@@ -1,6 +1,6 @@
-# dust
+# dust: norns incantations
 
-norns incantations - user data for the norns system
+user data for the norns system
 
 - `lua` - scripts, subfolders for organization
 - `sc` - engines
