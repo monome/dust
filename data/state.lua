@@ -1,6 +1,6 @@
 -- state
-sys.file.state.script = 'template.lua'
-sys.file.state.out = '50.0'
-sys.input_left = '48.0'
-sys.input_right = '48.0'
-sys.hp = '45'
+norns.state.script = 'grid_seek.lua'
+norns.state.out = '64'
+norns.state.input_left = '48.0'
+norns.state.input_right = '48.0'
+norns.state.hp = '45.0'

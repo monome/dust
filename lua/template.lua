@@ -12,7 +12,7 @@ init = function()
     -- print to command line
     print("template!")
     -- add log message
-    sys.log.post("hello!")
+    norns.log.post("hello!")
     -- show engine commands available
 	  e.listCommands()
     -- set engine params
@@ -84,7 +84,7 @@ c.time = 1
 -- callback function on each count
 c.callback = function(stage)
     t = t + 1
-    sys.log.post("tick "..t)
+    norns.log.post("tick "..t)
     redraw()
 end
 
