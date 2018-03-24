@@ -11,7 +11,7 @@ init = function()
     -- print to command line
     print("knaster!")
     -- add log message
-    sys.log.post("hello from knaster!")
+    norns.log.post("hello from knaster!")
     -- set engine params
     e.volume(0)
     -- screen: turn on anti-alias

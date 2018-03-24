@@ -106,7 +106,7 @@ init = function()
     -- print to command line
     print("step!")
     -- add log message
-    sys.log.post("hello from step!")
+    norns.log.post("hello from step!")
     -- set engine params
     e.setNumSteps(width)
     e.setTempo(tempo_spec_map(tempo))
@@ -124,10 +124,10 @@ end
 -- encoder function
 enc = function(n, delta)
     if n == 2 then
-        tempo = clamp(tempo+delta/200, 0, 1)
+        tempo = util.clamp(tempo+delta/200, 0, 1)
         e.setTempo(tempo_spec_map(tempo))
     elseif n == 3 then
-        swing_amount = clamp(swing_amount+delta/200, 0, 1)
+        swing_amount = util.clamp(swing_amount+delta/200, 0, 1)
         e.setSwingAmount(swing_amount_spec_map(swing_amount))
     end
     redraw()

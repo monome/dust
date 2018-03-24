@@ -7,4 +7,5 @@ init = function()
     s.level(15)
     s.move(0, 8)
     s.text("Why?")
+    s.update()
 end

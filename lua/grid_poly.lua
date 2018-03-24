@@ -131,7 +131,7 @@ end
 
 enc = function(n,delta)
    if n==2 then
-      curParamId = clamp(curParamId + delta,1,tab.count(params))
+      curParamId = util.clamp(curParamId + delta,1,tab.count(params))
    elseif n==3 then
       incParam(paramNames[curParamId], delta * 0.01)
    end
