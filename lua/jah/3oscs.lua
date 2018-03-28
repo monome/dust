@@ -269,11 +269,11 @@ init = function()
   scroll:push("to osc1.")
   scroll:push("")
   scroll:push("op-1 (midi ctrl mode):")
-  scroll:push("knobs will change osc1 index")
+  scroll:push("knobs will change osc3 index,")
   scroll:push("osc2 index, filter freq,")
   scroll:push("filter res")
   scroll:push("")
-  scroll:push("fin")
+  scroll:push("...fin")
   redraw()
 end
 
