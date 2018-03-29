@@ -3,83 +3,77 @@
 -- @author jah
 -- @txt a very basic example
 
--- specify dsp engine to load:
+Helper = require 'lua/jah/_helper'
+
 engine = 'Knaster'
 
--- init function
+local SCREEN_WIDTH = 128
+local SCREEN_HEIGHT = 64
+
+local vu = 0
+
 init = function()
-    -- print to command line
-    print("knaster!")
-    -- add log message
-    norns.log.post("hello from knaster!")
-    -- set engine params
-    e.volume(0)
-    -- screen: turn on anti-alias
-    s.aa(0)
-    s.line_width(1.0) 
+  e.volume(0)
+  s.line_width(1) 
+
+  if g then
+    g:all(0)
+    g:refresh()
+  end
+  start_amp_poll()
 end
 
--- screen redraw function
+enc = function(n, delta)
+  if n == 1 then
+    Helper.adjust_audio_output_level(delta)
+  end
+end
+
 redraw = function()
-    -- clear screen
-    s.clear()
-
-    for i=1,6 do
-        -- move cursor
-        s.move(0,i*8-1)
-        -- set pixel brightness (0-15)
-        s.level(i)
-        -- draw text
-        s.text("knaster "..i)
-    end 
-    s.move(0,7*8-1)
-    s.level(15)
-    s.text("knaster "..7)
-
-    -- TODO: amp_out-polls not working atm
-    --[[
-    s.level(15)
-    s.move(0,40)
-    s.aa(1)
-    s.line(vu,40)
-    s.stroke()
-    ]]
-
-    s.update()
+  s.clear()
+  s.aa(0)
+  s.move(0,7*8-1)
+  s.font_size(30)
+  s.text("knaster")
+  s.update()
 end 
 
--- TODO: amp_out-polls not working atm
---[[
+bang = function()
+  local level = vu/50*15
+  if level > 5 then
+    level = (level - 5)
+    local x = math.random(SCREEN_WIDTH)
+    local y = math.random(SCREEN_HEIGHT)
+    s.level(level*1)
+    s.rect(x, y, level, level)
+    s.fill()
+    -- print("vu: "..level)
+    if g then
+      g:led(x / SCREEN_WIDTH * 16, y / SCREEN_HEIGHT * 9, level*4)
+      g:refresh()
+    end
+  end
+end 
+
+local function calc_meter(amp, n, floor)
+  n = n or 64
+  floor = floor or -72
+  local db = 20.0 * math.log10(amp)
+  local norm = 1.0 - (db / floor)
+  vu = norm * n
+  bang()
+end
+
+local amp_callback = function(amp) calc_meter(amp, 64, -72) end
+
 p = nil
-vu = 0
 
-local function calcMeter(amp, n, floor)
-   n = n or 64
-   floor = floor or -72
-   local db = 20.0 * math.log10(amp)
-   local norm = 1.0 - (db / floor)
-   vu = norm * n
-   redraw()
-end
-
-local ampCallback = function(amp)
-    print(amp)
-    calcMeter(amp, 64, -72)
-end
-
-poll.report = function(polls)
-   p = polls['amp_out_l']
-   if p then
-      p.callback = ampCallback
-      p.time = 0.03;
-      p:start()
-   else
-      print("couldn't get requested poll, dang")
-   end 
+start_amp_poll = function()
+  p = poll.set('amp_out_l', amp_callback)
+  p.time = 0.01;
+  p:start()
 end 
-
 
 cleanup = function()
-   if p then p:stop() end
+  if p then p:stop() end
 end 
-]]

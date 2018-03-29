@@ -1,10 +1,14 @@
-Engine_JustSample : CroneEngine {
+Engine_Pusher : CroneEngine {
 	classvar maxSampleLength = 8;
 	classvar delayTimeSpec;
 	classvar decayTimeSpec;
 	classvar rqSpec;
 	classvar cutoffSpec;
-	classvar speedSpec;
+	classvar rateSpec;
+	classvar volumeSpec;
+	classvar percentageSpec;
+	classvar resonanceSpec;
+
 	var buffer;
 	var sampleLength;
 	var recSynth;
@@ -14,14 +18,14 @@ Engine_JustSample : CroneEngine {
 	var startedRecording;
 
 	*initClass {
-		// delayTimeSpec = \delay.asSpec;
-		delayTimeSpec = ControlSpec(0.0001, 3, 'exp', 0, 0.3, " secs");
-		// decayTimeSpec = \delay.asSpec;
-		decayTimeSpec = ControlSpec(0.0001, 3, 'exp', 0, 0.3, " secs");
+		rateSpec = ControlSpec(0.125, 8, 'exp', 0, 1, "");
+		delayTimeSpec = ControlSpec(0.0001, 3, 'exp', 0, 0.3, "secs");
+		decayTimeSpec = ControlSpec(0, 100, 'lin', 0, 1, "secs");
+		cutoffSpec = ControlSpec(20, 10000, 'exp', 0, 10000, "Hz");
+		volumeSpec = ControlSpec(-60, 0, 'lin', 0, 0, "dB");
+		percentageSpec = ControlSpec(0, 100, 'lin', 0, 0, "%");
+		resonanceSpec = ControlSpec(0, 100, 'lin', 0, 13, "%");
 		rqSpec = \rq.asSpec;
-		// cutoffSpec = \freq.asSpec;
-        cutoffSpec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz");
-        speedSpec = ControlSpec(0.125, 8, 'exp', 0, 1, "");
 	}
 
 	alloc {
@@ -99,12 +103,12 @@ Engine_JustSample : CroneEngine {
 				phasorFreq=1,
 				startPos,
 				endPos,
-				delayLevel,
+				delaySend,
 				delayTime,
 				decayTime,
 				cutoffFreq,
 				rq,
-				reverbLevel,
+				reverbSend,
 				reverbRoom,
 				reverbDamp
 			;
@@ -118,11 +122,11 @@ Engine_JustSample : CroneEngine {
 			sig = BufRd.ar(2, bufnum, playhead, interpolation: 4);
 
 			sig = RLPF.ar(sig, cutoffFreq, rq);
-			sig = sig + (delayLevel * CombC.ar(sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime, decaytime: decayTime));
-			sig = sig + (reverbLevel * FreeVerb2.ar(sig, sig, 1.0, reverbRoom, reverbDamp));
+			sig = sig + CombC.ar(delaySend.dbamp * sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime, decaytime: decayTime);
+			sig = sig + FreeVerb2.ar(reverbSend.dbamp * sig, reverbSend.dbamp * sig, 1.0, reverbRoom, reverbDamp);
 			Out.ar(out, sig);
 		},
-            [
+            [ // lag times...
                 nil, // out
                 nil, // bufnum
                 nil, // numFrames
@@ -130,12 +134,12 @@ Engine_JustSample : CroneEngine {
                 0.02, // phasorFreq
                 0.1, // startPos
                 0.1, // endPos
-                0.02, // delayLevel
+                0.02, // delaySend
                 0.25, // delayTime
                 0.02, // decayTime
                 0.02, // cutoffFreq
                 0.02, // rq
-                0.02, // reverbLevel
+                0.02, // reverbSend
                 0.02, // reverbRoom
                 0.02 // reverbDamp
             ]).add;
@@ -151,14 +155,14 @@ Engine_JustSample : CroneEngine {
 		this.addCommand("speed", "f") { |msg| this.speed(msg[1]) };
 		this.addCommand("cutoff", "f") { |msg| this.cutoff(msg[1]) };
 		this.addCommand("resonance", "f") { |msg| this.resonance(msg[1]) };
-		this.addCommand("delayLevel", "f") { |msg| this.delayLevel(msg[1]) };
+		this.addCommand("delaySend", "f") { |msg| this.delaySend(msg[1]) };
 		this.addCommand("delayTime", "f") { |msg| this.delayTime(msg[1]) };
 		this.addCommand("decayTime", "f") { |msg| this.decayTime(msg[1]) };
-		this.addCommand("reverbLevel", "f") { |msg| this.reverbLevel(msg[1]) };
+		this.addCommand("reverbSend", "f") { |msg| this.reverbSend(msg[1]) };
 		this.addCommand("reverbRoom", "f") { |msg| this.reverbRoom(msg[1]) };
 		this.addCommand("reverbDamp", "f") { |msg| this.reverbDamp(msg[1]) };
-		this.addCommand("readBuffer", "s") { |msg| this.readBuffer(msg[1]) };
-		this.addCommand("writeBuffer", "s") { |msg| this.writeBuffer(msg[1]) };
+		this.addCommand("readBuffer", "s") { |msg| this.readBuffer(msg[1]) }; // TODO: use for between-session persistance
+		this.addCommand("writeBuffer", "s") { |msg| this.writeBuffer(msg[1]) }; // TODO: use for between-session persistance
 	}
 
 	free {
@@ -191,7 +195,7 @@ Engine_JustSample : CroneEngine {
 		postln("started recording");
 		stopRecordingRoutine = fork {
 			maxSampleLength.wait;
-            maxSampleLength.debug(\sc_maxSampleTimeReached);
+            maxSampleLength.debug(\maxSampleTimeReached);
             this.play;
 		};
 	}
@@ -219,10 +223,10 @@ Engine_JustSample : CroneEngine {
 				    \endPos, 1,
 				    \phasorFreq, 1, // speed
                     // pitch
-				    \cutoffFreq, cutoffSpec.maxval,
-				    \rq, rqSpec.maxval,
-				    \delayLevel, 0,
-				    \reverbLevel, 0,
+				    \cutoffFreq, cutoffSpec.default,
+				    \rq, rqSpec.map((resonanceSpec.unmap(resonanceSpec.default.debug(\resonance_in)).debug(\resonance_unmapped).neg+1).debug(\resonance_unmapped_neg_plus_1)).debug(\rq_mapped),
+				    \delaySend, -60,
+				    \reverbSend, -60,
 				    \delayTime, delayTimeSpec.default,
 				    \decayTime, decayTimeSpec.default,
 				    \reverbRoom, 0.5,
@@ -246,102 +250,69 @@ Engine_JustSample : CroneEngine {
 
 	readBuffer { |path| buffer.read(path, numFrames: this.actualBufFrames) }
 
-	startPos { |value| // 0..1.0
+	startPos { |value|
 		playSynth !? {
-            playSynth.set(
-                \startPos,
-                value.debug(\sc_startPos_in).clip(0, 1).debug(\sc_startPos_clipped)
-            )
+            playSynth.set( \startPos, percentageSpec.unmap(value.debug(\startPos_in)).debug(\startPos_unmapped) )
         };
 	}
 
-	endPos { |value| // 0..1.0
+	endPos { |value|
 		playSynth !? {
-            playSynth.set(
-                \endPos,
-                value.debug(\sc_endPos_in).clip(0, 1).debug(\sc_endPos_clipped)
-            )
+            playSynth.set( \endPos, percentageSpec.unmap(value.debug(\endPos_in)).debug(\endPos_unmapped) )
         };
 	}
 
-	speed { |value| // 0..1
+	speed { |value|
 		playSynth !? {
-            playSynth.set(
-                \phasorFreq,
-                speedSpec.map(value.debug(\sc_speed_in)).debug(\sc_speed_mapped)
-            )
+            playSynth.set( \phasorFreq, rateSpec.constrain(value.debug(\speed_in)).debug(\speed_constrained) )
         };
 	}
 
-	cutoff { |value| // 0..1.0
+	cutoff { |value|
 		playSynth !? {
-            playSynth.set(
-                \cutoffFreq,
-                cutoffSpec.map(value.debug(\sc_cutoff_in)).debug(\sc_cutoff_mapped)
-            )
+            playSynth.set( \cutoffFreq, cutoffSpec.constrain(value.debug(\cutoff_in)).debug(\cutoff_constrained) )
         };
 	}
 
-	resonance { |value| // 0..1.0
+	resonance { |value|
 		playSynth !? {
-            playSynth.set(
-                \rq,
-                rqSpec.map((value.debug(\sc_resonance_in).neg+1).debug(\_sc_resonance_neg_plus_1)).debug(\sc_resonance_constrained)
-            )
+            playSynth.set( \rq, rqSpec.map((percentageSpec.unmap(value.debug(\resonance_in)).debug(\resonance_unmapped).neg+1).debug(\resonance_unmapped_neg_plus_1)).debug(\rq_mapped) )
         };
 	}
 
-	delayLevel { |value| // 0..1.0
+	delaySend { |value|
 		playSynth !? {
-			playSynth.set(
-				\delayLevel,
-				value.debug(\sc_delayLevel_in).clip(0, 1).debug(\sc_delayLevel_clipped)
-			)
+			playSynth.set( \delaySend, volumeSpec.constrain(value.debug(\delaySend_in)).debug(\delaySend_constrained) )
 		};
 	}
 
-	reverbLevel { |value| // 0..1.0
+	reverbSend { |value|
 		playSynth !? {
-			playSynth.set(
-				\reverbLevel,
-				value.debug(\sc_reverbLevel_in).clip(0, 1).debug(\sc_reverbLevel_clipped)
-			)
+			playSynth.set( \reverbSend, volumeSpec.constrain(value.debug(\reverbSend_in)).debug(\reverbSend_constrained) )
 		};
 	}
 
-	delayTime { |value| // \delay.asSpec
+	delayTime { |value|
 		playSynth !? {
-			playSynth.set(
-				\delayTime,
-				delayTimeSpec.map(value.debug(\sc_delayTime_in)).debug(\sc_delayTime_map)
-			)
+			playSynth.set( \delayTime, delayTimeSpec.constrain(value.debug(\delayTime_in)).debug(\delayTime_constrained) )
 		};
 	}
 
 	decayTime { |value|
 		playSynth !? {
-			playSynth.set(
-				\decayTime,
-				decayTimeSpec.map(value.debug(\sc_decayTime_in)).debug(\sc_decayTime_map)
-			)
+			playSynth.set( \decayTime, decayTimeSpec.constrain(value.debug(\decayTime_in)).debug(\decayTime_constrained) )
 		};
 	}
 
-	reverbRoom { |value| // 0..1
+	reverbRoom { |value|
 		playSynth !? {
-			playSynth.set(
-				\reverbRoom,
-				value.debug(\sc_reverbRoom_in).clip(0, 1).debug(\sc_reverbRoom_clipped)
-			)
+			playSynth.set( \reverbRoom, percentageSpec.unmap(value.debug(\reverbRoom_in)).debug(\reverbRoom_unmapped) )
 		};
 	}
 
-	reverbDamp { |value| // 0..1
+	reverbDamp { |value|
 		playSynth !? {
-            playSynth.set(
-                \reverbDamp,
-                value.debug(\sc_reverbDamp_in).clip(0, 1).debug(\sc_reverbDamp_clipped)
-            )
+            playSynth.set( \reverbDamp, percentageSpec.unmap(value.debug(\reverbDamp_in)).debug(\reverbDamp_unmapped) )
         };
 	}
 
