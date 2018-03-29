@@ -124,7 +124,7 @@ Engine_Step : CroneEngine {
 	scrambleSamples {
 		var filenameSymbol = this.class.filenameSymbol;
 		// var soundsFolder = PathName(filenameSymbol.asString).pathOnly ++ "tests";
-		var soundsFolder = "~/audio";
+		var soundsFolder = "~/dust/audio/step";
 		var soundsToLoad;
 		var allSounds = PathName(soundsFolder)
 			.deepFiles

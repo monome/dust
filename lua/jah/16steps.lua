@@ -88,7 +88,7 @@ init = function()
   -- print to command line
   print("step!")
   -- add log message
-  sys.log.post("hello from step!")
+  norns.log.post("hello from step!")
   -- set engine params
   e.setNumSteps(width)
   e.setTempo(tempo:mapped_value())
@@ -143,9 +143,9 @@ redraw = function()
   s.text("16STEPS")
 
   s.move(0, 24)
-  s.text("Tempo: "..round(tempo:mapped_value(), 0.1).."BPM")
+  s.text("Tempo: "..tempo:mapped_value().."BPM")
   s.move(0, 32)
-  s.text("Swing: "..round(swing_amount:mapped_value(), 1).."%")
+  s.text("Swing: "..swing_amount:mapped_value().."%")
   s.move(0, 48)
   if playing then
     s.text("Playing")

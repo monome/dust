@@ -115,9 +115,9 @@ local display_param = function()
     s.move(0, 24)
     s.text(reverb_send:string(0.01))
   elseif current_param_group == PARAM_GROUP_DELAY then
-    s.text("Delay Time: "..round(delay_time:mapped_value()*1000, 0.01).."ms")
+    s.text("Delay Time: "..(delay_time:mapped_value()*1000).."ms")
     s.move(0, 24)
-    s.text("Decay Time: "..round(decay_time:mapped_value()*1000, 0.01).."ms")
+    s.text("Decay Time: "..(decay_time:mapped_value()*1000).."ms")
   elseif current_param_group == PARAM_GROUP_REVERB then
     s.text(reverb_room:string(0.1))
     s.move(0, 24)
