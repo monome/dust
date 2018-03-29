@@ -14,7 +14,7 @@ local vu = 0
 
 init = function()
   e.volume(0)
-  s.line_width(1) 
+  s.line_width(1)
 
   if g then
     g:all(0)
@@ -36,7 +36,7 @@ redraw = function()
   s.font_size(30)
   s.text("knaster")
   s.update()
-end 
+end
 
 bang = function()
   local level = vu/50*15
@@ -53,7 +53,7 @@ bang = function()
       g:refresh()
     end
   end
-end 
+end
 
 local function calc_meter(amp, n, floor)
   n = n or 64
@@ -72,8 +72,8 @@ start_amp_poll = function()
   p = poll.set('amp_out_l', amp_callback)
   p.time = 0.01;
   p:start()
-end 
+end
 
 cleanup = function()
   if p then p:stop() end
-end 
+end
