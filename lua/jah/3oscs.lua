@@ -198,7 +198,7 @@ end
 
 init = function()
   s.aa(1)
-  s.line_width(1.0) 
+  s.line_width(1.0)
 
   e.capacity(8)
   e.module('osc1', 'oscil')

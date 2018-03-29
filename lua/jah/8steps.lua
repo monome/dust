@@ -81,7 +81,7 @@ local start_playpos_poll = function()
   p = poll.set('playpos', playpos_callback)
   p.time = 0.02;
   p:start()
-end 
+end
 
 -- init function
 init = function()
@@ -96,10 +96,10 @@ init = function()
   e.stopSequencer()
   e.clearAllTrigs()
   -- clear grid, if it exists
-  if g then 
+  if g then
     g:all(0)
     g:refresh()
-  end 
+  end
   start_playpos_poll()
 end
 
@@ -157,7 +157,7 @@ end
 
 -- grid key function
 gridkey = function(x, y, state)
-  if state > 0 then 
+  if state > 0 then
     if trig_is_set(x, y) then
       e.clearTrig(y-1, x-1)
       trigs[y*width+x] = false
@@ -175,7 +175,7 @@ end
 
 -- called on script quit, release memory
 cleanup = function()
-  if g then 
+  if g then
     g:all(0)
     g:refresh()
   end
