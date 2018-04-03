@@ -20,9 +20,10 @@ function Scroll:print()
   end
 end
 
-function Scroll:push(thing)
+function Scroll:push(thing) -- TODO: pushing nil to scroll freaks it out, handle this case
   lineno = self.size + 1
   self.content[lineno] = thing
+  -- TODO: there was some error here
   if type(thing) ~= 'string' and self.selected_param == nil then
     -- line assumed to be a Param instance
     self:select_param_at_line(lineno)
@@ -32,7 +33,7 @@ end
 
 function Scroll:pop(thing)
   self.size = self.size - 1
-  line = self.content[self.size]
+  local line = self.content[self.size]
   if self.selected_param == line then
     self:remove_param_selection()
   end
@@ -50,14 +51,14 @@ function Scroll:redraw()
   print("--------------") -- 
   ]]
   for i=1,Scroll.SCREEN_ROWS do
-    scroll_i = self.top+i-1
+    local scroll_i = self.top+i-1
     s.move(0, i*8)
     -- io.write("row: "..(scroll_i)..", ") -- 
     if scroll_i >= self.size then
       return
     else
       local str;
-      line = self.content[scroll_i]
+      local line = self.content[scroll_i]
       if type(line) == 'string' then
         s.level(Scroll.TEXT_LEVEL)
         -- io.write("level "..Scroll.TEXT_LEVEL..": ") -- 
@@ -70,7 +71,7 @@ function Scroll:redraw()
           s.level(Scroll.PARAM_LEVEL)
           -- io.write("level "..Scroll.PARAM_LEVEL..": ") -- 
         end
-        str = line:string(0.01)
+        str = line:string()
       end
       s.text(str)
       -- print(str) --
@@ -140,8 +141,8 @@ function Scroll:line_is_visible(lineno)
   end
 end
 
-function Scroll:lineno_of_visible_param_after(lineno)
-  for i=(lineno+1),self.top+Scroll.SCREEN_ROWS-1 do
+function Scroll:lineno_of_visible_param_at_or_after(lineno)
+  for i=(lineno),self.top+Scroll.SCREEN_ROWS-1 do
     if self:is_param_line(i) then
       return i
     end
@@ -156,6 +157,32 @@ function Scroll:lineno_of_visible_param_before(lineno)
   end
 end
 
+function Scroll:lookup_lineno(thing)
+  for i,t in ipairs(self.content) do
+    if t == thing then
+      return i
+    end
+  end
+end
+
+function Scroll:navigate_to_lineno(lineno)
+  new_top = lineno
+  if new_top >= 1 and (new_top + Scroll.SCREEN_ROWS) <= self.size then
+    if (new_top + Scroll.SCREEN_ROWS) > self.size then
+      new_top = self.size - Scroll.SCREEN_ROWS
+    end
+    self.top = new_top
+    new_selected_param_lineno = self:lineno_of_visible_param_at_or_after(new_top)
+    if new_selected_param_lineno then
+      self:select_param_at_line(new_selected_param_lineno)
+    elseif self.selected_lineno then
+      if not self:line_is_visible(self.selected_lineno) then
+        self:remove_param_selection()
+      end
+    end
+  end
+end
+
 function Scroll:navigate(delta)
   local new_selected_param_lineno
 
@@ -163,7 +190,7 @@ function Scroll:navigate(delta)
     if delta < 0 then
       new_selected_param_lineno = self:lineno_of_visible_param_before(self.selected_lineno)
     elseif delta > 0 then
-      new_selected_param_lineno = self:lineno_of_visible_param_after(self.selected_lineno)
+      new_selected_param_lineno = self:lineno_of_visible_param_at_or_after(self.selected_lineno+1)
     end
   end
 
@@ -171,13 +198,14 @@ function Scroll:navigate(delta)
   if new_selected_param_lineno then
     self:select_param_at_line(new_selected_param_lineno)
     self:redraw()
-  elseif new_top > 0 and new_top + Scroll.SCREEN_ROWS < self.size then
+  elseif new_top >= 1 and (new_top + Scroll.SCREEN_ROWS) <= self.size then
+    -- TODO print(self.size..":"..new_top)
     self.top = new_top
     if self.selected_lineno then
       if delta < 0 then
         new_selected_param_lineno = self:lineno_of_visible_param_before(self.selected_lineno)
       elseif delta > 0 then
-        new_selected_param_lineno = self:lineno_of_visible_param_after(self.selected_lineno)
+        new_selected_param_lineno = self:lineno_of_visible_param_at_or_after(self.selected_lineno+1)
       end
     else
       if delta < 0 and self:is_param_line(new_top) then

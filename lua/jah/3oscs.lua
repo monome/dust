@@ -7,43 +7,99 @@ ControlSpec = require 'lua/jah/_controlspec'
 Param = require 'lua/jah/_param'
 Scroll = require 'lua/jah/_scroll'
 Helper = require 'lua/jah/_helper'
+R = require 'lua/jah/_r'
 
 engine = 'R'
 
-local percent_spec = ControlSpec.new(0, 1, 'lin', 0, 0, "")
-local widefreq_spec = ControlSpec.new(0.1, 20000, 'exp', 0, 440, "Hz")
 local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
-local lofreq_spec = ControlSpec.new(0.1, 100, 'exp', 0, 6, "Hz")
-local db_spec = ControlSpec.new(-60, 0, 'lin', 0, -60, "dB")
-local delay_time_spec = ControlSpec.new(0.0001, 3, ControlSpec.WARP_EXP, 0, 0.3, "secs")
+local delay_time_spec = ControlSpec.delay_spec()
+delay_time_spec.maxval = 3
+local filter_freq_spec = ControlSpec.unipolar_spec()
+filter_freq_spec.default = 0.5
 
-local osc1_freq = Param.new("osc1 freq", widefreq_spec)
-local osc1_index = Param.new("osc1 index", index_spec)
-local osc1_osc1_patch = Param.new("osc1 > osc1", db_spec) -- TODO: i dunno about feedback
-local osc1_osc2_patch = Param.new("osc1 > osc2", db_spec)
-local osc1_osc3_patch = Param.new("osc1 > osc3", db_spec)
-local osc1_filter_patch = Param.new("osc1 > filter", db_spec)
-local osc2_freq = Param.new("osc2 freq", widefreq_spec)
-local osc2_index = Param.new("osc2 index", index_spec)
-local osc2_osc1_patch = Param.new("osc2 > osc1", db_spec) -- TODO: i dunno about feedback
-local osc2_osc2_patch = Param.new("osc2 > osc2", db_spec) -- TODO: i dunno about feedback
-local osc2_osc3_patch = Param.new("osc2 > osc3", db_spec)
-local osc2_filter_patch = Param.new("osc2 > filter", db_spec)
-local osc3_freq = Param.new("osc3 freq", widefreq_spec)
-local osc3_index = Param.new("osc3 index", index_spec)
-local osc3_osc1_patch = Param.new("osc3 > osc1", db_spec) -- TODO: i dunno about feedback
-local osc3_osc2_patch = Param.new("osc3 > osc2", db_spec) -- TODO: i dunno about feedback
-local osc3_osc3_patch = Param.new("osc3 > osc3", db_spec) -- TODO: i dunno about feedback
-local osc3_filter_patch = Param.new("osc3 > filter", db_spec)
-local delay_send = Param.new("delay send level", db_spec)
-local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec)
-local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec)
-local delay_feedback = Param.new("delay feedback", db_spec)
-local output_level = Param.new("output level", db_spec)
-local filter_freq = Param.new("filter freq", percent_spec)
-local filter_res = Param.new("filter res", percent_spec)
-local filter_lforate = Param.new("filter lforate", lofreq_spec)
-local filter_lfodepth = Param.new("filter lfodepth", percent_spec)
+local percentage_formatter = function(param)
+  return param:string_format(Param.round(param:mapped_value()*100), "%")
+end
+
+local ms_formatter = function(param)
+  return param:string_format(Param.round(param:mapped_value()*1000), "ms")
+end
+
+local round_formatter = function(param)
+  return param:string_format(Param.round(param:mapped_value(), 0.01))
+end
+
+local filter_freq_formatter = function(param) -- TODO: filter_freq_formatter
+  local dots_per_side = 10
+  local widget
+  local function draw_dots(num_dots)
+    for i=1,num_dots do widget = (widget or "").."." end
+  end
+  local function draw_bar()
+    widget = (widget or "").."|"
+  end
+
+  local mapped_value = ControlSpec.bipolar_spec():map(param.value)
+  local side = Param.round(math.abs(mapped_value)*100)
+  local descr
+
+  if mapped_value > 0 then
+    dots_left = dots_per_side+Param.round(side/dots_per_side)
+    dots_right = Param.round((100-side)/dots_per_side)
+    if side >= 1 then
+      descr = "HP"..side
+    end
+  elseif mapped_value < 0 then
+    dots_left = Param.round((100-side)/dots_per_side)
+    dots_right = dots_per_side+Param.round(side/dots_per_side)
+    if side >= 1 then
+      descr = "LP"..(100-side)
+    end
+  else
+    dots_left = dots_per_side
+    dots_right = dots_per_side
+  end
+
+  if descr == nil then
+    descr = "OFF"
+  end
+
+  draw_bar()
+  draw_dots(dots_left)
+  draw_bar()
+  draw_dots(dots_right)
+  draw_bar()
+
+  return param:string_format(widget.." "..descr, "")
+end
+
+local osc1_freq = Param.new("osc1 freq", ControlSpec.widefreq_spec(), round_formatter)
+local osc1_index = Param.new("osc1 index", index_spec, round_formatter)
+local osc1_osc1_patch = Param.new("osc1 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc1_osc2_patch = Param.new("osc1 > osc2", ControlSpec.db_spec())
+local osc1_osc3_patch = Param.new("osc1 > osc3", ControlSpec.db_spec())
+local osc1_filter_patch = Param.new("osc1 > filter", ControlSpec.db_spec())
+local osc2_freq = Param.new("osc2 freq", ControlSpec.widefreq_spec(), round_formatter)
+local osc2_index = Param.new("osc2 index", index_spec, round_formatter)
+local osc2_osc1_patch = Param.new("osc2 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc2_osc2_patch = Param.new("osc2 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc2_osc3_patch = Param.new("osc2 > osc3", ControlSpec.db_spec())
+local osc2_filter_patch = Param.new("osc2 > filter", ControlSpec.db_spec())
+local osc3_freq = Param.new("osc3 freq", ControlSpec.widefreq_spec(), round_formatter)
+local osc3_index = Param.new("osc3 index", index_spec, round_formatter)
+local osc3_osc1_patch = Param.new("osc3 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc3_osc2_patch = Param.new("osc3 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc3_osc3_patch = Param.new("osc3 > osc3", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc3_filter_patch = Param.new("osc3 > filter", ControlSpec.db_spec())
+local delay_send = Param.new("delay send level", ControlSpec.db_spec())
+local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, ms_formatter)
+local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, ms_formatter)
+local delay_feedback = Param.new("delay feedback", ControlSpec.db_spec())
+local output_level = Param.new("output level", ControlSpec.db_spec())
+local filter_freq = Param.new("filter freq", filter_freq_spec, filter_freq_formatter)
+local filter_res = Param.new("filter res", ControlSpec.unipolar_spec(), percentage_formatter)
+local filter_lforate = Param.new("filter lforate", ControlSpec.lofreq_spec(), round_formatter)
+local filter_lfodepth = Param.new("filter lfodepth", ControlSpec.unipolar_spec(), percentage_formatter)
 
 local function to_hz(note)
   local exp = (note - 21) / 12
@@ -67,67 +123,26 @@ local function update_output_level()
   e.patch('filter', 'outr', output_level:mapped_value())
 end
 
-local function split_param_name(param)
-  words = {}
-  for word in param.title:gmatch("[a-zA-Z0-9>]+") do table.insert(words, word) end
-  return words
-end
-
-local function is_patch_param(param)
-  return split_param_name(param)[2] == '>'
-end
-
-local function send_param_value_to_engine(param)
-  print("send_param_value_to_engine: "..param.title)
-  if param == delay_send then
-    update_delay_send()
-  elseif param == delay_feedback then
-    update_delay_feedback()
-  elseif param == output_level then
-    update_output_level()
-  elseif is_patch_param(param) then
-    module_gt_module = split_param_name(param)
-    e.patch(module_gt_module[1], module_gt_module[3], param:mapped_value())
-  else
-    module_param = split_param_name(param)
-    e.param(module_param[1], module_param[2], param:mapped_value())
-  end
-end
-
-local function send_param_values_to_engine(params)
-  for i, param in ipairs(params) do
-    send_param_value_to_engine(param)
-  end
-end
-
 local function init_osc1()
   osc1_freq:set_mapped_value(to_hz(69+12))
   osc1_index:revert_to_default()
-  osc1_filter_patch:set(0)
-  osc1_osc1_patch:set(0)
-  osc1_osc2_patch:set(db_spec:unmap(-20))
-  osc1_osc3_patch:set(db_spec:unmap(-20))
-  send_param_values_to_engine({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch})
+  osc1_osc2_patch:set_mapped_value(-20)
+  osc1_osc3_patch:set_mapped_value(-20)
+  R.send_r_param_values_to_engine({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch})
 end
 
 local function init_osc2()
   osc2_freq:set_mapped_value(to_hz(69-12))
   osc2_index:set_mapped_value(9)
   osc2_filter_patch:set_mapped_value(-20)
-  osc2_osc1_patch:set(0)
-  osc2_osc2_patch:set(0)
-  osc2_osc3_patch:set(0)
-  send_param_values_to_engine({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch})
+  R.send_r_param_values_to_engine({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch})
 end
 
 local function init_osc3()
   osc3_freq:set_mapped_value(to_hz(69))
   osc3_index:revert_to_default()
   osc3_filter_patch:set_mapped_value(-20)
-  osc3_osc1_patch:set(0)
-  osc3_osc2_patch:set(0)
-  osc3_osc3_patch:set(0)
-  send_param_values_to_engine({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch})
+  R.send_r_param_values_to_engine({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch})
 end
 
 local function init_filter()
@@ -135,7 +150,7 @@ local function init_filter()
   filter_res:set(0.1)
   filter_lforate:set_mapped_value(0.1)
   filter_lfodepth:set(0.1)
-  send_param_values_to_engine({filter_freq, filter_res, filter_lforate, filter_lfodepth})
+  R.send_r_param_values_to_engine({filter_freq, filter_res, filter_lforate, filter_lfodepth})
 end
 
 local function init_delay()
@@ -143,7 +158,7 @@ local function init_delay()
   update_delay_send()
   delayl_delaytime:set_mapped_value(0.23)
   delayr_delaytime:set_mapped_value(0.45)
-  send_param_values_to_engine({delayl_delaytime, delayr_delaytime})
+  R.send_r_param_values_to_engine({delayl_delaytime, delayr_delaytime})
 
   delay_feedback:set_mapped_value(-20)
   update_delay_feedback()
@@ -155,43 +170,55 @@ local function init_output()
   update_output_level()
 end
 
+local function send_param_value(param)
+  if param == delay_send then
+    update_delay_send()
+  elseif param == delay_feedback then
+    update_delay_feedback()
+  elseif param == output_level then
+    update_output_level()
+  else
+    R.send_r_param_value_to_engine(param)
+  end
+end
+
 local function note_on(note, velocity)
-  print("note_on: "..note..", velocity: "..velocity) -- TODO: replace this with on-screen notification
+  -- print("note_on: "..note..", velocity: "..velocity) -- TODO: replace this with on-screen notification
   osc1_ratio = osc1_freq:mapped_value() / osc3_freq:mapped_value()
   osc2_ratio = osc2_freq:mapped_value() / osc3_freq:mapped_value()
   local freq = to_hz(note)
   osc1_freq:set_mapped_value(freq*osc1_ratio)
   osc2_freq:set_mapped_value(freq*osc2_ratio)
   osc3_freq:set_mapped_value(freq)
-  send_param_values_to_engine({osc1_freq, osc2_freq, osc3_freq})
+  R.send_r_param_values_to_engine({osc1_freq, osc2_freq, osc3_freq})
   redraw()
 end
 
 local function note_off(note)
-  print("note_off: "..note)
+  -- print("note_off: "..note)
 end
 
 local function cc(control, value)
-  print("control: "..control..", value: "..value) -- TODO: replace this with on-screen notification
+  -- print("control: "..control..", value: "..value) -- TODO: replace this with on-screen notification
   if control == 1 then
-    print("osc3_index:set: "..value/127)
+    -- print("osc3_index:set: "..value/127)
     osc3_index:set(value/127)
-    send_param_value_to_engine(osc3_index)
+    send_param_value(osc3_index)
     redraw()
   elseif control == 2 then
-    print("osc2_index:set: "..value/127)
+    -- print("osc2_index:set: "..value/127)
     osc2_index:set(value/127)
-    send_param_value_to_engine(osc2_index)
+    send_param_value(osc2_index)
     redraw()
   elseif control == 3 then
-    print("filter_freq:set: "..value/127)
+    -- print("filter_freq:set: "..value/127)
     filter_freq:set(value/127)
-    send_param_value_to_engine(filter_freq)
+    send_param_value(filter_freq)
     redraw()
   elseif control == 4 then
-    print("filter_res:set: "..value/127)
+    -- print("filter_res:set: "..value/127)
     filter_res:set(value/127)
-    send_param_value_to_engine(filter_res)
+    send_param_value(filter_res)
     redraw()
   end
 end
@@ -303,7 +330,7 @@ enc = function(n, delta)
     if scroll.selected_param then
       local param = scroll.selected_param
       param:adjust(d)
-      send_param_value_to_engine(param)
+      send_param_value(param)
       redraw()
     end
   end
@@ -317,7 +344,7 @@ key = function(n, z)
       if scroll.selected_param then
         local param = scroll.selected_param
         param:revert_to_default()
-        send_param_value_to_engine(param)
+        send_param_value(param)
         redraw()
       end
     end
@@ -335,7 +362,7 @@ cleanup = function()
 end
 
 norns.midi.event = function(id, status, data1, data2)
-  print(id, status, data1, data2)
+  -- print(id, status, data1, data2)
   if status == 144 then
     --[[
     if data1 == 0 then

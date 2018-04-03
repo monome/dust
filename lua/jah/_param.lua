@@ -1,22 +1,28 @@
 local Param = {}
 Param.__index = Param
 
-local function round(number, quant)
+-- TODO: move round() function out of Param class to a more appropriate place since it is general
+function Param.round(number, quant)
   if quant == 0 then
     return number
   else
-    return math.floor(number/quant + 0.5) * quant
+    local quant_to_use
+    if quant then
+      quant_to_use = quant
+    else
+      quant_to_use = 1
+    end
+    return math.floor(number/quant_to_use + 0.5) * quant_to_use
   end
 end
 
-function Param.new(title, controlspec, value)
+function Param.new(title, controlspec, formatter)
   local p = setmetatable({}, Param)
   p.title = title
   p.controlspec = controlspec
+  p.formatter = formatter
 
-  if value then
-    p.value = value
-  elseif controlspec and controlspec.default then
+  if controlspec and controlspec.default then
     p.value = controlspec:unmap(controlspec.default)
   else
     p.value = 0
@@ -24,24 +30,54 @@ function Param.new(title, controlspec, value)
   return p
 end
 
-function Param:print()
-  for k,v in pairs(self) do
-    print('>> ', k, v)
+function Param:string(quant)
+  if self.formatter then
+    return self.formatter(self)
+  else
+    local mapped_value = self:mapped_value()
+    local display_value
+    if quant then
+      display_value = Param.round(mapped_value, quant)
+    else
+      display_value = mapped_value
+    end
+    return self:string_format(display_value)
   end
 end
 
-function Param:string(quant)
-  local v
-  if quant then
-    v = round(self.controlspec:map(self.value), quant)
+function Param:string_format(value, units, title)
+  local u
+  if units then
+    u = units
+  elseif self.controlspec then
+    u = self.controlspec.units
   else
-    v = self.controlspec:map(self.value)
+    u = ""
   end
-  return self.title..": "..v.." "..(self.controlspec.units)
+  return Param.stringify(title or self.title or "", u, value)
+end
+
+function Param.stringify(title, units, value)
+  return title..": "..value.." "..units
 end
 
 function Param:set(value)
-  self.value = util.clamp(value, 0, 1)
+  clamped_value = util.clamp(value, 0, 1)
+  if self.value ~= clamped_value then
+    prev_value = self.value
+    self.value = clamped_value
+    self:bang()
+  end
+end
+
+function Param:bang()
+  if self.on_change then
+    self.on_change(self.value, self.value)
+  end
+  if self.on_change_mapped then
+    local value_mapped = self.controlspec:map(self.value)
+    self.on_change_mapped(value_mapped, value_mapped)
+  end
 end
 
 function Param:set_mapped_value(value)
@@ -49,10 +85,10 @@ function Param:set_mapped_value(value)
 end
 
 function Param:adjust(delta)
-  self.value = util.clamp(self.value + delta, 0, 1)
+  self:set(self.value + delta)
 end
 
-function Param:adjust_wrap(delta) -- TODO
+function Param:adjust_wrap(delta) -- TODO: prune if not used anywhere
   self.value = util.clamp(self.value + delta, 0, 1)
 end
 
@@ -62,9 +98,9 @@ end
 
 function Param:revert_to_default()
   if self.controlspec and self.controlspec.default then
-    self.value = self.controlspec:unmap(self.controlspec.default)
+    self:set_mapped_value(self.controlspec.default)
   else
-    self.value = 0
+    self:set(0)
   end
 end
 
