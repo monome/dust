@@ -304,16 +304,16 @@ RDelayModule : RModule {
 
 RInputModule : RModule {
 	*params {
-		^[ 'inConfig' -> ControlSpec(0, 1, 'lin', 1, 0, "channel") ] // TODO: offset to context.in_b
+		^[ 'config' -> ControlSpec(0, 1, 'lin', 1, 0, "channel") ] // TODO: offset to context.in_b
 	}
 
 	*ugenGraphFunc {
-		^{ |out, inConfig| Out.ar(out, SoundIn.ar(inConfig)) }
+		^{ |out, norns_in_b, config| Out.ar(out, In.ar(norns_in_b+config)) }
 	}
 
 	init { |argContext, group, inbus, outbus|
 		context = argContext;
-		synth = Synth(this.class.defName.asSymbol, [\in, inbus, \out, outbus, \inConfig, context.in_b], target: group);
+		synth = Synth(this.class.defName.asSymbol, [\in, inbus, \out, outbus, \norns_in_b, context.in_b], target: group);
 	}
 }
 
