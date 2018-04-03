@@ -79,7 +79,7 @@ end
 
 init = function()
 
-  poll.listNames();
+  poll.list_names();
   local refresh_metro = metro[29] -- TODO: choose this so we don't grab menu timers
   refresh_metro.time = FRAMERATE
 

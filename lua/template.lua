@@ -14,7 +14,7 @@ init = function()
   -- add log message
   norns.log.post("hello!")
   -- show engine commands available
-    e.listCommands()
+    e.list_commands()
   -- set engine params
   e.hz(100)
   e.amp(0.125)
