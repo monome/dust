@@ -2,7 +2,7 @@
 -- @version 1.0
 -- @author jmcc
 
-Helper = require 'lua/jah/_helper'
+Helper = require '_helper'
 
 engine = 'Why'
 

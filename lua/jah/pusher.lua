@@ -3,10 +3,10 @@
 -- @author jah
 -- @txt capture & playback a sound
 
-ControlSpec = require 'lua/jah/_controlspec'
-Param = require 'lua/jah/_param'
-Scroll = require 'lua/jah/_scroll' -- TODO: not yet used
-Helper = require 'lua/jah/_helper'
+ControlSpec = require 'jah/_controlspec'
+Param = require 'jah/_param'
+Scroll = require 'jah/_scroll' -- TODO: not yet used
+Helper = require '_helper'
 
 engine = 'Pusher'
 

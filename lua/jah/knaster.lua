@@ -3,7 +3,7 @@
 -- @author jah
 -- @txt a very basic example
 
-Helper = require 'lua/jah/_helper'
+Helper = require '_helper'
 
 engine = 'Knaster'
 

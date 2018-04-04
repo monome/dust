@@ -3,11 +3,11 @@
 -- @author jah
 -- @txt test r
 
-ControlSpec = require 'lua/jah/_controlspec'
-Param = require 'lua/jah/_param'
-Scroll = require 'lua/jah/_scroll'
-Helper = require 'lua/jah/_helper'
-R = require 'lua/jah/_r'
+ControlSpec = require 'jah/_controlspec'
+Param = require 'jah/_param'
+Scroll = require 'jah/_scroll'
+Helper = require '_helper'
+R = require 'jah/_r'
 
 engine = 'R'
 
