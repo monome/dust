@@ -115,9 +115,8 @@ function ControlSpec:print()
 end
 
 --[[
-TODO 1:
+TODO:
 consider defining these default specs as global constants, ie. ControlSpec.UNIPOLAR, ControlSpec.BIPOLAR, ControlSpec.FREQ, etc (akin to how SuperCollider works) however, since afaik there's no way of freezing objects in lua either storing default specs this way as globals is error prone: if someone changes the properties of a ControlSpec.GLOBAL spec it would affect all usages (this is the root cause of weird unexpected errors in SuperCollider too)
-TODO 2: naming consider removing _spec suffix
 ]]
 function ControlSpec.unipolar()
   return ControlSpec.new(0, 1, 'lin', 0, 0, "")
