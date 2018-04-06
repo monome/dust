@@ -71,103 +71,86 @@ filter_lfodepth:set(0.1)
 
 local delay_send = Param.new("delay send level", ControlSpec.db_spec())
 delay_send:set_mapped_value(-30)
+delay_send.on_change_mapped = function(value)
+  e.patch('filter', 'delayl', value)
+  e.patch('filter', 'delayr', value)
+end
+
 local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
 delayl_delaytime:set_mapped_value(0.23)
 local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
 delayr_delaytime:set_mapped_value(0.45)
 local delay_feedback = Param.new("delay feedback", ControlSpec.db_spec())
 delay_feedback:set_mapped_value(-20)
+delay_feedback.on_change_mapped = function(value)
+  e.patch('delayl', 'delayr', value)
+  e.patch('delayr', 'delayl', value)
+end
+
 local output_level = Param.new("output level", ControlSpec.db_spec())
 output_level:set_mapped_value(-40)
-
-local function update_delay_send()
-  e.patch('filter', 'delayl', delay_send:mapped_value())
-  e.patch('filter', 'delayr', delay_send:mapped_value())
-end
-
-local function update_delay_feedback()
-  e.patch('delayl', 'delayr', delay_feedback:mapped_value())
-  e.patch('delayr', 'delayl', delay_feedback:mapped_value())
-end
-
-local function update_output_level()
-  e.patch('delayl', 'outl', output_level:mapped_value())
-  e.patch('delayr', 'outr', output_level:mapped_value())
-  e.patch('filter', 'outl', output_level:mapped_value())
-  e.patch('filter', 'outr', output_level:mapped_value())
+output_level.on_change_mapped = function(value)
+  e.patch('delayl', 'outl', value)
+  e.patch('delayr', 'outr', value)
+  e.patch('filter', 'outl', value)
+  e.patch('filter', 'outr', value)
 end
 
 local function init_osc1()
-  --[[
-  osc1_freq:set_mapped_value(to_hz(69+12))
-  osc1_index:revert_to_default()
-  osc1_osc2_patch:set_mapped_value(-20)
-  osc1_osc3_patch:set_mapped_value(-20)
-  ]]
-  R.send_r_param_values_to_engine({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch})
+  for key,param in pairs({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch}) do
+    param.on_change_mapped = function(value)
+      print("sending "..param.title.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 end
 
 local function init_osc2()
-  --[[
-  osc2_freq:set_mapped_value(to_hz(69-12))
-  osc2_index:set_mapped_value(9)
-  osc2_filter_patch:set_mapped_value(-20)
-  ]]
-  R.send_r_param_values_to_engine({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch})
+  for key,param in pairs({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch}) do
+    param.on_change_mapped = function(value)
+      print("sending "..param.title.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 end
 
 local function init_osc3()
-  --[[
-  osc3_freq:set_mapped_value(to_hz(69))
-  osc3_index:revert_to_default()
-  osc3_filter_patch:set_mapped_value(-20)
-  ]]
-  R.send_r_param_values_to_engine({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch})
+  for key,param in pairs({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch}) do
+    param.on_change_mapped = function(value)
+      print("sending "..param.title.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 end
 
 local function init_filter()
-  --[[
-  filter_freq:set(0.4)
-  filter_res:set(0.1)
-  filter_lforate:set_mapped_value(0.1)
-  filter_lfodepth:set(0.1)
-  ]]
-  R.send_r_param_values_to_engine({filter_freq, filter_res, filter_lforate, filter_lfodepth})
+  for key,param in pairs({filter_freq, filter_res, filter_lforate, filter_lfodepth}) do
+    param.on_change_mapped = function(value)
+      print("sending "..param.title.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 end
 
 local function init_delay()
-  -- TODO delay_send:set_mapped_value(-30)
-  update_delay_send()
-  --[[
-  TODO
-  delayl_delaytime:set_mapped_value(0.23)
-  delayr_delaytime:set_mapped_value(0.45)
-  ]]
-  R.send_r_param_values_to_engine({delayl_delaytime, delayr_delaytime})
-
-  --[[
-  TODO
-  delay_feedback:set_mapped_value(-20)
-  ]]
-  update_delay_feedback()
+  delay_send:bang()
+  for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
+    param.on_change_mapped = function(value)
+      print("sending "..param.title.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
+  delay_feedback:bang()
 end
 
 local function init_output()
   e.param('outr', 'config', 1) -- sets outr to output on right channel
-  -- TODO output_level:set_mapped_value(-40)
-  update_output_level()
-end
-
-local function send_param_value(param)
-  if param == delay_send then
-    update_delay_send()
-  elseif param == delay_feedback then
-    update_delay_feedback()
-  elseif param == output_level then
-    update_output_level()
-  else
-    R.send_r_param_value_to_engine(param)
-  end
+  output_level:bang()
 end
 
 local function note_on(note, velocity)
@@ -178,7 +161,6 @@ local function note_on(note, velocity)
   osc1_freq:set_mapped_value(freq*osc1_ratio)
   osc2_freq:set_mapped_value(freq*osc2_ratio)
   osc3_freq:set_mapped_value(freq)
-  R.send_r_param_values_to_engine({osc1_freq, osc2_freq, osc3_freq})
   redraw()
 end
 
@@ -191,22 +173,18 @@ local function cc(control, value)
   if control == 1 then
     -- print("osc3_index:set: "..value/127)
     osc3_index:set(value/127)
-    send_param_value(osc3_index)
     redraw()
   elseif control == 2 then
     -- print("osc2_index:set: "..value/127)
     osc2_index:set(value/127)
-    send_param_value(osc2_index)
     redraw()
   elseif control == 3 then
     -- print("filter_freq:set: "..value/127)
     filter_freq:set(value/127)
-    send_param_value(filter_freq)
     redraw()
   elseif control == 4 then
     -- print("filter_res:set: "..value/127)
     filter_res:set(value/127)
-    send_param_value(filter_res)
     redraw()
   end
 end
@@ -318,7 +296,6 @@ enc = function(n, delta)
     if scroll.selected_param then
       local param = scroll.selected_param
       param:adjust(d)
-      send_param_value(param)
       redraw()
     end
   end
@@ -332,7 +309,6 @@ key = function(n, z)
       if scroll.selected_param then
         local param = scroll.selected_param
         param:revert_to_default()
-        send_param_value(param)
         redraw()
       end
     end

@@ -40,8 +40,6 @@ delayr_delaytime:set_mapped_value(0.44)
 
 local filterl_freq = Param.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterl_freq:set(0.36)
--- local filterl_res = Param.new("filterl res", ControlSpec.unipolar_spec())
--- filterl_res:set(0.1)
 local filterl_lforate = Param.new("filterl lforate", ControlSpec.lofreq_spec())
 filterl_lforate:set_mapped_value(0.08)
 local filterl_lfodepth = Param.new("filterl lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
@@ -49,8 +47,6 @@ filterl_lfodepth:set(0.1)
 
 local filterr_freq = Param.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterr_freq:set(0.36)
---local filterr_res = Param.new("filterr res", ControlSpec.unipolar_spec())
--- filterr_res:set(0.1)
 local filterr_lforate = Param.new("filterr lforate", ControlSpec.lofreq_spec())
 filterr_lforate:set_mapped_value(0.14)
 local filterr_lfodepth = Param.new("filterr lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
@@ -70,18 +66,6 @@ output_level.on_change_mapped = function(value)
   e.patch('filterr', 'outr', value)
 end
 
-local function send_param_value(param)
-  if param == delay_send then
-    -- TODO update_delay_send()
-  elseif param == delay_feedback then
-    -- TODO update_delay_feedback()
-  elseif param == output_level then
-    -- TODO update_output_level()
-  else
-    R.send_r_param_value_to_engine(param)
-  end
-end
-
 init = function()
   s.aa(1)
   s.line_width(1.0) 
@@ -96,7 +80,13 @@ init = function()
 
   delay_send:bang()
 
-  R.send_r_param_values_to_engine({delayl_delaytime, delayr_delaytime})
+  for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
+    param.on_change_mapped = function(value)
+      print("sending "..key.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 
   e.module('filterl', 'pole')
   e.module('filterr', 'pole')
@@ -104,7 +94,13 @@ init = function()
   e.patch('delayl', 'filterl', 0)
   e.patch('delayr', 'filterr', 0)
 
-  R.send_r_param_values_to_engine({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth})
+  for key,param in pairs({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
+    param.on_change_mapped = function(value)
+      print("sending "..key.." to r engine: "..value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 
   delay_feedback:bang()
 
@@ -133,9 +129,7 @@ init = function()
   scroll:push(delayr_delaytime)
   scroll:push("")
   scroll:push(filterl_freq)
-  -- scroll:push(filterl_res)
   scroll:push(filterr_freq)
-  -- scroll:push(filterr_res)
   scroll:push("")
   scroll:push(filterl_lforate)
   scroll:push(filterl_lfodepth)
@@ -178,7 +172,6 @@ enc = function(n, delta)
     if scroll.selected_param then
       local param = scroll.selected_param
       param:adjust(d)
-      send_param_value(param)
       redraw()
     end
   end
@@ -192,7 +185,6 @@ key = function(n, z)
       if scroll.selected_param then
         local param = scroll.selected_param
         param:revert_to_default()
-        send_param_value(param)
         redraw()
       end
     end
