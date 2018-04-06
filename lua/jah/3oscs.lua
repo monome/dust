@@ -3,11 +3,11 @@
 -- @author jah
 -- @txt test r
 
-ControlSpec = require 'jah/_controlspec'
-Param = require 'jah/_param'
-Scroll = require 'jah/_scroll'
-Helper = require '_helper'
-R = require 'jah/_r'
+ControlSpec = require 'jah/controlspec'
+Param = require 'jah/param'
+Scroll = require 'jah/scroll'
+Helper = require 'helper'
+R = require 'jah/r'
 
 engine = 'R'
 

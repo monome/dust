@@ -3,10 +3,10 @@
 -- @author jah
 -- @txt ack test
 
-ControlSpec = require 'jah/_controlspec'
-Param = require 'jah/_param'
-Scroll = require 'jah/_scroll'
-Helper = require '_helper'
+ControlSpec = require 'jah/controlspec'
+Param = require 'jah/param'
+Scroll = require 'jah/scroll'
+Helper = require 'helper'
 
 engine = 'Ack'
 
