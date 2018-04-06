@@ -99,7 +99,6 @@ end
 local function init_osc1()
   for key,param in pairs({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch}) do
     param.on_change_mapped = function(value)
-      print("sending "..param.title.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
@@ -109,7 +108,6 @@ end
 local function init_osc2()
   for key,param in pairs({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch}) do
     param.on_change_mapped = function(value)
-      print("sending "..param.title.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
@@ -119,7 +117,6 @@ end
 local function init_osc3()
   for key,param in pairs({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch}) do
     param.on_change_mapped = function(value)
-      print("sending "..param.title.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
@@ -129,7 +126,6 @@ end
 local function init_filter()
   for key,param in pairs({filter_freq, filter_res, filter_lforate, filter_lfodepth}) do
     param.on_change_mapped = function(value)
-      print("sending "..param.title.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
@@ -140,7 +136,6 @@ local function init_delay()
   delay_send:bang()
   for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
     param.on_change_mapped = function(value)
-      print("sending "..param.title.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()

@@ -82,7 +82,6 @@ init = function()
 
   for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
     param.on_change_mapped = function(value)
-      print("sending "..key.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
@@ -96,7 +95,6 @@ init = function()
 
   for key,param in pairs({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
     param.on_change_mapped = function(value)
-      print("sending "..key.." to r engine: "..value)
       R.send_r_param_value_to_engine(param)
     end
     param:bang()
