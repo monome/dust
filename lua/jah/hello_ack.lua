@@ -17,27 +17,27 @@ local bool_spec = ControlSpec.new(0, 1, 'lin', 1, 0, "")
 
 --[[
 TODO: looping
-local loop_start_spec = ControlSpec.unipolar_spec()
+local loop_start_spec = ControlSpec.unipolar()
 local loop_end_spec = ControlSpec.new(0, 1, 'lin', 0, 1, "")
 ]]
 local speed_spec = ControlSpec.new(0, 5, 'lin', 0, 1, "")
 -- local slew_spec = ControlSpec.new(0, 5, 'lin', 0, 0, "") -- TODO: enable slews
-local volume_spec = ControlSpec.db_spec()
+local volume_spec = ControlSpec.db()
 volume_spec.default = -10
-local send_spec = ControlSpec.db_spec()
+local send_spec = ControlSpec.db()
 send_spec.default = -60
 local volume_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local volume_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 3, "secs")
 local filter_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local filter_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 0.25, "secs")
-local filter_cutoff_spec = ControlSpec.freq_spec()
+local filter_cutoff_spec = ControlSpec.freq()
 filter_cutoff_spec.default = 20000
-local filter_res_spec = ControlSpec.unipolar_spec()
+local filter_res_spec = ControlSpec.unipolar()
 local filter_mode_spec = ControlSpec.new(0, 1, 'lin', 1, 0)
-local filter_env_mod_spec = ControlSpec.unipolar_spec()
+local filter_env_mod_spec = ControlSpec.unipolar()
 
 local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
--- local delay_feedback_spec = ControlSpec.unipolar_spec() -- TODO feedback should be 0-1 displayed as %
+-- local delay_feedback_spec = ControlSpec.unipolar() -- TODO feedback should be 0-1 displayed as %
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
@@ -68,7 +68,7 @@ TODO: looping
   p.volume_env_attack.on_change_mapped = function(value) e.volumeEnvAttack(i, value) end
   p.volume_env_release = Param.new((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
   p.volume_env_release.on_change_mapped = function(value) e.volumeEnvRelease(i, value) end
-  p.pan = Param.new((i+1)..": pan", ControlSpec.pan_spec(), Formatters.bipolar_as_pan_widget)
+  p.pan = Param.new((i+1)..": pan", ControlSpec.pan(), Formatters.bipolar_as_pan_widget)
   p.pan.on_change_mapped = function(value) e.pan(i, value) end
   p.filter_cutoff = Param.new((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
   p.filter_cutoff.on_change_mapped = function(value) e.filterCutoff(i, value) end
@@ -182,14 +182,14 @@ init = function()
   reverb_damp:bang()
 
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
-	e.loadSample(0, sampleroot.."XR-20_003.wav")
-	e.loadSample(1, sampleroot.."XR-20_114.wav")
-	e.loadSample(2, sampleroot.."XR-20_285.wav")
-	e.loadSample(3, sampleroot.."XR-20_328.wav")
-	e.loadSample(4, sampleroot.."XR-20_121.wav")
-	e.loadSample(5, sampleroot.."XR-20_667.wav")
-	e.loadSample(6, sampleroot.."XR-20_128.wav")
-	e.loadSample(7, sampleroot.."XR-20_718.wav")
+  e.loadSample(0, sampleroot.."XR-20_003.wav")
+  e.loadSample(1, sampleroot.."XR-20_114.wav")
+  e.loadSample(2, sampleroot.."XR-20_285.wav")
+  e.loadSample(3, sampleroot.."XR-20_328.wav")
+  e.loadSample(4, sampleroot.."XR-20_121.wav")
+  e.loadSample(5, sampleroot.."XR-20_667.wav")
+  e.loadSample(6, sampleroot.."XR-20_128.wav")
+  e.loadSample(7, sampleroot.."XR-20_718.wav")
 
   scroll = Scroll.new()
   scroll:push("ack test script")

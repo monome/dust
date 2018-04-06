@@ -12,19 +12,19 @@ R = require 'jah/r'
 
 engine = 'R'
 
-local filter_freq_spec = ControlSpec.unipolar_spec()
+local filter_freq_spec = ControlSpec.unipolar()
 filter_freq_spec.default = 0.5
 
-local delay_send_spec =  ControlSpec.db_spec()
+local delay_send_spec =  ControlSpec.db()
 delay_send_spec.default = 0
 
-local delay_time_spec = ControlSpec.delay_spec()
+local delay_time_spec = ControlSpec.delay()
 delay_time_spec.maxval = 3
 
-local delay_feedback_spec = ControlSpec.db_spec()
+local delay_feedback_spec = ControlSpec.db()
 delay_feedback_spec.default = -5
 
-local output_level_spec = ControlSpec.db_spec()
+local output_level_spec = ControlSpec.db()
 output_level_spec.default = -20
 
 local delay_send = Param.new("delay send level", delay_send_spec)
@@ -40,16 +40,16 @@ delayr_delaytime:set_mapped_value(0.44)
 
 local filterl_freq = Param.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterl_freq:set(0.36)
-local filterl_lforate = Param.new("filterl lforate", ControlSpec.lofreq_spec())
+local filterl_lforate = Param.new("filterl lforate", ControlSpec.lofreq())
 filterl_lforate:set_mapped_value(0.08)
-local filterl_lfodepth = Param.new("filterl lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+local filterl_lfodepth = Param.new("filterl lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterl_lfodepth:set(0.1)
 
 local filterr_freq = Param.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterr_freq:set(0.36)
-local filterr_lforate = Param.new("filterr lforate", ControlSpec.lofreq_spec())
+local filterr_lforate = Param.new("filterr lforate", ControlSpec.lofreq())
 filterr_lforate:set_mapped_value(0.14)
-local filterr_lfodepth = Param.new("filterr lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+local filterr_lfodepth = Param.new("filterr lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterr_lfodepth:set(0.1)
 
 local delay_feedback = Param.new("delay feedback", delay_feedback_spec)
@@ -80,7 +80,7 @@ init = function()
 
   delay_send:bang()
 
-  for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
+  for key,param in pairs({delayl_delaytime, delayr_delaytime, filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
     param.on_change_mapped = function(value)
       R.send_r_param_value_to_engine(param)
     end
@@ -92,13 +92,6 @@ init = function()
 
   e.patch('delayl', 'filterl', 0)
   e.patch('delayr', 'filterr', 0)
-
-  for key,param in pairs({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
-    param.on_change_mapped = function(value)
-      R.send_r_param_value_to_engine(param)
-    end
-    param:bang()
-  end
 
   delay_feedback:bang()
 
