@@ -7,104 +7,78 @@ ControlSpec = require 'jah/controlspec'
 Param = require 'jah/param'
 Scroll = require 'jah/scroll'
 Helper = require 'helper'
+Formatters = require 'jah/formatters'
 R = require 'jah/r'
 
 engine = 'R'
-
-local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
-local delay_time_spec = ControlSpec.delay_spec()
-delay_time_spec.maxval = 3
-local filter_freq_spec = ControlSpec.unipolar_spec()
-filter_freq_spec.default = 0.5
-
-local percentage_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value()*100), "%")
-end
-
-local ms_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value()*1000), "ms")
-end
-
-local round_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value(), 0.01))
-end
-
-local filter_freq_formatter = function(param) -- TODO: filter_freq_formatter
-  local dots_per_side = 10
-  local widget
-  local function draw_dots(num_dots)
-    for i=1,num_dots do widget = (widget or "").."." end
-  end
-  local function draw_bar()
-    widget = (widget or "").."|"
-  end
-
-  local mapped_value = ControlSpec.bipolar_spec():map(param.value)
-  local side = Param.round(math.abs(mapped_value)*100)
-  local descr
-
-  if mapped_value > 0 then
-    dots_left = dots_per_side+Param.round(side/dots_per_side)
-    dots_right = Param.round((100-side)/dots_per_side)
-    if side >= 1 then
-      descr = "HP"..side
-    end
-  elseif mapped_value < 0 then
-    dots_left = Param.round((100-side)/dots_per_side)
-    dots_right = dots_per_side+Param.round(side/dots_per_side)
-    if side >= 1 then
-      descr = "LP"..(100-side)
-    end
-  else
-    dots_left = dots_per_side
-    dots_right = dots_per_side
-  end
-
-  if descr == nil then
-    descr = "OFF"
-  end
-
-  draw_bar()
-  draw_dots(dots_left)
-  draw_bar()
-  draw_dots(dots_right)
-  draw_bar()
-
-  return param:string_format(widget.." "..descr, "")
-end
-
-local osc1_freq = Param.new("osc1 freq", ControlSpec.widefreq_spec(), round_formatter)
-local osc1_index = Param.new("osc1 index", index_spec, round_formatter)
-local osc1_osc1_patch = Param.new("osc1 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc1_osc2_patch = Param.new("osc1 > osc2", ControlSpec.db_spec())
-local osc1_osc3_patch = Param.new("osc1 > osc3", ControlSpec.db_spec())
-local osc1_filter_patch = Param.new("osc1 > filter", ControlSpec.db_spec())
-local osc2_freq = Param.new("osc2 freq", ControlSpec.widefreq_spec(), round_formatter)
-local osc2_index = Param.new("osc2 index", index_spec, round_formatter)
-local osc2_osc1_patch = Param.new("osc2 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc2_osc2_patch = Param.new("osc2 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc2_osc3_patch = Param.new("osc2 > osc3", ControlSpec.db_spec())
-local osc2_filter_patch = Param.new("osc2 > filter", ControlSpec.db_spec())
-local osc3_freq = Param.new("osc3 freq", ControlSpec.widefreq_spec(), round_formatter)
-local osc3_index = Param.new("osc3 index", index_spec, round_formatter)
-local osc3_osc1_patch = Param.new("osc3 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc3_osc2_patch = Param.new("osc3 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc3_osc3_patch = Param.new("osc3 > osc3", ControlSpec.db_spec()) -- TODO: i dunno about feedback
-local osc3_filter_patch = Param.new("osc3 > filter", ControlSpec.db_spec())
-local delay_send = Param.new("delay send level", ControlSpec.db_spec())
-local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, ms_formatter)
-local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, ms_formatter)
-local delay_feedback = Param.new("delay feedback", ControlSpec.db_spec())
-local output_level = Param.new("output level", ControlSpec.db_spec())
-local filter_freq = Param.new("filter freq", filter_freq_spec, filter_freq_formatter)
-local filter_res = Param.new("filter res", ControlSpec.unipolar_spec(), percentage_formatter)
-local filter_lforate = Param.new("filter lforate", ControlSpec.lofreq_spec(), round_formatter)
-local filter_lfodepth = Param.new("filter lfodepth", ControlSpec.unipolar_spec(), percentage_formatter)
 
 local function to_hz(note)
   local exp = (note - 21) / 12
   return 27.5 * 2^exp
 end
+
+local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
+
+local filter_freq_spec = ControlSpec.unipolar_spec()
+filter_freq_spec.default = 0.5
+
+local delay_time_spec = ControlSpec.delay_spec()
+delay_time_spec.maxval = 3
+
+local osc1_freq = Param.new("osc1 freq", ControlSpec.widefreq_spec(), Formatters.round(0.01))
+local osc1_index = Param.new("osc1 index", index_spec, Formatters.round(0.01))
+local osc1_filter_patch = Param.new("osc1 > filter", ControlSpec.db_spec())
+local osc1_osc1_patch = Param.new("osc1 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc1_osc2_patch = Param.new("osc1 > osc2", ControlSpec.db_spec())
+local osc1_osc3_patch = Param.new("osc1 > osc3", ControlSpec.db_spec())
+
+osc1_freq:set_mapped_value(to_hz(69+12)) -- TODO: move to init() or bang in init() ?
+osc1_index:set_mapped_value(3)
+osc1_osc2_patch:set_mapped_value(-20)
+osc1_osc3_patch:set_mapped_value(-20)
+
+local osc2_freq = Param.new("osc2 freq", ControlSpec.widefreq_spec(), Formatters.round(0.01))
+local osc2_index = Param.new("osc2 index", index_spec, Formatters.round(0.01))
+local osc2_filter_patch = Param.new("osc2 > filter", ControlSpec.db_spec())
+local osc2_osc1_patch = Param.new("osc2 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc2_osc2_patch = Param.new("osc2 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc2_osc3_patch = Param.new("osc2 > osc3", ControlSpec.db_spec())
+
+osc2_freq:set_mapped_value(to_hz(69-12)) -- TODO: move to init() or bang in init() ?
+osc2_index:set_mapped_value(9)
+osc2_filter_patch:set_mapped_value(-20)
+
+local osc3_freq = Param.new("osc3 freq", ControlSpec.widefreq_spec(), Formatters.round(0.01))
+local osc3_index = Param.new("osc3 index", index_spec, Formatters.round(0.01))
+local osc3_filter_patch = Param.new("osc3 > filter", ControlSpec.db_spec())
+local osc3_osc1_patch = Param.new("osc3 > osc1", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc3_osc2_patch = Param.new("osc3 > osc2", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+local osc3_osc3_patch = Param.new("osc3 > osc3", ControlSpec.db_spec()) -- TODO: i dunno about feedback
+
+osc3_freq:set_mapped_value(to_hz(69)) -- TODO: move to init() or bang in init() ?
+osc3_index:set_mapped_value(3)
+osc3_filter_patch:set_mapped_value(-20)
+
+local filter_freq = Param.new("filter freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+local filter_res = Param.new("filter res", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+local filter_lforate = Param.new("filter lforate", ControlSpec.lofreq_spec(), Formatters.round(0.01))
+local filter_lfodepth = Param.new("filter lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+
+filter_freq:set(0.4) -- TODO: move to init() or bang in init() ?
+filter_res:set(0.1)
+filter_lforate:set_mapped_value(0.1)
+filter_lfodepth:set(0.1)
+
+local delay_send = Param.new("delay send level", ControlSpec.db_spec())
+delay_send:set_mapped_value(-30)
+local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayl_delaytime:set_mapped_value(0.23)
+local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayr_delaytime:set_mapped_value(0.45)
+local delay_feedback = Param.new("delay feedback", ControlSpec.db_spec())
+delay_feedback:set_mapped_value(-20)
+local output_level = Param.new("output level", ControlSpec.db_spec())
+output_level:set_mapped_value(-40)
 
 local function update_delay_send()
   e.patch('filter', 'delayl', delay_send:mapped_value())
@@ -124,49 +98,63 @@ local function update_output_level()
 end
 
 local function init_osc1()
+  --[[
   osc1_freq:set_mapped_value(to_hz(69+12))
   osc1_index:revert_to_default()
   osc1_osc2_patch:set_mapped_value(-20)
   osc1_osc3_patch:set_mapped_value(-20)
+  ]]
   R.send_r_param_values_to_engine({osc1_freq, osc1_index, osc1_osc1_patch, osc1_osc2_patch, osc1_osc3_patch, osc1_filter_patch})
 end
 
 local function init_osc2()
+  --[[
   osc2_freq:set_mapped_value(to_hz(69-12))
   osc2_index:set_mapped_value(9)
   osc2_filter_patch:set_mapped_value(-20)
+  ]]
   R.send_r_param_values_to_engine({osc2_freq, osc2_index, osc2_osc1_patch, osc2_osc2_patch, osc2_osc3_patch, osc2_filter_patch})
 end
 
 local function init_osc3()
+  --[[
   osc3_freq:set_mapped_value(to_hz(69))
   osc3_index:revert_to_default()
   osc3_filter_patch:set_mapped_value(-20)
+  ]]
   R.send_r_param_values_to_engine({osc3_freq, osc3_index, osc3_osc1_patch, osc3_osc2_patch, osc3_osc3_patch, osc3_filter_patch})
 end
 
 local function init_filter()
+  --[[
   filter_freq:set(0.4)
   filter_res:set(0.1)
   filter_lforate:set_mapped_value(0.1)
   filter_lfodepth:set(0.1)
+  ]]
   R.send_r_param_values_to_engine({filter_freq, filter_res, filter_lforate, filter_lfodepth})
 end
 
 local function init_delay()
-  delay_send:set_mapped_value(-30)
+  -- TODO delay_send:set_mapped_value(-30)
   update_delay_send()
+  --[[
+  TODO
   delayl_delaytime:set_mapped_value(0.23)
   delayr_delaytime:set_mapped_value(0.45)
+  ]]
   R.send_r_param_values_to_engine({delayl_delaytime, delayr_delaytime})
 
+  --[[
+  TODO
   delay_feedback:set_mapped_value(-20)
+  ]]
   update_delay_feedback()
 end
 
 local function init_output()
   e.param('outr', 'config', 1) -- sets outr to output on right channel
-  output_level:set_mapped_value(-40)
+  -- TODO output_level:set_mapped_value(-40)
   update_output_level()
 end
 
