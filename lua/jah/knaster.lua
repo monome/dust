@@ -3,7 +3,7 @@
 -- @author jah
 -- @txt a very basic example
 
-Helper = require '_helper'
+Helper = require 'helper'
 
 engine = 'Knaster'
 

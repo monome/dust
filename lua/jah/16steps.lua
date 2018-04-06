@@ -3,10 +3,10 @@
 -- @author jah
 -- @txt 16x8 step sequencer
 
-ControlSpec = require 'jah/_controlspec'
-Param = require 'jah/_param'
-Scroll = require 'jah/_scroll' -- TODO: not yet used
-Helper = require '_helper'
+ControlSpec = require 'jah/controlspec'
+Param = require 'jah/param'
+Scroll = require 'jah/scroll' -- TODO: not yet used
+Helper = require 'helper'
 
 -- TODO: refactor so that 16steps and 8steps uses the same core
 

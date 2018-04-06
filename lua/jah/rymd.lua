@@ -3,65 +3,67 @@
 -- @author jah
 -- @txt wip echo chamber thing
 
-ControlSpec = require 'jah/_controlspec'
-Param = require 'jah/_param'
-Scroll = require 'jah/_scroll'
-Helper = require '_helper'
-R = require 'jah/_r'
+ControlSpec = require 'jah/controlspec'
+Param = require 'jah/param'
+Scroll = require 'jah/scroll'
+Helper = require 'helper'
+Formatters = require 'jah/formatters'
+R = require 'jah/r'
 
 engine = 'R'
 
-local percent_spec = ControlSpec.new(0, 1, 'lin', 0, 0, "")
-local lofreq_spec = ControlSpec.new(0.1, 100, 'exp', 0, 6, "Hz")
-local db_spec = ControlSpec.new(-60, 0, 'lin', 0, -60, "dB")
-local delay_time_spec = ControlSpec.new(0.0001, 3, 'exp', 0, 0.3, "secs")
+local filter_freq_spec = ControlSpec.unipolar_spec()
+filter_freq_spec.default = 0.5
 
-local delay_send = Param.new("delay send level", db_spec)
+local delay_send_spec =  ControlSpec.db_spec()
+delay_send_spec.default = 0
 
-local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec)
-local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec)
+local delay_time_spec = ControlSpec.delay_spec()
+delay_time_spec.maxval = 3
 
-local filterl_freq = Param.new("filterl freq", percent_spec)
--- local filterl_res = Param.new("filterl res", percent_spec)
-local filterl_lforate = Param.new("filterl lforate", lofreq_spec)
-local filterl_lfodepth = Param.new("filterl lfodepth", percent_spec)
+local delay_feedback_spec = ControlSpec.db_spec()
+delay_feedback_spec.default = -5
 
-local filterr_freq = Param.new("filterr freq", percent_spec)
---local filterr_res = Param.new("filterr res", percent_spec)
-local filterr_lforate = Param.new("filterr lforate", lofreq_spec)
-local filterr_lfodepth = Param.new("filterr lfodepth", percent_spec)
+local output_level_spec = ControlSpec.db_spec()
+output_level_spec.default = -20
 
-local delay_feedback = Param.new("delay feedback", db_spec)
-
-local output_level = Param.new("output level", db_spec)
-
-local function update_delay_send()
-  e.patch('inl', 'delayl', delay_send:mapped_value())
-  e.patch('inr', 'delayr', delay_send:mapped_value())
+local delay_send = Param.new("delay send level", delay_send_spec)
+delay_send.on_change_mapped = function(value)
+  e.patch('inl', 'delayl', value)
+  e.patch('inr', 'delayr', value)
 end
 
-local function update_delay_feedback()
-  e.patch('filterl', 'delayr', delay_feedback:mapped_value())
-  e.patch('filterr', 'delayl', delay_feedback:mapped_value())
+local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayl_delaytime:set_mapped_value(0.52)
+local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayr_delaytime:set_mapped_value(0.44)
+
+local filterl_freq = Param.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+filterl_freq:set(0.36)
+local filterl_lforate = Param.new("filterl lforate", ControlSpec.lofreq_spec())
+filterl_lforate:set_mapped_value(0.08)
+local filterl_lfodepth = Param.new("filterl lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+filterl_lfodepth:set(0.1)
+
+local filterr_freq = Param.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+filterr_freq:set(0.36)
+local filterr_lforate = Param.new("filterr lforate", ControlSpec.lofreq_spec())
+filterr_lforate:set_mapped_value(0.14)
+local filterr_lfodepth = Param.new("filterr lfodepth", ControlSpec.unipolar_spec(), Formatters.unipolar_as_percentage)
+filterr_lfodepth:set(0.1)
+
+local delay_feedback = Param.new("delay feedback", delay_feedback_spec)
+delay_feedback.on_change_mapped = function(value)
+  e.patch('filterl', 'delayr', value)
+  e.patch('filterr', 'delayl', value)
 end
 
-local function update_output_level()
-  e.patch('inl', 'outl', output_level:mapped_value())
-  e.patch('inr', 'outr', output_level:mapped_value())
-  e.patch('filterl', 'outl', output_level:mapped_value())
-  e.patch('filterr', 'outr', output_level:mapped_value())
-end
-
-local function send_param_value(param)
-  if param == delay_send then
-    update_delay_send()
-  elseif param == delay_feedback then
-    update_delay_feedback()
-  elseif param == output_level then
-    update_output_level()
-  else
-    R.send_r_param_value_to_engine(param)
-  end
+local output_level = Param.new("output level", output_level_spec)
+output_level.on_change_mapped = function(value)
+  e.patch('inl', 'outl', value)
+  e.patch('inr', 'outr', value)
+  e.patch('filterl', 'outl', value)
+  e.patch('filterr', 'outr', value)
 end
 
 init = function()
@@ -76,12 +78,14 @@ init = function()
   e.module('delayl', 'delay')
   e.module('delayr', 'delay')
 
-  delay_send:set_mapped_value(0)
-  update_delay_send()
+  delay_send:bang()
 
-  delayl_delaytime:set_mapped_value(0.52)
-  delayr_delaytime:set_mapped_value(0.44)
-  R.send_r_param_values_to_engine({delayl_delaytime, delayr_delaytime})
+  for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
+    param.on_change_mapped = function(value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 
   e.module('filterl', 'pole')
   e.module('filterr', 'pole')
@@ -89,25 +93,20 @@ init = function()
   e.patch('delayl', 'filterl', 0)
   e.patch('delayr', 'filterr', 0)
 
-  filterl_freq:set(0.36)
-  -- filterl_res:set(0.1)
-  filterr_freq:set(0.36)
-  -- filterr_res:set(0.1)
-  filterl_lforate:set_mapped_value(0.08)
-  filterl_lfodepth:set(0.1)
-  filterr_lforate:set_mapped_value(0.14)
-  filterr_lfodepth:set(0.1)
-  R.send_r_param_values_to_engine({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth})
+  for key,param in pairs({filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
+    param.on_change_mapped = function(value)
+      R.send_r_param_value_to_engine(param)
+    end
+    param:bang()
+  end
 
-  delay_feedback:set_mapped_value(-5)
-  update_delay_feedback()
+  delay_feedback:bang()
 
   e.module('outl', 'output')
   e.module('outr', 'output')
   e.param('outr', 'config', 1) -- sets outr to output on right channel
 
-  output_level:set_mapped_value(-20)
-  update_output_level()
+  output_level:bang()
 
   scroll = Scroll.new()
   scroll:push("another test of r.")
@@ -128,9 +127,7 @@ init = function()
   scroll:push(delayr_delaytime)
   scroll:push("")
   scroll:push(filterl_freq)
-  -- scroll:push(filterl_res)
   scroll:push(filterr_freq)
-  -- scroll:push(filterr_res)
   scroll:push("")
   scroll:push(filterl_lforate)
   scroll:push(filterl_lfodepth)
@@ -173,7 +170,6 @@ enc = function(n, delta)
     if scroll.selected_param then
       local param = scroll.selected_param
       param:adjust(d)
-      send_param_value(param)
       redraw()
     end
   end
@@ -187,7 +183,6 @@ key = function(n, z)
       if scroll.selected_param then
         local param = scroll.selected_param
         param:revert_to_default()
-        send_param_value(param)
         redraw()
       end
     end

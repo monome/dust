@@ -3,14 +3,15 @@
 -- @author jah
 -- @txt ack test
 
-ControlSpec = require 'jah/_controlspec'
-Param = require 'jah/_param'
-Scroll = require 'jah/_scroll'
-Helper = require '_helper'
+ControlSpec = require 'jah/controlspec'
+Param = require 'jah/param'
+Scroll = require 'jah/scroll'
+Helper = require 'helper'
+Formatters = require 'jah/formatters'
 
 engine = 'Ack'
 
-debug = false
+local debug = false
 
 local bool_spec = ControlSpec.new(0, 1, 'lin', 1, 0, "")
 
@@ -29,8 +30,8 @@ local volume_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local volume_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 3, "secs")
 local filter_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local filter_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 0.25, "secs")
-local pan_spec = ControlSpec.pan_spec()
-local filter_cutoff_spec = ControlSpec.new(20, 20000, 'exp', 0, 20000, "Hz")
+local filter_cutoff_spec = ControlSpec.freq_spec()
+filter_cutoff_spec.default = 20000
 local filter_res_spec = ControlSpec.unipolar_spec()
 local filter_mode_spec = ControlSpec.new(0, 1, 'lin', 1, 0)
 local filter_env_mod_spec = ControlSpec.unipolar_spec()
@@ -40,81 +41,13 @@ local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
-local true_false_formatter = function(param)
-  local str
-  if param.value == 1 then str = "true" else str = "false" end
-  return param:string_format(str)
-end
-
-local enabled_disabled_formatter = function(param)
-  local str
-  if param.value == 1 then str = "enabled" else str = "disabled" end
-  return param:string_format(str)
-end
-
-local ms_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value()*1000), "ms")
-end
-
-local percentage_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value()*100), "%")
-end
-
-local pan_formatter = function(param)
-  local dots_per_side = 10
-  local widget
-  local function draw_dots(num_dots)
-    for i=1,num_dots do widget = (widget or "").."." end
-  end
-  local function draw_bar()
-    widget = (widget or "").."|"
-  end
-
-  local mapped_value = param:mapped_value()
-  local pan_side_percentage = Param.round(math.abs(mapped_value)*100)
-  local descr
-
-  if mapped_value > 0 then
-    dots_left = dots_per_side+Param.round(pan_side_percentage/dots_per_side)
-    dots_right = Param.round((100-pan_side_percentage)/dots_per_side)
-    if pan_side_percentage >= 1 then
-      descr = "R"..pan_side_percentage
-    end
-  elseif mapped_value < 0 then
-    dots_left = Param.round((100-pan_side_percentage)/dots_per_side)
-    dots_right = dots_per_side+Param.round(pan_side_percentage/dots_per_side)
-    if pan_side_percentage >= 1 then
-      descr = "L"..pan_side_percentage
-    end
-  else
-    dots_left = dots_per_side
-    dots_right = dots_per_side
-  end
-
-  if descr == nil then
-    descr = "MID"
-  end
-
-  draw_bar()
-  draw_dots(dots_left)
-  draw_bar()
-  draw_dots(dots_right)
-  draw_bar()
-
-  return param:string_format(widget.." "..descr, "")
-end
-
-local round_formatter = function(param)
-  return param:string_format(Param.round(param:mapped_value()))
-end
-
-local midi_in = Param.new("midi in", bool_spec, enabled_disabled_formatter)
+local midi_in = Param.new("midi in", bool_spec, Formatters.unipolar_as_enabled_disabled)
 midi_in:set(1) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
-local midi_selects = Param.new("midi selects", bool_spec, true_false_formatter)
+local midi_selects = Param.new("midi selects", bool_spec, Formatters.unipolar_as_true_false)
 midi_selects:set(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
-local trig_on_change = Param.new("trig on value change", bool_spec, true_false_formatter)
+local trig_on_change = Param.new("trig on value change", bool_spec, Formatters.unipolar_as_true_false)
 trig_on_change:set(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
 local channel_params = {}
@@ -122,32 +55,32 @@ for i=0,7 do
   local p = {}
 --[[
 TODO: looping
-  p.loop_start = Param.new((i+1)..": loop start", loop_start_spec, percentage_formatter)
+  p.loop_start = Param.new((i+1)..": loop start", loop_start_spec, Formatters.unipolar_as_percentage)
   p.loop_start.on_change_mapped = function(value) e.loopStart(i, value) end
-  p.loop_end = Param.new((i+1)..": loop end", loop_end_spec, percentage_formatter)
+  p.loop_end = Param.new((i+1)..": loop end", loop_end_spec, Formatters.unipolar_as_percentage)
   p.loop_end.on_change_mapped = function(value) e.loopEnd(i, value) end
 ]]
-  p.speed = Param.new((i+1)..": speed", speed_spec, percentage_formatter)
+  p.speed = Param.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
   p.speed.on_change_mapped = function(value) e.speed(i, value) end
   p.volume = Param.new((i+1)..": vol", volume_spec)
   p.volume.on_change_mapped = function(value) e.volume(i, value) end
-  p.volume_env_attack = Param.new((i+1)..": vol env atk", volume_env_attack_spec, ms_formatter)
+  p.volume_env_attack = Param.new((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
   p.volume_env_attack.on_change_mapped = function(value) e.volumeEnvAttack(i, value) end
-  p.volume_env_release = Param.new((i+1)..": vol env rel", volume_env_release_spec, ms_formatter)
+  p.volume_env_release = Param.new((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
   p.volume_env_release.on_change_mapped = function(value) e.volumeEnvRelease(i, value) end
-  p.pan = Param.new((i+1)..": pan", pan_spec, pan_formatter)
+  p.pan = Param.new((i+1)..": pan", ControlSpec.pan_spec(), Formatters.bipolar_as_pan_widget)
   p.pan.on_change_mapped = function(value) e.pan(i, value) end
-  p.filter_cutoff = Param.new((i+1)..": filter cutoff", filter_cutoff_spec, round_formatter)
+  p.filter_cutoff = Param.new((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
   p.filter_cutoff.on_change_mapped = function(value) e.filterCutoff(i, value) end
-  p.filter_res = Param.new((i+1)..": filter res", filter_res_spec, percentage_formatter)
+  p.filter_res = Param.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
   p.filter_res.on_change_mapped = function(value) e.filterRes(i, value) end
   p.filter_mode = Param.new((i+1)..": filter mode", filter_mode_spec)
   p.filter_mode.on_change_mapped = function(value) e.filterMode(i, value) end
-  p.filter_env_attack = Param.new((i+1)..": filter env atk", filter_env_attack_spec, ms_formatter)
+  p.filter_env_attack = Param.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
   p.filter_env_attack.on_change_mapped = function(value) e.filterEnvAttack(i, value) end
-  p.filter_env_release = Param.new((i+1)..": filter env rel", filter_env_release_spec, ms_formatter)
+  p.filter_env_release = Param.new((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
   p.filter_env_release.on_change_mapped = function(value) e.filterEnvRelease(i, value) end
-  p.filter_env_mod = Param.new((i+1)..": filter env mod", filter_env_mod_spec, percentage_formatter)
+  p.filter_env_mod = Param.new((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
   p.filter_env_mod.on_change_mapped = function(value) e.filterEnvMod(i, value) end
   p.delay_send = Param.new((i+1)..": delay send", send_spec)
   p.delay_send.on_change_mapped = function(value) e.delaySend(i, value) end
@@ -169,16 +102,16 @@ TODO: looping
   channel_params[i] = p
 end
 
-local delay_time = Param.new("delay time", delay_time_spec, ms_formatter)
+local delay_time = Param.new("delay time", delay_time_spec, Formatters.secs_as_ms)
 delay_time.on_change_mapped = function(value) e.delayTimeL(value) end
 -- local delay_time_r = Param.new("delay time r", delay_time_spec) TODO
 -- delay_time_r.on_change_mapped = function(value) e.delayTimeR(value) end TODO
-local delay_feedback = Param.new("delay feedback", delay_time_spec, ms_formatter)
+local delay_feedback = Param.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
 delay_feedback:set_mapped_value(0.75)
 delay_feedback.on_change_mapped = function(value) e.delayFeedback(value) end
-local reverb_room = Param.new("reverb room", reverb_room_spec, percentage_formatter)
+local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
 reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end
-local reverb_damp = Param.new("reverb damp", reverb_damp_spec, percentage_formatter)
+local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
 reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end
 
 local function debug_print(str)

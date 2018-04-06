@@ -2,7 +2,7 @@
 -- @version 1.0
 -- @author jmcc
 
-Helper = require '_helper'
+Helper = require 'helper'
 
 engine = 'Why'
 
