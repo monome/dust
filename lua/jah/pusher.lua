@@ -3,10 +3,9 @@
 -- @author jah
 -- @txt capture & playback a sound
 
-ControlSpec = require 'jah/controlspec'
-Param = require 'jah/param'
+ControlSpec = require 'controlspec'
+Param = require 'param'
 Scroll = require 'jah/scroll' -- TODO: not yet used
-Helper = require 'helper'
 
 engine = 'Pusher'
 
@@ -178,7 +177,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    Helper.adjust_audio_output_level(delta)
+    norns.audio.adjust_output_level(delta)
     return
   end
 

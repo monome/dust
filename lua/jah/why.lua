@@ -2,8 +2,6 @@
 -- @version 1.0
 -- @author jmcc
 
-Helper = require 'helper'
-
 engine = 'Why'
 
 init = function()
@@ -12,7 +10,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    Helper.adjust_audio_output_level(delta)
+    norns.audio.adjust_output_level(delta)
   end
 end
 

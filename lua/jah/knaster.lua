@@ -3,8 +3,6 @@
 -- @author jah
 -- @txt a very basic example
 
-Helper = require 'helper'
-
 engine = 'Knaster'
 
 local SCREEN_WIDTH = 128
@@ -25,7 +23,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    Helper.adjust_audio_output_level(delta)
+    norns.audio.adjust_output_level(delta)
   end
 end
 

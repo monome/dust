@@ -3,10 +3,9 @@
 -- @author jah
 -- @txt 8x8 step sequencer
 
-ControlSpec = require 'jah/controlspec'
-Param = require 'jah/param'
+ControlSpec = require 'controlspec'
+Param = require 'param'
 Scroll = require 'jah/scroll' -- TODO: not yet used
-Helper = require 'helper'
 
 -- TODO: refactor so that 16steps and 8steps uses the same core
 
@@ -106,7 +105,7 @@ end
 -- encoder function
 enc = function(n, delta)
   if n == 1 then
-    Helper.adjust_audio_output_level(delta)
+    norns.audio.adjust_output_level(delta)
   elseif n == 2 then
     tempo:adjust(delta/200)
     e.setTempo(tempo:mapped_value())

@@ -3,11 +3,10 @@
 -- @author jah
 -- @txt wip echo chamber thing
 
-ControlSpec = require 'jah/controlspec'
-Param = require 'jah/param'
+ControlSpec = require 'controlspec'
+Param = require 'param'
 Scroll = require 'jah/scroll'
-Helper = require 'helper'
-Formatters = require 'jah/formatters'
+Formatters = require 'formatters'
 R = require 'jah/r'
 
 engine = 'R'
@@ -146,7 +145,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    Helper.adjust_audio_output_level(delta)
+    norns.audio.adjust_output_level(delta)
     return
   end
 
