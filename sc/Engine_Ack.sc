@@ -414,13 +414,6 @@ Engine_Ack : CroneEngine {
 
 		context.server.sync;
 
-		delaySynth = Synth(this.delayDefName, [\out, context.out_b, \in, delayBus], target: effectsGroup);
-		reverbSynth = Synth(this.reverbDefName, [\out, context.out_b, \in, reverbBus], target: effectsGroup);
-
-		samplePlayerSynths = Array.fill(numChannels);
-
-		context.server.sync;
-
 		this.addCommand(\loadSample, "is") { |msg| this.cmdLoadSample(msg[1], msg[2]) };
 		this.addCommand(\trig, "i") { |msg| this.cmdTrig(msg[1]) };
 		this.addCommand(\loopStart, "if") { |msg| this.cmdLoopStart(msg[1], msg[2]) };
@@ -446,8 +439,18 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\delayTimeL, "f") { |msg| this.cmdDelayTimeL(msg[1]) };
 		this.addCommand(\delayTimeR, "f") { |msg| this.cmdDelayTimeR(msg[1]) };
 		this.addCommand(\delayFeedback, "f") { |msg| this.cmdDelayFeedback(msg[1]) };
-		this.addCommand(\reverbRoom, "f") { |msg| this.cmdReverbRoom(msg[1]) };
-		this.addCommand(\reverbDamp, "f") { |msg| this.cmdReverbDamp(msg[1]) };
+		// TODO :this.addCommand(\reverbRoom, "f") { |msg| this.cmdReverbRoom(msg[1]) };
+		// this.addCommand(\reverbDamp, "f") { |msg| this.cmdReverbDamp(msg[1]) };
+		this.addParameter(\reverbRoom, reverbRoomSpec);
+		this.addParameter(\reverbDamp, reverbDampSpec);
+
+		context.server.sync;
+
+		delaySynth = Synth(this.delayDefName, [\out, context.out_b, \in, delayBus], target: effectsGroup);
+		reverbSynth = Synth(this.reverbDefName, [\out, context.out_b, \in, reverbBus, \room, parameterControlBusses[\reverbRoom].asMap, \damp, parameterControlBusses[\reverbDamp].asMap], target: effectsGroup);
+
+		samplePlayerSynths = Array.fill(numChannels);
+
 	}
 
 	cmdLoadSample { |channelnum, path|
