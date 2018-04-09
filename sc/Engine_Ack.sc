@@ -444,13 +444,12 @@ Engine_Ack : CroneEngine {
 		this.addParameter(\reverbRoom, reverbRoomSpec);
 		this.addParameter(\reverbDamp, reverbDampSpec);
 
-		context.server.sync;
-
 		delaySynth = Synth(this.delayDefName, [\out, context.out_b, \in, delayBus], target: effectsGroup);
 		reverbSynth = Synth(this.reverbDefName, [\out, context.out_b, \in, reverbBus, \room, parameterControlBusses[\reverbRoom].asMap, \damp, parameterControlBusses[\reverbDamp].asMap], target: effectsGroup);
 
 		samplePlayerSynths = Array.fill(numChannels);
 
+		context.server.sync;
 	}
 
 	cmdLoadSample { |channelnum, path|
