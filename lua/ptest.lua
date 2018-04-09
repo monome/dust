@@ -1,7 +1,6 @@
 engine = 'TestSine'
 
-spec = controlspec.new(0, 100, 'lin', 1, 0, "bits", false, 1)
---default_spec:print()
+spec = controlspec.new(0, 100, 'lin', 1, 0, "bits", false, 1, 1)
 
 init = function()
   p.number = param.new("number")
@@ -28,9 +27,7 @@ end
 
 enc = function(n,d)
   if n == 2 then
-    p.freq:delta(d)
-  elseif n==3 then
-    p.freq:delta_raw(d/1000)
+    p.freq:delta(d/10)
   elseif n==1 then
     p.news:delta(d)
   end
