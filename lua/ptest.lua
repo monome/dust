@@ -12,6 +12,7 @@ init = function()
   p.news = option.new("news",l)
   p.news.action = function(i) print(p.news:string()) end
   p.mode = option.new("mode",{"MIDI","OSC","SYNTH","CV"})
+  paramset.read(p,"ptest.pset")
   paramset.bang(p)
 end
 
@@ -34,3 +35,6 @@ enc = function(n,d)
 end
 
 
+cleanup = function() 
+  paramset.write(p,"ptest.pset")
+end
