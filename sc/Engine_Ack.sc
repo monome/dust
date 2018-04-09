@@ -576,6 +576,8 @@ Engine_Ack : CroneEngine {
 		delaySynth.set(\feedback, delayTimeSpec.constrain(f));
 	}
 
+/*
+	TODO: now params, remove
 	cmdReverbRoom { |f|
 		reverbSynth.set(\room, reverbRoomSpec.constrain(f));
 	}
@@ -583,6 +585,7 @@ Engine_Ack : CroneEngine {
 	cmdReverbDamp { |f|
 		reverbSynth.set(\damp, reverbDampSpec.constrain(f));
 	}
+*/
 
 	free {
 		samplePlayerSynths do: _.free;
