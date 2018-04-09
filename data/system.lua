@@ -1,6 +1,6 @@
 -- system state
-norns.state.script = 'jah/hello_ack.lua'
-norns.state.out = '64'
+norns.state.script = 'ptest.lua'
+norns.state.out = '63'
 norns.state.monitor = '64'
 norns.state.monitor_mode = '0'
 norns.state.input_left = '48.0'

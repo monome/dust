@@ -7,10 +7,31 @@ init = function()
   e.cutoff(50*2^(cutoff/12))
   e.release(0.1*2^(release/12))
   e.amp(0.5)
+
+  tempo_spec = controlspec.new(40, 300, 'lin', 0, 80, "")
+  p.tempo = param.new("tempo",tempo_spec)
+  p.tempo.action = function(n) t.time = 15/n print(15/n) change_time = true  end
+  
+  t = metro[1]
+  t.time = 15/p.tempo:get() 
+
+  t.callback = function(stage)
+    if change_time then
+      change_time = false
+      t:stop()
+      t:start()
+    else
+      pos = pos + 1
+      if pos == 17 then pos = 1 end
+      if steps[pos] > 0 then e.hz(freqs[9-steps[pos]]) end
+      if g ~= nil then
+        gridredraw()
+      end
+      redraw()
+    end
+  end
+
   t:start()
-
-  start_amp_poll()
-
 end
 
 gridkey = function(x, y, state)
@@ -24,9 +45,6 @@ gridkey = function(x, y, state)
    g:refresh()
 end
 
-t = metro[1]
-t.time = 0.1
-
 pos = 1
 
 steps = {}
@@ -35,16 +53,6 @@ freqs = {}
 
 for i=1, 8 do freqs[i] = 100*2^(notes[i]/12) end
 for i=1, 16 do steps[i] = math.floor(math.random()*8) end
-
-t.callback = function(stage)
-  pos = pos + 1
-  if pos == 17 then pos = 1 end
-  if steps[pos] > 0 then e.hz(freqs[9-steps[pos]]) end
-  if g ~= nil then
-  gridredraw()
-  end
-  redraw()
-end
 
 gridredraw = function()
   g:all(0)
@@ -63,7 +71,9 @@ cutoff = 30
 release = 20
 
 enc = function(n, delta)
-  if n == 2 then
+  if n == 1 then
+    p.tempo:delta_raw(delta/100)
+  elseif n == 2 then
     cutoff = math.min(100, math.max(0, cutoff+delta))
     e.cutoff(50*2^(cutoff/12))
   elseif n == 3 then
@@ -93,35 +103,5 @@ redraw = function()
   s.move(0, 60)
   s.text("step > "..pos)
   s.move(0, 40)
-  s.aa(1)
-  s.line(vu, 40)
-  s.stroke()
-
   s.update()
-end
-
-p = nil
-vu = 0
-
-local function calc_meter(amp, n, floor)
-   n = n or 64
-   floor = floor or -72
-   local db = 20.0 * math.log10(amp)
-   local norm = 1.0 - (db / floor)
-   vu = norm * n
-   redraw()
-end
-
-local amp_callback = function(amp) calc_meter(amp, 64, -72) end
-
-start_amp_poll = function()
-   print('starting amp poll in grid_seek')
-   p = poll.set('amp_out_l', amp_callback)
-   p.time = 0.03;
-   p:start()
-end
-
-
-cleanup = function()
-   if p then p:stop() end
 end
