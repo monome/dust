@@ -108,10 +108,10 @@ delay_time.on_change_mapped = function(value) e.delayTimeL(value) end
 local delay_feedback = Param.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
 delay_feedback:set_mapped_value(0.75)
 delay_feedback.on_change_mapped = function(value) e.delayFeedback(value) end
-local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
-reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end
-local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
-reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end
+local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage) -- TODO: once engine params to menu params scaffolding is done, this is not needed
+reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end -- TODO: once engine params to menu params scaffolding is done, this is not needed
+local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage) -- TODO: once engine params to menu params scaffolding is done, this is not needed
+reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end -- TODO: once engine params to menu params scaffolding is done, this is not needed
 
 local function debug_print(str)
   if debug then print(str) end
