@@ -8,12 +8,15 @@ init = function()
   e.release(0.1*2^(release/12))
   e.amp(0.5)
 
-  tempo_spec = controlspec.new(40, 300, 'lin', 0, 80, "")
-  p.tempo = param.new("tempo",tempo_spec)
-  p.tempo.action = function(n) t.time = 15/n print(15/n) change_time = true  end
+  p:add_number("tempo",40,300,80)
+  p:set_action("tempo", function(n) 
+    t.time = 15/n
+    --print(15/n)
+    change_time = true
+    end)
   
   t = metro[1]
-  t.time = 15/p.tempo:get() 
+  t.time = 15/p:get("tempo") 
 
   t.callback = function(stage)
     if change_time then
@@ -72,7 +75,7 @@ release = 20
 
 enc = function(n, delta)
   if n == 1 then
-    p.tempo:delta_raw(delta/100)
+    p:delta("tempo",delta)
   elseif n == 2 then
     cutoff = math.min(100, math.max(0, cutoff+delta))
     e.cutoff(50*2^(cutoff/12))

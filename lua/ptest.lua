@@ -5,7 +5,7 @@ init = function()
   p:add_option("output",{"MIDI","OSC","SYNTH","CV"})
   p:add_param("something",controlspec.unipolar())
   p:add_param("freq",controlspec.freq())
-  p:action("freq",e.hz)
+  p:set_action("freq",e.hz)
   
   p:read("ptest.pset")
 end
