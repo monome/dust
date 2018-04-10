@@ -1,0 +1,6 @@
+# ignore emacs cruft
+\#*\#
+*.*~
+
+# ignore vim swap files
+*.swp

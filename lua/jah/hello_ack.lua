@@ -108,10 +108,10 @@ delay_time.on_change_mapped = function(value) e.delayTimeL(value) end
 local delay_feedback = Param.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
 delay_feedback:set_mapped_value(0.75)
 delay_feedback.on_change_mapped = function(value) e.delayFeedback(value) end
-local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
-reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end
-local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
-reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end
+local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage) -- TODO: once engine params to menu params scaffolding is done, this is not needed
+reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end -- TODO: once engine params to menu params scaffolding is done, this is not needed
+local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage) -- TODO: once engine params to menu params scaffolding is done, this is not needed
+reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end -- TODO: once engine params to menu params scaffolding is done, this is not needed
 
 local function debug_print(str)
   if debug then print(str) end
@@ -177,8 +177,8 @@ init = function()
   end
   delay_time:bang()
   delay_feedback:bang()
-  reverb_room:bang()
-  reverb_damp:bang()
+  reverb_room:bang() -- TODO: p.reverbRoom:bang() once scaffolding is done
+  reverb_damp:bang() -- TODO: p.reverbDamp:bang() once scaffolding is done
 
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
   e.loadSample(0, sampleroot.."XR-20_003.wav")
@@ -220,6 +220,14 @@ init = function()
   scroll:push("")
   scroll:push("# ack")
   scroll:push("")
+  scroll:push("handled as engine params:")
+  scroll:push("")
+  scroll:push(reverb_room) -- TODO: p.reverbRoom once scaffolding is done
+  scroll:push(reverb_damp) -- TODO: p.reverbDamp once scaffolding is done
+  scroll:push("")
+  scroll:push("handled as commands:")
+  scroll:push("")
+
   for i=0,7 do
     -- TODO scroll:push(channel_params[i].loop_start)
     -- TODO scroll:push(channel_params[i].loop_end)
@@ -250,9 +258,6 @@ init = function()
   scroll:push(delay_time)
   -- scroll:push(delay_time_r) TODO
   scroll:push(delay_feedback)
-  scroll:push("")
-  scroll:push(reverb_room)
-  scroll:push(reverb_damp)
   scroll:push("")
   scroll:push("...fin")
   redraw()
