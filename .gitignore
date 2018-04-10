@@ -1,0 +1,14 @@
+# ignore objects and archives
+*.[oa]
+
+# ignore emacs cruft
+\#*\#
+*.*~
+
+# vim
+*.swp
+
+# waf
+.lock-waf*
+.waf*
+build/
