@@ -397,8 +397,6 @@ Engine_Ack : CroneEngine {
 				// TODO delayTimeL,
 				// TODO delayTimeR,
 				// TODO delayFeedback,
-				// TODO reverbRoom,
-				// TODO reverbDamp
 			].collect { |sym| sym -> Bus.control }.asDict
 		};
 		effectsGroup = Group.tail(context.xg);
@@ -439,8 +437,6 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\delayTimeL, "f") { |msg| this.cmdDelayTimeL(msg[1]) };
 		this.addCommand(\delayTimeR, "f") { |msg| this.cmdDelayTimeR(msg[1]) };
 		this.addCommand(\delayFeedback, "f") { |msg| this.cmdDelayFeedback(msg[1]) };
-		// TODO :this.addCommand(\reverbRoom, "f") { |msg| this.cmdReverbRoom(msg[1]) };
-		// this.addCommand(\reverbDamp, "f") { |msg| this.cmdReverbDamp(msg[1]) };
 		this.addParameter(\reverbRoom, reverbRoomSpec);
 		this.addParameter(\reverbDamp, reverbDampSpec);
 
@@ -575,17 +571,6 @@ Engine_Ack : CroneEngine {
 	cmdDelayFeedback { |f|
 		delaySynth.set(\feedback, delayTimeSpec.constrain(f));
 	}
-
-/*
-	TODO: now params, remove
-	cmdReverbRoom { |f|
-		reverbSynth.set(\room, reverbRoomSpec.constrain(f));
-	}
-
-	cmdReverbDamp { |f|
-		reverbSynth.set(\damp, reverbDampSpec.constrain(f));
-	}
-*/
 
 	free {
 		samplePlayerSynths do: _.free;

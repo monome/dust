@@ -177,8 +177,8 @@ init = function()
   end
   delay_time:bang()
   delay_feedback:bang()
-  reverb_room:bang()
-  reverb_damp:bang()
+  reverb_room:bang() -- TODO: p.reverbRoom:bang() once scaffolding is done
+  reverb_damp:bang() -- TODO: p.reverbDamp:bang() once scaffolding is done
 
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
   e.loadSample(0, sampleroot.."XR-20_003.wav")
@@ -222,8 +222,8 @@ init = function()
   scroll:push("")
   scroll:push("handled as engine params:")
   scroll:push("")
-  scroll:push(reverb_room)
-  scroll:push(reverb_damp)
+  scroll:push(reverb_room) -- TODO: p.reverbRoom once scaffolding is done
+  scroll:push(reverb_damp) -- TODO: p.reverbDamp once scaffolding is done
   scroll:push("")
   scroll:push("handled as commands:")
   scroll:push("")
