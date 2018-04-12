@@ -1,11 +1,11 @@
 -- @name template
 -- @version 1.0.3
 -- @author tehn
--- @url http://monome.org
+-- @url http://monomengine.org
 -- @txt a very basic example
 
 -- specify dsp engine to load:
-engine = 'TestSine'
+engine.name = 'TestSine'
 
 -- init function
 init = function()
@@ -14,10 +14,10 @@ init = function()
   -- add log message
   norns.log.post("hello!")
   -- show engine commands available
-    e.list_commands()
+    engine.list_commands()
   -- set engine params
-  e.hz(100)
-  e.amp(0.125)
+  engine.hz(100)
+  engine.amp(0.125)
   -- start timer
   c:start()
   -- clear grid, if it exists
@@ -26,8 +26,8 @@ init = function()
     g:refresh()
   end
   -- screen: turn on anti-alias
-  s.aa(1)
-  s.line_width(1.0)
+  screen.aa(1)
+  screen.line_width(1.0)
 end
 
 -- make a variable
@@ -54,23 +54,23 @@ end
 -- screen redraw function
 redraw = function()
   -- clear screen
-  s.clear()
+  screen.clear()
   -- set pixel brightness (0-15)
-  s.level(15)
+  screen.level(15)
 
   for i=1, 6 do
     -- move cursor
-    s.move(0, i*8-1)
+    screen.move(0, i*8-1)
     -- draw text
-    s.text("> "..numbers[i])
+    screen.text("> "..numbers[i])
   end
 
   -- show timer
-  s.move(0, 63)
-  s.text("> "..t)
+  screen.move(0, 63)
+  screen.text("> "..t)
 
   -- refresh screen
-  s.update()
+  screen.update()
 end
 
 

@@ -4,7 +4,7 @@
 -- knob 3 changes selected param
 local tab = require 'tabutil'
 
-engine = 'PolySub'
+engine.name = 'PolySub'
 
 -- pythagorean minor/major, kinda
 local ratios = { 1, 9/8, 6/5, 5/4, 4/3, 3/2, 27/16, 16/9 }
@@ -103,8 +103,8 @@ init = function()
     g:all(1)
     g:refresh()
   end
-  e.level(0.05)
-  e.stopAll()
+  engine.level(0.05)
+  engine.stopAll()
   print("grid/poly")
 end
 
@@ -115,13 +115,13 @@ gridkey = function(x, y, state)
   local note = ((7-y)*5) + x
   if state > 0 then
     if nvoices < 6 then
-     --e.start(id, getHz(x, y-1))
-     e.start(id, getHzET(note))
+     --engine.start(id, getHz(x, y-1))
+     engine.start(id, getHzET(note))
       g:led(x, y, 10)
      nvoices = nvoices + 1
     end
   else
-    e.stop(id)
+    engine.stop(id)
     g:led(x, y, 0)
     nvoices = nvoices - 1
   end
@@ -149,13 +149,13 @@ key = function(n,z)
 end
 
 redraw = function()
-   s.clear()
-   s.line_width(1)
-   s.level(15)
-   s.move(0,10)
-   s.text(param_names[cur_param_id] .. " = " .. params[param_names[cur_param_id]])
+   screen.clear()
+   screen.line_width(1)
+   screen.level(15)
+   screen.move(0,10)
+   screen.text(param_names[cur_param_id] .. " = " .. params[param_names[cur_param_id]])
 
-   s.update()
+   screen.update()
 end
 
 

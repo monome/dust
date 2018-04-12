@@ -1,7 +1,7 @@
 -- drawing
 
 -- specify dsp engine to load:
-engine = 'TestSine'
+engine.name = 'TestSine'
 
 -- init function
 init = function()
@@ -11,59 +11,59 @@ end
 -- screen redraw function
 redraw = function()
   -- clear screen
-  s.clear()
+  screen.clear()
   -- set pixel brightness (0-15)
-  s.level(15)
+  screen.level(15)
   -- enable anti-alasing
-  s.aa(1)
+  screen.aa(1)
   -- set line width
-  s.line_width(1.0)
+  screen.line_width(1.0)
   -- move position
-  s.move(0,0)
+  screen.move(0,0)
   -- draw line
-  s.line(10,20)
+  screen.line(10,20)
   -- stroke line
-  s.stroke()
+  screen.stroke()
   -- draw arc: x-center, y-center, radius, angle1, angle2
-  s.arc(20,0,10,0,math.pi*0.8)
-  s.stroke()
+  screen.arc(20,0,10,0,math.pi*0.8)
+  screen.stroke()
   -- draw rect: x,y,w,h
-  s.rect(30,10,15,20)
-  s.level(3)
-  s.stroke()
+  screen.rect(30,10,15,20)
+  screen.level(3)
+  screen.stroke()
   -- draw curve
-  s.move(50,0)
-  s.curve(50,20,60,0,70,10)
-  s.level(15)
-  s.stroke()
+  screen.move(50,0)
+  screen.curve(50,20,60,0,70,10)
+  screen.level(15)
+  screen.stroke()
   -- draw poly and fill
-  s.move(60,20)
-  s.line(80,10)
-  s.line(70,40)
-  s.close()
-  s.level(10)
-  s.fill()
+  screen.move(60,20)
+  screen.line(80,10)
+  screen.line(70,40)
+  screen.close()
+  screen.level(10)
+  screen.fill()
   -- draw circle
-  s.circle(100,20,10)
-  s.stroke()
+  screen.circle(100,20,10)
+  screen.stroke()
 
 
-  s.level(15)
-  s.move(0,63)
+  screen.level(15)
+  screen.move(0,63)
   -- set text face
-  s.font_face(9)
+  screen.font_face(9)
   -- set text size
-  s.font_size(20)
+  screen.font_size(20)
   -- draw text
-  s.text("new!")
+  screen.text("new!")
   -- draw centered text
-  s.move(63,50)
-  s.font_face(0)
-  s.font_size(8)
-  s.text_center("center")
+  screen.move(63,50)
+  screen.font_face(0)
+  screen.font_size(8)
+  screen.text_center("center")
   -- draw right aliged text
-  s.move(127,63)
-  s.text_right("1992")
+  screen.move(127,63)
+  screen.text_right("1992")
 
-  s.update()
+  screen.update()
 end

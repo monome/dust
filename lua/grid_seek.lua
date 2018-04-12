@@ -1,22 +1,22 @@
 -- @txt test grid sequencer
 
-engine = 'PolyPerc'
+engine.name = 'PolyPerc'
 
 init = function()
   print("grid/seek")
-  e.cutoff(50*2^(cutoff/12))
-  e.release(0.1*2^(release/12))
-  e.amp(0.5)
+  engine.cutoff(50*2^(cutoff/12))
+  engine.release(0.1*2^(release/12))
+  engine.amp(0.5)
 
-  p:add_number("tempo",40,300,80)
-  p:set_action("tempo", function(n) 
+  params:add_number("tempo",40,300,80)
+  params:set_action("tempo", function(n) 
     t.time = 15/n
     --print(15/n)
     change_time = true
     end)
   
   t = metro[1]
-  t.time = 15/p:get("tempo") 
+  t.time = 15/params:get("tempo") 
 
   t.callback = function(stage)
     if change_time then
@@ -26,7 +26,7 @@ init = function()
     else
       pos = pos + 1
       if pos == 17 then pos = 1 end
-      if steps[pos] > 0 then e.hz(freqs[9-steps[pos]]) end
+      if steps[pos] > 0 then engine.hz(freqs[9-steps[pos]]) end
       if g ~= nil then
         gridredraw()
       end
@@ -75,13 +75,13 @@ release = 20
 
 enc = function(n, delta)
   if n == 1 then
-    p:delta("tempo",delta)
+    params:delta("tempo",delta)
   elseif n == 2 then
     cutoff = math.min(100, math.max(0, cutoff+delta))
-    e.cutoff(50*2^(cutoff/12))
+    engine.cutoff(50*2^(cutoff/12))
   elseif n == 3 then
     release = math.min(60, math.max(0, release+delta))
-    e.release(0.1*2^(release/12))
+    engine.release(0.1*2^(release/12))
   end
 
   redraw()
@@ -91,20 +91,20 @@ key = function(n)
   if n == 2 then
     for i=1, 16 do steps[i] = math.floor(math.random()*8) end
   elseif n == 3 then
-    e.pw(math.random()*1)
+    engine.pw(math.random()*1)
   end
 end
 
 redraw = function()
-  s.clear()
-  s.line_width(1)
-  s.level(15)
-  s.move(0, 10)
-  s.text("cutoff > "..string.format('%.1f', (50*2^(cutoff/12))))
-  s.move(0, 20)
-  s.text("release > "..string.format('%.3f', 0.1*2^(release/12)))
-  s.move(0, 60)
-  s.text("step > "..pos)
-  s.move(0, 40)
-  s.update()
+  screen.clear()
+  screen.line_width(1)
+  screen.level(15)
+  screen.move(0, 10)
+  screen.text("cutoff > "..string.format('%.1f', (50*2^(cutoff/12))))
+  screen.move(0, 20)
+  screen.text("release > "..string.format('%.3f', 0.1*2^(release/12)))
+  screen.move(0, 60)
+  screen.text("step > "..pos)
+  screen.move(0, 40)
+  screen.update()
 end

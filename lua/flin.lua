@@ -1,5 +1,5 @@
 -- @txt cyclic poly-rhythm music box
-engine = 'PolySub'
+enginengine.name = 'PolySub'
 
 local GRID_HEIGHT = 8
 local DURATION_1 = 1 / 20
@@ -59,9 +59,9 @@ function start_col(x, speed, length)
 
     local on = cols[x].leds[1] == 1
     if on then
-      e.start(x, freqs[x])
+      engine.start(x, freqs[x])
     else
-      e.stop(x)
+      engine.stop(x)
     end
   end
 
@@ -74,7 +74,7 @@ function stop_col(x)
   timer:stop()
   cols[x].running = false
   draw_col(x)
-  e.stop(x)
+  engine.stop(x)
 end
 
 init = function()

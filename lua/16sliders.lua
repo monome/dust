@@ -5,12 +5,12 @@ edit = 1
 accum = 1
 step = 0
 
-engine = 'TestSine'
+engine.name = 'TestSine'
 
 init = function()
   print("16sliders: loaded engine")
-  e.hz(100)
-  e.amp(0.1)
+  engine.hz(100)
+  engine.amp(0.1)
   k:start()
 end
 
@@ -19,7 +19,7 @@ k.count = -1
 k.time = 0.1
 k.callback = function(stage)
   step = (step + 1) % 16
-  e.hz(2^(sliders[step+1]/12) * 80)
+  engine.hz(2^(sliders[step+1]/12) * 80)
   redraw()
 end
 
@@ -52,25 +52,25 @@ key = function(n, z)
 end
 
 redraw = function()
-  s.aa(1)
-  s.line_width(1.0)
-  s.clear()
+  screen.aa(1)
+  screen.line_width(1.0)
+  screen.clear()
 
   for i=0, 15 do
     if i == edit then
-      s.level(15)
+      screen.level(15)
     else
-      s.level(2)
+      screen.level(2)
     end
-    s.move(32+i*4, 48)
-    s.line(32+i*4, 46-sliders[i+1])
-    s.stroke()
+    screen.move(32+i*4, 48)
+    screen.line(32+i*4, 46-sliders[i+1])
+    screen.stroke()
   end
 
-  s.level(10)
-  s.move(32+step*4, 50)
-  s.line(32+step*4, 54)
-  s.stroke()
+  screen.level(10)
+  screen.move(32+step*4, 50)
+  screen.line(32+step*4, 54)
+  screen.stroke()
 
-  s.update()
+  screen.update()
 end
