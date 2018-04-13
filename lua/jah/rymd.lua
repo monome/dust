@@ -4,12 +4,12 @@
 -- @txt wip echo chamber thing
 
 ControlSpec = require 'controlspec'
-Param = require 'param'
+Control = require 'control'
 Scroll = require 'jah/scroll'
-Formatters = require 'formatters'
+Formatters = require 'jah/formatters'
 R = require 'jah/r'
 
-engine = 'R'
+engine.name = 'R'
 
 local filter_freq_spec = ControlSpec.unipolar()
 filter_freq_spec.default = 0.5
@@ -26,77 +26,77 @@ delay_feedback_spec.default = -5
 local output_level_spec = ControlSpec.db()
 output_level_spec.default = -20
 
-local delay_send = Param.new("delay send level", delay_send_spec)
-delay_send.on_change_mapped = function(value)
-  e.patch('inl', 'delayl', value)
-  e.patch('inr', 'delayr', value)
+local delay_send = Control.new("delay send level", delay_send_spec)
+delay_send.action = function(value)
+  engine.patch('inl', 'delayl', value)
+  engine.patch('inr', 'delayr', value)
 end
 
-local delayl_delaytime = Param.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
-delayl_delaytime:set_mapped_value(0.52)
-local delayr_delaytime = Param.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
-delayr_delaytime:set_mapped_value(0.44)
+local delayl_delaytime = Control.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayl_delaytime:set(0.52)
+local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
+delayr_delaytime:set(0.44)
 
-local filterl_freq = Param.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+local filterl_freq = Control.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterl_freq:set(0.36)
-local filterl_lforate = Param.new("filterl lforate", ControlSpec.lofreq())
-filterl_lforate:set_mapped_value(0.08)
-local filterl_lfodepth = Param.new("filterl lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
+local filterl_lforate = Control.new("filterl lforate", ControlSpec.lofreq())
+filterl_lforate:set(0.08)
+local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterl_lfodepth:set(0.1)
 
-local filterr_freq = Param.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+local filterr_freq = Control.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterr_freq:set(0.36)
-local filterr_lforate = Param.new("filterr lforate", ControlSpec.lofreq())
-filterr_lforate:set_mapped_value(0.14)
-local filterr_lfodepth = Param.new("filterr lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
+local filterr_lforate = Control.new("filterr lforate", ControlSpec.lofreq())
+filterr_lforate:set(0.14)
+local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterr_lfodepth:set(0.1)
 
-local delay_feedback = Param.new("delay feedback", delay_feedback_spec)
-delay_feedback.on_change_mapped = function(value)
-  e.patch('filterl', 'delayr', value)
-  e.patch('filterr', 'delayl', value)
+local delay_feedback = Control.new("delay feedback", delay_feedback_spec)
+delay_feedback.action = function(value)
+  engine.patch('filterl', 'delayr', value)
+  engine.patch('filterr', 'delayl', value)
 end
 
-local output_level = Param.new("output level", output_level_spec)
-output_level.on_change_mapped = function(value)
-  e.patch('inl', 'outl', value)
-  e.patch('inr', 'outr', value)
-  e.patch('filterl', 'outl', value)
-  e.patch('filterr', 'outr', value)
+local output_level = Control.new("output level", output_level_spec)
+output_level.action = function(value)
+  engine.patch('inl', 'outl', value)
+  engine.patch('inr', 'outr', value)
+  engine.patch('filterl', 'outl', value)
+  engine.patch('filterr', 'outr', value)
 end
 
 init = function()
-  s.aa(1)
-  s.line_width(1.0) 
+  screen.aa(1)
+  screen.line_width(1.0) 
 
-  e.capacity(8)
-  e.module('inl', 'input')
-  e.module('inr', 'input')
-  e.param('inr', 'config', 1) -- sets inr to input right channel
+  engine.capacity(8)
+  engine.module('inl', 'input')
+  engine.module('inr', 'input')
+  engine.param('inr', 'config', 1) -- sets inr to input right channel
 
-  e.module('delayl', 'delay')
-  e.module('delayr', 'delay')
+  engine.module('delayl', 'delay')
+  engine.module('delayr', 'delay')
 
   delay_send:bang()
 
   for key,param in pairs({delayl_delaytime, delayr_delaytime, filterl_freq, filterl_lforate, filterl_lfodepth, filterr_freq, filterr_lforate, filterr_lfodepth}) do
-    param.on_change_mapped = function(value)
-      R.send_r_param_value_to_engine(param)
+    param.action = function(value)
+      R.send_r_param_value_to_engine(engine, param)
     end
     param:bang()
   end
 
-  e.module('filterl', 'pole')
-  e.module('filterr', 'pole')
+  engine.module('filterl', 'pole')
+  engine.module('filterr', 'pole')
 
-  e.patch('delayl', 'filterl', 0)
-  e.patch('delayr', 'filterr', 0)
+  engine.patch('delayl', 'filterl', 0)
+  engine.patch('delayr', 'filterr', 0)
 
   delay_feedback:bang()
 
-  e.module('outl', 'output')
-  e.module('outr', 'output')
-  e.param('outr', 'config', 1) -- sets outr to output on right channel
+  engine.module('outl', 'output')
+  engine.module('outr', 'output')
+  engine.param('outr', 'config', 1) -- sets outr to output on right channel
 
   output_level:bang()
 
@@ -138,9 +138,9 @@ end
 
 redraw = function()
   if scroll then
-    scroll:redraw()
+    scroll:redraw(screen)
   end
-  s.update()
+  screen.update()
 end
 
 enc = function(n, delta)
@@ -149,19 +149,21 @@ enc = function(n, delta)
     return
   end
 
+  --[[
   local d
   if key2_down then
     d = delta/2500
   else
     d = delta/100
   end
+  ]]
   if n == 2 then
     scroll:navigate(delta)
     redraw()
   elseif n == 3 then
     if scroll.selected_param then
       local param = scroll.selected_param
-      param:adjust(d)
+      param:delta(delta)
       redraw()
     end
   end
@@ -174,7 +176,7 @@ key = function(n, z)
     elseif n == 3 then
       if scroll.selected_param then
         local param = scroll.selected_param
-        param:revert_to_default()
+        param:set_default()
         redraw()
       end
     end

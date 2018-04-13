@@ -4,11 +4,11 @@
 -- @txt ack test
 
 ControlSpec = require 'controlspec'
-Param = require 'param'
+Control = require 'control'
 Scroll = require 'jah/scroll'
-Formatters = require 'formatters'
+Formatters = require 'jah/formatters'
 
-engine = 'Ack'
+engine.name = 'Ack'
 
 local debug = false
 
@@ -40,78 +40,78 @@ local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
-local midi_in = Param.new("midi in", bool_spec, Formatters.unipolar_as_enabled_disabled)
+local midi_in = Control.new("midi in", bool_spec, Formatters.unipolar_as_enabled_disabled)
 midi_in:set(1) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
-local midi_selects = Param.new("midi selects", bool_spec, Formatters.unipolar_as_true_false)
+local midi_selects = Control.new("midi selects", bool_spec, Formatters.unipolar_as_true_false)
 midi_selects:set(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
-local trig_on_change = Param.new("trig on value change", bool_spec, Formatters.unipolar_as_true_false)
-trig_on_change:set(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
+local trig_on_change = Control.new("trig on value change", bool_spec, Formatters.unipolar_as_true_false)
+trig_on_change:set_raw(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
 
 local channel_params = {}
 for i=0,7 do
   local p = {}
 --[[
 TODO: looping
-  p.loop_start = Param.new((i+1)..": loop start", loop_start_spec, Formatters.unipolar_as_percentage)
-  p.loop_start.on_change_mapped = function(value) e.loopStart(i, value) end
-  p.loop_end = Param.new((i+1)..": loop end", loop_end_spec, Formatters.unipolar_as_percentage)
-  p.loop_end.on_change_mapped = function(value) e.loopEnd(i, value) end
+  p.loop_start = Control.new((i+1)..": loop start", loop_start_spec, Formatters.unipolar_as_percentage)
+  p.loop_start.action = function(value) engine.loopStart(i, value) end
+  p.loop_end = Control.new((i+1)..": loop end", loop_end_spec, Formatters.unipolar_as_percentage)
+  p.loop_end.action = function(value) engine.loopEnd(i, value) end
 ]]
-  p.speed = Param.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
-  p.speed.on_change_mapped = function(value) e.speed(i, value) end
-  p.volume = Param.new((i+1)..": vol", volume_spec)
-  p.volume.on_change_mapped = function(value) e.volume(i, value) end
-  p.volume_env_attack = Param.new((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
-  p.volume_env_attack.on_change_mapped = function(value) e.volumeEnvAttack(i, value) end
-  p.volume_env_release = Param.new((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
-  p.volume_env_release.on_change_mapped = function(value) e.volumeEnvRelease(i, value) end
-  p.pan = Param.new((i+1)..": pan", ControlSpec.pan(), Formatters.bipolar_as_pan_widget)
-  p.pan.on_change_mapped = function(value) e.pan(i, value) end
-  p.filter_cutoff = Param.new((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
-  p.filter_cutoff.on_change_mapped = function(value) e.filterCutoff(i, value) end
-  p.filter_res = Param.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
-  p.filter_res.on_change_mapped = function(value) e.filterRes(i, value) end
-  p.filter_mode = Param.new((i+1)..": filter mode", filter_mode_spec)
-  p.filter_mode.on_change_mapped = function(value) e.filterMode(i, value) end
-  p.filter_env_attack = Param.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
-  p.filter_env_attack.on_change_mapped = function(value) e.filterEnvAttack(i, value) end
-  p.filter_env_release = Param.new((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
-  p.filter_env_release.on_change_mapped = function(value) e.filterEnvRelease(i, value) end
-  p.filter_env_mod = Param.new((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
-  p.filter_env_mod.on_change_mapped = function(value) e.filterEnvMod(i, value) end
-  p.delay_send = Param.new((i+1)..": delay send", send_spec)
-  p.delay_send.on_change_mapped = function(value) e.delaySend(i, value) end
-  p.reverb_send = Param.new((i+1)..": reverb send", send_spec)
-  p.reverb_send.on_change_mapped = function(value) e.reverbSend(i, value) end
+  p.speed = Control.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
+  p.speed.action = function(value) engine.speed(i, value) end
+  p.volume = Control.new((i+1)..": vol", volume_spec)
+  p.volume.action = function(value) engine.volume(i, value) end
+  p.volume_env_attack = Control.new((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
+  p.volume_env_attack.action = function(value) engine.volumeEnvAttack(i, value) end
+  p.volume_env_release = Control.new((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
+  p.volume_env_release.action = function(value) engine.volumeEnvRelease(i, value) end
+  p.pan = Control.new((i+1)..": pan", ControlSpec.pan(), Formatters.bipolar_as_pan_widget)
+  p.pan.action = function(value) engine.pan(i, value) end
+  p.filter_cutoff = Control.new((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
+  p.filter_cutoff.action = function(value) engine.filterCutoff(i, value) end
+  p.filter_res = Control.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
+  p.filter_res.action = function(value) engine.filterRes(i, value) end
+  p.filter_mode = Control.new((i+1)..": filter mode", filter_mode_spec)
+  p.filter_mode.action = function(value) engine.filterMode(i, value) end
+  p.filter_env_attack = Control.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
+  p.filter_env_attack.action = function(value) engine.filterEnvAttack(i, value) end
+  p.filter_env_release = Control.new((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
+  p.filter_env_release.action = function(value) engine.filterEnvRelease(i, value) end
+  p.filter_env_mod = Control.new((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
+  p.filter_env_mod.action = function(value) engine.filterEnvMod(i, value) end
+  p.delay_send = Control.new((i+1)..": delay send", send_spec)
+  p.delay_send.action = function(value) engine.delaySend(i, value) end
+  p.reverb_send = Control.new((i+1)..": reverb send", send_spec)
+  p.reverb_send.action = function(value) engine.reverbSend(i, value) end
   --[[
   TODO: enable slews
-  p.speed_slew = Param.new((i+1)..": speed slew", slew_spec)
-  p.speed_slew.on_change_mapped = function(value) e.speedSlew(i, value) end
-  p.volume_slew = Param.new((i+1)..": vol slew", slew_spec)
-  p.volume_slew.on_change_mapped = function(value) e.volumeSlew(i, value) end
-  p.pan_slew = Param.new((i+1)..": pan slew", slew_spec)
-  p.pan_slew.on_change_mapped = function(value) e.panSlew(i, value) end
-  p.filter_cutoff_slew = Param.new((i+1)..": filter cutoff slew", slew_spec)
-  p.filter_cutoff_slew.on_change_mapped = function(value) e.filterCutoffSlew(i, value) end
-  p.filter_res_slew = Param.new((i+1)..": filter res slew", slew_spec)
-  p.filter_res_slew.on_change_mapped = function(value) e.filterResSlew(i, value) end
+  p.speed_slew = Control.new((i+1)..": speed slew", slew_spec)
+  p.speed_slew.action = function(value) engine.speedSlew(i, value) end
+  p.volume_slew = Control.new((i+1)..": vol slew", slew_spec)
+  p.volume_slew.action = function(value) engine.volumeSlew(i, value) end
+  p.pan_slew = Control.new((i+1)..": pan slew", slew_spec)
+  p.pan_slew.action = function(value) engine.panSlew(i, value) end
+  p.filter_cutoff_slew = Control.new((i+1)..": filter cutoff slew", slew_spec)
+  p.filter_cutoff_slew.action = function(value) engine.filterCutoffSlew(i, value) end
+  p.filter_res_slew = Control.new((i+1)..": filter res slew", slew_spec)
+  p.filter_res_slew.action = function(value) engine.filterResSlew(i, value) end
   ]]
   channel_params[i] = p
 end
 
-local delay_time = Param.new("delay time", delay_time_spec, Formatters.secs_as_ms)
-delay_time.on_change_mapped = function(value) e.delayTimeL(value) end
--- local delay_time_r = Param.new("delay time r", delay_time_spec) TODO
--- delay_time_r.on_change_mapped = function(value) e.delayTimeR(value) end TODO
-local delay_feedback = Param.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
-delay_feedback:set_mapped_value(0.75)
-delay_feedback.on_change_mapped = function(value) e.delayFeedback(value) end
-local reverb_room = Param.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
-reverb_room.on_change_mapped = function(value) e.reverbRoom(value) end
-local reverb_damp = Param.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
-reverb_damp.on_change_mapped = function(value) e.reverbDamp(value) end
+local delay_time = Control.new("delay time", delay_time_spec, Formatters.secs_as_ms)
+delay_time.action = function(value) engine.delayTimeL(value) end
+-- local delay_time_r = Control.new("delay time r", delay_time_spec) TODO
+-- delay_time_r.action = function(value) engine.delayTimeR(value) end TODO
+local delay_feedback = Control.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
+delay_feedback:set(0.75)
+delay_feedback.action = function(value) engine.delayFeedback(value) end
+local reverb_room = Control.new("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
+reverb_room.action = function(value) engine.reverbRoom(value) end
+local reverb_damp = Control.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
+reverb_damp.action = function(value) engine.reverbDamp(value) end
 
 local function debug_print(str)
   if debug then print(str) end
@@ -148,11 +148,11 @@ local function note_on(note, velocity)
   end
   if channel then
     debug_print("midi / channel: "..channel)
-    e.trig(channel)
-    if midi_selects:mapped_value() == 1 then
+    engine.trig(channel)
+    if midi_selects:get() == 1 then
       local selected_param = scroll.selected_param
 
-      if selected_param == nil or get_channel_from_string(selected_param.title) ~= channel+1 then -- TODO: make this the proper way
+      if selected_param == nil or get_channel_from_string(selected_param.name) ~= channel+1 then -- TODO: make this the proper way
         scroll:navigate_to_lineno(scroll:lookup_lineno(channel_params[channel].speed))
         redraw()
       end
@@ -169,8 +169,8 @@ local function cc(control, value)
 end
 
 init = function()
-  s.aa(1)
-  s.line_width(1.0)
+  screen.aa(1)
+  screen.line_width(1.0)
 
   for channelnum=0,7 do
     for key, param in pairs(channel_params[channelnum]) do param:bang() end
@@ -181,14 +181,14 @@ init = function()
   reverb_damp:bang()
 
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
-  e.loadSample(0, sampleroot.."XR-20_003.wav")
-  e.loadSample(1, sampleroot.."XR-20_114.wav")
-  e.loadSample(2, sampleroot.."XR-20_285.wav")
-  e.loadSample(3, sampleroot.."XR-20_328.wav")
-  e.loadSample(4, sampleroot.."XR-20_121.wav")
-  e.loadSample(5, sampleroot.."XR-20_667.wav")
-  e.loadSample(6, sampleroot.."XR-20_128.wav")
-  e.loadSample(7, sampleroot.."XR-20_718.wav")
+  engine.loadSample(0, sampleroot.."XR-20_003.wav")
+  engine.loadSample(1, sampleroot.."XR-20_114.wav")
+  engine.loadSample(2, sampleroot.."XR-20_285.wav")
+  engine.loadSample(3, sampleroot.."XR-20_328.wav")
+  engine.loadSample(4, sampleroot.."XR-20_121.wav")
+  engine.loadSample(5, sampleroot.."XR-20_667.wav")
+  engine.loadSample(6, sampleroot.."XR-20_128.wav")
+  engine.loadSample(7, sampleroot.."XR-20_718.wav")
 
   scroll = Scroll.new()
   scroll:push("ack test script")
@@ -260,16 +260,16 @@ end
 
 redraw = function()
   if scroll then
-    scroll:redraw()
+    scroll:redraw(screen)
   end
-  s.update()
+  screen.update()
 end
 
 local function trig_if_channel_param(param)
   if param then
-    local channel = get_channel_from_string(param.title)
+    local channel = get_channel_from_string(param.name)
     if channel then
-      e.trig(channel-1)
+      engine.trig(channel-1)
     end
   end
 end
@@ -285,16 +285,18 @@ enc = function(n, delta)
     redraw()
   elseif n == 3 then
     if scroll.selected_param then
-    local d
-    if key2_down then
-      d = delta/500
-    else
-      d = delta/50
-    end
+      --[[
+      local d
+      if key2_down then
+        d = delta/500
+      else
+        d = delta/50
+      end
+      ]]
       local param = scroll.selected_param
-      local prev = param.value
-      param:adjust(d)
-      if param.value ~= prev and trig_on_change:mapped_value() == 1 then
+      local prev = param:get()
+      param:delta(delta)
+      if param:get() ~= prev and trig_on_change:get() == 1 then
         trig_if_channel_param(param)
       end
       redraw()
@@ -310,9 +312,9 @@ key = function(n, z)
     elseif n == 3 then
       if scroll.selected_param then
         local param = scroll.selected_param
-        local prev = param.value
-        param:revert_to_default()
-        if param.value ~= prev and trig_on_change:mapped_value() == 1 then
+        local prev = param:get()
+        param:set_default()
+        if param:get() ~= prev and trig_on_change:get() == 1 then
           trig_if_channel_param(param)
         end
         redraw()
@@ -332,7 +334,7 @@ cleanup = function()
 end
 
 norns.midi.event = function(id, status, data1, data2)
-  if midi_in:mapped_value() == 1 then
+  if midi_in:get() == 1 then
     -- TODO print(id, status, data1, data2)
     if status == 144 then
       --[[

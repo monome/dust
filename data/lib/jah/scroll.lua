@@ -6,7 +6,7 @@ Scroll.SELECTED_PARAM_LEVEL = 15
 Scroll.PARAM_LEVEL = 4
 Scroll.TEXT_LEVEL = 4
 
-function Scroll.new(title, controlspec, value)
+function Scroll.new()
   local instance = setmetatable({}, Scroll)
   instance.content = {}
   instance.size = 0
@@ -40,13 +40,13 @@ function Scroll:pop(thing)
   self.content[self.size] = nil
 end
 
-function Scroll:redraw()
+function Scroll:redraw(s)
   s.clear()
   --[[
   print("--------------") -- 
   print("new screen") -- 
   if self.selected_param then -- 
-    print("selected_param: "..(self.selected_param.title)) -- 
+    print("selected_param: "..(self.selected_param.name)) -- 
   end -- 
   print("--------------") -- 
   ]]
@@ -84,7 +84,7 @@ function Scroll:redraw_old()
   print("--------------")
   print("new screen")
   if self.selected_param then
-    print("selected_param: "..(self.selected_param.title))
+    print("selected_param: "..(self.selected_param.name))
   end
   print("--------------")
   for i=1,Scroll.SCREEN_ROWS do
@@ -197,7 +197,6 @@ function Scroll:navigate(delta)
   new_top = self.top + delta
   if new_selected_param_lineno then
     self:select_param_at_line(new_selected_param_lineno)
-    self:redraw()
   elseif new_top >= 1 and (new_top + Scroll.SCREEN_ROWS) <= self.size then
     -- TODO print(self.size..":"..new_top)
     self.top = new_top

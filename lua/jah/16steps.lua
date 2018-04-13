@@ -9,7 +9,7 @@ Scroll = require 'jah/scroll' -- TODO: not yet used
 
 -- TODO: refactor so that 16steps and 8steps uses the same core
 
-engine = 'Step'
+engine.name = 'Step'
 
 local TRIG_LEVEL = 15
 local PLAYPOS_LEVEL = 7
@@ -89,11 +89,11 @@ init = function()
   -- add log message
   norns.log.post("hello from step!")
   -- set engine params
-  e.setNumSteps(width)
-  e.setTempo(tempo:mapped_value())
-  e.setSwingAmount(swing_amount:mapped_value())
-  e.stopSequencer()
-  e.clearAllTrigs()
+  engine.setNumSteps(width)
+  engine.setTempo(tempo:get())
+  engine.setSwingAmount(swing_amount:get())
+  engine.stopSequencer()
+  engine.clearAllTrigs()
   -- clear grid, if it exists
   if g then
     g:all(0)
@@ -107,11 +107,11 @@ enc = function(n, delta)
   if n == 1 then
     norns.audio.adjust_output_level(delta)
   elseif n == 2 then
-    tempo:adjust(delta/200)
-    e.setTempo(tempo:mapped_value())
+    tempo:delta(delta)
+    engine.setTempo(tempo:get())
   elseif n == 3 then
-    swing_amount:adjust(delta/200)
-    e.setSwingAmount(swing_amount:mapped_value())
+    swing_amount:delta(delta)
+    engine.setSwingAmount(swing_amount:get())
   end
   redraw()
 end
@@ -119,12 +119,12 @@ end
 -- key function
 key = function(n, z)
   if n == 2 and z == 1 then
-    -- e.clearPattern()
-    e.stopSequencer()
+    -- engine.clearPattern()
+    engine.stopSequencer()
     playing = false
   elseif n == 3 and z == 1 then
-    -- e.scrambleSamples()
-    e.playSequencer()
+    -- engine.scrambleSamples()
+    engine.playSequencer()
     playing = true
   end
   redraw()
@@ -142,9 +142,9 @@ redraw = function()
   s.text("16STEPS")
 
   s.move(0, 24)
-  s.text("Tempo: "..tempo:mapped_value().."BPM")
+  s.text("Tempo: "..tempo:get().."BPM")
   s.move(0, 32)
-  s.text("Swing: "..swing_amount:mapped_value().."%")
+  s.text("Swing: "..swing_amount:get().."%")
   s.move(0, 48)
   if playing then
     s.text("Playing")
@@ -158,11 +158,11 @@ end
 gridkey = function(x, y, state)
   if state > 0 then
     if trig_is_set(x, y) then
-      e.clearTrig(y-1, x-1)
+      engine.clearTrig(y-1, x-1)
       trigs[y*width+x] = false
       refresh_trig_on_grid(x, y)
     else
-      e.setTrig(y-1, x-1)
+      engine.setTrig(y-1, x-1)
       trigs[y*width+x] = true
       refresh_trig_on_grid(x, y)
     end

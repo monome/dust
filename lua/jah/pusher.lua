@@ -4,10 +4,10 @@
 -- @txt capture & playback a sound
 
 ControlSpec = require 'controlspec'
-Param = require 'param'
+Control = require 'control'
 Scroll = require 'jah/scroll' -- TODO: not yet used
 
-engine = 'Pusher'
+engine.name = 'Pusher'
 
 local PAGE_FIRST = 1
 local PAGE_RELEASE_TO_PLAY = 2
@@ -32,28 +32,28 @@ local volume_spec = ControlSpec.new(-60, 0, ControlSpec.WARP_LIN, 0, -60, "dB")
 local percentage_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 local resonance_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 13, "%")
 
-local start_pos = Param.new("Start", percentage_spec)
-local end_pos = Param.new("End", percentage_spec)
-local speed = Param.new("Speed", speed_spec)
-local cutoff = Param.new("Cutoff", cutoff_spec)
-local resonance = Param.new("Resonance", resonance_spec)
-local delay_send = Param.new("Delay Send", volume_spec)
-local reverb_send = Param.new("Reverb Send", volume_spec)
-local delay_time = Param.new("Delay Time", delay_time_spec)
-local decay_time = Param.new("Decay Time", decay_time_spec)
-local reverb_room = Param.new("Reverb Room", percentage_spec)
-local reverb_damp = Param.new("Reverb Damp", percentage_spec)
+local start_pos = Control.new("Start", percentage_spec)
+local end_pos = Control.new("End", percentage_spec)
+local speed = Control.new("Speed", speed_spec)
+local cutoff = Control.new("Cutoff", cutoff_spec)
+local resonance = Control.new("Resonance", resonance_spec)
+local delay_send = Control.new("Delay Send", volume_spec)
+local reverb_send = Control.new("Reverb Send", volume_spec)
+local delay_time = Control.new("Delay Time", delay_time_spec)
+local decay_time = Control.new("Decay Time", decay_time_spec)
+local reverb_room = Control.new("Reverb Room", percentage_spec)
+local reverb_damp = Control.new("Reverb Damp", percentage_spec)
 
 set_defaults = function()
-  start_pos:revert_to_default()
+  start_pos:set_default()
   end_pos:set(1.0)
-  speed:revert_to_default()
-  cutoff:revert_to_default()
-  resonance:revert_to_default()
-  delay_send:revert_to_default()
-  reverb_send:revert_to_default()
-  delay_time:revert_to_default()
-  decay_time:revert_to_default()
+  speed:set_default()
+  cutoff:set_default()
+  resonance:set_default()
+  delay_send:set_default()
+  reverb_send:set_default()
+  delay_time:set_default()
+  decay_time:set_default()
   reverb_room:set(0.5)
   reverb_damp:set(0.5)
 end
@@ -96,31 +96,31 @@ end
 ]]
 
 local display_param = function()
-  s.move(0, 16)
+  screen.move(0, 16)
   if current_param_group == PARAM_GROUP_POS then
-    s.text(start_pos:string(0.1))
-    s.move(0, 24)
-    s.text(end_pos:string(0.1))
+    screen.text(start_pos:string(0.1))
+    screen.move(0, 24)
+    screen.text(end_pos:string(0.1))
   elseif current_param_group == PARAM_GROUP_RATE then
-    s.text(speed:string(0.01))
-    s.move(0, 24)
-    s.text("") -- TODO: something?
+    screen.text(speed:string(0.01))
+    screen.move(0, 24)
+    screen.text("") -- TODO: something?
   elseif current_param_group == PARAM_GROUP_FILTER then
-    s.text(cutoff:string(0.01))
-    s.move(0, 24)
-    s.text(resonance:string(0.1))
+    screen.text(cutoff:string(0.01))
+    screen.move(0, 24)
+    screen.text(resonance:string(0.1))
   elseif current_param_group == PARAM_GROUP_MIX then
-    s.text(delay_send:string(0.01))
-    s.move(0, 24)
-    s.text(reverb_send:string(0.01))
+    screen.text(delay_send:string(0.01))
+    screen.move(0, 24)
+    screen.text(reverb_send:string(0.01))
   elseif current_param_group == PARAM_GROUP_DELAY then
-    s.text("Delay Time: "..(delay_time:mapped_value()*1000).."ms")
-    s.move(0, 24)
-    s.text("Decay Time: "..(decay_time:mapped_value()*1000).."ms")
+    screen.text("Delay Time: "..(delay_time:get()*1000).."ms")
+    screen.move(0, 24)
+    screen.text("Decay Time: "..(decay_time:get()*1000).."ms")
   elseif current_param_group == PARAM_GROUP_REVERB then
-    s.text(reverb_room:string(0.1))
-    s.move(0, 24)
-    s.text(reverb_damp:string(0.1))
+    screen.text(reverb_room:string(0.1))
+    screen.move(0, 24)
+    screen.text(reverb_damp:string(0.1))
   end
 end
 
@@ -130,41 +130,41 @@ local switch_to_page = function(page)
 end
 
 redraw = function()
-  s.clear()
-  s.level(15)
-  s.move(0, 8)
+  screen.clear()
+  screen.level(15)
+  screen.move(0, 8)
   if current_page == PAGE_FIRST then
-    s.text("Press and hold rightmost key")
-    s.move(0, 16)
-    s.text("to capture a sound!")
+    screen.text("Press and hold rightmost key")
+    screen.move(0, 16)
+    screen.text("to capture a sound!")
     --[[
-    s.move(0, 48)
-    s.text("(Long press leftmost key for")
-    s.move(0, 56)
-    s.text("help and options)")
+    screen.move(0, 48)
+    screen.text("(Long press leftmost key for")
+    screen.move(0, 56)
+    screen.text("help and options)")
     ]]
   elseif current_page == PAGE_RELEASE_TO_PLAY then
-    s.text("Recording...")
-    s.move(0, 24)
-    s.text("Release key and recorded")
-    s.move(0, 32)
-    s.text("sound will start playing")
+    screen.text("Recording...")
+    screen.move(0, 24)
+    screen.text("Release key and recorded")
+    screen.move(0, 32)
+    screen.text("sound will start playing")
   elseif current_page == PAGE_MASH then
-    s.text("Encoders adjust params")
+    screen.text("Encoders adjust params")
     display_param()
-    s.move(0, 40)
-    s.text("Middle key cycles between")
-    s.move(0, 48)
-    s.text("params, rightmost key will")
-    s.move(0, 56)
-    s.text("capture a new sound.")
+    screen.move(0, 40)
+    screen.text("Middle key cycles between")
+    screen.move(0, 48)
+    screen.text("params, rightmost key will")
+    screen.move(0, 56)
+    screen.text("capture a new sound.")
   end
-  s.update()
+  screen.update()
 end
 
 init = function(commands, count)
-  s.aa(1)
-  s.line_width(1.0) 
+  screen.aa(1)
+  screen.line_width(1.0) 
   -- TODO: load saved state and buffer, if any
   set_defaults()
   redraw()
@@ -175,52 +175,51 @@ cleanup = function()
   -- TODO: write audio sample to file
 end
 
-enc = function(n, delta)
+enc = function(n, d)
   if n == 1 then
-    norns.audio.adjust_output_level(delta)
+    norns.audio.adjust_output_level(d)
     return
   end
 
   if current_page == PAGE_MASH then
-    local d = delta/100
     if n == 2 then
       if current_param_group == PARAM_GROUP_POS then
-        start_pos:adjust(d)
-        e.startPos(start_pos:mapped_value())
+        start_pos:delta(d)
+        engine.startPos(start_pos:get())
       elseif current_param_group == PARAM_GROUP_RATE then
-        speed:adjust(d)
-        e.speed(speed:mapped_value())
+        speed:delta(d)
+        engine.speed(speed:get())
       elseif current_param_group == PARAM_GROUP_FILTER then
-        cutoff:adjust(d)
-        e.cutoff(cutoff:mapped_value())
+        cutoff:delta(d)
+        engine.cutoff(cutoff:get())
       elseif current_param_group == PARAM_GROUP_MIX then
-        delay_send:adjust(d)
-        e.delaySend(delay_send:mapped_value())
+        delay_send:delta(d)
+        engine.delaySend(delay_send:get())
       elseif current_param_group == PARAM_GROUP_DELAY then
-        delay_time:adjust(d)
-        e.delayTime(delay_time:mapped_value())
+        delay_time:delta(d)
+        engine.delayTime(delay_time:get())
       elseif current_param_group == PARAM_GROUP_REVERB then
-        reverb_room:adjust(d)
-        e.reverbRoom(reverb_room:mapped_value())
+        reverb_room:delta(d)
+        engine.reverbRoom(reverb_room:get())
       end
     elseif n == 3 then
       if current_param_group == PARAM_GROUP_POS then
-        end_pos:adjust(d)
-        e.endPos(end_pos:mapped_value())
+        end_pos:delta(d)
+        engine.endPos(end_pos:get())
       elseif current_param_group == PARAM_GROUP_RATE then
         print("TODO")
       elseif current_param_group == PARAM_GROUP_FILTER then
-        resonance:adjust(d)
-        e.resonance(resonance:mapped_value())
+        resonance:delta(d)
+        engine.resonance(resonance:get())
       elseif current_param_group == PARAM_GROUP_MIX then
-        reverb_send:adjust(d)
-        e.reverbSend(reverb_send:mapped_value())
+        reverb_send:delta(d)
+        engine.reverbSend(reverb_send:get())
       elseif current_param_group == PARAM_GROUP_DELAY then
-        decay_time:adjust(d)
-        e.decayTime(decay_time:mapped_value())
+        decay_time:delta(d)
+        engine.decayTime(decay_time:get())
       elseif current_param_group == PARAM_GROUP_REVERB then
-        reverb_damp:adjust(d)
-        e.reverbDamp(reverb_damp:mapped_value())
+        reverb_damp:delta(d)
+        engine.reverbDamp(reverb_damp:get())
       end
     end
     redraw()
@@ -237,11 +236,11 @@ key = function(n, z)
     switch_to_page(PAGE_MASH)
   elseif n == 3 then
     if z == 1 then
-      e.record()
+      engine.record()
       set_defaults()
       switch_to_page(PAGE_RELEASE_TO_PLAY)
     else
-      e.play()
+      engine.play()
       switch_to_page(PAGE_MASH)
     end
   end
