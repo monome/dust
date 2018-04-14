@@ -26,7 +26,7 @@ delay_feedback_spec.default = -5
 local output_level_spec = ControlSpec.db()
 output_level_spec.default = -20
 
-local delay_send = Control.new("delay send level", delay_send_spec)
+local delay_send = Control.new("delay send level", delay_send_spec, Formatters.std)
 delay_send.action = function(value)
   engine.patch('inl', 'delayl', value)
   engine.patch('inr', 'delayr', value)
@@ -39,25 +39,25 @@ delayr_delaytime:set(0.44)
 
 local filterl_freq = Control.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterl_freq:set(0.36)
-local filterl_lforate = Control.new("filterl lforate", ControlSpec.lofreq())
+local filterl_lforate = Control.new("filterl lforate", ControlSpec.lofreq(), Formatters.std)
 filterl_lforate:set(0.08)
 local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterl_lfodepth:set(0.1)
 
 local filterr_freq = Control.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterr_freq:set(0.36)
-local filterr_lforate = Control.new("filterr lforate", ControlSpec.lofreq())
+local filterr_lforate = Control.new("filterr lforate", ControlSpec.lofreq(), Formatters.std)
 filterr_lforate:set(0.14)
 local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
 filterr_lfodepth:set(0.1)
 
-local delay_feedback = Control.new("delay feedback", delay_feedback_spec)
+local delay_feedback = Control.new("delay feedback", delay_feedback_spec, Formatters.std)
 delay_feedback.action = function(value)
   engine.patch('filterl', 'delayr', value)
   engine.patch('filterr', 'delayl', value)
 end
 
-local output_level = Control.new("output level", output_level_spec)
+local output_level = Control.new("output level", output_level_spec, Formatters.std)
 output_level.action = function(value)
   engine.patch('inl', 'outl', value)
   engine.patch('inr', 'outr', value)
@@ -133,7 +133,7 @@ init = function()
   scroll:push("fin1")
   scroll:push("fin2")
   scroll:push("fin3")
-  redraw()
+  --redraw()
 end
 
 redraw = function()

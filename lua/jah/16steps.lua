@@ -4,7 +4,7 @@
 -- @txt 16x8 step sequencer
 
 ControlSpec = require 'controlspec'
-Param = require 'param'
+Control = require 'control'
 Scroll = require 'jah/scroll' -- TODO: not yet used
 
 -- TODO: refactor so that 16steps and 8steps uses the same core
@@ -20,8 +20,8 @@ tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 
 -- params
-local swing_amount = Param.new("Swing", swing_amount_spec)
-local tempo = Param.new("Tempo", tempo_spec)
+local swing_amount = Control.new("Swing", swing_amount_spec)
+local tempo = Control.new("Tempo", tempo_spec)
 
 -- state
 local width = 16
@@ -133,25 +133,25 @@ end
 -- screen redraw function
 redraw = function()
   -- clear screen
-  s.clear()
+  screen.clear()
   -- set pixel brightness (0-15)
-  s.level(15)
+  screen.level(15)
 
   -- show timer
-  s.move(0,8)
-  s.text("16STEPS")
+  screen.move(0,8)
+  screen.text("16STEPS")
 
-  s.move(0, 24)
-  s.text("Tempo: "..tempo:get().."BPM")
-  s.move(0, 32)
-  s.text("Swing: "..swing_amount:get().."%")
-  s.move(0, 48)
+  screen.move(0, 24)
+  screen.text("Tempo: "..tempo:get().."BPM")
+  screen.move(0, 32)
+  screen.text("Swing: "..swing_amount:get().."%")
+  screen.move(0, 48)
   if playing then
-    s.text("Playing")
+    screen.text("Playing")
   else
-    s.text("Stopped")
+    screen.text("Stopped")
   end
-  s.update()
+  screen.update()
 end
 
 -- grid key function

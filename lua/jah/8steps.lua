@@ -4,7 +4,7 @@
 -- @txt 8x8 step sequencer
 
 ControlSpec = require 'controlspec'
-Param = require 'param'
+Control = require 'control'
 Scroll = require 'jah/scroll' -- TODO: not yet used
 
 -- TODO: refactor so that 16steps and 8steps uses the same core
@@ -20,8 +20,8 @@ tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 
 -- params
-local swing_amount = Param.new("Swing", swing_amount_spec)
-local tempo = Param.new("Tempo", tempo_spec)
+local swing_amount = Control.new("Swing", swing_amount_spec)
+local tempo = Control.new("Tempo", tempo_spec)
 
 -- state
 local width = 8

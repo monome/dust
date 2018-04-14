@@ -61,7 +61,7 @@ TODO: looping
 ]]
   p.speed = Control.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
   p.speed.action = function(value) engine.speed(i, value) end
-  p.volume = Control.new((i+1)..": vol", volume_spec)
+  p.volume = Control.new((i+1)..": vol", volume_spec, Formatters.std)
   p.volume.action = function(value) engine.volume(i, value) end
   p.volume_env_attack = Control.new((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
   p.volume_env_attack.action = function(value) engine.volumeEnvAttack(i, value) end
@@ -73,7 +73,7 @@ TODO: looping
   p.filter_cutoff.action = function(value) engine.filterCutoff(i, value) end
   p.filter_res = Control.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
   p.filter_res.action = function(value) engine.filterRes(i, value) end
-  p.filter_mode = Control.new((i+1)..": filter mode", filter_mode_spec)
+  p.filter_mode = Control.new((i+1)..": filter mode", filter_mode_spec, Formatters.std)
   p.filter_mode.action = function(value) engine.filterMode(i, value) end
   p.filter_env_attack = Control.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
   p.filter_env_attack.action = function(value) engine.filterEnvAttack(i, value) end
@@ -81,21 +81,21 @@ TODO: looping
   p.filter_env_release.action = function(value) engine.filterEnvRelease(i, value) end
   p.filter_env_mod = Control.new((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
   p.filter_env_mod.action = function(value) engine.filterEnvMod(i, value) end
-  p.delay_send = Control.new((i+1)..": delay send", send_spec)
+  p.delay_send = Control.new((i+1)..": delay send", send_spec, Formatters.std)
   p.delay_send.action = function(value) engine.delaySend(i, value) end
-  p.reverb_send = Control.new((i+1)..": reverb send", send_spec)
+  p.reverb_send = Control.new((i+1)..": reverb send", send_spec, Formatters.std)
   p.reverb_send.action = function(value) engine.reverbSend(i, value) end
   --[[
   TODO: enable slews
-  p.speed_slew = Control.new((i+1)..": speed slew", slew_spec)
+  p.speed_slew = Control.new((i+1)..": speed slew", slew_spec, Formatters.std)
   p.speed_slew.action = function(value) engine.speedSlew(i, value) end
-  p.volume_slew = Control.new((i+1)..": vol slew", slew_spec)
+  p.volume_slew = Control.new((i+1)..": vol slew", slew_spec, Formatters.std)
   p.volume_slew.action = function(value) engine.volumeSlew(i, value) end
-  p.pan_slew = Control.new((i+1)..": pan slew", slew_spec)
+  p.pan_slew = Control.new((i+1)..": pan slew", slew_spec, Formatters.std)
   p.pan_slew.action = function(value) engine.panSlew(i, value) end
-  p.filter_cutoff_slew = Control.new((i+1)..": filter cutoff slew", slew_spec)
+  p.filter_cutoff_slew = Control.new((i+1)..": filter cutoff slew", slew_spec, Formatters.std)
   p.filter_cutoff_slew.action = function(value) engine.filterCutoffSlew(i, value) end
-  p.filter_res_slew = Control.new((i+1)..": filter res slew", slew_spec)
+  p.filter_res_slew = Control.new((i+1)..": filter res slew", slew_spec, Formatters.std)
   p.filter_res_slew.action = function(value) engine.filterResSlew(i, value) end
   ]]
   channel_params[i] = p
@@ -103,7 +103,7 @@ end
 
 local delay_time = Control.new("delay time", delay_time_spec, Formatters.secs_as_ms)
 delay_time.action = function(value) engine.delayTimeL(value) end
--- local delay_time_r = Control.new("delay time r", delay_time_spec) TODO
+-- local delay_time_r = Control.new("delay time r", delay_time_spec, Formatters.std) TODO
 -- delay_time_r.action = function(value) engine.delayTimeR(value) end TODO
 local delay_feedback = Control.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
 delay_feedback:set(0.75)
@@ -255,7 +255,6 @@ init = function()
   scroll:push(reverb_damp)
   scroll:push("")
   scroll:push("...fin")
-  redraw()
 end
 
 redraw = function()

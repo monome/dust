@@ -2,7 +2,11 @@
 local Formatters = {}
 
 function string_format(param, value, units)
-  return param.name..": "..value.." "..(units or "")
+  return param.name..": "..value.." "..(units or param.controlspec.units or "")
+end
+
+function Formatters.std(param)
+  return Formatters.round(0.01)(param)
 end
 
 function Formatters.unipolar_as_percentage(param)
@@ -40,14 +44,14 @@ function Formatters.bipolar_as_pan_widget(param)
   local descr
 
   if value > 0 then
-    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)
+    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
     dots_right = util.round((100-pan_side_percentage)/dots_per_side)
     if pan_side_percentage >= 1 then
       descr = "R"..pan_side_percentage
     end
   elseif value < 0 then
     dots_left = util.round((100-pan_side_percentage)/dots_per_side)
-    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)
+    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
     if pan_side_percentage >= 1 then
       descr = "L"..pan_side_percentage
     end
