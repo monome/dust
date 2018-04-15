@@ -1,8 +1,41 @@
-
 local Formatters = {}
 
-function string_format(param, value, units)
-  return param.name..": "..value.." "..(units or param.controlspec.units or "")
+local function format(param, value, units)
+  return value.." "..(units or param.controlspec.units or "")
+end
+
+function Formatters.lbl_std(param)
+  return param.name..": "..Formatters.std(param)
+end
+
+function Formatters.lbl_unipolar_as_percentage(param)
+  return param.name..": "..Formatters.unipolar_as_percentage(param)
+end
+
+function Formatters.lbl_secs_as_ms(param)
+  return param.name..": "..Formatters.secs_as_ms(param)
+end
+
+function Formatters.lbl_unipolar_as_true_false(param)
+  return param.name..": "..Formatters.unipolar_as_true_false(param)
+end
+
+function Formatters.lbl_unipolar_as_enabled_disabled(param)
+  return param.name..": "..Formatters.unipolar_as_enabled_disabled(param)
+end
+
+function Formatters.lbl_bipolar_as_pan_widget(param)
+  return param.name..": "..Formatters.unipolar_as_pan_widget(param)
+end
+
+function Formatters.lbl_unipolar_as_multimode_filter_freq(param)
+  return param.name..": "..Formatters.unipolar_as_multimode_filter_freq(param)
+end
+
+function Formatters.lbl_round(precision)
+  return function(param)
+    return param.name..": "..Formatters.round(precision)(param)
+  end
 end
 
 function Formatters.std(param)
@@ -10,23 +43,23 @@ function Formatters.std(param)
 end
 
 function Formatters.unipolar_as_percentage(param)
-  return string_format(param, util.round(param:get()*100), "%")
+  return format(param, util.round(param:get()*100), "%")
 end
 
 function Formatters.secs_as_ms(param)
-  return string_format(param, util.round(param:get()*1000), "ms")
+  return format(param, util.round(param:get()*1000), "ms")
 end
 
 function Formatters.unipolar_as_true_false(param)
   local str
   if param:get() == 1 then str = "true" else str = "false" end
-  return string_format(param, str)
+  return format(param, str)
 end
 
 function Formatters.unipolar_as_enabled_disabled(param)
   local str
   if param:get() == 1 then str = "enabled" else str = "disabled" end
-  return string_format(param, str)
+  return format(param, str)
 end
 
 function Formatters.bipolar_as_pan_widget(param)
@@ -70,7 +103,7 @@ function Formatters.bipolar_as_pan_widget(param)
   add_dots(dots_right)
   add_bar()
 
-  return string_format(param, widget.." "..descr, "")
+  return format(param, widget.." "..descr, "")
 end
 
 function Formatters.unipolar_as_multimode_filter_freq(param)
@@ -112,12 +145,12 @@ function Formatters.unipolar_as_multimode_filter_freq(param)
     descr = "OFF"
   end
 
-  return string_format(param, widget.." "..descr, "")
+  return format(param, widget.." "..descr, "")
 end
 
 function Formatters.round(precision)
   return function(param)
-    return string_format(param, util.round(param:get(), precision))
+    return format(param, util.round(param:get(), precision))
   end
 end
 
