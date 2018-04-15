@@ -52,13 +52,13 @@ trig_on_change:set_raw(0.98) -- TODO: hack, better idea: encoder deltas configur
 local channel_params = {}
 for i=0,7 do
   local p = {}
---[[
-TODO: looping
+  --[[
+  TODO: looping
   p.loop_start = Control.new((i+1)..": loop start", loop_start_spec, Formatters.unipolar_as_percentage)
   p.loop_start.action = function(value) engine.loopStart(i, value) end
   p.loop_end = Control.new((i+1)..": loop end", loop_end_spec, Formatters.unipolar_as_percentage)
   p.loop_end.action = function(value) engine.loopEnd(i, value) end
-]]
+  ]]
   p.speed = Control.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
   p.speed.action = function(value) engine.speed(i, value) end
   p.volume = Control.new((i+1)..": vol", volume_spec, Formatters.std)
@@ -73,8 +73,10 @@ TODO: looping
   p.filter_cutoff.action = function(value) engine.filterCutoff(i, value) end
   p.filter_res = Control.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
   p.filter_res.action = function(value) engine.filterRes(i, value) end
+  --[[
   p.filter_mode = Control.new((i+1)..": filter mode", filter_mode_spec, Formatters.std)
   p.filter_mode.action = function(value) engine.filterMode(i, value) end
+  ]]
   p.filter_env_attack = Control.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
   p.filter_env_attack.action = function(value) engine.filterEnvAttack(i, value) end
   p.filter_env_release = Control.new((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
