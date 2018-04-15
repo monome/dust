@@ -322,9 +322,19 @@ init = function()
 end
 
 redraw = function()
+  --[[
   if scroll then
     scroll:redraw(screen)
   end
+  screen.update()
+  ]]
+
+  screen.clear()
+  screen.level(15)
+  screen.aa(0)
+  screen.move(0,7*8-1)
+  screen.font_size(30)
+  screen.text("ack")
   screen.update()
 end
 
