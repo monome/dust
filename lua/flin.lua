@@ -1,5 +1,5 @@
 -- @txt cyclic poly-rhythm music box
-enginengine.name = 'PolySub'
+engine.name = 'PolySub'
 
 local GRID_HEIGHT = 8
 local DURATION_1 = 1 / 20
