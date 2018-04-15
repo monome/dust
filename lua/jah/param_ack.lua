@@ -51,6 +51,22 @@ local midinote_indicator_level
 local midicc_indicator_level
 local note_downs = {}
 
+local function screen_update_channels()
+  screen.move(0,16)
+  screen.font_size(8)
+  for channel=0,7 do
+    if note_downs[channel] then
+      screen.level(15)
+    elseif selected_channel == channel or key3_down then
+      screen.level(6)
+    else
+      screen.level(2)
+    end
+    screen.text(channel+1)
+  end
+  screen.update()
+end
+
 local function screen_update_midi_indicators()
   --screen.move(125, 20)
   screen.move(0,60)
@@ -67,22 +83,6 @@ local function screen_update_midi_indicators()
     screen.level(3)
     screen.text("no midi")
   end
-end
-
-local function screen_update_channels()
-  screen.move(0,16)
-  screen.font_size(8)
-  for channel=0,7 do
-    if note_downs[channel] then
-      screen.level(15)
-    elseif selected_channel == channel then
-      screen.level(6)
-    else
-      screen.level(2)
-    end
-    screen.text(channel+1)
-  end
-  screen.update()
 end
 
 local function channel_from_midinote(midinote)
@@ -130,12 +130,16 @@ local function note_off(note)
 end
 
 local function cc_set_control(name, controlspec, value)
-  print(name..","..value)
   params:set(name, controlspec:map(midi_cc_spec:unmap(value)))
 end
 
 local function cc_delta_control(name, controlspec, value)
-  print(value)
+  local delta
+  if value > 0 and value < 64 then
+    delta = value
+  else
+    delta = value - 128
+  end
   local value = params:get(name)
   local value_unmapped = controlspec:unmap(value)
   local new_unmapped_value = value_unmapped + delta/100
@@ -143,33 +147,42 @@ local function cc_delta_control(name, controlspec, value)
 end
 
 local function cc(ctl, value)
-  print(ctl..","..value)
-  local param_name_suffix
+  local param
   local spec
   if ctl == params:get("filter cutoff cc") then
-    param_name_suffix = "filter cutoff"
+    param = "filter cutoff"
     spec = filter_cutoff_spec
     abs = params:get("filter cutoff cc type") == 1
   elseif ctl == params:get("filter res cc") then
-    param_name_suffix = "filter res"
+    param = "filter res"
     spec = filter_res_spec
     abs = params:get("filter res cc type") == 1
   elseif ctl == params:get("delay send cc") then
-    param_name_suffix = "delay send"
+    param = "delay send"
     spec = send_spec
     abs = params:get("delay send cc type") == 1
   elseif ctl == params:get("reverb send cc") then
-    param_name_suffix = "reverb send"
+    param = "reverb send"
     spec = send_spec
     abs = params:get("reverb send cc type") == 1
   end
-  if param_name_suffix then
-    local param_name = (selected_channel+1)..": "..param_name_suffix
+  if param then
     if abs then
-      print("hwy!")
-      cc_set_control(param_name, spec, value)
+      if key3_down then
+        for i=0,7 do
+          cc_set_control((i+1)..": "..param, spec, value)
+        end
+      else
+        cc_set_control((selected_channel+1)..": "..param, spec, value)
+      end
     else
-      cc_delta_control(param_name, spec, value)
+      if key3_down then
+        for i=0,7 do
+          cc_delta_control((i+1)..": "..param, spec, value)
+        end
+      else
+        cc_delta_control((selected_channel+1)..": "..param, spec, value)
+      end
     end
   end
 end
@@ -281,8 +294,8 @@ redraw = function()
   screen.font_size(8)
   screen.level(15)
   screen.text("ack")
-  screen_update_midi_indicators()
   screen_update_channels()
+  screen_update_midi_indicators()
   screen.update()
 end
 
@@ -309,25 +322,49 @@ enc = function(n, delta)
       redraw()
     end
   else
-    params:delta((selected_channel+1)..": speed", delta)
+    if key3_down then
+      for i=0,7 do
+        params:delta((i+1)..": speed", delta)
+      end
+    else
+      params:delta((selected_channel+1)..": speed", delta)
+    end
+  end
+end
+
+local function trig_channel(channel)
+  engine.trig(channel)
+  if not note_downs[channel] then
+    note_downs[channel] = true
+  end
+end
+
+local function reset_channel(channel)
+  if note_downs[channel] then
+    note_downs[channel] = false
   end
 end
 
 key = function(n, z)
   if n == 2 then
     if z == 1 then
-      engine.trig(selected_channel)
-      if not note_downs[selected_channel] then
-        note_downs[selected_channel] = true
-        screen_update_channels()
+      if key3_down then
+        for i=0,7 do trig_channel(i) end
+      else
+        trig_channel(selected_channel)
       end
+      screen_update_channels()
     else
-      if note_downs[selected_channel] then
-        note_downs[selected_channel] = false
-        screen_update_channels()
+      if key3_down then
+        for i=0,7 do reset_channel(i) end
+      else
+        reset_channel(selected_channel)
       end
+      screen_update_channels()
     end
   elseif n == 3 then
+    key3_down = z == 1
+    redraw()
   end
 end
 
