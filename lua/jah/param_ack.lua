@@ -119,6 +119,25 @@ local function debug_print(str)
   if debug then print(str) end
 end
 
+local selected_channel = 0
+local note_downs = {}
+
+local function screenprint_channels()
+  screen.move(0,40)
+  screen.font_size(14)
+  for channel=0,7 do
+    if note_downs[channel] then
+      screen.level(15)
+    elseif selected_channel == channel then
+      screen.level(6)
+    else
+      screen.level(2)
+    end
+    screen.text(channel+1)
+  end
+  screen.update()
+end
+
 local function get_channel_from_string(string) -- TODO
   -- TODO: ugly hack code- change so that this is not a for loop, as we're only interested in first match
   words = {}
@@ -149,21 +168,48 @@ local function note_on(note, velocity)
     channel = 7
   end
   if channel then
+    note_downs[channel] = true
+    screenprint_channels()
     debug_print("midi / channel: "..channel)
     engine.trig(channel)
     if midi_selects:get() == 1 then
+      --[[
       local selected_param = scroll.selected_param
 
       if selected_param == nil or get_channel_from_string(selected_param.name) ~= channel+1 then -- TODO: make this the proper way
         scroll:navigate_to_lineno(scroll:lookup_lineno(channel_params[channel].speed))
         redraw()
       end
+      ]]
     end
   end
 end
 
 local function note_off(note)
   debug_print("midi / note_off: "..note)
+
+  local channel = nil
+  if note == 60 then
+    channel = 0
+  elseif note == 62 then
+    channel = 1
+  elseif note == 64 then
+    channel = 2
+  elseif note == 65 then
+    channel = 3
+  elseif note == 67 then
+    channel = 4
+  elseif note == 69 then
+    channel = 5
+  elseif note == 71 then
+    channel = 6
+  elseif note == 72 then
+    channel = 7
+  end
+  if channel then
+    note_downs[channel] = false
+    screenprint_channels()
+  end
 end
 
 local function cc(control, value)
@@ -174,8 +220,8 @@ init = function()
   screen.aa(1)
   screen.line_width(1.0)
 
-  for channelnum=0,7 do
-    for key, param in pairs(channel_params[channelnum]) do param:bang() end
+  for channel=0,7 do
+    for key, param in pairs(channel_params[channel]) do param:bang() end
   end
 
   params:add_option("midi in", {"disabled", "enabled"}, 2)
@@ -260,30 +306,14 @@ init = function()
 end
 
 redraw = function()
-  --[[
-  if scroll then
-    scroll:redraw(screen)
-  end
-  screen.update()
-  ]]
-
   screen.clear()
   screen.level(15)
   screen.aa(0)
-  screen.move(0,7*8-1)
+  screen.move(0, 20)
   screen.font_size(20)
   screen.text("ack")
+  screenprint_channels()
   screen.update()
-end
-
-local function trig_if_channel_param(param)
-  if param then
-    local channel = get_channel_from_string(param.name)
-    if channel then
-      print("debugs"..channel)
-      engine.trig(channel-1)
-    end
-  end
 end
 
 enc = function(n, delta)
@@ -293,18 +323,21 @@ enc = function(n, delta)
   end
 
   if n == 2 then
-    scroll:navigate(delta)
-    redraw()
+    if delta < 0 then
+      if selected_channel ~= 0 then
+        selected_channel = selected_channel - 1
+        redraw()
+      end
+    else
+      if selected_channel ~= 7 then
+        selected_channel = selected_channel + 1
+        redraw()
+      end
+    end
+  end
+  --[[
   elseif n == 3 then
     if scroll.selected_param then
-      --[[
-      local d
-      if key2_down then
-        d = delta/500
-      else
-        d = delta/50
-      end
-      ]]
       local param = scroll.selected_param
       local prev = param:get()
       param:delta(delta)
@@ -314,8 +347,28 @@ enc = function(n, delta)
       redraw()
     end
   end
+  ]]
 end
 
+key = function(n, z)
+  if n == 2 then
+    if z == 1 then
+      engine.trig(selected_channel)
+      if not note_downs[selected_channel] then
+        note_downs[selected_channel] = true
+        screenprint_channels()
+      end
+    else
+      if note_downs[selected_channel] then
+        note_downs[selected_channel] = false
+        screenprint_channels()
+      end
+    end
+  elseif n == 3 then
+  end
+end
+
+--[[
 key = function(n, z)
   if z == 1 then
     if n == 2 then
@@ -340,12 +393,16 @@ key = function(n, z)
     end
   end
 end
+]]
 
 cleanup = function()
   norns.midi.event = nil
 end
 
-norns.midi.event = function(id, status, data1, data2)
+norns.midi.event = function(id, data)
+  status = data[1]
+  data1 = data[2]
+  data2 = data[3]
   if midi_in:get() == 1 then
     -- TODO print(id, status, data1, data2)
     if status == 144 then
