@@ -5,19 +5,17 @@
 
 ControlSpec = require 'controlspec'
 Control = require 'control'
-Scroll = require 'jah/scroll'
 Formatters = require 'jah/formatters'
 
 engine.name = 'Ack'
 
-local debug = false
-
-local bool_spec = ControlSpec.new(0, 1, 'lin', 1, 0, "")
+local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
 
 --[[
 TODO: looping
-local loop_start_spec = ControlSpec.unipolar()
-local loop_end_spec = ControlSpec.new(0, 1, 'lin', 0, 1, "")
+local start_spec = ControlSpec.unipolar()
+local end_spec = ControlSpec.new(0, 1, 'lin', 0, 1, "")
+local loop_point_spec = ControlSpec.unipolar()
 ]]
 local speed_spec = ControlSpec.new(0, 5, 'lin', 0, 1, "")
 -- local slew_spec = ControlSpec.new(0, 5, 'lin', 0, 0, "") -- TODO: enable slews
@@ -40,73 +38,6 @@ local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
-local midi_in = Control.new("midi in", bool_spec, Formatters.unipolar_as_enabled_disabled)
-midi_in:set(1) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
-
-local midi_selects = Control.new("midi selects", bool_spec, Formatters.unipolar_as_true_false)
-midi_selects:set(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
-
-local trig_on_change = Control.new("trig on value change", bool_spec, Formatters.unipolar_as_true_false)
-trig_on_change:set_raw(0.98) -- TODO: hack, better idea: encoder deltas configured per param or set_min_mapped_value()/set_max_mapped_value()
-
-local channel_params = {}
-for i=0,7 do
-  local p = {}
-  --[[
-  TODO: looping
-  p.loop_start = Control.new((i+1)..": loop start", loop_start_spec, Formatters.unipolar_as_percentage)
-  p.loop_start.action = function(value) engine.loopStart(i, value) end
-  p.loop_end = Control.new((i+1)..": loop end", loop_end_spec, Formatters.unipolar_as_percentage)
-  p.loop_end.action = function(value) engine.loopEnd(i, value) end
-  ]]
-  p.speed = Control.new((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
-  p.speed.action = function(value) engine.speed(i, value) end
-  p.volume = Control.new((i+1)..": vol", volume_spec, Formatters.std)
-  p.volume.action = function(value) engine.volume(i, value) end
-  p.volume_env_attack = Control.new((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
-  p.volume_env_attack.action = function(value) engine.volumeEnvAttack(i, value) end
-  p.volume_env_release = Control.new((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
-  p.volume_env_release.action = function(value) engine.volumeEnvRelease(i, value) end
-  p.pan = Control.new((i+1)..": pan", ControlSpec.pan(), Formatters.bipolar_as_pan_widget)
-  p.pan.action = function(value) engine.pan(i, value) end
-  p.filter_cutoff = Control.new((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
-  p.filter_cutoff.action = function(value) engine.filterCutoff(i, value) end
-  p.filter_res = Control.new((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
-  p.filter_res.action = function(value) engine.filterRes(i, value) end
-  --[[
-  p.filter_mode = Control.new((i+1)..": filter mode", filter_mode_spec, Formatters.std)
-  p.filter_mode.action = function(value) engine.filterMode(i, value) end
-  ]]
-  p.filter_env_attack = Control.new((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
-  p.filter_env_attack.action = function(value) engine.filterEnvAttack(i, value) end
-  p.filter_env_release = Control.new((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
-  p.filter_env_release.action = function(value) engine.filterEnvRelease(i, value) end
-  p.filter_env_mod = Control.new((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
-  p.filter_env_mod.action = function(value) engine.filterEnvMod(i, value) end
-  p.delay_send = Control.new((i+1)..": delay send", send_spec, Formatters.std)
-  p.delay_send.action = function(value) engine.delaySend(i, value) end
-  p.reverb_send = Control.new((i+1)..": reverb send", send_spec, Formatters.std)
-  p.reverb_send.action = function(value) engine.reverbSend(i, value) end
-  --[[
-  TODO: enable slews
-  p.speed_slew = Control.new((i+1)..": speed slew", slew_spec, Formatters.std)
-  p.speed_slew.action = function(value) engine.speedSlew(i, value) end
-  p.volume_slew = Control.new((i+1)..": vol slew", slew_spec, Formatters.std)
-  p.volume_slew.action = function(value) engine.volumeSlew(i, value) end
-  p.pan_slew = Control.new((i+1)..": pan slew", slew_spec, Formatters.std)
-  p.pan_slew.action = function(value) engine.panSlew(i, value) end
-  p.filter_cutoff_slew = Control.new((i+1)..": filter cutoff slew", slew_spec, Formatters.std)
-  p.filter_cutoff_slew.action = function(value) engine.filterCutoffSlew(i, value) end
-  p.filter_res_slew = Control.new((i+1)..": filter res slew", slew_spec, Formatters.std)
-  p.filter_res_slew.action = function(value) engine.filterResSlew(i, value) end
-  ]]
-  channel_params[i] = p
-end
-
-local delay_time = Control.new("delay time", delay_time_spec, Formatters.secs_as_ms)
-delay_time.action = function(value) engine.delayTimeL(value) end
--- local delay_time_r = Control.new("delay time r", delay_time_spec, Formatters.std) TODO
--- delay_time_r.action = function(value) engine.delayTimeR(value) end TODO
 local delay_feedback = Control.new("delay feedback", delay_time_spec, Formatters.secs_as_ms)
 delay_feedback:set(0.75)
 delay_feedback.action = function(value) engine.delayFeedback(value) end
@@ -115,16 +46,32 @@ reverb_room.action = function(value) engine.reverbRoom(value) end
 local reverb_damp = Control.new("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
 reverb_damp.action = function(value) engine.reverbDamp(value) end
 
-local function debug_print(str)
-  if debug then print(str) end
-end
-
 local selected_channel = 0
+local midinote_indicator_level
+local midicc_indicator_level
 local note_downs = {}
 
-local function screenprint_channels()
-  screen.move(0,40)
-  screen.font_size(14)
+local function screen_update_midi_indicators()
+  --screen.move(125, 20)
+  screen.move(0,60)
+  screen.font_size(8)
+  if midi_available then
+    screen.level(15)
+    screen.text("midi:")
+    screen.text(" ")
+    screen.level(midinote_indicator_level)
+    screen.text("note ")
+    screen.level(midicc_indicator_level)
+    screen.text("cc")
+  else
+    screen.level(3)
+    screen.text("no midi")
+  end
+end
+
+local function screen_update_channels()
+  screen.move(0,16)
+  screen.font_size(8)
   for channel=0,7 do
     if note_downs[channel] then
       screen.level(15)
@@ -138,95 +85,117 @@ local function screenprint_channels()
   screen.update()
 end
 
-local function get_channel_from_string(string) -- TODO
-  -- TODO: ugly hack code- change so that this is not a for loop, as we're only interested in first match
-  words = {}
-  for word in string:gmatch("([0-9]+):") do -- TODO: why doesn't "^([0-9]+):" work here?
-    table.insert(words, word)
+local function channel_from_midinote(midinote)
+  local channel = nil
+  if midinote == 60 then
+    channel = 0
+  elseif midinote == 62 then
+    channel = 1
+  elseif midinote == 64 then
+    channel = 2
+  elseif midinote == 65 then
+    channel = 3
+  elseif midinote == 67 then
+    channel = 4
+  elseif midinote == 69 then
+    channel = 5
+  elseif midinote == 71 then
+    channel = 6
+  elseif midinote == 72 then
+    channel = 7
   end
-  return tonumber(words[1])
+  return channel
 end
 
 local function note_on(note, velocity)
-  debug_print("midi / note_on: "..note..", velocity: "..velocity) -- TODO: replace this with on-screen notification
-  local channel = nil
-  if note == 60 then
-    channel = 0
-  elseif note == 62 then
-    channel = 1
-  elseif note == 64 then
-    channel = 2
-  elseif note == 65 then
-    channel = 3
-  elseif note == 67 then
-    channel = 4
-  elseif note == 69 then
-    channel = 5
-  elseif note == 71 then
-    channel = 6
-  elseif note == 72 then
-    channel = 7
-  end
+  local channel = channel_from_midinote(note)
   if channel then
-    note_downs[channel] = true
-    screenprint_channels()
-    debug_print("midi / channel: "..channel)
-    engine.trig(channel)
-    if midi_selects:get() == 1 then
-      --[[
-      local selected_param = scroll.selected_param
-
-      if selected_param == nil or get_channel_from_string(selected_param.name) ~= channel+1 then -- TODO: make this the proper way
-        scroll:navigate_to_lineno(scroll:lookup_lineno(channel_params[channel].speed))
-        redraw()
+    if not note_downs[channel] then
+      note_downs[channel] = true
+      engine.trig(channel)
+      if params:get("midi selects channel") == 2 then
+        selected_channel = channel
       end
-      ]]
+      screen_update_channels()
     end
   end
 end
 
 local function note_off(note)
-  debug_print("midi / note_off: "..note)
-
-  local channel = nil
-  if note == 60 then
-    channel = 0
-  elseif note == 62 then
-    channel = 1
-  elseif note == 64 then
-    channel = 2
-  elseif note == 65 then
-    channel = 3
-  elseif note == 67 then
-    channel = 4
-  elseif note == 69 then
-    channel = 5
-  elseif note == 71 then
-    channel = 6
-  elseif note == 72 then
-    channel = 7
-  end
+  local channel = channel_from_midinote(note)
   if channel then
     note_downs[channel] = false
-    screenprint_channels()
+    screen_update_channels()
   end
 end
 
-local function cc(control, value)
-  debug_print("midi / control: "..control..", value: "..value)
+local function cc_set_control(name, controlspec, value)
+  print(name..","..value)
+  params:set(name, controlspec:map(midi_cc_spec:unmap(value)))
+end
+
+local function cc_delta_control(name, controlspec, value)
+  print(value)
+  local value = params:get(name)
+  local value_unmapped = controlspec:unmap(value)
+  local new_unmapped_value = value_unmapped + delta/100
+  params:set(name, controlspec:map(new_unmapped_value))
+end
+
+local function cc(ctl, value)
+  print(ctl..","..value)
+  local param_name_suffix
+  local spec
+  if ctl == params:get("filter cutoff cc") then
+    param_name_suffix = "filter cutoff"
+    spec = filter_cutoff_spec
+    abs = params:get("filter cutoff cc type") == 1
+  elseif ctl == params:get("filter res cc") then
+    param_name_suffix = "filter res"
+    spec = filter_res_spec
+    abs = params:get("filter res cc type") == 1
+  elseif ctl == params:get("delay send cc") then
+    param_name_suffix = "delay send"
+    spec = send_spec
+    abs = params:get("delay send cc type") == 1
+  elseif ctl == params:get("reverb send cc") then
+    param_name_suffix = "reverb send"
+    spec = send_spec
+    abs = params:get("reverb send cc type") == 1
+  end
+  if param_name_suffix then
+    local param_name = (selected_channel+1)..": "..param_name_suffix
+    if abs then
+      print("hwy!")
+      cc_set_control(param_name, spec, value)
+    else
+      cc_delta_control(param_name, spec, value)
+    end
+  end
 end
 
 init = function()
   screen.aa(1)
   screen.line_width(1.0)
 
-  for channel=0,7 do
-    for key, param in pairs(channel_params[channel]) do param:bang() end
-  end
-
+  local bool = {"false", "true"}
   params:add_option("midi in", {"disabled", "enabled"}, 2)
-  params:add_option("midi selects", {"false", "true"})
-  params:add_option("trig on value change", {"false", "true"})
+  params:add_option("midi selects channel", bool, 2)
+
+  local cc_list = {}
+  for i=0,127 do
+    cc_list[i] = i
+  end
+  cc_type = {"abs", "rel"}
+  params:add_option("filter cutoff cc", cc_list, 1)
+  params:add_option("filter cutoff cc type", cc_type)
+  params:add_option("filter res cc", cc_list, 2)
+  params:add_option("filter res cc type", cc_type)
+  params:add_option("delay send cc", cc_list, 3)
+  params:add_option("delay send cc type", cc_type)
+  params:add_option("reverb send cc", cc_list, 4)
+  params:add_option("reverb send cc type", cc_type)
+  params:add_option("trig on param change", bool)
 
   for i=0,7 do
   --[[
@@ -284,10 +253,10 @@ init = function()
   end
 
   params:add_control("delay time", delay_time_spec, Formatters.secs_as_ms)
-  params:set_action("delay time", engine.delayTimeL)
+  params:set_action("delay time", engine.delayTime)
   params:add_control("delay feedback", delay_time_spec, Formatters.secs_as_ms)
   params:set("delay feedback", 0.75)
-  params:set_action("delay feedback", engine.delayTimeL)
+  params:set_action("delay feedback", engine.delayFeedback)
   params:add_control("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
   params:set_action("reverb room", engine.reverbRoom)
   params:add_control("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
@@ -307,12 +276,13 @@ end
 
 redraw = function()
   screen.clear()
+  screen.aa(1)
+  screen.move(0, 8)
+  screen.font_size(8)
   screen.level(15)
-  screen.aa(0)
-  screen.move(0, 20)
-  screen.font_size(20)
   screen.text("ack")
-  screenprint_channels()
+  screen_update_midi_indicators()
+  screen_update_channels()
   screen.update()
 end
 
@@ -320,34 +290,27 @@ enc = function(n, delta)
   if n == 1 then
     norns.audio.adjust_output_level(delta)
     return
-  end
-
-  if n == 2 then
+  elseif n == 2 then
+    local new_selection
     if delta < 0 then
       if selected_channel ~= 0 then
-        selected_channel = selected_channel - 1
-        redraw()
+        new_selection = selected_channel - 1
       end
     else
       if selected_channel ~= 7 then
-        selected_channel = selected_channel + 1
-        redraw()
+        new_selection = selected_channel + 1
       end
     end
-  end
-  --[[
-  elseif n == 3 then
-    if scroll.selected_param then
-      local param = scroll.selected_param
-      local prev = param:get()
-      param:delta(delta)
-      if param:get() ~= prev and trig_on_change:get() == 1 then
-        trig_if_channel_param(param)
+    if new_selection then
+      if note_downs[selected_channel] then
+        note_downs[selected_channel] = false
       end
+      selected_channel = new_selection
       redraw()
     end
+  else
+    params:delta((selected_channel+1)..": speed", delta)
   end
-  ]]
 end
 
 key = function(n, z)
@@ -356,62 +319,48 @@ key = function(n, z)
       engine.trig(selected_channel)
       if not note_downs[selected_channel] then
         note_downs[selected_channel] = true
-        screenprint_channels()
+        screen_update_channels()
       end
     else
       if note_downs[selected_channel] then
         note_downs[selected_channel] = false
-        screenprint_channels()
+        screen_update_channels()
       end
     end
   elseif n == 3 then
   end
 end
 
---[[
-key = function(n, z)
-  if z == 1 then
-    if n == 2 then
-      key2_down = true
-      trig_if_channel_param(scroll.selected_param)
-    elseif n == 3 then
-      if scroll.selected_param then
-        local param = scroll.selected_param
-        local prev = param:get()
-        param:set_default()
-        if param:get() ~= prev and trig_on_change:get() == 1 then
-          trig_if_channel_param(param)
-        end
-        redraw()
-      end
-    end
-  end
-  if z == 0 then
-    if n == 2 then
-      key2_down = false
-    elseif n == 3 then
-    end
-  end
-end
-]]
-
 cleanup = function()
   norns.midi.event = nil
+end
+
+norns.midi.add = function(id, name, dev)
+  midi_available = true
+  midinote_indicator_level = 3
+  midicc_indicator_level = 3
+  redraw()
+end
+
+norns.midi.remove = function(id)
+  midi_available = false
+  redraw()
 end
 
 norns.midi.event = function(id, data)
   status = data[1]
   data1 = data[2]
   data2 = data[3]
-  if midi_in:get() == 1 then
-    -- TODO print(id, status, data1, data2)
+  if params:get("midi in") == 2 then
     if status == 144 then
+      midinote_indicator_level = math.random(15)
       --[[
       if data1 == 0 then
         return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
       end
       ]]
       note_on(data1, data2)
+      redraw()
     elseif status == 128 then
       --[[
       if data1 == 0 then
@@ -420,7 +369,9 @@ norns.midi.event = function(id, data)
       ]]
       note_off(data1)
     elseif status == 176 then
+      midicc_indicator_level = math.random(15)
       cc(data1, data2)
+      redraw()
     elseif status == 224 then
       bend(data1, data2)
     end

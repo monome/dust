@@ -338,9 +338,9 @@ Engine_Ack : CroneEngine {
 
 		SynthDef(
 			this.delayDefName,
-			{ |in, out, delayTimeL, delayTimeR, feedback|
+			{ |in, out, delayTime, feedback|
 				var sig = In.ar(in, 2);
-				sig = CombC.ar(sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTimeL, decaytime: feedback);
+				sig = CombC.ar(sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime, decaytime: feedback);
 				Out.ar(out, sig);
 			},
 			rates: [nil, nil, nil, nil, nil],
@@ -348,8 +348,7 @@ Engine_Ack : CroneEngine {
 				specs: (
 					in: \audiobus,
 					out: \audiobus,
-					delayTimeL: delayTimeSpec,
-					delayTimeR: delayTimeSpec,
+					delayTime: delayTimeSpec,
 					feedback: delayTimeSpec
 				)
 			)
@@ -393,12 +392,7 @@ Engine_Ack : CroneEngine {
 				filterEnvRelease,
 				filterEnvMod,
 				delaySend,
-				reverbSend,
-				// TODO delayTimeL,
-				// TODO delayTimeR,
-				// TODO delayFeedback,
-				// TODO reverbRoom,
-				// TODO reverbDamp
+				reverbSend
 			].collect { |sym| sym -> Bus.control }.asDict
 		};
 		effectsGroup = Group.tail(context.xg);
@@ -443,8 +437,7 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\filterEnvMod, "if") { |msg| this.cmdFilterEnvMod(msg[1], msg[2]) };
 		this.addCommand(\delaySend, "if") { |msg| this.cmdDelaySend(msg[1], msg[2]) };
 		this.addCommand(\reverbSend, "if") { |msg| this.cmdReverbSend(msg[1], msg[2]) };
-		this.addCommand(\delayTimeL, "f") { |msg| this.cmdDelayTimeL(msg[1]) };
-		this.addCommand(\delayTimeR, "f") { |msg| this.cmdDelayTimeR(msg[1]) };
+		this.addCommand(\delayTime, "f") { |msg| this.cmdDelayTime(msg[1]) };
 		this.addCommand(\delayFeedback, "f") { |msg| this.cmdDelayFeedback(msg[1]) };
 		this.addCommand(\reverbRoom, "f") { |msg| this.cmdReverbRoom(msg[1]) };
 		this.addCommand(\reverbDamp, "f") { |msg| this.cmdReverbDamp(msg[1]) };
@@ -562,12 +555,8 @@ Engine_Ack : CroneEngine {
 		channelControlBusses[channelnum][\reverbSend].set(sendSpec.constrain(f));
 	}
 
-	cmdDelayTimeL { |f|
-		delaySynth.set(\delayTimeL, delayTimeSpec.constrain(f));
-	}
-
-	cmdDelayTimeR { |f|
-		delaySynth.set(\delayTimeR, delayTimeSpec.constrain(f));
+	cmdDelayTime { |f|
+		delaySynth.set(\delayTime, delayTimeSpec.constrain(f));
 	}
 
 	cmdDelayFeedback { |f|
