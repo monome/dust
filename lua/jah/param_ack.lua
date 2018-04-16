@@ -3,9 +3,10 @@
 -- @author jah
 -- @txt ack params test
 
-ControlSpec = require 'controlspec'
-Control = require 'control'
-Formatters = require 'jah/formatters'
+local ControlSpec = require 'controlspec'
+local Control = require 'control'
+local Formatters = require 'jah/formatters'
+fs = require 'fileselect'
 
 engine.name = 'Ack'
 
@@ -208,7 +209,7 @@ init = function()
   params:add_option("delay send cc type", cc_type)
   params:add_option("reverb send cc", cc_list, 4)
   params:add_option("reverb send cc type", cc_type)
-  params:add_option("trig on param change", bool)
+  -- TODO params:add_option("trig on param change", bool)
 
   for i=0,7 do
   --[[
@@ -345,6 +346,13 @@ local function reset_channel(channel)
   end
 end
 
+local function newfile(what)
+  if what ~= "cancel" then
+    print("loadSample: "..selected_channel..", "..what)
+    engine.loadSample(selected_channel, what)
+  end
+end
+
 key = function(n, z)
   if n == 2 then
     if z == 1 then
@@ -365,6 +373,8 @@ key = function(n, z)
   elseif n == 3 then
     key3_down = z == 1
     redraw()
+  elseif n==1 and z==1 then
+    fs.enter("/home/pi/dust", newfile)
   end
 end
 
