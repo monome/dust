@@ -2,7 +2,7 @@
 -- @version 1.0
 -- @author jmcc
 
-engine = 'Why'
+engine.name = 'Why'
 
 init = function()
   redraw()
@@ -15,9 +15,9 @@ enc = function(n, delta)
 end
 
 redraw = function()
-  s.clear()
-  s.level(15)
-  s.move(0, 8)
-  s.text("Why?")
-  s.update()
+  screen.clear()
+  screen.level(15)
+  screen.move(0, 8)
+  screen.text("Why?")
+  screen.update()
 end

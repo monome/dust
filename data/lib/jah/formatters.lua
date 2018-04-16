@@ -1,24 +1,65 @@
-
 local Formatters = {}
 
+local function format(param, value, units)
+  return value.." "..(units or param.controlspec.units or "")
+end
+
+function Formatters.lbl_std(param)
+  return param.name..": "..Formatters.std(param)
+end
+
+function Formatters.lbl_unipolar_as_percentage(param)
+  return param.name..": "..Formatters.unipolar_as_percentage(param)
+end
+
+function Formatters.lbl_secs_as_ms(param)
+  return param.name..": "..Formatters.secs_as_ms(param)
+end
+
+function Formatters.lbl_unipolar_as_true_false(param)
+  return param.name..": "..Formatters.unipolar_as_true_false(param)
+end
+
+function Formatters.lbl_unipolar_as_enabled_disabled(param)
+  return param.name..": "..Formatters.unipolar_as_enabled_disabled(param)
+end
+
+function Formatters.lbl_bipolar_as_pan_widget(param)
+  return param.name..": "..Formatters.unipolar_as_pan_widget(param)
+end
+
+function Formatters.lbl_unipolar_as_multimode_filter_freq(param)
+  return param.name..": "..Formatters.unipolar_as_multimode_filter_freq(param)
+end
+
+function Formatters.lbl_round(precision)
+  return function(param)
+    return param.name..": "..Formatters.round(precision)(param)
+  end
+end
+
+function Formatters.std(param)
+  return Formatters.round(0.01)(param)
+end
+
 function Formatters.unipolar_as_percentage(param)
-  return param:string_format(util.round(param:mapped_value()*100), "%")
+  return format(param, util.round(param:get()*100), "%")
 end
 
 function Formatters.secs_as_ms(param)
-  return param:string_format(util.round(param:mapped_value()*1000), "ms")
+  return format(param, util.round(param:get()*1000), "ms")
 end
 
 function Formatters.unipolar_as_true_false(param)
   local str
-  if param.value == 1 then str = "true" else str = "false" end
-  return param:string_format(str)
+  if param:get() == 1 then str = "true" else str = "false" end
+  return format(param, str)
 end
 
 function Formatters.unipolar_as_enabled_disabled(param)
   local str
-  if param.value == 1 then str = "enabled" else str = "disabled" end
-  return param:string_format(str)
+  if param:get() == 1 then str = "enabled" else str = "disabled" end
+  return format(param, str)
 end
 
 function Formatters.bipolar_as_pan_widget(param)
@@ -31,19 +72,19 @@ function Formatters.bipolar_as_pan_widget(param)
     widget = (widget or "").."|"
   end
 
-  local mapped_value = param:mapped_value()
-  local pan_side_percentage = util.round(math.abs(mapped_value)*100)
+  local value = param:get()
+  local pan_side_percentage = util.round(math.abs(value)*100)
   local descr
 
-  if mapped_value > 0 then
-    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)
+  if value > 0 then
+    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
     dots_right = util.round((100-pan_side_percentage)/dots_per_side)
     if pan_side_percentage >= 1 then
       descr = "R"..pan_side_percentage
     end
-  elseif mapped_value < 0 then
+  elseif value < 0 then
     dots_left = util.round((100-pan_side_percentage)/dots_per_side)
-    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)
+    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
     if pan_side_percentage >= 1 then
       descr = "L"..pan_side_percentage
     end
@@ -62,7 +103,7 @@ function Formatters.bipolar_as_pan_widget(param)
   add_dots(dots_right)
   add_bar()
 
-  return param:string_format(widget.." "..descr, "")
+  return format(param, widget.." "..descr, "")
 end
 
 function Formatters.unipolar_as_multimode_filter_freq(param)
@@ -75,21 +116,21 @@ function Formatters.unipolar_as_multimode_filter_freq(param)
     for i=1,num do widget = (widget or "").."|" end
   end
 
-  local mapped_value = ControlSpec.bipolar():map(param.value)
-  local abs_mapped_value = math.abs(mapped_value)
+  local value = ControlSpec.bipolar():map(param:get())
+  local abs_mapped_value = math.abs(value)
   local percentage = util.round(abs_mapped_value*100)
   local descr
 
-  if mapped_value > 0 then
-    local clear = mapped_value*chars
+  if value > 0 then
+    local clear = value*chars
     if percentage >= 1 then
       descr = "HP"..percentage
     end
     add_bars(1)
     add_dots(clear)
     add_bars(chars-clear+1)
-  elseif mapped_value < 0 then
-    local fill = (mapped_value+1)*chars
+  elseif value < 0 then
+    local fill = (value+1)*chars
     if percentage >= 1 then
       descr = "LP"..(100-percentage)
     end
@@ -104,12 +145,12 @@ function Formatters.unipolar_as_multimode_filter_freq(param)
     descr = "OFF"
   end
 
-  return param:string_format(widget.." "..descr, "")
+  return format(param, widget.." "..descr, "")
 end
 
 function Formatters.round(precision)
   return function(param)
-    return param:string_format(util.round(param:mapped_value(), precision))
+    return format(param, util.round(param:get(), precision))
   end
 end
 

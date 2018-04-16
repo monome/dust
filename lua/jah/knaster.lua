@@ -3,7 +3,7 @@
 -- @author jah
 -- @txt a very basic example
 
-engine = 'Knaster'
+engine.name = 'Knaster'
 
 local SCREEN_WIDTH = 128
 local SCREEN_HEIGHT = 64
@@ -11,8 +11,8 @@ local SCREEN_HEIGHT = 64
 local vu = 0
 
 init = function()
-  e.volume(0)
-  s.line_width(1)
+  engine.volume(0)
+  screen.line_width(1)
 
   if g then
     g:all(0)
@@ -28,12 +28,12 @@ enc = function(n, delta)
 end
 
 redraw = function()
-  s.clear()
-  s.aa(0)
-  s.move(0,7*8-1)
-  s.font_size(30)
-  s.text("knaster")
-  s.update()
+  screen.clear()
+  screen.aa(0)
+  screen.move(0,7*8-1)
+  screen.font_size(30)
+  screen.text("knaster")
+  screen.update()
 end
 
 bang = function()
@@ -42,9 +42,9 @@ bang = function()
     level = (level - 5)
     local x = math.random(SCREEN_WIDTH)
     local y = math.random(SCREEN_HEIGHT)
-    s.level(level*1)
-    s.rect(x, y, level, level)
-    s.fill()
+    screen.level(level*1)
+    screen.rect(x, y, level, level)
+    screen.fill()
     -- print("vu: "..level)
     if g then
       g:led(x / SCREEN_WIDTH * 16, y / SCREEN_HEIGHT * 9, level*4)
