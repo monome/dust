@@ -373,7 +373,7 @@ key = function(n, z)
     key3_down = z == 1
     redraw()
   elseif n==1 and z==1 then
-    FS.enter("/home/pi/dust", newfile)
+    FS.enter("/home/pi/dust/audio", newfile)
   end
 end
 
