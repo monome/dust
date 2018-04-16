@@ -348,7 +348,6 @@ end
 
 local function newfile(what)
   if what ~= "cancel" then
-    print("loadSample: "..selected_channel..", "..what)
     engine.loadSample(selected_channel, what)
   end
 end
