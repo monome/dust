@@ -6,7 +6,7 @@
 local ControlSpec = require 'controlspec'
 local Control = require 'control'
 local Formatters = require 'jah/formatters'
-fs = require 'fileselect'
+local FS = require 'fileselect'
 
 engine.name = 'Ack'
 
@@ -374,7 +374,7 @@ key = function(n, z)
     key3_down = z == 1
     redraw()
   elseif n==1 and z==1 then
-    fs.enter("/home/pi/dust", newfile)
+    FS.enter("/home/pi/dust", newfile)
   end
 end
 
