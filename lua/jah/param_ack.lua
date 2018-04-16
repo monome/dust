@@ -48,6 +48,7 @@ local reverb_damp = Control.new("reverb damp", reverb_damp_spec, Formatters.unip
 reverb_damp.action = function(value) engine.reverbDamp(value) end
 
 local selected_channel = 0
+local all_selected = false
 local midinote_indicator_level
 local midicc_indicator_level
 local note_downs = {}
@@ -58,13 +59,19 @@ local function screen_update_channels()
   for channel=0,7 do
     if note_downs[channel] then
       screen.level(15)
-    elseif selected_channel == channel or key3_down then
+    elseif selected_channel == channel or all_selected then
       screen.level(6)
     else
       screen.level(2)
     end
     screen.text(channel+1)
   end
+  if all_selected then
+    screen.level(6)
+  else
+    screen.level(0)
+  end
+  screen.text(" all")
   screen.update()
 end
 
@@ -169,7 +176,7 @@ local function cc(ctl, value)
   end
   if param then
     if abs then
-      if key3_down then
+      if all_selected then
         for i=0,7 do
           cc_set_control((i+1)..": "..param, spec, value)
         end
@@ -177,7 +184,7 @@ local function cc(ctl, value)
         cc_set_control((selected_channel+1)..": "..param, spec, value)
       end
     else
-      if key3_down then
+      if all_selected then
         for i=0,7 do
           cc_delta_control((i+1)..": "..param, spec, value)
         end
@@ -323,7 +330,7 @@ enc = function(n, delta)
       redraw()
     end
   else
-    if key3_down then
+    if all_selected then
       for i=0,7 do
         params:delta((i+1)..": speed", delta)
       end
@@ -355,14 +362,14 @@ end
 key = function(n, z)
   if n == 2 then
     if z == 1 then
-      if key3_down then
+      if all_selected then
         for i=0,7 do trig_channel(i) end
       else
         trig_channel(selected_channel)
       end
       screen_update_channels()
     else
-      if key3_down then
+      if all_selected then
         for i=0,7 do reset_channel(i) end
       else
         reset_channel(selected_channel)
@@ -370,7 +377,7 @@ key = function(n, z)
       screen_update_channels()
     end
   elseif n == 3 then
-    key3_down = z == 1
+    all_selected = z == 1
     redraw()
   elseif n==1 and z==1 then
     FS.enter("/home/pi/dust/audio", newfile)
