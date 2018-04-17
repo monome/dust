@@ -282,6 +282,8 @@ init = function()
   params:set_action("reverb room", engine.reverbRoom)
   params:add_control("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
   params:set_action("reverb damp", engine.reverbRoom)
+
+  params:read("param_ack.pset")
   params:bang()
   
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
@@ -386,6 +388,7 @@ end
 
 cleanup = function()
   norns.midi.event = nil
+  params:write("param_ack.pset")
 end
 
 norns.midi.add = function(id, name, dev)
