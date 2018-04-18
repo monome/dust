@@ -16,27 +16,27 @@ local bool_spec = ControlSpec.new(0, 1, 'lin', 1, 0, "")
 
 --[[
 TODO: looping
-local loop_start_spec = ControlSpec.unipolar()
+local loop_start_spec = ControlSpec.UNIPOLAR
 local loop_end_spec = ControlSpec.new(0, 1, 'lin', 0, 1, "")
 ]]
 local speed_spec = ControlSpec.new(0, 5, 'lin', 0, 1, "")
 -- local slew_spec = ControlSpec.new(0, 5, 'lin', 0, 0, "") -- TODO: enable slews
-local volume_spec = ControlSpec.db()
+local volume_spec = ControlSpec.DB:copy()
 volume_spec.default = -10
-local send_spec = ControlSpec.db()
+local send_spec = ControlSpec.DB:copy()
 send_spec.default = -60
 local volume_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local volume_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 3, "secs")
 local filter_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local filter_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 0.25, "secs")
-local filter_cutoff_spec = ControlSpec.freq()
+local filter_cutoff_spec = ControlSpec.FREQ:copy()
 filter_cutoff_spec.default = 20000
-local filter_res_spec = ControlSpec.unipolar()
+local filter_res_spec = ControlSpec.UNIPOLAR
 local filter_mode_spec = ControlSpec.new(0, 1, 'lin', 1, 0)
-local filter_env_mod_spec = ControlSpec.unipolar()
+local filter_env_mod_spec = ControlSpec.UNIPOLAR
 
 local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
--- local delay_feedback_spec = ControlSpec.unipolar() -- TODO feedback should be 0-1 displayed as %
+-- local delay_feedback_spec = ControlSpec.UNIPOLAR -- TODO feedback should be 0-1 displayed as %
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 

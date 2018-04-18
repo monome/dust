@@ -16,8 +16,8 @@ local PLAYPOS_LEVEL = 7
 local CLEAR_LEVEL = 0
 
 -- specs
-tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
-swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
+tempo_spec = ControlSpec.new(20, 300, 'lin', 0, 120, "BPM")
+swing_amount_spec = ControlSpec.new(0, 100, 'lin', 0, 0, "%")
 
 -- params
 local swing_amount = Control.new("Swing", swing_amount_spec)

@@ -24,13 +24,13 @@ local PARAM_GROUP_REVERB = 6
 
 local current_param_group = PARAM_GROUP_POS
 
-local speed_spec = ControlSpec.rate()
-local delay_time_spec = ControlSpec.new(0.0001, 3, ControlSpec.WARP_EXP, 0, 0.3, "secs")
-local decay_time_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 1, "secs")
-local cutoff_spec = ControlSpec.new(20, 10000, ControlSpec.WARP_EXP, 0, 10000, "Hz")
-local volume_spec = ControlSpec.new(-60, 0, ControlSpec.WARP_LIN, 0, -60, "dB")
-local percentage_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
-local resonance_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 13, "%")
+local speed_spec = ControlSpec.RATE
+local delay_time_spec = ControlSpec.new(0.0001, 3, 'exp', 0, 0.3, "secs")
+local decay_time_spec = ControlSpec.new(0, 100, 'lin', 0, 1, "secs")
+local cutoff_spec = ControlSpec.new(20, 10000, 'exp', 0, 10000, "Hz")
+local volume_spec = ControlSpec.new(-60, 0, 'lin', 0, -60, "dB")
+local percentage_spec = ControlSpec.new(0, 100, 'lin', 0, 0, "%")
+local resonance_spec = ControlSpec.new(0, 100, 'lin', 0, 13, "%")
 
 local start_pos = Control.new("Start", percentage_spec)
 local end_pos = Control.new("End", percentage_spec)
