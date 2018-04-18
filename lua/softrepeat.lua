@@ -1,5 +1,12 @@
--- key 2 start stop
--- key 3 hold clears records until release
+-- SOFTREPEAT (looper)
+--
+-- K1 held = load file
+-- K2 start stop
+-- K3 hold clears records
+--          until release
+-- E1 vol
+-- E2 loop len
+-- E3 speed
 
 fs = require "fileselect"
 

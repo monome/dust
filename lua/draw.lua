@@ -1,4 +1,7 @@
--- drawing
+-- draw demo
+--
+-- code shows all of the screen
+-- drawing functions
 
 -- specify dsp engine to load:
 engine.name = 'TestSine'

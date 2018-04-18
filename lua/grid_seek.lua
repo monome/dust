@@ -1,4 +1,10 @@
--- @txt test grid sequencer
+-- test grid sequencer
+--
+-- knob 1 = tempo
+-- knob 2 = filter
+-- knob 3 = decay
+-- key 2 = random sequence
+-- key 3 = random pulsewidth
 
 engine.name = 'PolyPerc'
 
@@ -88,9 +94,9 @@ enc = function(n, delta)
 end
 
 key = function(n)
-  if n == 2 then
+  if n == 2 and z == 1 then
     for i=1, 16 do steps[i] = math.floor(math.random()*8) end
-  elseif n == 3 then
+  elseif n == 3 and z == 1 then
     engine.pw(math.random()*1)
   end
 end

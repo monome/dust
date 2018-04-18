@@ -1,4 +1,5 @@
--- @txt cyclic poly-rhythm music box
+-- cyclic poly-rhythm music box
+
 engine.name = 'PolySub'
 
 local GRID_HEIGHT = 8

@@ -1,7 +1,8 @@
--- @txt subtractive polysynth
+-- subtractive polysynth
 -- controlled by grid
 -- knob 2 selects param
 -- knob 3 changes selected param
+
 local tab = require 'tabutil'
 
 engine.name = 'PolySub'

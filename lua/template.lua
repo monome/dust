@@ -1,8 +1,21 @@
--- @name template
--- @version 1.0.3
--- @author tehn
--- @url http://monomengine.org
--- @txt a very basic example
+-- TEMPLATE 1.0.0
+-- http://monome.org
+-- 
+-- a code example showing the
+-- basic functions and how to
+-- use them.
+--
+-- see additional documentation
+-- at...
+--
+-- ////////
+-- ////
+-- //////
+-- /////////////
+-- //
+-- ///////
+-- ///
+-- /
 
 -- specify dsp engine to load:
 engine.name = 'TestSine'
