@@ -11,19 +11,19 @@ R = require 'jah/r'
 
 engine.name = 'R'
 
-local filter_freq_spec = ControlSpec.unipolar()
+local filter_freq_spec = ControlSpec.UNIPOLAR:copy()
 filter_freq_spec.default = 0.5
 
-local delay_send_spec =  ControlSpec.db()
+local delay_send_spec =  ControlSpec.DB:copy()
 delay_send_spec.default = 0
 
-local delay_time_spec = ControlSpec.delay()
+local delay_time_spec = ControlSpec.DELAY:copy()
 delay_time_spec.maxval = 3
 
-local delay_feedback_spec = ControlSpec.db()
+local delay_feedback_spec = ControlSpec.DB:copy()
 delay_feedback_spec.default = -5
 
-local output_level_spec = ControlSpec.db()
+local output_level_spec = ControlSpec.DB:copy()
 output_level_spec.default = -20
 
 local delay_send = Control.new("delay send level", delay_send_spec, Formatters.std)
@@ -39,16 +39,16 @@ delayr_delaytime:set(0.44)
 
 local filterl_freq = Control.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterl_freq:set(0.36)
-local filterl_lforate = Control.new("filterl lforate", ControlSpec.lofreq(), Formatters.std)
+local filterl_lforate = Control.new("filterl lforate", ControlSpec.LOFREQ, Formatters.std)
 filterl_lforate:set(0.08)
-local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
+local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
 filterl_lfodepth:set(0.1)
 
 local filterr_freq = Control.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
 filterr_freq:set(0.36)
-local filterr_lforate = Control.new("filterr lforate", ControlSpec.lofreq(), Formatters.std)
+local filterr_lforate = Control.new("filterr lforate", ControlSpec.LOFREQ, Formatters.std)
 filterr_lforate:set(0.14)
-local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.unipolar(), Formatters.unipolar_as_percentage)
+local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
 filterr_lfodepth:set(0.1)
 
 local delay_feedback = Control.new("delay feedback", delay_feedback_spec, Formatters.std)

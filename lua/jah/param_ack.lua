@@ -14,28 +14,28 @@ local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
 
 --[[
 TODO: looping
-local start_spec = ControlSpec.unipolar()
+local loop_start_spec = ControlSpec.UNIPOLAR
 local end_spec = ControlSpec.new(0, 1, 'lin', 0, 1, "")
-local loop_point_spec = ControlSpec.unipolar()
+local loop_point_spec = ControlSpec.UNIPOLAR
 ]]
-local speed_spec = ControlSpec.new(0, 5, 'lin', 0, 1, "")
+local speed_spec = ControlSpec.new(0.05, 5, 'lin', 0, 1, "")
 -- local slew_spec = ControlSpec.new(0, 5, 'lin', 0, 0, "") -- TODO: enable slews
-local volume_spec = ControlSpec.db()
+local volume_spec = ControlSpec.DB:copy()
 volume_spec.default = -10
-local send_spec = ControlSpec.db()
+local send_spec = ControlSpec.DB:copy()
 send_spec.default = -60
 local volume_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local volume_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 3, "secs")
 local filter_env_attack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
 local filter_env_release_spec = ControlSpec.new(0, 3, 'lin', 0, 0.25, "secs")
-local filter_cutoff_spec = ControlSpec.freq()
+local filter_cutoff_spec = ControlSpec.FREQ:copy()
 filter_cutoff_spec.default = 20000
-local filter_res_spec = ControlSpec.unipolar()
+local filter_res_spec = ControlSpec.UNIPOLAR
 local filter_mode_spec = ControlSpec.new(0, 1, 'lin', 1, 0)
-local filter_env_mod_spec = ControlSpec.unipolar()
+local filter_env_mod_spec = ControlSpec.UNIPOLAR
 
 local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
--- local delay_feedback_spec = ControlSpec.unipolar() -- TODO feedback should be 0-1 displayed as %
+-- local delay_feedback_spec = ControlSpec.UNIPOLAR -- TODO feedback should be 0-1 displayed as %
 local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
@@ -238,7 +238,7 @@ init = function()
     params:set_action((i+1)..": vol env atk", function(value) engine.volumeEnvAttack(i, value) end)
     params:add_control((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
     params:set_action((i+1)..": vol env rel", function(value) engine.volumeEnvRelease(i, value) end)
-    params:add_control((i+1)..": pan", ControlSpec.pan(), Formatters.bipolar_as_pan_widget)
+    params:add_control((i+1)..": pan", ControlSpec.PAN, Formatters.bipolar_as_pan_widget)
     params:set_action((i+1)..": pan", function(value) engine.pan(i, value) end)
     params:add_control((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
     params:set_action((i+1)..": filter cutoff", function(value) engine.filterCutoff(i, value) end)
@@ -283,7 +283,7 @@ init = function()
   params:add_control("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
   params:set_action("reverb damp", engine.reverbRoom)
 
-  params:read("param_ack.pset")
+  -- params:read("param_ack.pset")
   params:bang()
   
   local sampleroot = "/home/pi/dust/audio/hello_ack/"
@@ -388,7 +388,7 @@ end
 
 cleanup = function()
   norns.midi.event = nil
-  params:write("param_ack.pset")
+  -- params:write("param_ack.pset")
 end
 
 norns.midi.add = function(id, name, dev)
