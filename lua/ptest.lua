@@ -1,3 +1,6 @@
+-- param test
+--
+
 engine.name = 'TestSine'
 
 init = function()

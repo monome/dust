@@ -1,4 +1,11 @@
---16sliders
+-- 16sliders
+--
+-- step sequencing a mono sine
+--
+-- enc 2 = select step
+-- enc 3 = tune step
+-- key 2 = random walk
+-- key 3 = mutate
 
 sliders = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 edit = 1
