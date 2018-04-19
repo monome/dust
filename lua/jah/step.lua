@@ -210,7 +210,7 @@ init = function()
   t.time = 15/params:get("tempo") 
 
   params:add_control("swing amount", swing_amount_spec)
-  params:add_option("num steps", {"8", "16"}, 1)
+  params:add_option("num steps", {"8", "16"}, 2)
 
   add_ack_params()
   params:bang()
