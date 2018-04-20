@@ -17,41 +17,33 @@ init = function()
   params:add_number("tempo",40,300,80)
   params:set_action("tempo", function(n) 
     t.time = 15/n
-    --print(15/n)
-    change_time = true
-    end)
-  
+  end)
+
   t = metro[1]
   t.time = 15/params:get("tempo") 
 
   t.callback = function(stage)
-    if change_time then
-      change_time = false
-      t:stop()
-      t:start()
-    else
-      pos = pos + 1
-      if pos == 17 then pos = 1 end
-      if steps[pos] > 0 then engine.hz(freqs[9-steps[pos]]) end
-      if g ~= nil then
-        gridredraw()
-      end
-      redraw()
+    pos = pos + 1
+    if pos == 17 then pos = 1 end
+    if steps[pos] > 0 then engine.hz(freqs[9-steps[pos]]) end
+    if g ~= nil then
+      gridredraw()
     end
+    redraw()
   end
 
   t:start()
 end
 
 gridkey = function(x, y, state)
-   if state > 0 then
+  if state > 0 then
     if steps[x] == y then
       steps[x] = 0
     else
       steps[x] = y
     end
-   end
-   g:refresh()
+  end
+  g:refresh()
 end
 
 pos = 1
@@ -105,12 +97,16 @@ redraw = function()
   screen.clear()
   screen.line_width(1)
   screen.level(15)
+  screen.move(0,40)
+  screen.line(params:get("tempo")-38,40)
+  screen.stroke()
+  screen.move(0,38)
+  screen.text(params:get("tempo"))
   screen.move(0, 10)
   screen.text("cutoff > "..string.format('%.1f', (50*2^(cutoff/12))))
   screen.move(0, 20)
   screen.text("release > "..string.format('%.3f', 0.1*2^(release/12)))
   screen.move(0, 60)
   screen.text("step > "..pos)
-  screen.move(0, 40)
   screen.update()
 end

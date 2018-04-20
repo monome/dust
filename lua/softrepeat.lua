@@ -13,7 +13,7 @@ fs = require "fileselect"
 engine.name = "SoftCut"
 
 init = function()
-  print("============================== mlr")
+  print("==============================")
   engine.recRun(1,1)
   engine.adc_rec(1,1,0)
   engine.play_dac(1,1,1)
@@ -41,9 +41,9 @@ init = function()
   params:set_action("rate",set_rate)
   params:set("rate",1)
 
-  p = poll.set('phase_1', new_pos)
-  p.time = 0.5;
-  --p:start()
+  p = poll.set('phase_norm_1', new_pos)
+  p.time = 0.1;
+  p:start()
   pos = 0
 end
 
@@ -88,6 +88,7 @@ end
 
 redraw = function()
   screen.clear()
+  screen.line_width(1)
   screen.level(15)
   screen.font_face(9)
   screen.font_size(24)
@@ -103,15 +104,23 @@ redraw = function()
   screen.font_size(10)
   screen.move(70,50)
   screen.text("rate")
+  screen.move(0,1)
+  screen.line(pos*128/1000,1)
+  screen.stroke()
+  screen.font_face(0)
+  screen.font_size(8)
+  screen.move(0,10)
+  screen.text(pos)
   screen.update()
 end
 
 -- poll callback
 new_pos = function(x)
   pos = x
-  --redraw()
+  --print("pos > "..pos)
+  redraw()
 end
 
 cleanup = function()
-  p:stop()
+  if p then p:stop() end
 end

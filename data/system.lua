@@ -1,5 +1,5 @@
 -- system state
-norns.state.script = 'template.lua'
+norns.state.script = 'softrepeat.lua'
 norns.state.out = '64'
 norns.state.monitor = '0'
 norns.state.monitor_mode = '0'
