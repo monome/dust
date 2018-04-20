@@ -15,7 +15,7 @@ engine.name = "SoftCut"
 init = function()
   print("============================== mlr")
   engine.recRun(1,1)
-  engine.adc_rec(1,1,1)
+  engine.adc_rec(1,1,0)
   engine.play_dac(1,1,1)
   engine.loopStart(1,0)
   engine.loopEnd(1,1)
@@ -23,7 +23,8 @@ init = function()
   engine.rec(1,1)
   engine.pre(1,1)
   engine.amp(1,1)
-
+  engine.start(1)
+  running = true
 
   params:add_control("amp")
   set_amp = function(x) engine.amp(1,x) end
@@ -35,7 +36,7 @@ init = function()
   params:set_action("loop_end",set_llen) 
   params:set("loop_end",1)
 
-  params:add_control("rate", controlspec.bipolar())
+  params:add_control("rate", controlspec.BIPOLAR)
   set_rate = function(x) engine.rate(1,x) end
   params:set_action("rate",set_rate)
   params:set("rate",1)

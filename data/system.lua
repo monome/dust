@@ -1,7 +1,7 @@
 -- system state
-norns.state.script = 'grid_seek.lua'
+norns.state.script = 'template.lua'
 norns.state.out = '64'
-norns.state.monitor = '21.0'
+norns.state.monitor = '0'
 norns.state.monitor_mode = '0'
 norns.state.input_left = '48'
 norns.state.input_right = '48'

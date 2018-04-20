@@ -1,14 +1,14 @@
 -- param test
---
 
 engine.name = 'TestSine'
 
 init = function()
   params:add_number("num")
   params:add_option("output",{"MIDI","OSC","SYNTH","CV"})
-  params:add_control("something",controlspec.unipolar())
-  params:add_control("freq",controlspec.freq())
+  params:add_control("something",controlspec.UNIPOLAR)
+  params:add_control("freq",controlspec.FREQ)
   params:set_action("freq",engine.hz)
+  --params:add_file("sample","~/dust/audio/")
   
   params:read("ptest.pset")
 end
@@ -43,5 +43,5 @@ end
 
 
 cleanup = function() 
-  params:write("ptest.pset")
+  --params:write("ptest.pset")
 end

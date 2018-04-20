@@ -93,7 +93,7 @@ enc = function(n, delta)
   redraw()
 end
 
-key = function(n)
+key = function(n,z)
   if n == 2 and z == 1 then
     for i=1, 16 do steps[i] = math.floor(math.random()*8) end
   elseif n == 3 and z == 1 then

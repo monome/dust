@@ -6,7 +6,7 @@ local fs = {}
 function fs.enter(folder, callback)
   fs.folders = {}
   fs.list = {}
-  fs.pos = 1 
+  fs.pos = 0 
   fs.depth = 0
   fs.folder = folder
   fs.callback = callback
