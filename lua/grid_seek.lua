@@ -10,11 +10,15 @@ engine.name = 'PolyPerc'
 
 init = function()
   print("grid/seek")
+
+  cutoff = 30
+  release = 55
+
   engine.cutoff(50*2^(cutoff/12))
   engine.release(0.1*2^(release/12))
   engine.amp(0.5)
 
-  params:add_number("tempo",40,300,80)
+  params:add_number("tempo",40,300,60)
   params:set_action("tempo", function(n) 
     t.time = 15/n
   end)
@@ -26,7 +30,7 @@ init = function()
     pos = pos + 1
     if pos == 17 then pos = 1 end
     if steps[pos] > 0 then engine.hz(freqs[9-steps[pos]]) end
-    if g ~= nil then
+    if g then
       gridredraw()
     end
     redraw()
@@ -43,7 +47,7 @@ gridkey = function(x, y, state)
       steps[x] = y
     end
   end
-  g:refresh()
+  --g:refresh()
 end
 
 pos = 1
@@ -67,9 +71,6 @@ gridredraw = function()
   end
   g:refresh();
 end
-
-cutoff = 30
-release = 20
 
 enc = function(n, delta)
   if n == 1 then

@@ -6,11 +6,6 @@
 -- specify dsp engine to load:
 engine.name = 'TestSine'
 
--- init function
-init = function()
-  redraw()
-end
-
 -- screen redraw function
 redraw = function()
   -- clear screen
