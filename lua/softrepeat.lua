@@ -16,7 +16,7 @@ init = function()
   print("==============================")
   engine.rec_on(1,1)
   engine.rec_lag(1,0.25)
-  engine.adc_rec(1,1,1)
+  --engine.adc_rec(1,1,1)
   engine.play_dac(1,1,1)
   engine.play_dac(1,2,1)
   engine.loop_start(1,0)
@@ -64,7 +64,7 @@ key = function(n,z)
     end
   elseif n==2 then
     if z==1 and running then
-      engine.top(1)
+      engine.stop(1)
       running = false
     elseif z==1 then
       engine.reset(1)
