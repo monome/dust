@@ -1,5 +1,5 @@
 -- system state
-norns.state.script = 'grid_seek.lua'
+norns.state.script = 'ptest.lua'
 norns.state.out = '64'
 norns.state.monitor = '0.0'
 norns.state.monitor_mode = '0'
