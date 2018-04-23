@@ -96,7 +96,7 @@ local incParam = function(name, delta)
   if val < param_ranges[name][1] then val = param_ranges[name][1] end
   if val > param_ranges[name][2] then val = param_ranges[name][2] end
   params[name] = val
-  e[name](val)
+  engine[name](val)
 end
 
 init = function()
