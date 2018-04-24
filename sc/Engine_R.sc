@@ -23,6 +23,7 @@ Engine_R : CroneEngine {
 
 		this.addCommand(\capacity, "i") { |msg| this.setNumModules(msg[1]) };
 		this.addCommand(\module, "ss") { |msg| this.createModule(msg[1], msg[2]) };
+		this.addCommand(\freeall, "") { |msg| this.freeModules }; // TODO: doesn't work yet
 		this.addCommand(\free, "s") { |msg| this.freeModule(msg[1]) };
 		this.addCommand(\patch, "ssf") { |msg| this.setPatchLevel(msg[1], msg[2], msg[3]) };
 		this.addCommand(\param, "ssf") { |msg| this.setParam(msg[1], msg[2], msg[3]) };
@@ -224,11 +225,12 @@ Engine_R : CroneEngine {
 		^switch (moduleType)
 			{ 'input' } { RInputModule.new(context, group, inbus, outbus) }
 			{ 'output' } { ROutputModule.new(context, group, inbus, outbus) }
-			{ 'knaster' } { RKnasterModule.new(context, group, inbus, outbus) }
 			{ 'delay' } { RDelayModule.new(context, group, inbus, outbus) }
 			{ 'oscil' } { ROscillatorModule.new(context, group, inbus, outbus) }
+			{ 'fmthing' } { RFMThingModule.new(context, group, inbus, outbus) }
 			{ 'filter' } { RMultiModeFilterModule.new(context, group, inbus, outbus) }
 			{ 'pole' } { RModulatingMultiModeFilterModule.new(context, group, inbus, outbus) }
+			{ 'newpole' } { RTheNewPoleModule.new(context, group, inbus, outbus) }
 			{ 'tape' } { RTapeModule.new(context, group, inbus, outbus) }
 			{ 'grain' } { RGrainModule.new(context, group, inbus, outbus) }
 	}
@@ -374,6 +376,284 @@ ROscillatorModule : RModule {
 	}
 }
 
+RFMThingModule : RModule {
+	*params {
+		^[
+			// 'index' -> ControlSpec(0, 24, 'lin', 0, 3, "");
+			'envattack' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
+			'envdecay' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
+			'envsustain' -> \unipolar.asSpec,
+			'envrelease' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
+			'envgate' -> \unipolar.asSpec,
+			'osc1freq' -> \widefreq.asSpec,
+			'osc1freqenvmod' -> \db.asSpec,
+			'osc1freqosc1mod' -> \db.asSpec,
+			'osc1freqosc2mod' -> \db.asSpec,
+			'osc1freqosc3mod' -> \db.asSpec,
+			'osc1freqosc4mod' -> \db.asSpec,
+			'osc1levelenvmod' -> \db.asSpec,
+			'osc1level' -> \db.asSpec,
+			'osc1outlevel' -> \db.asSpec,
+			'osc2freq' -> \widefreq.asSpec,
+			'osc2freqenvmod' -> \db.asSpec,
+			'osc2freqosc1mod' -> \db.asSpec,
+			'osc2freqosc2mod' -> \db.asSpec,
+			'osc2freqosc3mod' -> \db.asSpec,
+			'osc2freqosc4mod' -> \db.asSpec,
+			'osc2levelenvmod' -> \db.asSpec,
+			'osc2level' -> \db.asSpec,
+			'osc2outlevel' -> \db.asSpec,
+			'osc3freq' -> \widefreq.asSpec,
+			'osc3freqenvmod' -> \db.asSpec,
+			'osc3freqosc1mod' -> \db.asSpec,
+			'osc3freqosc2mod' -> \db.asSpec,
+			'osc3freqosc3mod' -> \db.asSpec,
+			'osc3freqosc4mod' -> \db.asSpec,
+			'osc3levelenvmod' -> \db.asSpec,
+			'osc3level' -> \db.asSpec,
+			'osc3outlevel' -> \db.asSpec,
+			'osc4freq' -> \widefreq.asSpec,
+			'osc4freqenvmod' -> \db.asSpec,
+			'osc4freqosc1mod' -> \db.asSpec,
+			'osc4freqosc2mod' -> \db.asSpec,
+			'osc4freqosc3mod' -> \db.asSpec,
+			'osc4freqosc4mod' -> \db.asSpec,
+			'osc4levelenvmod' -> \db.asSpec,
+			'osc4level' -> \db.asSpec,
+			'osc4outlevel' -> \db.asSpec
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			arg 
+				in, // TODO: not used yet
+				out,
+				envattack,
+				envdecay,
+				envsustain,
+				envrelease,
+				envgate,
+				osc1freq,
+				osc1freqenvmod = -60,
+				osc1freqosc1mod = -60,
+				osc1freqosc2mod = -60,
+				osc1freqosc3mod = -60,
+				osc1freqosc4mod = -60,
+				osc1level = -60,
+				osc1levelenvmod = -60,
+				osc1outlevel = -60,
+				osc2freq,
+				osc2freqenvmod = -60,
+				osc2freqosc1mod = -60,
+				osc2freqosc2mod = -60,
+				osc2freqosc3mod = -60,
+				osc2freqosc4mod = -60,
+				osc2level = -60,
+				osc2levelenvmod = -60,
+				osc2outlevel = -60,
+				osc3freq,
+				osc3freqenvmod = -60,
+				osc3freqosc1mod = -60,
+				osc3freqosc2mod = -60,
+				osc3freqosc3mod = -60,
+				osc3freqosc4mod = -60,
+				osc3level = -60,
+				osc3levelenvmod = -60,
+				osc3outlevel = -60,
+				osc4freq,
+				osc4freqenvmod = -60,
+				osc4freqosc1mod = -60,
+				osc4freqosc2mod = -60,
+				osc4freqosc3mod = -60,
+				osc4freqosc4mod = -60,
+				osc4level = -60,
+				osc4levelenvmod = -60,
+				osc4outlevel = -60
+			;
+			var insig = In.ar(in); // TODO: not used
+			var env = EnvGen.ar(Env.adsr(envattack, envdecay, envsustain, envrelease), envgate);
+			var oscfeedback = LocalIn.ar(4);
+			var osc1 = SinOsc.ar(
+				osc1freq
+					+ (oscfeedback[0] * osc1freq * osc1freqosc1mod.dbamp)
+					+ (oscfeedback[1] * osc1freq * osc1freqosc2mod.dbamp)
+					+ (oscfeedback[2] * osc1freq * osc1freqosc3mod.dbamp)
+					+ (oscfeedback[3] * osc1freq * osc1freqosc4mod.dbamp)
+					+ (osc1freqenvmod.dbamp * env)
+			) * (osc1level.dbamp + (osc1levelenvmod.dbamp * env));
+			var osc2 = SinOsc.ar(
+				osc2freq
+					+ (oscfeedback[0] * osc2freq * osc2freqosc1mod.dbamp)
+					+ (oscfeedback[1] * osc2freq * osc2freqosc2mod.dbamp)
+					+ (oscfeedback[2] * osc2freq * osc2freqosc3mod.dbamp)
+					+ (oscfeedback[3] * osc2freq * osc2freqosc4mod.dbamp)
+					+ (osc2freqenvmod.dbamp * env)
+			) * (osc2level.dbamp + (osc2levelenvmod.dbamp * env));
+			var osc3 = SinOsc.ar(
+				osc3freq
+					+ (oscfeedback[0] * osc3freq * osc3freqosc1mod.dbamp)
+					+ (oscfeedback[1] * osc3freq * osc3freqosc2mod.dbamp)
+					+ (oscfeedback[2] * osc3freq * osc3freqosc3mod.dbamp)
+					+ (oscfeedback[3] * osc3freq * osc3freqosc4mod.dbamp)
+					+ (osc3freqenvmod.dbamp * env)
+			) * (osc3level.dbamp + (osc3levelenvmod.dbamp * env));
+			var osc4 = SinOsc.ar(
+				osc4freq
+					+ (oscfeedback[0] * osc4freq * osc4freqosc1mod.dbamp)
+					+ (oscfeedback[1] * osc4freq * osc4freqosc2mod.dbamp)
+					+ (oscfeedback[2] * osc4freq * osc4freqosc3mod.dbamp)
+					+ (oscfeedback[3] * osc4freq * osc4freqosc4mod.dbamp)
+					+ (osc4freqenvmod.dbamp * env)
+			) * (osc4level.dbamp + (osc4levelenvmod.dbamp * env));
+			LocalOut.ar([osc1, osc2, osc3, osc4]);
+			Out.ar(
+				out,
+				(osc1 * osc1outlevel.dbamp) +
+				(osc2 * osc2outlevel.dbamp) +
+				(osc3 * osc3outlevel.dbamp) +
+				(osc4 * osc4outlevel.dbamp)
+			);
+		}
+	}
+
+	*lagTimes {
+		^[
+			nil, // in, // TODO: not used yet
+			nil, // out,
+			// envattack,
+			// envdecay,
+			// envsustain,
+			// envrelease,
+			// envgate,
+			// osc1freq,
+			// osc1freqenvmod,
+			// osc1freqosc1mod,
+			// osc1freqosc2mod,
+			// osc1freqosc3mod,
+			// osc1freqosc4mod,
+			// osc1level,
+			// osc1levelenvmod,
+			// osc1outlevel,
+			// osc2freq,
+			// osc2freqenvmod,
+			// osc2freqosc1mod,
+			// osc2freqosc2mod,
+			// osc2freqosc3mod,
+			// osc2freqosc4mod,
+			// osc2level,
+			// osc2levelenvmod,
+			// osc2outlevel,
+			// osc3freq,
+			// osc3freqenvmod,
+			// osc3freqosc1mod,
+			// osc3freqosc2mod,
+			// osc3freqosc3mod,
+			// osc3freqosc4mod,
+			// osc3level,
+			// osc3levelenvmod,
+			// osc3outlevel,
+			// osc4freq,
+			// osc4freqenvmod,
+			// osc4freqosc1mod,
+			// osc4freqosc2mod,
+			// osc4freqosc3mod,
+			// osc4freqosc4mod,
+			// osc4level,
+			// osc4levelenvmod,
+			// osc4outlevel
+		]
+	}
+}
+
+RTheNewPoleModule : RModule {
+	*params {
+		^[
+			'lowpassfiltercutoff' -> ControlSpec(20, 10000, 'exp', 0, 440, " Hz"),
+			'lowpassfilterres' -> \unipolar.asSpec,
+			'highpassfiltercutoff' -> ControlSpec(20, 10000, 'exp', 0, 440, " Hz"),
+			'highpassfilterres' -> \unipolar.asSpec,
+			'amplevel' -> \db.asSpec,
+			'envattack' -> ControlSpec(0, 4, 'lin', 0, 0.01, "secs"),
+			'envdecay' -> ControlSpec(0, 4, 'lin', 0, 0.3, "secs"),
+			'envsustain' -> \unipolar.asSpec,
+			'envrelease' -> ControlSpec(0, 4, 'lin', 0, 1, "secs"),
+			'envgate' -> \unipolar.asSpec,
+			'lforate' -> \lofreq.asSpec,
+			'lowpassfiltercutoffenvmod' -> \db.asSpec,
+			'lowpassfiltercutofflfomod' -> \db.asSpec,
+			'lowpassfilterresenvmod' -> \db.asSpec,
+			'lowpassfilterreslfomod' -> \db.asSpec,
+			'highpassfiltercutoffenvmod' -> \db.asSpec,
+			'highpassfiltercutofflfomod' -> \db.asSpec,
+			'highpassfilterresenvmod' -> \db.asSpec,
+			'highpassfilterreslfomod' -> \db.asSpec,
+			'ampenvmod' -> \db.asSpec,
+			'amplfomod' -> \db.asSpec
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			arg
+				in,
+				out,
+				lowpassfiltercutoff = 10000,
+				lowpassfilterres = 0,
+				highpassfiltercutoff = 0,
+				highpassfilterres = 0,
+				amplevel = -60,
+				envattack=0.01,
+				envdecay=0.03,
+				envsustain=0.5,
+				envrelease=1,
+				envgate,
+				lforate = 1,
+				lowpassfiltercutoffenvmod = -60,
+				lowpassfiltercutofflfomod = -60,
+				lowpassfilterresenvmod = -60,
+				lowpassfilterreslfomod = -60,
+				highpassfiltercutoffenvmod = -60,
+				highpassfiltercutofflfomod = -60,
+				highpassfilterresenvmod = -60,
+				highpassfilterreslfomod = -60,
+				ampenvmod = -60,
+				amplfomod = -60
+			;
+			var freqSpec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz");
+			var rqSpec = \rq.asSpec;
+			var env = EnvGen.ar(Env.adsr(envattack, envdecay, envsustain, envrelease), envgate);
+			var lfo = SinOsc.ar(lforate);
+			var highpassfilterrq = rqSpec.map(1-(highpassfilterres + (env * highpassfilterresenvmod.dbamp) + (lfo * highpassfilterreslfomod.dbamp)));
+			var lowpassfilterrq = rqSpec.map(1-(lowpassfilterres + (env * lowpassfilterresenvmod.dbamp) + (lfo * lowpassfilterreslfomod.dbamp)));
+			var sig = In.ar(in);
+
+			sig = RHPF.ar(
+				sig,
+				freqSpec.map(freqSpec.unmap(highpassfiltercutoff) + (env * highpassfiltercutoffenvmod.dbamp) + (lfo * highpassfiltercutofflfomod.dbamp)),
+				highpassfilterrq
+			);
+
+			sig = RLPF.ar(
+				sig,
+				freqSpec.map(freqSpec.unmap(lowpassfiltercutoff) + (env * lowpassfiltercutoffenvmod.dbamp) + (lfo * lowpassfiltercutofflfomod.dbamp)),
+				lowpassfilterrq
+			);
+
+			Out.ar(out, sig * (amplevel.dbamp + (env * ampenvmod.dbamp) + (lfo * amplfomod.dbamp)));
+		}
+	}
+
+	*lagTimes {
+		^[
+			nil, // in
+			nil, // out
+			0.1, // freq
+			0.1 // res
+		]
+	}
+}
+
 RGrainModule : RModule {
 	*params {
 		^[
@@ -473,7 +753,6 @@ RMultiModeFilterModule : RModule {
 	}
 }
 
-
 RModulatingMultiModeFilterModule : RModule {
 	*params {
 		^[
@@ -518,33 +797,3 @@ RModulatingMultiModeFilterModule : RModule {
 		]
 	}
 }
-
-
-RKnasterModule : RModule { // TODO: remove this toy thing
-	*params {
-		^[ 'volume' -> \db.asSpec ]
-	}
-
-	*ugenGraphFunc {
-		^{ |out, volume|
-
-            var density = 4;
-			var sig;
-			var delaymod;
-			var delaySpec;
-
-			sig = Dust2.ar(density);
-
-			sig = FreeVerb.ar(sig, room:0.2, damp: 0);
-
-			delaySpec = \delay.asSpec.copy.maxval_(4);
-			delaymod = LFNoise1.ar(2.2).range(0.01, 1);
-			sig = sig + CombC.ar(sig, maxdelaytime: delaySpec.maxval, delaytime: delaySpec.map(delaymod), decaytime: 1);
-
-			sig = sig * \db.asSpec.unmap(volume);
-
-			Out.ar(out, sig);
-		}
-	}
-}
-
