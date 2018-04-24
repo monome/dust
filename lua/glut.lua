@@ -60,7 +60,11 @@ gridkey = function(x, y, state)
 end
 
 enc = function(n, d)
-  if n == 1 then print(1, d)
+  if n == 1 then
+    focus = focus + d
+    if focus > 7 then focus = 7 end
+    if focus < 1 then focus = 1 end
+    gridredraw()
   elseif n == 2 then print(2, d)
   elseif n == 3 then print(3, d)
   end
