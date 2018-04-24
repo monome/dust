@@ -15,20 +15,27 @@ engine.name = "SoftCut"
 init = function()
   print("==============================")
   engine.rec_on(1,1)
-  engine.rec_lag(1,0.25)
+  engine.rec_lag(1, 0.25)
+
   --engine.adc_rec(1,1,1)
   engine.play_dac(1,1,1)
   engine.play_dac(1,2,1)
-  engine.loop_start(1,0)
+
+  engine.loop_start(1,1)
   engine.loop_end(1,1)
   engine.loop_on(1,1)
   engine.rec(1,0)
+
   engine.pre(1,1)
   engine.amp(1,1)
   engine.start(1)
+
+  engine.fade_rec(1, 1.0)
+  engine.fade(1, 0.01)
+
   running = true
 
-  engine.trim(1,0,1)
+--  engine.trim(1,0,1)
 
   params:add_control("amp")
   set_amp = function(x) engine.amp(1,x) end
@@ -36,7 +43,7 @@ init = function()
   params:set("amp",1)
 
   params:add_control("loop_end")
-  set_llen = function(x) engine.loop_end(1,x) end
+  set_llen = function(x) engine.loop_end(1,x+1) end
   params:set_action("loop_end",set_llen) 
   params:set("loop_end",1)
 
@@ -45,11 +52,14 @@ init = function()
   params:set_action("rate",set_rate)
   params:set("rate",1)
 
-  p = poll.set('phase_norm_1', new_pos)
+ 
+  p = poll.set('phase_1', new_pos)
   p.time = 0.05;
   p:start()
-  pos = 0
+   pos = 0
   gpos = 0
+
+
 end
 
 key = function(n,z)
@@ -136,7 +146,7 @@ end
 gridkey = function(x, y, state)
   --print("grid > "..x.." "..y.." "..state)
   if state > 0 and y == 1 then
-    local cut = (x-1)/16
+    local cut = (x-1)/16 + 1
     engine.pos(1,cut)
     engine.reset(1)
     --print("pos > "..cut)
