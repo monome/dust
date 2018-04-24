@@ -21,10 +21,10 @@ focus = 1
 init = function()
   engine.list_commands()
   -- set engine params
-  engine.read(1, "glut/1.wav")
-  engine.read(2, "glut/2.wav")
-  engine.read(3, "glut/3.aif")
-  engine.read(4, "glut/4.aif")
+  engine.read(1, "/home/pi/dust/audio/test.wav")
+  engine.read(2, "/home/pi/dust/audio/test.wav")
+  engine.read(3, "/home/pi/dust/audio/test.wav")
+  engine.read(4, "/home/pi/dust/audio/test.wav")
   -- start timer
   c:start()
   gridredraw()
