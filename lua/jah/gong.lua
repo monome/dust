@@ -12,8 +12,10 @@ local fm_osc1outlevel_spec = ControlSpec.DB
 local fm_osc2level_spec = ControlSpec.DB
 local fm_osc1freqosc2mod_spec = ControlSpec.DB
 
+local partial_spec = ControlSpec.new(0.5, 10, 'lin', 0.5, 1)
+
 local pole_envattack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
-local pole_envdecay_spec = ControlSpec.new(0, 1, 'lin', 0, 0.03, "secs")
+local pole_envdecay_spec = ControlSpec.new(0, 1, 'lin', 0, 0.3, "secs")
 local pole_envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "secs")
 local pole_envrelease_spec = ControlSpec.new(0, 3, 'lin', 0, 1, "secs")
 local pole_ampenvmod_spec = ControlSpec.DB
@@ -25,10 +27,15 @@ local pole_highpassfiltercutoff = ControlSpec(20, 10000, 'exp', 0, 440, " Hz")
 local pole_highpassfilterres = ControlSpec.UNIPOLAR
 ]]
 
-local polyphony = 6
+local polyphony = 4
 local midinote_indicator_level
 local midicc_indicator_level
 local note_downs = {}
+
+local function to_hz(note)
+  local exp = (note - 21) / 12
+  return 27.5 * 2^exp
+end
 
 local function screen_update_channels()
   screen.move(0,16)
@@ -41,15 +48,7 @@ local function screen_update_channels()
     end
     screen.text(voicenum)
   end
-  --[[
-  if all_selected then
-    screen.level(6)
-  else
-    screen.level(0)
-  end
-  screen.text(" all")
   screen.update()
-  ]]
 end
 
 local function screen_update_midi_indicators()
@@ -71,7 +70,7 @@ local function screen_update_midi_indicators()
 end
 
 local function r_voice(voicenum, name, param, value)
-  e.param(name..voicenum, param, value)
+  engine.param(name..voicenum, param, value)
 end
 
 local function r_all(name, param, value)
@@ -96,13 +95,27 @@ local function pole_voice(voicenum, param, value)
   r_voice(voicenum, "pole", param, value)
 end
 
+local function alloc_voice(voicenum, freq)
+  fm_voice(voicenum, "osc1freq", freq)
+  fm_voice(voicenum, "osc2freq", freq * params:get("osc2partial"))
+  pole_voice(voicenum, "envgate", 1)
+end
+
+local function free_voice(voicenum)
+  pole_voice(voicenum, "envgate", 0)
+end
+
 local function note_on(note, velocity)
+  local voicenum = 1
   note_downs[voicenum] = true
+  alloc_voice(voicenum, to_hz(note))
   screen_update_channels()
 end
 
 local function note_off(note)
-  note_downs[voicenum] = true
+  local voicenum = 1
+  note_downs[voicenum] = false
+  free_voice(voicenum)
   screen_update_channels()
 end
 
@@ -136,9 +149,18 @@ init = function()
   params:add_control("osc2level", fm_osc2level_spec)
   params:set("osc2level", 0)
   params:set_action("osc2level", function(value) fm_all("osc2level", value) end)
+  params:add_control("osc2partial", partial_spec)
   params:add_control("osc1freqosc2mod", fm_osc1freqosc2mod_spec)
   params:set("osc1freqosc2mod", -15)
   params:set_action("osc1freqosc2mod", function(value) fm_all("osc1freqosc2mod", value) end)
+  params:add_control("ampenv/attack", pole_envattack_spec)
+  params:set_action("ampenv/attack", function(value) pole_all("envattack", value) end)
+  params:add_control("ampenv/decay", pole_envdecay_spec)
+  params:set_action("ampenv/decay", function(value) pole_all("envdecay", value) end)
+  params:add_control("ampenv/sustain", pole_envsustain_spec)
+  params:set_action("ampenv/sustain", function(value) pole_all("envsustain", value) end)
+  params:add_control("ampenv/release", pole_envrelease_spec)
+  params:set_action("ampenv/release", function(value) pole_all("envrelease", value) end)
   params:add_control("ampenvmod", pole_ampenvmod_spec)
   params:set("ampenvmod", 0)
   params:set_action("ampenvmod", function(value) pole_all("ampenvmod", value) end)
@@ -153,7 +175,7 @@ redraw = function()
   screen.move(0, 8)
   screen.font_size(8)
   screen.level(15)
-  screen.text("ack")
+  screen.text("gong")
   screen_update_channels()
   screen_update_midi_indicators()
   screen.update()
@@ -163,12 +185,6 @@ enc = function(n, delta)
   if n == 1 then
     norns.audio.adjust_output_level(delta)
   end
-end
-
-local function alloc_voice(voicenum, freq)
-end
-
-local function free_voice(voicenum)
 end
 
 key = function(n, z)
