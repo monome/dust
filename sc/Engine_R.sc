@@ -569,10 +569,10 @@ RFMThingModule : RModule {
 RTheNewPoleModule : RModule {
 	*params {
 		^[
-			'lowpassfiltercutoff' -> ControlSpec(20, 10000, 'exp', 0, 440, " Hz"),
-			'lowpassfilterres' -> \unipolar.asSpec,
-			'highpassfiltercutoff' -> ControlSpec(20, 10000, 'exp', 0, 440, " Hz"),
-			'highpassfilterres' -> \unipolar.asSpec,
+			'lpfcutoff' -> ControlSpec(20, 10000, 'exp', 0, 440, " Hz"),
+			'lpfres' -> \unipolar.asSpec,
+			'hpfcutoff' -> ControlSpec(1, 10000, 'exp', 0, 440, " Hz"),
+			'hpfres' -> \unipolar.asSpec,
 			'amplevel' -> \db.asSpec,
 			'envattack' -> ControlSpec(0, 4, 'lin', 0, 0.01, "secs"),
 			'envdecay' -> ControlSpec(0, 4, 'lin', 0, 0.3, "secs"),
@@ -580,14 +580,14 @@ RTheNewPoleModule : RModule {
 			'envrelease' -> ControlSpec(0, 4, 'lin', 0, 1, "secs"),
 			'envgate' -> \unipolar.asSpec,
 			'lforate' -> \lofreq.asSpec,
-			'lowpassfiltercutoffenvmod' -> \db.asSpec,
-			'lowpassfiltercutofflfomod' -> \db.asSpec,
-			'lowpassfilterresenvmod' -> \db.asSpec,
-			'lowpassfilterreslfomod' -> \db.asSpec,
-			'highpassfiltercutoffenvmod' -> \db.asSpec,
-			'highpassfiltercutofflfomod' -> \db.asSpec,
-			'highpassfilterresenvmod' -> \db.asSpec,
-			'highpassfilterreslfomod' -> \db.asSpec,
+			'lpfcutoffenvmod' -> \db.asSpec,
+			'lpfcutofflfomod' -> \db.asSpec,
+			'lpfresenvmod' -> \db.asSpec,
+			'lpfreslfomod' -> \db.asSpec,
+			'hpfcutoffenvmod' -> \db.asSpec,
+			'hpfcutofflfomod' -> \db.asSpec,
+			'hpfresenvmod' -> \db.asSpec,
+			'hpfreslfomod' -> \db.asSpec,
 			'ampenvmod' -> \db.asSpec,
 			'amplfomod' -> \db.asSpec
 		]
@@ -598,10 +598,10 @@ RTheNewPoleModule : RModule {
 			arg
 				in,
 				out,
-				lowpassfiltercutoff = 10000,
-				lowpassfilterres = 0,
-				highpassfiltercutoff = 0,
-				highpassfilterres = 0,
+				lpfcutoff = 10000,
+				lpfres = 0,
+				hpfcutoff = 0,
+				hpfres = 0,
 				amplevel = -60,
 				envattack=0.01,
 				envdecay=0.03,
@@ -609,14 +609,14 @@ RTheNewPoleModule : RModule {
 				envrelease=1,
 				envgate,
 				lforate = 1,
-				lowpassfiltercutoffenvmod = -60,
-				lowpassfiltercutofflfomod = -60,
-				lowpassfilterresenvmod = -60,
-				lowpassfilterreslfomod = -60,
-				highpassfiltercutoffenvmod = -60,
-				highpassfiltercutofflfomod = -60,
-				highpassfilterresenvmod = -60,
-				highpassfilterreslfomod = -60,
+				lpfcutoffenvmod = -60,
+				lpfcutofflfomod = -60,
+				lpfresenvmod = -60,
+				lpfreslfomod = -60,
+				hpfcutoffenvmod = -60,
+				hpfcutofflfomod = -60,
+				hpfresenvmod = -60,
+				hpfreslfomod = -60,
 				ampenvmod = -60,
 				amplfomod = -60
 			;
@@ -624,20 +624,20 @@ RTheNewPoleModule : RModule {
 			var rqSpec = \rq.asSpec;
 			var env = EnvGen.ar(Env.adsr(envattack, envdecay, envsustain, envrelease), envgate);
 			var lfo = SinOsc.ar(lforate);
-			var highpassfilterrq = rqSpec.map(1-(highpassfilterres + (env * highpassfilterresenvmod.dbamp) + (lfo * highpassfilterreslfomod.dbamp)));
-			var lowpassfilterrq = rqSpec.map(1-(lowpassfilterres + (env * lowpassfilterresenvmod.dbamp) + (lfo * lowpassfilterreslfomod.dbamp)));
+			var hpfrq = rqSpec.map(1-(hpfres + (env * hpfresenvmod.dbamp) + (lfo * hpfreslfomod.dbamp)));
+			var lpfrq = rqSpec.map(1-(lpfres + (env * lpfresenvmod.dbamp) + (lfo * lpfreslfomod.dbamp)));
 			var sig = In.ar(in);
 
 			sig = RHPF.ar(
 				sig,
-				freqSpec.map(freqSpec.unmap(highpassfiltercutoff) + (env * highpassfiltercutoffenvmod.dbamp) + (lfo * highpassfiltercutofflfomod.dbamp)),
-				highpassfilterrq
+				freqSpec.map(freqSpec.unmap(hpfcutoff) + (env * hpfcutoffenvmod.dbamp) + (lfo * hpfcutofflfomod.dbamp)),
+				hpfrq
 			);
 
 			sig = RLPF.ar(
 				sig,
-				freqSpec.map(freqSpec.unmap(lowpassfiltercutoff) + (env * lowpassfiltercutoffenvmod.dbamp) + (lfo * lowpassfiltercutofflfomod.dbamp)),
-				lowpassfilterrq
+				freqSpec.map(freqSpec.unmap(lpfcutoff) + (env * lpfcutoffenvmod.dbamp) + (lfo * lpfcutofflfomod.dbamp)),
+				lpfrq
 			);
 
 			Out.ar(out, sig * (amplevel.dbamp + (env * ampenvmod.dbamp) + (lfo * amplfomod.dbamp)));

@@ -2,30 +2,30 @@
 -- polyphonic fm synth
 
 local ControlSpec = require 'controlspec'
-local Control = require 'control'
-local Formatters = require 'jah/formatters'
+local VoiceAllocator = require 'lib/exp/voice'
+
 
 engine.name = 'R'
 
-local fm_osc1level_spec = ControlSpec.DB
-local fm_osc1outlevel_spec = ControlSpec.DB
-local fm_osc2level_spec = ControlSpec.DB
-local fm_osc1freqosc2mod_spec = ControlSpec.DB
+local oscxlevel_spec = ControlSpec.DB
+local oscxoutlevel_spec = ControlSpec.DB
+local oscxfreqoscxmod_spec = ControlSpec.DB
 
 local partial_spec = ControlSpec.new(0.5, 10, 'lin', 0.5, 1)
 
-local pole_envattack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
-local pole_envdecay_spec = ControlSpec.new(0, 1, 'lin', 0, 0.3, "secs")
-local pole_envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "secs")
-local pole_envrelease_spec = ControlSpec.new(0, 3, 'lin', 0, 1, "secs")
-local pole_ampenvmod_spec = ControlSpec.DB
+local lpfcutoff_spec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz")
+local lpfres_spec = ControlSpec.UNIPOLAR
+local hpfcutoff = ControlSpec(1, 10000, 'exp', 0, 440, " Hz")
+local hpfres = ControlSpec.UNIPOLAR
 
---[[
-local pole_lowpassfiltercutoff_spec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz")
-local pole_lowpassfilterres_spec = ControlSpec.UNIPOLAR
-local pole_highpassfiltercutoff = ControlSpec(20, 10000, 'exp', 0, 440, " Hz")
-local pole_highpassfilterres = ControlSpec.UNIPOLAR
-]]
+local envattack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
+local envdecay_spec = ControlSpec.new(0, 1, 'lin', 0, 0.3, "secs")
+local envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "secs")
+local envrelease_spec = ControlSpec.new(0, 3, 'lin', 0, 1, "secs")
+local envmod_spec = ControlSpec.DB
+
+local delay_time_spec = ControlSpec.DELAY:copy()
+delay_time_spec.maxval = 3
 
 local polyphony = 4
 local midinote_indicator_level
@@ -37,7 +37,7 @@ local function to_hz(note)
   return 27.5 * 2^exp
 end
 
-local function screen_update_channels()
+local function screen_update_voice_indicators()
   screen.move(0,16)
   screen.font_size(8)
   for voicenum=1,polyphony do
@@ -69,61 +69,52 @@ local function screen_update_midi_indicators()
   end
 end
 
-local function r_voice(voicenum, name, param, value)
-  engine.param(name..voicenum, param, value)
-end
-
-local function r_all(name, param, value)
-  for voicenum=1,polyphony do
-    r_voice(voicenum, name, param, value)
+local function r_param(name, voiceref, param, value)
+  if voiceref == "all" then
+    for voicenum=1,polyphony do
+      engine.param(name..voicenum, param, value)
+    end
+  else
+    engine.param(name..voiceref, param, value)
   end
 end
 
-local function fm_all(param, value)
-  r_all("fm", param, value)
-end
-
-local function fm_voice(voicenum, param, value)
-  r_voice(voicenum, "fm", param, value)
-end
-
-local function pole_all(param, value)
-  r_all("pole", param, value)
-end
-
-local function pole_voice(voicenum, param, value)
-  r_voice(voicenum, "pole", param, value)
-end
-
 local function alloc_voice(voicenum, freq)
-  fm_voice(voicenum, "osc1freq", freq)
-  fm_voice(voicenum, "osc2freq", freq * params:get("osc2partial"))
-  pole_voice(voicenum, "envgate", 1)
+  r_param("fm", voicenum, "osc1freq", freq)
+  r_param("fm", voicenum, "osc2freq", freq * params:get("osc2/partial"))
+  r_param("pole", voicenum, "envgate", 1)
 end
 
 local function free_voice(voicenum)
-  pole_voice(voicenum, "envgate", 0)
+  r_param("pole", voicenum, "envgate", 0)
 end
 
 local function note_on(note, velocity)
+  --[[
   local voicenum = 1
   note_downs[voicenum] = true
   alloc_voice(voicenum, to_hz(note))
-  screen_update_channels()
+  screen_update_voice_indicators()
+  ]]
+  alloc_voice(voicenum, to_hz(note))
+  global_slot = global_va:get()
+  global_slot.on_release = function()
+    free_voice(voicenum)
+  end
 end
 
 local function note_off(note)
+  --[[
   local voicenum = 1
   note_downs[voicenum] = false
   free_voice(voicenum)
-  screen_update_channels()
+  screen_update_voice_indicators()
+  ]]
+  global_va:release(global_slot)
 end
 
-init = function()
-  screen.aa(1)
-  screen.line_width(1.0)
-
-  engine.capacity(polyphony*2+2)
+local function setup_r_config()
+  engine.capacity(polyphony*2+2+2)
 
   for voicenum=1,polyphony do
     engine.module("fm"..voicenum, "fmthing")
@@ -131,42 +122,125 @@ init = function()
     engine.patch("fm"..voicenum, "pole"..voicenum, 0)
   end
 
+  engine.module("ldelay", "delay")
+  engine.module("rdelay", "delay")
+
+  engine.patch("ldelay", "lout", 0)
+  engine.patch("rdelay", "rout", 0)
+
   engine.module("lout", "output")
   engine.module("rout", "output")
-  engine.param("rout", "config", 1)
+  engine.param("rout", "config", 1) -- TODO: split output up in left and right?
 
   for voicenum=1,polyphony do
     engine.patch("pole"..voicenum, "lout", 0)
     engine.patch("pole"..voicenum, "rout", 0)
   end
+end
 
-  params:add_control("osc1level", fm_osc1level_spec)
-  params:set("osc1level", -10)
-  params:set_action("osc1level", function(value) fm_all("osc1level", value) end)
-  params:add_control("osc1outlevel", fm_osc1outlevel_spec)
-  params:set("osc1outlevel", -10)
-  params:set_action("osc1outlevel", function(value) fm_all("osc1outlevel", value) end)
-  params:add_control("osc2level", fm_osc2level_spec)
-  params:set("osc2level", 0)
-  params:set_action("osc2level", function(value) fm_all("osc2level", value) end)
-  params:add_control("osc2partial", partial_spec)
-  params:add_control("osc1freqosc2mod", fm_osc1freqosc2mod_spec)
-  params:set("osc1freqosc2mod", -15)
-  params:set_action("osc1freqosc2mod", function(value) fm_all("osc1freqosc2mod", value) end)
-  params:add_control("ampenv/attack", pole_envattack_spec)
-  params:set_action("ampenv/attack", function(value) pole_all("envattack", value) end)
-  params:add_control("ampenv/decay", pole_envdecay_spec)
-  params:set_action("ampenv/decay", function(value) pole_all("envdecay", value) end)
-  params:add_control("ampenv/sustain", pole_envsustain_spec)
-  params:set_action("ampenv/sustain", function(value) pole_all("envsustain", value) end)
-  params:add_control("ampenv/release", pole_envrelease_spec)
-  params:set_action("ampenv/release", function(value) pole_all("envrelease", value) end)
-  params:add_control("ampenvmod", pole_ampenvmod_spec)
-  params:set("ampenvmod", 0)
-  params:set_action("ampenvmod", function(value) pole_all("ampenvmod", value) end)
+local function add_fmthing_params()
+  local all_fm = function(param, value)
+    r_param("fm", "all", param, value)
+  end
 
-  -- params:read("param_ack.pset")
+  params:add_control("osc1/level", oscxlevel_spec)
+  params:set("osc1/level", -10)
+  params:set_action("osc1/level", function(value) all_fm("osc1level", value) end)
+
+  params:add_control("osc1/outlevel", oscxoutlevel_spec)
+  params:set("osc1/outlevel", -10)
+  params:set_action("osc1/outlevel", function(value) all_fm("osc1outlevel", value) end)
+
+  params:add_control("osc1/freqosc2mod", oscxfreqoscxmod_spec)
+  params:set("osc1/freqosc2mod", -15)
+  params:set_action("osc1/freqosc2mod", function(value) all_fm("osc1freqosc2mod", value) end)
+
+  params:add_control("osc2/level", oscxlevel_spec)
+  params:set("osc2/level", 0)
+  params:set_action("osc2/level", function(value) all_fm("osc2level", value) end)
+
+  params:add_control("osc2/partial", partial_spec)
+
+end
+
+local all_poles = function(param, value)
+  r_param("pole", "all", param, value)
+end
+
+local function add_pole_params()
+  params:add_control("lpf/cutoff", lpfcutoff_spec)
+  params:set_action("lpf/cutoff", function(value) all_poles("lpfcutoff", value) end)
+  params:add_control("lpf/resonance", lpfres_spec)
+  params:set_action("lpf/resonance", function(value) all_poles("lpfres", value) end)
+
+  params:add_control("hpf/cutoff", lpfcutoff_spec)
+  params:set_action("hpf/cutoff", function(value) all_poles("hpfcutoff", value) end)
+  params:add_control("hpf/resonance", lpfres_spec)
+  params:set_action("hpf/resonance", function(value) all_poles("hpfres", value) end)
+
+  params:add_control("env2/attack", envattack_spec)
+  params:set_action("env2/attack", function(value) all_poles("envattack", value) end)
+
+  params:add_control("env2/decay", envdecay_spec)
+  params:set_action("env2/decay", function(value) all_poles("envdecay", value) end)
+
+  params:add_control("env2/sustain", envsustain_spec)
+  params:set_action("env2/sustain", function(value) all_poles("envsustain", value) end)
+
+  params:add_control("env2/release", envrelease_spec)
+  params:set_action("env2/release", function(value) all_poles("envrelease", value) end)
+
+  params:add_control("env2/ampmod", envmod_spec)
+  params:set("env2/ampmod", 0)
+  params:set_action("env2/ampmod", function(value) all_poles("ampenvmod", value) end)
+
+  params:add_control("env2/lpf/cutoffmod", envmod_spec)
+  params:set("env2/lpf/cutoffmod", -60)
+  params:set_action("env2/lpf/cutoffmod", function(value) all_poles("lpfcutoffenvmod", value) end)
+
+  params:add_control("env2/hpf/cutoffmod", envmod_spec)
+  params:set("env2/hpf/cutoffmod", -60)
+  params:set_action("env2/hpf/cutoffmod", function(value) all_poles("hpfcutoffenvmod", value) end)
+end
+
+local function add_delay_params()
+  params:add_control("delay send", ControlSpec.DB)
+  params:set("delay send", -30)
+  params:set_action("delay send", function(value)
+    all_poles("ldelay", value)
+    all_poles("rdelay", value)
+  end)
+
+  params:add_control("delay time/left", delay_time_spec)
+  params:set("delay time/left", 0.23)
+  params:set_action("delay time/left", function(value)
+    engine.param("ldelay", "delaytime", value)
+  end)
+  params:add_control("delay time/right", delay_time_spec)
+  params:set("delay time/right", 0.45)
+  params:set_action("delay time/right", function(value)
+    engine.param("rdelay", "delaytime", value)
+  end)
+
+  params:add_control("delay feedback", ControlSpec.DB)
+  params:set("delay feedback", -20)
+  params:set_action("delay feedback", function(value)
+    engine.patch('ldelay', 'rdelay', value)
+    engine.patch('rdelay', 'ldelay', value)
+  end)
+end
+
+init = function()
+  setup_r_config()
+  add_fmthing_params()
+  add_pole_params()
+  add_delay_params()
+
+  global_va = Voice.new(polyphony)
+  -- params:read("gong.pset")
   params:bang()
+
+  screen.line_width(1.0)
 end
 
 redraw = function()
@@ -176,7 +250,7 @@ redraw = function()
   screen.font_size(8)
   screen.level(15)
   screen.text("gong")
-  screen_update_channels()
+  screen_update_voice_indicators()
   screen_update_midi_indicators()
   screen.update()
 end
@@ -201,7 +275,7 @@ end
 
 cleanup = function()
   norns.midi.event = nil
-  -- params:write("param_ack.pset")
+  -- params:write("gong.pset")
 end
 
 norns.midi.add = function(id, name, dev)
