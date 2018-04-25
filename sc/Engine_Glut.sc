@@ -6,6 +6,7 @@ Engine_Glut : CroneEngine {
 	var <buf;
 	var <voices;
 	var mixBus;
+	var <phases;
 
 	*new { arg context, doneCallback;
 		^super.new(context, doneCallback);
@@ -14,7 +15,11 @@ Engine_Glut : CroneEngine {
 	// disk read
 	readBuf { arg i, path;
 		if(buf[i].notNil, {
-			buf[i].readChannel(path, channels:[0]);
+			var newbuf = Buffer.readChannel(context.server, path, 0, -1, [0], {
+				voices[i].set(\buf, newbuf);
+				buf[i].free;
+				buf[i] = newbuf;
+			});
 		});
 	}
 
@@ -27,28 +32,38 @@ Engine_Glut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out=context.out_b, sndbuf, gate=0, pos=0;
-			var pos_sig;
+			arg out, phase_out, buf, gate=0, pos=0, t_pos=0;
+			var phase;
+			var phase_jitter;
+			var phase_sig;
 			var sig;
 			var env;
 
-			pos_sig = Wrap.kr(LFNoise1.kr(freq: 50, mul: 0.15, add: pos));
+			var dur = BufDur.kr(buf);
+
+			phase_jitter = LFNoise1.kr(freq: 50, mul: 0.005);
+			phase = Phasor.kr(trig: t_pos,
+				rate: BufDur.kr(buf) / SampleRate.ir,
+				resetPos: pos);
+			phase_sig = Wrap.kr(phase + phase_jitter);
+
 			env = EnvGen.ar(Env.adsr(), gate: gate);
 
 			sig = GrainBuf.ar(2,
-				Impulse.kr(15), // trig
-				0.25, //dur
-				sndbuf,
+				Dust.kr(15), // trig
+				0.15, //dur
+				buf,
 				1, // rate
-				pos_sig, // pos
+				phase_sig, // pos
 				2, // interp
 				0, -1);
 			sig = sig * env;
 			Out.ar(out, sig);
+			Out.kr(phase_out, phase); // or phase_sig?
 		}).add;
 
 		SynthDef(\effect, {
-			arg in, out, mix=0.66, room=1.0, damp=0.5;
+			arg in, out, mix=0.66, room=1.0, damp=1;
 			var sig = In.ar(in, 2);
 			sig = FreeVerb.ar(sig, mix, room, damp);
 			Out.ar(out, sig);
@@ -61,9 +76,19 @@ Engine_Glut : CroneEngine {
 
 		effect = Synth.new(\effect, [\in, mixBus.index, \out, context.out_b.index]);
 
-		voices = Array.fill(nvoices, { |i|
-			Synth.new(\synth, [\out, mixBus.index, \sndbuf, buf[i]]);
+		phases = Array.fill(nvoices, { arg i;
+			Bus.control(context.server);
 		});
+
+		voices = Array.fill(nvoices, { arg i;
+			Synth.new(\synth, [
+				\out, mixBus.index,
+				\phase_out, phases[i].index,
+				\buf, buf[i],
+			]);
+		});
+
+		context.server.sync;
 
 		this.addCommand("read", "is", { arg msg;
 			this.readBuf(msg[1] - 1, msg[2]);
@@ -74,6 +99,7 @@ Engine_Glut : CroneEngine {
 			var synth = voices[voice];
 
 			synth.set(\pos, msg[2]);
+			synth.set(\t_pos, 1);
 		});
 
 		this.addCommand("gate", "ii", { arg msg;
@@ -81,6 +107,13 @@ Engine_Glut : CroneEngine {
 			var synth = voices[voice];
 
 			synth.set(\gate, msg[2]);
+		});
+
+		nvoices.do({ arg i;
+			this.addPoll(("phase_" ++ (i+1)).asSymbol, {
+				var val = phases[i].getSynchronous;
+				val
+			});
 		});
 	}
 

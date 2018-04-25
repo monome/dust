@@ -14,64 +14,76 @@
 -- specify dsp engine to load:
 engine.name = 'Glut'
 
-positions = {-1, -1, -1, -1, -1, -1, -1}
+glut_positions = {-1, -1, -1, -1, -1, -1, -1}
+glut_gates = {0, 0, 0, 0, 0, 0, 0}
 focus = 1
 
 -- init function
-init = function()
+function init()
   engine.list_commands()
   -- set engine params
-  engine.read(1, "/home/pi/dust/audio/test.wav")
-  engine.read(2, "/home/pi/dust/audio/test.wav")
-  engine.read(3, "/home/pi/dust/audio/test.wav")
-  engine.read(4, "/home/pi/dust/audio/test.wav")
-  -- start timer
+  engine.read(1, "/usr/share/sounds/alsa/Front_Left.wav")
+  engine.read(2, "/usr/share/sounds/alsa/Front_Right.wav")
+  engine.read(3, "/usr/share/sounds/alsa/Rear_Left.wav")
+  engine.read(4, "/usr/share/sounds/alsa/Rear_Right.wav")
+
+  -- grid refresh timer
+  c = metro[1]
+  c.count = -1
+  c.time = 1 / 60
+  c.callback = function(stage)
+    gridredraw()
+  end
   c:start()
-  gridredraw()
+
+
+  for v=1, 4 do
+    p = poll.set('phase_' .. v, function(pos) update_pos(v, pos) end)
+    p.time = 0.05
+    p:start()
+  end
 end
 
--- set up a metro
-c = metro[1]
--- count forever
-c.count = -1
--- count interval to 1 second
-c.time = 1
--- callback function on each count
-c.callback = function(stage)
-  redraw()
+function update_pos(voice, pos)
+  local led_pos = math.floor(pos * 16) + 1
+  glut_positions[voice] = led_pos
+end
+
+function start_voice(voice, pos)
+  engine.pos(voice, pos)
+  engine.gate(voice, 1)
+  glut_gates[voice] = 1
+end
+
+function stop_voice(voice)
+  glut_gates[voice] = 0
+  engine.gate(voice, 0)
 end
 
 -- grid key function
-gridkey = function(x, y, state)
+function gridkey(x, y, state)
   if state > 0 then
     -- set voice pos
     if y > 1 then
       local voice = y - 1
-      positions[voice] = x
-      engine.pos(voice, (x - 1)/ 16.0)
-      engine.gate(voice, 1)
+      start_voice(voice, (x - 1) / 16.0)
     else
       local voice = x
-      positions[voice] = -1
-      engine.gate(voice, 0)
+      stop_voice(voice)
     end
-    gridredraw()
   end
 end
 
-enc = function(n, d)
+function enc(n, d)
   if n == 1 then
     focus = focus + d
     if focus > 7 then focus = 7 end
     if focus < 1 then focus = 1 end
-    gridredraw()
-  elseif n == 2 then print(2, d)
-  elseif n == 3 then print(3, d)
   end
   redraw()
 end
 
-gridredraw = function()
+function gridredraw()
   if g == nil then
     return
   end
@@ -81,9 +93,9 @@ gridredraw = function()
     g:led(i, focus + 1, 3)
   end
   for i=1, 7 do
-    if positions[i] > 0 then
+    if glut_gates[i] > 0 then
       g:led(i, 1, 7)
-      g:led(positions[i], i + 1, 15)
+      g:led(glut_positions[i], i + 1, 15)
     end
   end
   g:refresh()
@@ -91,6 +103,5 @@ end
 
 -- called on script quit, release memory
 cleanup = function()
-  positions = nil
+  glut_positions = nil
 end
-
