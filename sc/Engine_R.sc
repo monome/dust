@@ -392,7 +392,7 @@ RFMThingModule : RModule {
 			'osc1freqosc3mod' -> \db.asSpec,
 			'osc1freqosc4mod' -> \db.asSpec,
 			'osc1levelenvmod' -> \db.asSpec,
-			'osc1level' -> \db.asSpec,
+			'osc1gain' -> \db.asSpec,
 			'osc1outlevel' -> \db.asSpec,
 			'osc2freq' -> \widefreq.asSpec,
 			'osc2freqenvmod' -> \db.asSpec,
@@ -401,7 +401,7 @@ RFMThingModule : RModule {
 			'osc2freqosc3mod' -> \db.asSpec,
 			'osc2freqosc4mod' -> \db.asSpec,
 			'osc2levelenvmod' -> \db.asSpec,
-			'osc2level' -> \db.asSpec,
+			'osc2gain' -> \db.asSpec,
 			'osc2outlevel' -> \db.asSpec,
 			'osc3freq' -> \widefreq.asSpec,
 			'osc3freqenvmod' -> \db.asSpec,
@@ -410,7 +410,7 @@ RFMThingModule : RModule {
 			'osc3freqosc3mod' -> \db.asSpec,
 			'osc3freqosc4mod' -> \db.asSpec,
 			'osc3levelenvmod' -> \db.asSpec,
-			'osc3level' -> \db.asSpec,
+			'osc3gain' -> \db.asSpec,
 			'osc3outlevel' -> \db.asSpec,
 			'osc4freq' -> \widefreq.asSpec,
 			'osc4freqenvmod' -> \db.asSpec,
@@ -419,7 +419,7 @@ RFMThingModule : RModule {
 			'osc4freqosc3mod' -> \db.asSpec,
 			'osc4freqosc4mod' -> \db.asSpec,
 			'osc4levelenvmod' -> \db.asSpec,
-			'osc4level' -> \db.asSpec,
+			'osc4gain' -> \db.asSpec,
 			'osc4outlevel' -> \db.asSpec
 		]
 	}
@@ -440,7 +440,7 @@ RFMThingModule : RModule {
 				osc1freqosc2mod = -60,
 				osc1freqosc3mod = -60,
 				osc1freqosc4mod = -60,
-				osc1level = -60,
+				osc1gain = -60,
 				osc1levelenvmod = -60,
 				osc1outlevel = -60,
 				osc2freq,
@@ -449,7 +449,7 @@ RFMThingModule : RModule {
 				osc2freqosc2mod = -60,
 				osc2freqosc3mod = -60,
 				osc2freqosc4mod = -60,
-				osc2level = -60,
+				osc2gain = -60,
 				osc2levelenvmod = -60,
 				osc2outlevel = -60,
 				osc3freq,
@@ -458,7 +458,7 @@ RFMThingModule : RModule {
 				osc3freqosc2mod = -60,
 				osc3freqosc3mod = -60,
 				osc3freqosc4mod = -60,
-				osc3level = -60,
+				osc3gain = -60,
 				osc3levelenvmod = -60,
 				osc3outlevel = -60,
 				osc4freq,
@@ -467,7 +467,7 @@ RFMThingModule : RModule {
 				osc4freqosc2mod = -60,
 				osc4freqosc3mod = -60,
 				osc4freqosc4mod = -60,
-				osc4level = -60,
+				osc4gain = -60,
 				osc4levelenvmod = -60,
 				osc4outlevel = -60
 			;
@@ -480,32 +480,32 @@ RFMThingModule : RModule {
 					+ (oscfeedback[1] * osc1freq * osc1freqosc2mod.dbamp)
 					+ (oscfeedback[2] * osc1freq * osc1freqosc3mod.dbamp)
 					+ (oscfeedback[3] * osc1freq * osc1freqosc4mod.dbamp)
-					+ (osc1freqenvmod.dbamp * env)
-			) * (osc1level.dbamp + (osc1levelenvmod.dbamp * env));
+					+ \freq.asSpec.map(osc1freqenvmod.dbamp * env)
+			) * (osc1gain.dbamp + (osc1levelenvmod.dbamp * env));
 			var osc2 = SinOsc.ar(
 				osc2freq
 					+ (oscfeedback[0] * osc2freq * osc2freqosc1mod.dbamp)
 					+ (oscfeedback[1] * osc2freq * osc2freqosc2mod.dbamp)
 					+ (oscfeedback[2] * osc2freq * osc2freqosc3mod.dbamp)
 					+ (oscfeedback[3] * osc2freq * osc2freqosc4mod.dbamp)
-					+ (osc2freqenvmod.dbamp * env)
-			) * (osc2level.dbamp + (osc2levelenvmod.dbamp * env));
+					+ \freq.asSpec.map(osc2freqenvmod.dbamp * env)
+			) * (osc2gain.dbamp + (osc2levelenvmod.dbamp * env));
 			var osc3 = SinOsc.ar(
 				osc3freq
 					+ (oscfeedback[0] * osc3freq * osc3freqosc1mod.dbamp)
 					+ (oscfeedback[1] * osc3freq * osc3freqosc2mod.dbamp)
 					+ (oscfeedback[2] * osc3freq * osc3freqosc3mod.dbamp)
 					+ (oscfeedback[3] * osc3freq * osc3freqosc4mod.dbamp)
-					+ (osc3freqenvmod.dbamp * env)
-			) * (osc3level.dbamp + (osc3levelenvmod.dbamp * env));
+					+ \freq.asSpec.map(osc3freqenvmod.dbamp * env)
+			) * (osc3gain.dbamp + (osc3levelenvmod.dbamp * env));
 			var osc4 = SinOsc.ar(
 				osc4freq
 					+ (oscfeedback[0] * osc4freq * osc4freqosc1mod.dbamp)
 					+ (oscfeedback[1] * osc4freq * osc4freqosc2mod.dbamp)
 					+ (oscfeedback[2] * osc4freq * osc4freqosc3mod.dbamp)
 					+ (oscfeedback[3] * osc4freq * osc4freqosc4mod.dbamp)
-					+ (osc4freqenvmod.dbamp * env)
-			) * (osc4level.dbamp + (osc4levelenvmod.dbamp * env));
+					+ \freq.asSpec.map(osc4freqenvmod.dbamp * env)
+			) * (osc4gain.dbamp + (osc4levelenvmod.dbamp * env));
 			LocalOut.ar([osc1, osc2, osc3, osc4]);
 			Out.ar(
 				out,
@@ -532,7 +532,7 @@ RFMThingModule : RModule {
 			// osc1freqosc2mod,
 			// osc1freqosc3mod,
 			// osc1freqosc4mod,
-			// osc1level,
+			// osc1gain,
 			// osc1levelenvmod,
 			// osc1outlevel,
 			// osc2freq,
@@ -541,7 +541,7 @@ RFMThingModule : RModule {
 			// osc2freqosc2mod,
 			// osc2freqosc3mod,
 			// osc2freqosc4mod,
-			// osc2level,
+			// osc2gain,
 			// osc2levelenvmod,
 			// osc2outlevel,
 			// osc3freq,
@@ -550,7 +550,7 @@ RFMThingModule : RModule {
 			// osc3freqosc2mod,
 			// osc3freqosc3mod,
 			// osc3freqosc4mod,
-			// osc3level,
+			// osc3gain,
 			// osc3levelenvmod,
 			// osc3outlevel,
 			// osc4freq,
@@ -559,7 +559,7 @@ RFMThingModule : RModule {
 			// osc4freqosc2mod,
 			// osc4freqosc3mod,
 			// osc4freqosc4mod,
-			// osc4level,
+			// osc4gain,
 			// osc4levelenvmod,
 			// osc4outlevel
 		]
@@ -573,7 +573,7 @@ RTheNewPoleModule : RModule {
 			'lpfres' -> \unipolar.asSpec,
 			'hpfcutoff' -> ControlSpec(1, 10000, 'exp', 0, 440, " Hz"),
 			'hpfres' -> \unipolar.asSpec,
-			'amplevel' -> \db.asSpec,
+			'ampgain' -> \db.asSpec,
 			'envattack' -> ControlSpec(0, 4, 'lin', 0, 0.01, "secs"),
 			'envdecay' -> ControlSpec(0, 4, 'lin', 0, 0.3, "secs"),
 			'envsustain' -> \unipolar.asSpec,
@@ -602,7 +602,7 @@ RTheNewPoleModule : RModule {
 				lpfres = 0,
 				hpfcutoff = 0,
 				hpfres = 0,
-				amplevel = -60,
+				ampgain = -60,
 				envattack=0.01,
 				envdecay=0.03,
 				envsustain=0.5,
@@ -640,7 +640,7 @@ RTheNewPoleModule : RModule {
 				lpfrq
 			);
 
-			Out.ar(out, sig * (amplevel.dbamp + (env * ampenvmod.dbamp) + (lfo * amplfomod.dbamp)));
+			Out.ar(out, sig * (ampgain.dbamp + (env * ampenvmod.dbamp)/* + (lfo * amplfomod.dbamp)*/));
 		}
 	}
 
