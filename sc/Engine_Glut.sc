@@ -32,7 +32,7 @@ Engine_Glut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out, phase_out, buf, gate=0, pos=0, t_pos=0;
+			arg out, phase_out, buf, gate=0, pos=0, t_pos=0, rate=1;
 			var phase;
 			var phase_jitter;
 			var phase_sig;
@@ -43,7 +43,7 @@ Engine_Glut : CroneEngine {
 
 			phase_jitter = LFNoise1.kr(freq: 50, mul: 0.005);
 			phase = Phasor.kr(trig: t_pos,
-				rate: BufDur.kr(buf) / SampleRate.ir,
+				rate: BufDur.kr(buf).reciprocal / ControlRate.ir * rate,
 				resetPos: pos);
 			phase_sig = Wrap.kr(phase + phase_jitter);
 
@@ -107,6 +107,13 @@ Engine_Glut : CroneEngine {
 			var synth = voices[voice];
 
 			synth.set(\gate, msg[2]);
+		});
+
+		this.addCommand("rate", "if", { arg msg;
+			var voice = msg[1] - 1;
+			var synth = voices[voice];
+
+			synth.set(\rate, msg[2]);
 		});
 
 		nvoices.do({ arg i;
