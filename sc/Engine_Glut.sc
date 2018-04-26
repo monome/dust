@@ -33,7 +33,7 @@ Engine_Glut : CroneEngine {
 
 		SynthDef(\synth, {
 			arg out, phase_out, buf, gate=0, pos=0, t_pos=0, rate=1,
-			dur=1, density=1;
+			dur=1, density=1, pitch=1;
 			var phase;
 			var phase_jitter;
 			var phase_sig;
@@ -52,7 +52,7 @@ Engine_Glut : CroneEngine {
 				Dust.kr(density), // trig
 				dur,
 				buf,
-				1, // rate
+				pitch, // rate
 				phase_sig, // pos
 				2, // interp
 				0, -1);
@@ -127,6 +127,13 @@ Engine_Glut : CroneEngine {
 			var synth = voices[voice];
 
 			synth.set(\density, msg[2]);
+		});
+
+		this.addCommand("pitch", "if", { arg msg;
+			var voice = msg[1] - 1;
+			var synth = voices[voice];
+
+			synth.set(\pitch, msg[2]);
 		});
 
 		nvoices.do({ arg i;
