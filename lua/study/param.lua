@@ -1,6 +1,6 @@
 -- param test
 -- see menu > parameters
---
+-- hold key1 inside menu to read/write
 
 engine.name = 'TestSine'
 
