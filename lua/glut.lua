@@ -11,8 +11,9 @@
 -- ///
 -- /
 
--- specify dsp engine to load:
 engine.name = 'Glut'
+
+VOICES=4
 
 glut_positions = {-1, -1, -1, -1, -1, -1, -1}
 glut_gates = {0, 0, 0, 0, 0, 0, 0}
@@ -37,10 +38,14 @@ function init()
   c:start()
 
 
-  for v=1, 4 do
+  for v=1, VOICES do
+    -- set poll
     p = poll.set('phase_' .. v, function(pos) update_pos(v, pos) end)
     p.time = 0.05
     p:start()
+
+    params:add_control("voice"..v..".rate",controlspec.new(-8, 8, "lin", 0, 1, ""))
+    params:set_action("voice"..v..".rate", function(value) engine.rate(v, value) end)
   end
 end
 
@@ -79,6 +84,8 @@ function enc(n, d)
     focus = focus + d
     if focus > 7 then focus = 7 end
     if focus < 1 then focus = 1 end
+  elseif n == 2 then
+    params:delta("voice"..focus..".rate", d / 10)
   end
   redraw()
 end
@@ -99,6 +106,19 @@ function gridredraw()
     end
   end
   g:refresh()
+end
+
+function redraw()
+  screen.clear()
+  screen.level(15)
+
+  screen.move(0, 10)
+  screen.text("voice: "..focus)
+
+  screen.move(0, 20)
+  screen.text("rate: "..params:string("voice"..focus..".rate"))
+
+  screen.update()
 end
 
 -- called on script quit, release memory
