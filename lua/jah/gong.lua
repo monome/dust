@@ -8,15 +8,17 @@ engine.name = 'R'
 
 local partial_spec = ControlSpec.new(0.5, 10, 'lin', 0.25, 1)
 
-local lpfcutoff_spec = ControlSpec.new(20, 10000, 'exp', 0, 10000, " Hz")
+local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
+
+local lpfcutoff_spec = ControlSpec.new(20, 10000, 'exp', 0, 10000, "Hz")
 local lpfres_spec = ControlSpec.UNIPOLAR
-local hpfcutoff_spec = ControlSpec.new(1, 10000, 'exp', 0, 1, " Hz")
+local hpfcutoff_spec = ControlSpec.new(1, 10000, 'exp', 0, 1, "Hz")
 local hpfres_spec = ControlSpec.UNIPOLAR
 
-local envattack_spec = ControlSpec.new(0, 1, 'lin', 0, 0.01, "secs")
-local envdecay_spec = ControlSpec.new(0, 1, 'lin', 0, 0.3, "secs")
+local envattack_spec = ControlSpec.new(0, 1000, 'lin', 0, 5, "ms")
+local envdecay_spec = ControlSpec.new(0, 5000, 'lin', 0, 500, "ms")
 local envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
-local envrelease_spec = ControlSpec.new(0, 3, 'lin', 0, 1, "secs")
+local envrelease_spec = ControlSpec.new(0, 5000, 'lin', 0, 1000, "ms")
 
 local delay_time_spec = ControlSpec.DELAY:copy()
 delay_time_spec.maxval = 3
@@ -79,7 +81,6 @@ local function trig_voice(voicenum, freq)
   r_param("fm", voicenum, "osc1freq", freq * params:get("osc1/partial"))
   r_param("fm", voicenum, "osc2freq", freq * params:get("osc2/partial"))
   r_param("fm", voicenum, "osc3freq", freq * params:get("osc3/partial"))
-  r_param("fm", voicenum, "osc4freq", freq * params:get("osc4/partial"))
   r_param("fm", voicenum, "envgate", 1)
   r_param("pole", voicenum, "envgate", 1)
 end
@@ -100,8 +101,9 @@ local function note_on(note, velocity)
     trig_voice(voicenum, midicps(note))
     slot.on_release = function()
       release_voice(voicenum)
-      noteslots[voicenum] = nil
+      noteslots[note] = nil
     end
+    noteslots[note] = slot
     note_downs[voicenum] = true
     screen_update_voice_indicators()
   end
@@ -210,15 +212,17 @@ local function add_fmthing_params()
     r_param("fm", "all", param, value)
   end
 
-  for oscnum=1,4 do
+  for oscnum=1,3 do
     params:add_control("osc"..oscnum.."/gain", ControlSpec.DB)
     params:set_action("osc"..oscnum.."/gain", function(value) all_fm("osc"..oscnum.."gain", value) end)
     params:add_control("osc"..oscnum.."/partial", partial_spec)
+    params:add_control("osc"..oscnum.."/index", index_spec)
+    params:set_action("osc"..oscnum.."/index", function(value) all_fm("osc"..oscnum.."index", value) end)
 
     params:add_control("osc"..oscnum.." > out", ControlSpec.DB)
     params:set_action("osc"..oscnum.." > out", function(value) all_fm("osc"..oscnum.."outlevel", value) end)
 
-    for dest=1,4 do
+    for dest=1,3 do
       params:add_control("osc"..oscnum.." > osc"..dest.."/freq", ControlSpec.DB)
       params:set_action("osc"..oscnum.." > osc"..dest.."/freq", function(value) all_fm("osc"..dest.."freqosc"..oscnum.."mod", value) end)
       params:set("osc"..oscnum.." > osc"..dest.."/freq", -60)
@@ -272,7 +276,7 @@ local function add_pole_params()
   params:set_action("amp/gain", function(value) all_poles("ampgain", value) end)
 
   params:add_control("lfo/rate", ControlSpec.LOFREQ)
-  params:set_action("lfo/rate", function(value) all_poles("envattack", value) end)
+  params:set_action("lfo/rate", function(value) all_poles("lforate", value) end)
 
   params:add_control("env2/attack", envattack_spec)
   params:set_action("env2/attack", function(value) all_poles("envattack", value) end)
@@ -290,13 +294,29 @@ local function add_pole_params()
   params:set_action("lfo > lpf/cutoff", function(value) all_poles("lpfcutofflfomod", value) end)
   params:set("lfo > lpf/cutoff", -60)
 
-  params:add_control("env2 > lpf/cutoff", ControlSpec.DB)
-  params:set_action("env2 > lpf/cutoff", function(value) all_poles("lpfcutoffenvmod", value) end)
-  params:set("env2 > lpf/cutoff", -60)
+  params:add_control("lfo > hpf/cutoff", ControlSpec.DB)
+  params:set_action("lfo > hpf/cutoff", function(value) all_poles("hpfcutofflfomod", value) end)
+  params:set("lfo > hpf/cutoff", -60)
+
+  params:add_control("lfo > hpf/resonance", ControlSpec.DB)
+  params:set_action("lfo > hpf/resonance", function(value) all_poles("hpfcutoffresmod", value) end)
+  params:set("lfo > hpf/resonance", -60)
 
   params:add_control("lfo > lpf/resonance", ControlSpec.DB)
   params:set_action("lfo > lpf/resonance", function(value) all_poles("lpfcutoffresmod", value) end)
   params:set("lfo > lpf/resonance", -60)
+
+  params:add_control("lfo > amp/gain", ControlSpec.DB)
+  params:set_action("lfo > amp/gain", function(value) all_poles("amplfomod", value) end)
+  params:set("lfo > amp/gain", -60)
+
+  params:add_control("env2 > amp/gain", ControlSpec.DB)
+  params:set_action("env2 > amp/gain", function(value) all_poles("ampenvmod", value) end)
+  params:set("env2 > amp/gain", 0)
+
+  params:add_control("env2 > lpf/cutoff", ControlSpec.DB)
+  params:set_action("env2 > lpf/cutoff", function(value) all_poles("lpfcutoffenvmod", value) end)
+  params:set("env2 > lpf/cutoff", -60)
 
   params:add_control("env2 > lpf/resonance", ControlSpec.DB)
   params:set_action("env2 > lpf/resonance", function(value) all_poles("lpfresenvmod", value) end)
@@ -306,25 +326,9 @@ local function add_pole_params()
   params:set_action("env2 > hpf/cutoff", function(value) all_poles("hpfcutoffenvmod", value) end)
   params:set("env2 > hpf/cutoff", -60)
 
-  params:add_control("env2 > hpf/cutoff", ControlSpec.DB)
-  params:set_action("env2 > hpf/cutoff", function(value) all_poles("hpfcutoffenvmod", value) end)
-  params:set("env2 > hpf/cutoff", -60)
-
-  params:add_control("lfo > hpf/resonance", ControlSpec.DB)
-  params:set_action("lfo > hpf/resonance", function(value) all_poles("hpfcutoffresmod", value) end)
-  params:set("lfo > hpf/resonance", -60)
-
   params:add_control("env2 > hpf/resonance", ControlSpec.DB)
   params:set_action("env2 > hpf/resonance", function(value) all_poles("hpfresenvmod", value) end)
   params:set("env2 > hpf/resonance", -60)
-
-  params:add_control("lfo > amp/gain", ControlSpec.DB)
-  params:set_action("lfo > amp/gain", function(value) all_poles("amplfomod", value) end)
-  params:set("lfo > amp", 0)
-
-  params:add_control("env2 > amp/gain", ControlSpec.DB)
-  params:set_action("env2 > amp/gain", function(value) all_poles("ampenvmod", value) end)
-  params:set("env2 > amp", 0)
 end
 
 local function add_delay_params()
@@ -365,7 +369,7 @@ init = function()
   params:bang()
 
   voice = Voice.new(polyphony)
-  params:read("gong.pset")
+  -- params:read("gong.pset")
 
   screen.line_width(1.0)
 end
@@ -402,7 +406,7 @@ end
 
 cleanup = function()
   norns.midi.event = nil
-  params:write("gong.pset")
+  -- params:write("gong.pset")
 end
 
 norns.midi.add = function(id, name, dev)

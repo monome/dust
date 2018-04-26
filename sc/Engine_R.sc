@@ -337,19 +337,6 @@ ROutputModule : RModule {
 	}
 }
 
-/*
-	TODO: remove, old plain SinOsc
-ROscillatorModule : RModule {
-	*params {
-		^[ 'freq' -> \freq.asSpec ]
-	}
-
-	*ugenGraphFunc {
-		^{ |out, freq| Out.ar(out, SinOsc.ar(freq)) }
-	}
-}
-*/
-
 ROscillatorModule : RModule {
 	*params {
 		^[
@@ -379,13 +366,13 @@ ROscillatorModule : RModule {
 RFMThingModule : RModule {
 	*params {
 		^[
-			// 'index' -> ControlSpec(0, 24, 'lin', 0, 3, "");
-			'envattack' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
-			'envdecay' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
-			'envsustain' -> \unipolar.asSpec,
-			'envrelease' -> ControlSpec(0, 100, 'lin', 0, 30, "ms"),
+			'envattack' -> ControlSpec(0, 5000, 'lin', 0, 5, "ms"),
+			'envdecay' -> ControlSpec(0, 5000, 'lin', 0, 30, "ms"),
+			'envsustain' -> ControlSpec(0, 1, 'lin', 0, 0.5, ""),
+			'envrelease' -> ControlSpec(0, 5000, 'lin', 0, 100, "ms"),
 			'envgate' -> \unipolar.asSpec,
 			'osc1freq' -> \widefreq.asSpec,
+			'osc1index' -> ControlSpec(0, 24, 'lin', 0, 3, ""),
 			'osc1freqenvmod' -> \db.asSpec,
 			'osc1freqosc1mod' -> \db.asSpec,
 			'osc1freqosc2mod' -> \db.asSpec,
@@ -395,6 +382,7 @@ RFMThingModule : RModule {
 			'osc1gain' -> \db.asSpec,
 			'osc1outlevel' -> \db.asSpec,
 			'osc2freq' -> \widefreq.asSpec,
+			'osc2index' -> ControlSpec(0, 24, 'lin', 0, 3, ""),
 			'osc2freqenvmod' -> \db.asSpec,
 			'osc2freqosc1mod' -> \db.asSpec,
 			'osc2freqosc2mod' -> \db.asSpec,
@@ -404,6 +392,7 @@ RFMThingModule : RModule {
 			'osc2gain' -> \db.asSpec,
 			'osc2outlevel' -> \db.asSpec,
 			'osc3freq' -> \widefreq.asSpec,
+			'osc3index' -> ControlSpec(0, 24, 'lin', 0, 3, ""),
 			'osc3freqenvmod' -> \db.asSpec,
 			'osc3freqosc1mod' -> \db.asSpec,
 			'osc3freqosc2mod' -> \db.asSpec,
@@ -412,15 +401,6 @@ RFMThingModule : RModule {
 			'osc3levelenvmod' -> \db.asSpec,
 			'osc3gain' -> \db.asSpec,
 			'osc3outlevel' -> \db.asSpec,
-			'osc4freq' -> \widefreq.asSpec,
-			'osc4freqenvmod' -> \db.asSpec,
-			'osc4freqosc1mod' -> \db.asSpec,
-			'osc4freqosc2mod' -> \db.asSpec,
-			'osc4freqosc3mod' -> \db.asSpec,
-			'osc4freqosc4mod' -> \db.asSpec,
-			'osc4levelenvmod' -> \db.asSpec,
-			'osc4gain' -> \db.asSpec,
-			'osc4outlevel' -> \db.asSpec
 		]
 	}
 
@@ -435,6 +415,7 @@ RFMThingModule : RModule {
 				envrelease,
 				envgate,
 				osc1freq,
+				osc1index,
 				osc1freqenvmod = -60,
 				osc1freqosc1mod = -60,
 				osc1freqosc2mod = -60,
@@ -444,6 +425,7 @@ RFMThingModule : RModule {
 				osc1levelenvmod = -60,
 				osc1outlevel = -60,
 				osc2freq,
+				osc2index,
 				osc2freqenvmod = -60,
 				osc2freqosc1mod = -60,
 				osc2freqosc2mod = -60,
@@ -453,6 +435,7 @@ RFMThingModule : RModule {
 				osc2levelenvmod = -60,
 				osc2outlevel = -60,
 				osc3freq,
+				osc3index,
 				osc3freqenvmod = -60,
 				osc3freqosc1mod = -60,
 				osc3freqosc2mod = -60,
@@ -460,59 +443,38 @@ RFMThingModule : RModule {
 				osc3freqosc4mod = -60,
 				osc3gain = -60,
 				osc3levelenvmod = -60,
-				osc3outlevel = -60,
-				osc4freq,
-				osc4freqenvmod = -60,
-				osc4freqosc1mod = -60,
-				osc4freqosc2mod = -60,
-				osc4freqosc3mod = -60,
-				osc4freqosc4mod = -60,
-				osc4gain = -60,
-				osc4levelenvmod = -60,
-				osc4outlevel = -60
+				osc3outlevel = -60
 			;
 			var insig = In.ar(in); // TODO: not used
-			var env = EnvGen.ar(Env.adsr(envattack, envdecay, envsustain, envrelease), envgate);
-			var oscfeedback = LocalIn.ar(4);
+			var env = EnvGen.ar(Env.adsr(envattack/1000, envdecay/1000, envsustain, envrelease/1000), envgate);
+			var oscfeedback = LocalIn.ar(3);
 			var osc1 = SinOsc.ar(
 				osc1freq
-					+ (oscfeedback[0] * osc1freq * osc1freqosc1mod.dbamp)
-					+ (oscfeedback[1] * osc1freq * osc1freqosc2mod.dbamp)
-					+ (oscfeedback[2] * osc1freq * osc1freqosc3mod.dbamp)
-					+ (oscfeedback[3] * osc1freq * osc1freqosc4mod.dbamp)
+					+ (oscfeedback[0] * osc1freq * osc1freqosc1mod.dbamp * osc1index)
+					+ (oscfeedback[1] * osc1freq * osc1freqosc2mod.dbamp * osc1index)
+					+ (oscfeedback[2] * osc1freq * osc1freqosc3mod.dbamp * osc1index)
 					+ \freq.asSpec.map(osc1freqenvmod.dbamp * env)
 			) * (osc1gain.dbamp + (osc1levelenvmod.dbamp * env));
 			var osc2 = SinOsc.ar(
 				osc2freq
-					+ (oscfeedback[0] * osc2freq * osc2freqosc1mod.dbamp)
-					+ (oscfeedback[1] * osc2freq * osc2freqosc2mod.dbamp)
-					+ (oscfeedback[2] * osc2freq * osc2freqosc3mod.dbamp)
-					+ (oscfeedback[3] * osc2freq * osc2freqosc4mod.dbamp)
+					+ (oscfeedback[0] * osc2freq * osc2freqosc1mod.dbamp * osc2index)
+					+ (oscfeedback[1] * osc2freq * osc2freqosc2mod.dbamp * osc2index)
+					+ (oscfeedback[2] * osc2freq * osc2freqosc3mod.dbamp * osc2index)
 					+ \freq.asSpec.map(osc2freqenvmod.dbamp * env)
 			) * (osc2gain.dbamp + (osc2levelenvmod.dbamp * env));
 			var osc3 = SinOsc.ar(
 				osc3freq
-					+ (oscfeedback[0] * osc3freq * osc3freqosc1mod.dbamp)
-					+ (oscfeedback[1] * osc3freq * osc3freqosc2mod.dbamp)
-					+ (oscfeedback[2] * osc3freq * osc3freqosc3mod.dbamp)
-					+ (oscfeedback[3] * osc3freq * osc3freqosc4mod.dbamp)
+					+ (oscfeedback[0] * osc3freq * osc3freqosc1mod.dbamp * osc3index)
+					+ (oscfeedback[1] * osc3freq * osc3freqosc2mod.dbamp * osc3index)
+					+ (oscfeedback[2] * osc3freq * osc3freqosc3mod.dbamp * osc3index)
 					+ \freq.asSpec.map(osc3freqenvmod.dbamp * env)
 			) * (osc3gain.dbamp + (osc3levelenvmod.dbamp * env));
-			var osc4 = SinOsc.ar(
-				osc4freq
-					+ (oscfeedback[0] * osc4freq * osc4freqosc1mod.dbamp)
-					+ (oscfeedback[1] * osc4freq * osc4freqosc2mod.dbamp)
-					+ (oscfeedback[2] * osc4freq * osc4freqosc3mod.dbamp)
-					+ (oscfeedback[3] * osc4freq * osc4freqosc4mod.dbamp)
-					+ \freq.asSpec.map(osc4freqenvmod.dbamp * env)
-			) * (osc4gain.dbamp + (osc4levelenvmod.dbamp * env));
-			LocalOut.ar([osc1, osc2, osc3, osc4]);
+			LocalOut.ar([osc1, osc2, osc3]);
 			Out.ar(
 				out,
 				(osc1 * osc1outlevel.dbamp) +
 				(osc2 * osc2outlevel.dbamp) +
-				(osc3 * osc3outlevel.dbamp) +
-				(osc4 * osc4outlevel.dbamp)
+				(osc3 * osc3outlevel.dbamp)
 			);
 		}
 	}
@@ -574,10 +536,10 @@ RTheNewPoleModule : RModule {
 			'hpfcutoff' -> ControlSpec(1, 10000, 'exp', 0, 440, " Hz"),
 			'hpfres' -> \unipolar.asSpec,
 			'ampgain' -> \db.asSpec,
-			'envattack' -> ControlSpec(0, 4, 'lin', 0, 0.01, "secs"),
-			'envdecay' -> ControlSpec(0, 4, 'lin', 0, 0.3, "secs"),
-			'envsustain' -> \unipolar.asSpec,
-			'envrelease' -> ControlSpec(0, 4, 'lin', 0, 1, "secs"),
+			'envattack' -> ControlSpec(0, 5000, 'lin', 0, 5, "ms"),
+			'envdecay' -> ControlSpec(0, 5000, 'lin', 0, 30, "ms"),
+			'envsustain' -> ControlSpec(0, 1, 'lin', 0, 0.5, ""),
+			'envrelease' -> ControlSpec(0, 5000, 'lin', 0, 100, "ms"),
 			'envgate' -> \unipolar.asSpec,
 			'lforate' -> \lofreq.asSpec,
 			'lpfcutoffenvmod' -> \db.asSpec,
@@ -603,10 +565,10 @@ RTheNewPoleModule : RModule {
 				hpfcutoff = 0,
 				hpfres = 0,
 				ampgain = -60,
-				envattack=0.01,
-				envdecay=0.03,
-				envsustain=0.5,
-				envrelease=1,
+				envattack,
+				envdecay,
+				envsustain,
+				envrelease,
 				envgate,
 				lforate = 1,
 				lpfcutoffenvmod = -60,
@@ -622,7 +584,7 @@ RTheNewPoleModule : RModule {
 			;
 			var freqSpec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz");
 			var rqSpec = \rq.asSpec;
-			var env = EnvGen.ar(Env.adsr(envattack, envdecay, envsustain, envrelease), envgate);
+			var env = EnvGen.ar(Env.adsr(envattack/1000, envdecay/1000, envsustain/1000, envrelease/1000), envgate);
 			var lfo = SinOsc.ar(lforate);
 			var hpfrq = rqSpec.map(1-(hpfres + (env * hpfresenvmod.dbamp) + (lfo * hpfreslfomod.dbamp)));
 			var lpfrq = rqSpec.map(1-(lpfres + (env * lpfresenvmod.dbamp) + (lfo * lpfreslfomod.dbamp)));
@@ -640,7 +602,7 @@ RTheNewPoleModule : RModule {
 				lpfrq
 			);
 
-			Out.ar(out, sig * (ampgain.dbamp + (env * ampenvmod.dbamp)/* + (lfo * amplfomod.dbamp)*/));
+			Out.ar(out, sig * (ampgain.dbamp + (env * ampenvmod.dbamp) + (lfo * amplfomod.dbamp)));
 		}
 	}
 
