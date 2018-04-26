@@ -1,6 +1,6 @@
 -- glut
 --
--- granular thing
+-- granular sampler
 --
 -- ////////
 -- ////
@@ -18,6 +18,12 @@ VOICES=4
 glut_positions = {-1, -1, -1, -1, -1, -1, -1}
 glut_gates = {0, 0, 0, 0, 0, 0, 0}
 focus = 1
+param_focus = 1
+param_names = {
+  "rate",
+  "dur",
+  "density",
+}
 
 -- init function
 function init()
@@ -44,8 +50,14 @@ function init()
     p.time = 0.05
     p:start()
 
-    params:add_control("voice"..v..".rate",controlspec.new(-8, 8, "lin", 0, 1, ""))
-    params:set_action("voice"..v..".rate", function(value) engine.rate(v, value) end)
+    params:add_control("rate"..v, controlspec.new(-8, 8, "lin", 0, 1, ""))
+    params:set_action("rate"..v, function(value) engine.rate(v, value) end)
+
+    params:add_control("dur"..v, controlspec.new(0.001, 10, "lin", 0, 1, "sec"))
+    params:set_action("dur"..v, function(value) engine.dur(v, value) end)
+
+    params:add_control("density"..v, controlspec.new(0, 512, "lin", 0, 1, ""))
+    params:set_action("density"..v, function(value) engine.density(v, value) end)
   end
 end
 
@@ -85,7 +97,9 @@ function enc(n, d)
     if focus > 7 then focus = 7 end
     if focus < 1 then focus = 1 end
   elseif n == 2 then
-    params:delta("voice"..focus..".rate", d / 10)
+    param_focus = util.clamp(param_focus + d, 1, 3)
+  elseif n == 3 then
+    params:delta(param_names[param_focus]..focus, d / 10)
   end
   redraw()
 end
@@ -110,13 +124,22 @@ end
 
 function redraw()
   screen.clear()
-  screen.level(15)
 
+  screen.level(7)
   screen.move(0, 10)
   screen.text("voice: "..focus)
 
+  if param_focus == 1 then screen.level(15) else screen.level(7) end
   screen.move(0, 20)
-  screen.text("rate: "..params:string("voice"..focus..".rate"))
+  screen.text("rate: "..params:string("rate"..focus))
+
+  if param_focus == 2 then screen.level(15) else screen.level(7) end
+  screen.move(0, 30)
+  screen.text("dur: "..params:string("dur"..focus))
+
+  if param_focus == 3 then screen.level(15) else screen.level(7) end
+  screen.move(0, 40)
+  screen.text("density: "..params:string("density"..focus))
 
   screen.update()
 end
