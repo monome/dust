@@ -309,7 +309,7 @@ Engine_Ack : CroneEngine {
 					out: \audiobus,
 					delayBus: \audiobus,
 					reverbBus: \audiobus,
-					bufnum: nil, // ControlSpec(0, 7, step: 1, default: 0), // TODO: temporary for testing in SynthDescLib
+					bufnum: nil,
 					loopStart: loopStartSpec,
 					loopEnd: loopEndSpec,
 					// speed: speedSpec,
@@ -340,16 +340,18 @@ Engine_Ack : CroneEngine {
 			this.delayDefName,
 			{ |in, out, delayTime, feedback|
 				var sig = In.ar(in, 2);
-				sig = CombC.ar(sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime, decaytime: feedback);
+				var sigfeedback = LocalIn.ar(2);
+				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime);
+				LocalOut.ar(sig * feedback);
 				Out.ar(out, sig);
 			},
-			rates: [nil, nil, nil, nil, nil],
+			rates: [nil, nil, 0.2, 0.2],
 			metadata: (
 				specs: (
 					in: \audiobus,
 					out: \audiobus,
 					delayTime: delayTimeSpec,
-					feedback: delayTimeSpec
+					feedback: delayFeedbackSpec
 				)
 			)
 		).add;
@@ -482,12 +484,10 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdSpeed { |channelnum, f|
-		// TODO channelGroups[channelnum].set(\speed, speedSpec.constrain(f));
-		channelControlBusses[channelnum][\phasorFreq].set(speedSpec.constrain(f)); // TODO: this should be a ctrlBus
+		channelControlBusses[channelnum][\phasorFreq].set(speedSpec.constrain(f));
 	}
 
 	cmdSpeedSlew { |channelnum, f|
-		// TODO channelGroups[channelnum].set(\speedSlew, slewSpec.constrain(f));
 		channelControlBusses[channelnum][\phasorFreqSlew].set(slewSpec.constrain(f));
 	}
 
@@ -560,7 +560,7 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdDelayFeedback { |f|
-		delaySynth.set(\feedback, delayTimeSpec.constrain(f));
+		delaySynth.set(\feedback, delayFeedbackSpec.constrain(f));
 	}
 
 	cmdReverbRoom { |f|
@@ -586,39 +586,9 @@ Engine_Ack : CroneEngine {
 		super.free;
 	}
 
-	// TODO: remove
-	scrambleSamples {
-		var soundsFolder = "/home/pi/dust/audio/hello_ack";
-		// var soundsFolder = "/newthing/dust/audio/hello_ack";
-		var soundsToLoad;
-		var allSounds = PathName(soundsFolder)
-			.deepFiles
-			.select { |pathname| ["aif", "aiff", "wav"].includesEqual(pathname.extension) }
-			.collect(_.fullPath);
+	sampleIsLoaded { |channelnum| ^buffers[channelnum].path.notNil }
 
-		soundsToLoad = allSounds
-			.scramble
-			.keep(numChannels);
-
-		fork {
-			soundsToLoad.do { |path, channelnum|
-				this.loadSample(channelnum, path.asString);
-			};
-
-			context.server.sync;
-
-			"% randomly selected sounds out of % sounds in folder % loaded."
-				.format(soundsToLoad.size, allSounds.size, soundsFolder.quote).inform;
-		};
-	}
-
-	sampleIsLoaded { |channelnum|
-		^buffers[channelnum].path.notNil
-	}
-
-	sampleIsStereo { |channelnum|
-		^buffers[channelnum].numChannels == 2
-	}
+	sampleIsStereo { |channelnum| ^buffers[channelnum].numChannels == 2 }
 
 	loadSample { |channelnum, path|
 		if (channelnum >= 0 and: channelnum < numChannels) {

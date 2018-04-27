@@ -1,13 +1,17 @@
--- simple step sequencer,
--- grid controlled
+-- sample based grid step
+-- sequencer
 -- 
+-- transport:
+-- key2 = stop sequencer
+-- key3 = play sequencer
+-- key3+grid to cut position
 -- enc2 = tempo
--- enc3 = swing amount
--- key2 = stop
--- key3 = play
+-- enc3 = swing amount (TODO)
 -- 
--- enc1 while gridrow pressed
---   = load sample
+-- editing:
+-- grid edit trigs
+-- grid+enc2/enc3 lock params
+-- grid+key2 clear locks
 
 engine.name = 'Ack'
 
@@ -113,76 +117,77 @@ local function add_ack_params()
   local filter_env_mod_spec = ControlSpec.UNIPOLAR
 
   local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
-  -- local delay_feedback_spec = ControlSpec.UNIPOLAR -- TODO feedback should be 0-1 displayed as %
+  local delay_feedback_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
   local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
   local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
-  for i=0,7 do
+  for i=1,8 do
+    params:add_file(i..": sample", "/home/pi/dust/audio/")
+    params:set_file(i..": sample", function(value)
+      engine.loadSample(i-1, value)
+    end)
   --[[
   TODO: looping
-    params:add_control((i+1)..": start", start_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": start", function(value) engine.start(i, value) end)
-    params:add_control((i+1)..": end", end_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": end", function(value) engine.end(i, value) end)
-    params:add_control((i+1)..": loop point", loop_point_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": loop point", function(value) engine.loopPoint(i, value) end)
-    params:add_option((i+1)..": loop", {"off", "on"})
-    params:set_action((i+1)..": loop", function(value) engine.loop(i, value) end)
+    params:add_control(i..": start", start_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": start", function(value) engine.start(i-1, value) end)
+    params:add_control(i..": end", end_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": end", function(value) engine.end(i-1, value) end)
+    params:add_control(i..": loop point", loop_point_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": loop point", function(value) engine.loopPoint(i-1, value) end)
+    params:add_option(i..": loop", {"off", "on"})
+    params:set_action(i..": loop", function(value) engine.loop(i-1, value) end)
   ]]
-    params:add_control((i+1)..": speed", speed_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": speed", function(value) engine.speed(i, value) end)
-    params:add_control((i+1)..": vol", volume_spec, Formatters.std)
-    params:set_action((i+1)..": vol", function(value) engine.volume(i, value) end)
-    params:add_control((i+1)..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
-    params:set_action((i+1)..": vol env atk", function(value) engine.volumeEnvAttack(i, value) end)
-    params:add_control((i+1)..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
-    params:set_action((i+1)..": vol env rel", function(value) engine.volumeEnvRelease(i, value) end)
-    params:add_control((i+1)..": pan", ControlSpec.PAN, Formatters.bipolar_as_pan_widget)
-    params:set_action((i+1)..": pan", function(value) engine.pan(i, value) end)
-    params:add_control((i+1)..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
-    params:set_action((i+1)..": filter cutoff", function(value) engine.filterCutoff(i, value) end)
-    params:add_control((i+1)..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": filter res", function(value) engine.filterRes(i, value) end)
+    params:add_control(i..": speed", speed_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": speed", function(value) engine.speed(i-1, value) end)
+    params:add_control(i..": vol", volume_spec, Formatters.std)
+    params:set_action(i..": vol", function(value) engine.volume(i-1, value) end)
+    params:add_control(i..": vol env atk", volume_env_attack_spec, Formatters.secs_as_ms)
+    params:set_action(i..": vol env atk", function(value) engine.volumeEnvAttack(i-1, value) end)
+    params:add_control(i..": vol env rel", volume_env_release_spec, Formatters.secs_as_ms)
+    params:set_action(i..": vol env rel", function(value) engine.volumeEnvRelease(i-1, value) end)
+    params:add_control(i..": pan", ControlSpec.PAN, Formatters.bipolar_as_pan_widget)
+    params:set_action(i..": pan", function(value) engine.pan(i-1, value) end)
+    params:add_control(i..": filter cutoff", filter_cutoff_spec, Formatters.round(0.001))
+    params:set_action(i..": filter cutoff", function(value) engine.filterCutoff(i-1, value) end)
+    params:add_control(i..": filter res", filter_res_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": filter res", function(value) engine.filterRes(i-1, value) end)
     --[[
-    params:add_control((i+1)..": filter mode", filter_mode_spec, Formatters.std)
-    params:set_action(function(value) engine.filterMode(i, value) end)
+    params:add_control(i..": filter mode", filter_mode_spec, Formatters.std)
+    params:set_action(function(value) engine.filterMode(i-1, value) end)
     ]]
-    params:add_control((i+1)..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
-    params:set_action((i+1)..": filter env atk", function(value) engine.filterEnvAttack(i, value) end)
-    params:add_control((i+1)..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
-    params:set_action((i+1)..": filter env rel", function(value) engine.filterEnvRelease(i, value) end)
-    params:add_control((i+1)..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
-    params:set_action((i+1)..": filter env mod", function(value) engine.filterEnvMod(i, value) end)
-    params:add_control((i+1)..": delay send", send_spec, Formatters.std)
-    params:set_action((i+1)..": delay send", function(value) engine.delaySend(i, value) end)
-    params:add_control((i+1)..": reverb send", send_spec, Formatters.std)
-    params:set_action((i+1)..": reverb send", function(value) engine.reverbSend(i, value) end)
+    params:add_control(i..": filter env atk", filter_env_attack_spec, Formatters.secs_as_ms)
+    params:set_action(i..": filter env atk", function(value) engine.filterEnvAttack(i-1, value) end)
+    params:add_control(i..": filter env rel", filter_env_release_spec, Formatters.secs_as_ms)
+    params:set_action(i..": filter env rel", function(value) engine.filterEnvRelease(i-1, value) end)
+    params:add_control(i..": filter env mod", filter_env_mod_spec, Formatters.unipolar_as_percentage)
+    params:set_action(i..": filter env mod", function(value) engine.filterEnvMod(i-1, value) end)
+    params:add_control(i..": delay send", send_spec, Formatters.std)
+    params:set_action(i..": delay send", function(value) engine.delaySend(i-1, value) end)
+    params:add_control(i..": reverb send", send_spec, Formatters.std)
+    params:set_action(i..": reverb send", function(value) engine.reverbSend(i-1, value) end)
     --[[
     TODO: enable slews
-    params:add_control((i+1)..": speed slew", slew_spec, Formatters.std)
-    params:set_action((i+1)..": speed slew", function(value) engine.speedSlew(i, value) end)
-    params:add_control((i+1)..": vol slew", slew_spec, Formatters.std)
-    params:set_action((i+1)..": vol slew", function(value) engine.volumeSlew(i, value) end)
-    params:add_control((i+1)..": pan slew", slew_spec, Formatters.std)
-    params:set_action((i+1)..": pan slew", function(value) engine.panSlew(i, value) end)
-    params:add_control((i+1)..": filter cutoff slew", slew_spec, Formatters.std)
-    params:set_action((i+1)..": filter cutoff slew", function(value) engine.filterCutoffSlew(i, value) end)
-    params:add_control((i+1)..": filter res slew", slew_spec, Formatters.std)
-    params:set_action((i+1)..": filter res slew", function(value) engine.filterResSlew(i, value) end)
+    params:add_control(i..": speed slew", slew_spec, Formatters.std)
+    params:set_action(i..": speed slew", function(value) engine.speedSlew(i-1, value) end)
+    params:add_control(i..": vol slew", slew_spec, Formatters.std)
+    params:set_action(i..": vol slew", function(value) engine.volumeSlew(i-1, value) end)
+    params:add_control(i..": pan slew", slew_spec, Formatters.std)
+    params:set_action(i..": pan slew", function(value) engine.panSlew(i-1, value) end)
+    params:add_control(i..": filter cutoff slew", slew_spec, Formatters.std)
+    params:set_action(i..": filter cutoff slew", function(value) engine.filterCutoffSlew(i-1, value) end)
+    params:add_control(i..": filter res slew", slew_spec, Formatters.std)
+    params:set_action(i..": filter res slew", function(value) engine.filterResSlew(i-1, value) end)
     ]]
   end
 
   params:add_control("delay time", delay_time_spec, Formatters.secs_as_ms)
   params:set_action("delay time", engine.delayTime)
-  params:add_control("delay feedback", delay_time_spec, Formatters.secs_as_ms)
-  params:set("delay feedback", 0.75)
+  params:add_control("delay feedback", delay_feedback_spec, Formatters.unipolar_as_percentage)
   params:set_action("delay feedback", engine.delayFeedback)
   params:add_control("reverb room", reverb_room_spec, Formatters.unipolar_as_percentage)
   params:set_action("reverb room", engine.reverbRoom)
   params:add_control("reverb damp", reverb_damp_spec, Formatters.unipolar_as_percentage)
   params:set_action("reverb damp", engine.reverbRoom)
-
-  -- params:read("param_ack.pset")
 end
 
 init = function()
