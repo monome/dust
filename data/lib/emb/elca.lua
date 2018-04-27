@@ -35,7 +35,6 @@ function CA:update()
    local newState = {}
    for i=1,CA.numStates do
       local l, c, r = self:neighbors(i)
---      print (l, c, r)
       local code = CA.code(l, c, r)
       if (self.rule & (1 << code)) > 0 then newState[i] = 1
       else newState[i] = 0 end

@@ -76,16 +76,20 @@ end
 m.callback = function(stage)
    ca:update()
    local col = ca:window(8)
-   history[17] = col
+   table.insert(history, col)
    table.remove(history, 1)
 
    gridredraw()
-   
+
+   --[[
    local str = ""
    for i=1,8 do      
       if col[i] > 0 then str = str .. "0" else str = str .. "." end
    end
-   print(str)end
+   print(str)
+   --]]
+   
+end
 
 m.time = 0.125
 
