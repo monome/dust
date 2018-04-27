@@ -92,13 +92,10 @@ end
 
 -- change current state at index,
 --- and update the rule to that which would have produced the new state
-function CA:set_rule_by_state(val, l, r, c)
-   if self.oldState[i] ~= val then
-      self.oldState[i] = val
-      local code = CA.code(l, r, c)
-      if val then rule = rule | 2
-      else rule = rule & 5 end
-   end
+function CA:set_rule_by_state(val, l, c, r)
+   local code = CA.code(l, c, r)
+   if val then self.rule = self.rule | 2
+   else self.rule = self.rule & 5 end
 end
 
 -- TODO: maybe setter methods that clamp stuff

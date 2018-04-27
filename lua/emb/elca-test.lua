@@ -1,5 +1,15 @@
+-- elementary cellular automata
+-- 
+-- last column: change state
+-- earlier columns: change rule
+--
+-- key 2 : stop
+-- key 3 : start
+-- enc 2 : rate
+--
+--- TODO: sounds...?
+
 local elca = require 'emb.elca'
---local grid = require 'grid'
 
 local ca = elca.new()
 local m = metro[1]
@@ -26,13 +36,42 @@ end
 
 function gridredraw()
    if g == nil then return end
+   local val
    for i=1, 16 do
+   if i == 16 then val = 12 else val = 4 end
       local col = history[i]
+      local z
       for j=1,8 do
+         if col[j] > 0 then z = val else z = 0 end
 	 g:led(i, j, col[j])
       end
    end
+   g:refresh()
 end
+
+gridkey = function(x, y, z)
+   if x < 2 then return end
+   -- most recent row - set the state
+   if x == 16 then
+      if ca.state[y] > 0 then ca.state[y] = 0 else ca.state[y] = 1 end
+   -- earlier rows - change the rule such that it would have produced a different value
+   -- (and change the state too)
+   else
+      local col = history[x-1]
+      local l
+      if y == 1 then l = col[8] else l = col[y-1] end
+      local r
+      if y == 8 then r = col[1] else r = col[y+1] end
+      local c = col[y]
+      local val
+      if history[x][y] > 0  then val = 0 else val = 1 end
+      history[x][y] = val
+      ca.state[y] = c
+      ca:set_rule_by_state(history[x][y], l, c, r)
+      gridredraw()
+   end
+end
+
 
 m.callback = function(stage)
    ca:update()
