@@ -51,6 +51,9 @@ function init()
     p.time = 0.05
     p:start()
 
+    params:add_file("sample"..v)
+    params:set_action("sample"..v, function(file) engine.read(v, file) end)
+
     params:add_control("rate"..v, controlspec.new(-8, 8, "lin", 0, 1, ""))
     params:set_action("rate"..v, function(value) engine.rate(v, value) end)
 
@@ -81,6 +84,12 @@ function stop_voice(voice)
   engine.gate(voice, 0)
 end
 
+function fileselect_callback(path)
+  if path ~= "cancel" then
+    engine.read(focus, path)
+  end
+end
+
 -- grid key function
 function gridkey(x, y, state)
   if state > 0 then
@@ -106,6 +115,12 @@ function enc(n, d)
     params:delta(param_names[param_focus]..focus, d / 10)
   end
   redraw()
+end
+
+function key(n, z)
+  if n == 2 then
+    fileselect.enter("/home/pi/dust", fileselect_callback)
+  end
 end
 
 function gridredraw()
@@ -148,6 +163,10 @@ function redraw()
   if param_focus == 4 then screen.level(15) else screen.level(5) end
   screen.move(0, 50)
   screen.text("pitch: "..params:string("pitch"..focus))
+
+  screen.level(5)
+  screen.move(0, 60)
+  screen.text("key2 - load")
 
   screen.update()
 end
