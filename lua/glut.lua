@@ -13,7 +13,7 @@
 
 engine.name = 'Glut'
 
-VOICES=4
+VOICES=7
 
 glut_positions = {-1, -1, -1, -1, -1, -1, -1}
 glut_gates = {0, 0, 0, 0, 0, 0, 0}
@@ -57,10 +57,10 @@ function init()
     params:add_control("rate"..v, controlspec.new(-8, 8, "lin", 0, 1, ""))
     params:set_action("rate"..v, function(value) engine.rate(v, value) end)
 
-    params:add_control("dur"..v, controlspec.new(0.001, 10, "lin", 0, 1, "sec"))
+    params:add_control("dur"..v, controlspec.new(0.001, 10, "lin", 0, 0.1, "sec"))
     params:set_action("dur"..v, function(value) engine.dur(v, value) end)
 
-    params:add_control("density"..v, controlspec.new(0, 512, "lin", 0, 1, ""))
+    params:add_control("density"..v, controlspec.new(0, 512, "lin", 0, 20, ""))
     params:set_action("density"..v, function(value) engine.density(v, value) end)
 
     params:add_control("pitch"..v, controlspec.new(0, 8, "lin", 0, 1, ""))
