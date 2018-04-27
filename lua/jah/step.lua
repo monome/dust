@@ -1,24 +1,26 @@
--- sample based grid step
--- sequencer
+-- sample based
+-- grid controlled
+-- step sequencer
 -- 
 -- transport:
 -- key2 = stop sequencer
 -- key3 = play sequencer
--- key3+grid to cut position
 -- enc2 = tempo
 -- enc3 = swing amount (TODO)
--- 
--- editing:
 -- grid edit trigs
+
+--[[
+-- key3+grid to cut position
 -- grid+enc2/enc3 lock params
 -- grid+key2 clear locks
-
+]]
 engine.name = 'Ack'
 
 local ControlSpec = require 'controlspec'
 local Control = require 'control'
 local Formatters = require 'jah/formatters'
 local FS = require 'fileselect'
+local Grid = require 'grid'
 
 local TRIG_LEVEL = 15
 local PLAYPOS_LEVEL = 7
@@ -33,6 +35,11 @@ local playing = false
 local playpos
 local t
 
+local trigger_indicators = {}
+local grid_available
+
+local gridbutton_indicator_level
+
 local trigs = {}
 
 local set_trig = function(x, y, value)
@@ -43,7 +50,7 @@ local trig_is_set = function(x, y)
   return trigs[y*maxwidth+x]
 end
 
-local refresh_grid_button = function(x, y)
+local refresh_grid_button = function(x, y, refresh)
   if g then
     if trig_is_set(x, y) then
       g:led(x, y, TRIG_LEVEL)
@@ -52,13 +59,27 @@ local refresh_grid_button = function(x, y)
     else
       g:led(x, y, CLEAR_LEVEL)
     end
+    if refresh then
+      g:refresh()
+    end
+  end
+end
+
+local refresh_grid_column = function(x, refresh)
+  for y=1,height do
+    refresh_grid_button(x, y, false)
+  end
+  if refresh then
     g:refresh()
   end
 end
 
-local refresh_grid_column = function(x)
-  for y=1,height do
-    refresh_grid_button(x, y)
+local refresh_grid = function()
+  for x=1,maxwidth do
+    refresh_grid_column(x, false)
+  end
+  if refresh then
+    g:refresh()
   end
 end
 
@@ -117,14 +138,16 @@ local function add_ack_params()
   local filter_env_mod_spec = ControlSpec.UNIPOLAR
 
   local delay_time_spec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
-  local delay_feedback_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
+  local delay_feedback_spec = ControlSpec.new(0, 1.25, 'lin', 0, 0.5, "")
   local reverb_room_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
   local reverb_damp_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 
   for i=1,8 do
-    params:add_file(i..": sample", "/home/pi/dust/audio/")
-    params:set_file(i..": sample", function(value)
-      engine.loadSample(i-1, value)
+    params:add_file(i..": sample")
+    params:set_action(i..": sample", function(value)
+      if value ~= "-" then
+        engine.loadSample(i-1, value)
+      end
     end)
   --[[
   TODO: looping
@@ -190,16 +213,40 @@ local function add_ack_params()
   params:set_action("reverb damp", engine.reverbRoom)
 end
 
+local function screen_update_voice_indicators()
+  screen.move(0,16)
+  screen.font_size(8)
+  for channelnum=1,8 do
+    if trigger_indicators[channelnum] then
+      screen.level(15)
+    else
+      screen.level(2)
+    end
+    screen.text(channelnum)
+  end
+end
+
+local function screen_update_grid_indicator()
+  screen.move(0,60)
+  screen.font_size(8)
+  if grid_available then
+    screen.level(15)
+    screen.text("grid:")
+    screen.text(" ")
+    screen.level(gridbutton_indicator_level or 0)
+    screen.text(grid_available)
+  else
+    screen.level(3)
+    screen.text("no grid")
+  end
+end
+
 init = function()
+  print("jah/step")
   for x=1,maxwidth do
     for y=1,height do
       set_trig(x, y, false)
     end
-  end
-
-  if g then
-    g:all(0)
-    g:refresh()
   end
 
   t = metro[1]
@@ -220,15 +267,13 @@ init = function()
   add_ack_params()
   params:bang()
 
-  local sampleroot = "/home/pi/dust/audio/hello_ack/"
-  engine.loadSample(0, sampleroot.."XR-20_003.wav")
-  engine.loadSample(1, sampleroot.."XR-20_114.wav")
-  engine.loadSample(2, sampleroot.."XR-20_285.wav")
-  engine.loadSample(3, sampleroot.."XR-20_328.wav")
-  engine.loadSample(4, sampleroot.."XR-20_121.wav")
-  engine.loadSample(5, sampleroot.."XR-20_667.wav")
-  engine.loadSample(6, sampleroot.."XR-20_128.wav")
-  engine.loadSample(7, sampleroot.."XR-20_718.wav")
+  --[[
+  if g then
+    g:all(0)
+    g:refresh()
+  end
+  ]]
+
 end
 
 -- encoder function
@@ -245,7 +290,7 @@ end
 
 local function newfile(what)
   if what ~= "cancel" then
-    engine.loadSample(fileselect_channel-1, what)
+    params:set(fileselect..": sample", what)
   end
 end
 
@@ -280,17 +325,20 @@ redraw = function()
   else
     screen.text("stopped")
   end
+  -- screen_update_voice_indicators()
+  -- screen_update_grid_indicator()
   screen.update()
 end
 
 gridkey = function(x, y, state)
+  gridbutton_indicator_level = math.random(15)
   if state == 1 then
     if trig_is_set(x, y) then
       set_trig(x, y, false)
-      refresh_grid_button(x, y)
+      refresh_grid_button(x, y, true)
     else
       set_trig(x, y, true)
-      refresh_grid_button(x, y)
+      refresh_grid_button(x, y, true)
     end
     if g then
       g:refresh()
@@ -299,7 +347,24 @@ gridkey = function(x, y, state)
   else
     fileselect_channel = nil -- TODO: register keydowns in a table
   end
+  redraw()
 end
+
+--[[
+function Grid.add(grid)
+  print("grid added")
+  refresh_grid()
+  grid_available = grid.serial
+  gridbutton_indicator_level = 3
+  redraw()
+end
+
+function Grid.remove()
+  print("grid removed")
+  grid_available = nil
+  redraw()
+end
+]]
 
 cleanup = function()
   if g then

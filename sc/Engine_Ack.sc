@@ -60,8 +60,8 @@ Engine_Ack : CroneEngine {
 		filterModeSpec = ControlSpec(0, 1, step: 1, default: 0);
 		filterEnvModSpec = \unipolar.asSpec;
 
-		delayTimeSpec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs");
-		delayFeedbackSpec = \unipolar.asSpec;
+		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
+		delayFeedbackSpec = ControlSpec(0, 1.25);
 
 		reverbRoomSpec = \unipolar.asSpec.copy.default_(0.75);
 		reverbDampSpec = \unipolar.asSpec.copy.default_(0.5);
@@ -336,6 +336,85 @@ Engine_Ack : CroneEngine {
 			)
 		).add;
 
+		SynthDef(
+			(this.stereoSamplePlayerDefName.asString++"_OneShot").asSymbol,
+			{
+				|
+					gate,
+					out=0,
+					delayBus,
+					reverbBus,
+					bufnum,
+					loopStart,
+					loopEnd,
+					// speed, TODO
+					// speedSlew, TODO
+					phasorFreq,
+					phasorFreqSlew,
+					volume,
+					volumeSlew,
+					volumeEnvAttack,
+					volumeEnvRelease,
+					pan,
+					panSlew,
+					filterCutoff,
+					filterCutoffSlew,
+					filterRq,
+					filterRqSlew,
+					filterMode,
+					filterEnvAttack,
+					filterEnvRelease,
+					filterEnvMod,
+					delaySend,
+					reverbSend
+				|
+				var sig = PlayBuf.ar(2, bufnum, phasorFreq, 1);
+
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+
+				sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRq);
+				sig = Balance2.ar(sig[0], sig[1], pan);
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			// rates: [\tr],
+			rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					loopStart: loopStartSpec,
+					loopEnd: loopEndSpec,
+					// speed: speedSpec,
+					// speedSlew: slewSpec,
+					phasorFreq: nil,
+					phasorFreqSlew: slewSpec,
+					volume: volumeSpec,
+					volumeSlew: slewSpec,
+					volumeEnvAttack: volumeEnvAttackSpec,
+					volumeEnvRelease: volumeEnvReleaseSpec,
+					pan: panSpec,
+					panSlew: slewSpec,
+					filterCutoff: filterCutoffSpec,
+					filterCutoffSlew: slewSpec,
+					filterRq: \rq,
+					filterRqSlew: slewSpec,
+					filterMode: filterModeSpec,
+					filterEnvAttack: filterEnvAttackSpec,
+					filterEnvRelease: filterEnvReleaseSpec,
+					filterEnvMod: filterEnvModSpec,
+					delaySend: sendSpec,
+					reverbSend: sendSpec
+				)
+			)
+		).add;
 		SynthDef(
 			this.delayDefName,
 			{ |in, out, delayTime, feedback|
