@@ -1,6 +1,6 @@
 
 Engine_Glut : CroneEngine {
-	classvar nvoices = 4;
+	classvar nvoices = 7;
 
 	var effect;
 	var <buf;
@@ -33,7 +33,7 @@ Engine_Glut : CroneEngine {
 
 		SynthDef(\synth, {
 			arg out, phase_out, buf, gate=0, pos=0, t_pos=0, rate=1,
-			dur=1, density=1, pitch=1;
+			dur=0.1, density=20, pitch=1.0;
 			var phase;
 			var phase_jitter;
 			var phase_sig;
