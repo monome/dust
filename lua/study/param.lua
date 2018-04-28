@@ -1,5 +1,6 @@
 -- param test
---
+-- see menu > parameters
+-- hold key1 inside menu to read/write
 
 engine.name = 'TestSine'
 
@@ -9,7 +10,7 @@ init = function()
   params:add_control("something",controlspec.UNIPOLAR)
   params:add_control("freq",controlspec.FREQ)
   params:set_action("freq",engine.hz)
-  --params:add_file("sample","~/dust/audio/")
+  params:add_file("sample")
   
   params:read("ptest.pset")
 end
