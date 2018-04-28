@@ -13,13 +13,13 @@
 
 engine.name = 'Glut'
 
-VOICES=7
+local VOICES = 7
 
-glut_positions = {-1, -1, -1, -1, -1, -1, -1}
-glut_gates = {0, 0, 0, 0, 0, 0, 0}
-focus = 1
-param_focus = 1
-param_names = {
+local positions = {-1, -1, -1, -1, -1, -1, -1}
+local gates = {0, 0, 0, 0, 0, 0, 0}
+local focus = 1
+local param_focus = 1
+local param_names = {
   "rate",
   "dur",
   "density",
@@ -45,7 +45,7 @@ function init()
   c:start()
 
 
-  for v=1, VOICES do
+  for v = 1, VOICES do
     -- set poll
     p = poll.set('phase_' .. v, function(pos) update_pos(v, pos) end)
     p.time = 0.05
@@ -70,17 +70,17 @@ end
 
 function update_pos(voice, pos)
   local led_pos = math.floor(pos * 16) + 1
-  glut_positions[voice] = led_pos
+  positions[voice] = led_pos
 end
 
 function start_voice(voice, pos)
   engine.pos(voice, pos)
   engine.gate(voice, 1)
-  glut_gates[voice] = 1
+  gates[voice] = 1
 end
 
 function stop_voice(voice)
-  glut_gates[voice] = 0
+  gates[voice] = 0
   engine.gate(voice, 0)
 end
 
@@ -133,9 +133,9 @@ function gridredraw()
     g:led(i, focus + 1, 3)
   end
   for i=1, 7 do
-    if glut_gates[i] > 0 then
+    if gates[i] > 0 then
       g:led(i, 1, 7)
-      g:led(glut_positions[i], i + 1, 15)
+      g:led(positions[i], i + 1, 15)
     end
   end
   g:refresh()
@@ -173,5 +173,5 @@ end
 
 -- called on script quit, release memory
 cleanup = function()
-  glut_positions = nil
+  positions = nil
 end
