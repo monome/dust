@@ -497,6 +497,7 @@ Engine_Ack : CroneEngine {
 		context.server.sync;
 
 		this.addCommand(\loadSample, "is") { |msg| this.cmdLoadSample(msg[1], msg[2]) };
+		this.addCommand(\multiTrig, "iiiiiiii") { |msg| this.cmdMultiTrig(msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8]) };
 		this.addCommand(\trig, "i") { |msg| this.cmdTrig(msg[1]) };
 		this.addCommand(\loopStart, "if") { |msg| this.cmdLoopStart(msg[1], msg[2]) };
 		this.addCommand(\loopEnd, "if") { |msg| this.cmdLoopEnd(msg[1], msg[2]) };
@@ -526,6 +527,14 @@ Engine_Ack : CroneEngine {
 
 	cmdLoadSample { |channelnum, path|
 		this.loadSample(channelnum, path.asString);
+	}
+
+	cmdMultiTrig { |...channels|
+		context.server.makeBundle(nil) {
+			channels.do { |trig, channelnum|
+				if (trig.booleanValue) { this.cmdTrig(channelnum) };
+			};
+		};
 	}
 
 	cmdTrig { |channelnum|
