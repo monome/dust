@@ -26,6 +26,56 @@ local param_names = {
   "pitch",
 }
 
+local gridbuf = require 'gridbuf'
+local grid_ctl = gridbuf.new(16, 8)
+local grid_voc = gridbuf.new(16, 8)
+
+local function update_pos(voice, pos)
+  local led_pos = math.floor(pos * 16) + 1
+  positions[voice] = led_pos
+end
+
+local function start_voice(voice, pos)
+  engine.pos(voice, pos)
+  engine.gate(voice, 1)
+  gates[voice] = 1
+end
+
+local function stop_voice(voice)
+  gates[voice] = 0
+  engine.gate(voice, 0)
+end
+
+local function fileselect_callback(path)
+  if path ~= "cancel" then
+    engine.read(focus, path)
+  end
+end
+
+local function gridredraw()
+  if g == nil then
+    return
+  end
+
+  grid_ctl:led_level_all(0)
+  grid_voc:led_level_all(0)
+
+  for i=1, 16 do
+    grid_ctl:led_level_set(i, focus + 1, 3)
+  end
+
+  for i=1, 7 do
+    if gates[i] > 0 then
+      grid_ctl:led_level_set(i, 1, 7)
+      grid_voc:led_level_set(positions[i], i + 1, 15)
+    end
+  end
+
+  local buf = grid_ctl | grid_voc
+  buf:render(g)
+  g:refresh()
+end
+
 -- init function
 function init()
   engine.list_commands()
@@ -68,28 +118,6 @@ function init()
   end
 end
 
-function update_pos(voice, pos)
-  local led_pos = math.floor(pos * 16) + 1
-  positions[voice] = led_pos
-end
-
-function start_voice(voice, pos)
-  engine.pos(voice, pos)
-  engine.gate(voice, 1)
-  gates[voice] = 1
-end
-
-function stop_voice(voice)
-  gates[voice] = 0
-  engine.gate(voice, 0)
-end
-
-function fileselect_callback(path)
-  if path ~= "cancel" then
-    engine.read(focus, path)
-  end
-end
-
 -- grid key function
 function gridkey(x, y, state)
   if state > 0 then
@@ -123,24 +151,6 @@ function key(n, z)
   end
 end
 
-function gridredraw()
-  if g == nil then
-    return
-  end
-
-  g:all(0)
-  for i=1, 16 do
-    g:led(i, focus + 1, 3)
-  end
-  for i=1, 7 do
-    if gates[i] > 0 then
-      g:led(i, 1, 7)
-      g:led(positions[i], i + 1, 15)
-    end
-  end
-  g:refresh()
-end
-
 function redraw()
   screen.clear()
 
@@ -172,6 +182,6 @@ function redraw()
 end
 
 -- called on script quit, release memory
-cleanup = function()
+function cleanup()
   positions = nil
 end

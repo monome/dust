@@ -4,12 +4,14 @@ end
 
 local function grid_binary_op(op, lhs, rhs)
   local result = { grid = {}, width = lhs.width, height = lhs.height }
+
   for row = 1, lhs.height do
     result.grid[row] = {}
     for col = 1, lhs.width do
       result.grid[row][col] = clamp(op(lhs.grid[row][col], rhs.grid[row][col]), 0, 15)
     end
   end
+
   setmetatable(result, getmetatable(lhs))
   return result
 end
@@ -20,6 +22,9 @@ local Buffer = {
   end,
   __sub = function(lhs, rhs)
     return grid_binary_op(function(a, b) return a - b end, lhs, rhs)
+  end,
+  __bor = function(lhs, rhs)
+    return grid_binary_op(function(a, b) return math.max(a, b) end, lhs, rhs)
   end,
   __bxor = function(lhs, rhs)
     return grid_binary_op(function(a, b) return a ~ b end, lhs, rhs)
@@ -73,7 +78,7 @@ function Buffer:render(grid)
   -- TODO: use map when it's available
   for row = 1, self.height do
     for col = 1, self.width do
-      grid:led(col, row, self.grid[col][row])
+      grid:led(col, row, self.grid[row][col])
     end
   end
 end
