@@ -1,7 +1,4 @@
--- @name 3oscs
--- @version 0.1.0
--- @author jah
--- @txt test r
+-- r engine test
 
 ControlSpec = require 'controlspec'
 Control = require 'control'
