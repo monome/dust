@@ -260,6 +260,7 @@ init = function()
   end
 
   timer = metro[1]
+  -- timer.count = -1 -- TODO: default, should not be needed
   timer.callback = tick
 
   -- TODO params:add_option("grid brightness", {"mono", "vari"}, 2)
