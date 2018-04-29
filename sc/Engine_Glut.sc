@@ -15,10 +15,12 @@ Engine_Glut : CroneEngine {
 	// disk read
 	readBuf { arg i, path;
 		if(buf[i].notNil, {
-			var newbuf = Buffer.readChannel(context.server, path, 0, -1, [0], {
-				voices[i].set(\buf, newbuf);
-				buf[i].free;
-				buf[i] = newbuf;
+			if (File.exists(path), {
+				var newbuf = Buffer.readChannel(context.server, path, 0, -1, [0], {
+					voices[i].set(\buf, newbuf);
+					buf[i].free;
+					buf[i] = newbuf;
+				});
 			});
 		});
 	}
@@ -166,7 +168,10 @@ Engine_Glut : CroneEngine {
 
 	free {
 		voices.do({ arg voice; voice.free; });
+		phases.do({ arg phase; phase.free; });
 		buf.do({ arg b; b.free; });
+		effect.free;
+		mixBus.free;
 		super.free;
 	}
 }
