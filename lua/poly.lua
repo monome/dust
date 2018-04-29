@@ -1,5 +1,5 @@
 -- subtractive polysynth
--- controlled by grid
+-- controlled by midi or grid
 -- knob 2 selects param
 -- knob 3 changes selected param
 
@@ -117,6 +117,7 @@ gridkey = function(x, y, state)
   if state > 0 then
     if nvoices < 6 then
      --engine.start(id, getHz(x, y-1))
+     print("grid > "..id.." "..note)
      engine.start(id, getHzET(note))
       g:led(x, y, 10)
      nvoices = nvoices + 1
@@ -163,4 +164,42 @@ end
 
 cleanup = function()
   -- nothing to do
+end
+
+norns.midi.event = function(id, data)
+  tab.print(data)
+  if data[1] == 144 then
+    --[[
+    if data1 == 0 then
+    return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
+    end
+    ]]
+    note_on(data[2], data[3])
+  elseif data[1] == 128 then
+    --[[
+    if data1 == 0 then
+    return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
+    end
+    ]]
+    note_off(data[2])
+  elseif status == 176 then
+    --cc(data1, data2)
+  elseif status == 224 then
+    --bend(data1, data2)
+  end
+end
+
+nvoices = 0
+
+note_on = function(note, vel)
+  if nvoices < 6 then
+    --engine.start(id, getHz(x, y-1))
+    engine.start(note, getHzET(note))
+    nvoices = nvoices + 1
+  end
+end
+
+note_off = function(note, vel)
+  engine.stop(note)
+  nvoices = nvoices - 1
 end

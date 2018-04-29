@@ -22,7 +22,7 @@
 engine.name = "SoftCut"
 
 TRACKS = 4
-FADE = 0.1
+FADE = 0.25
 
 vREC = 1
 vCUT = 2 
@@ -72,7 +72,7 @@ event_exec = function(e)
     track[e.i].loop_end = e.loop_end
     --print("LOOP "..track[e.i].loop_start.." "..track[e.i].loop_end)
     local lstart = 1+(track[e.i].loop_start-1)/16*track[e.i].length
-    local lend =  1+(track[e.i].loop_end)/16*track[e.i].length - FADE
+    local lend =  1+(track[e.i].loop_end)/16*track[e.i].length-- - FADE
     --print(">>>> "..lstart.." "..lend)
     engine.loop_start(e.i,lstart)
     engine.loop_end(e.i,lend) 
@@ -474,7 +474,7 @@ end
 
 v.enc[vCUT] = function(n,d)
   if n==2 then
-    params:delta("vol"..focus,d/100)
+    params:delta("vol"..focus,d)
   end 
   redraw()
 end
