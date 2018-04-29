@@ -25,6 +25,7 @@ local param_names = {
   "dur",
   "density",
   "pitch",
+  "spread",
 }
 
 local gridbuf = require 'gridbuf'
@@ -121,15 +122,17 @@ function init()
   end
   c:start()
 
-
+  -- add samples first
   for v = 1, VOICES do
-    -- set poll
+    params:add_file("sample"..v)
+    params:set_action("sample"..v, function(file) engine.read(v, file) end)
+
     p = poll.set('phase_' .. v, function(pos) update_pos(v, pos) end)
     p.time = 0.05
     p:start()
+  end
 
-    params:add_file("sample"..v)
-    params:set_action("sample"..v, function(file) engine.read(v, file) end)
+  for v = 1, VOICES do
 
     params:add_control("rate"..v, controlspec.new(-8, 8, "lin", 0, 1, ""))
     params:set_action("rate"..v, function(value) engine.rate(v, value) end)
@@ -145,6 +148,9 @@ function init()
 
     params:add_control("pitch"..v, controlspec.new(0, 8, "lin", 0, 1, ""))
     params:set_action("pitch"..v, function(value) engine.pitch(v, value) end)
+
+    params:add_control("spread"..v, controlspec.new(0, 1, "lin", 0, 0, ""))
+    params:set_action("spread"..v, function(value) engine.spread(v, value) end)
   end
 end
 
@@ -168,7 +174,7 @@ function enc(n, d)
     if focus > 7 then focus = 7 end
     if focus < 1 then focus = 1 end
   elseif n == 2 then
-    param_focus = util.clamp(param_focus + d, 1, 5)
+    param_focus = util.clamp(param_focus + d, 1, 6)
   elseif n == 3 then
     params:delta(param_names[param_focus]..focus, d / 10)
   end
@@ -208,18 +214,20 @@ function redraw()
   screen.move(0, 50)
   screen.text("pitch: "..params:string("pitch"..focus))
 
+  if param_focus == 6 then screen.level(15) else screen.level(5) end
+  screen.move(0, 60)
+  screen.text("spread: "..params:string("spread"..focus))
+
   screen.level(5)
   screen.move(127, 60)
   screen.text_right("key2 - load")
-
-  screen.level(5)
-  screen.move(0, 60)
-  screen.text("")
 
   screen.update()
 end
 
 -- called on script quit, release memory
 function cleanup()
-  positions = nil
+  for v = 1, VOICES do
+    poll.polls['phase_' .. v]:stop()
+  end
 end
