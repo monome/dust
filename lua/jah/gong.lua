@@ -362,11 +362,7 @@ local function add_delay_params()
   params:set("delay feedback", -20)
 end
 
-local function bang()
-  print("banging..")
-  params:bang()
-  print("..banged")
-end
+local timer
 
 init = function()
   setup_r_config()
@@ -375,8 +371,13 @@ init = function()
   add_delay_params()
 
   timer = metro[1]
-  timer:start(1, 1)
-  timer.callback = bang
+  timer:start(0.05, 1)
+  timer.callback = function()
+    print("banging..")
+    params:bang()
+    print("..banged")
+  end
+
 
   voice = Voice.new(polyphony)
   -- params:read("gong.pset")
@@ -417,6 +418,8 @@ end
 cleanup = function()
   norns.midi.event = nil
   -- params:write("gong.pset")
+  timer.count = -1 -- TODO: reset to ensure timer set to default, should not be needed
+  timer:stop()
 end
 
 norns.midi.add = function(id, name, dev)
