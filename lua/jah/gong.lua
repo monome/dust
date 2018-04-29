@@ -24,7 +24,7 @@ local envrelease_spec = ControlSpec.new(0, 5000, 'lin', 0, 1000, "ms")
 local delay_time_spec = ControlSpec.DELAY:copy()
 delay_time_spec.maxval = 3
 
-local polyphony = 2
+local polyphony = 3
 local midinote_indicator_level
 local midicc_indicator_level
 local note_downs = {}
