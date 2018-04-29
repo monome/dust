@@ -60,8 +60,8 @@ Engine_Ack : CroneEngine {
 		filterModeSpec = ControlSpec(0, 1, step: 1, default: 0);
 		filterEnvModSpec = \unipolar.asSpec;
 
-		delayTimeSpec = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs");
-		delayFeedbackSpec = \unipolar.asSpec;
+		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
+		delayFeedbackSpec = ControlSpec(0, 1.25);
 
 		reverbRoomSpec = \unipolar.asSpec.copy.default_(0.75);
 		reverbDampSpec = \unipolar.asSpec.copy.default_(0.5);
@@ -309,7 +309,7 @@ Engine_Ack : CroneEngine {
 					out: \audiobus,
 					delayBus: \audiobus,
 					reverbBus: \audiobus,
-					bufnum: nil, // ControlSpec(0, 7, step: 1, default: 0), // TODO: temporary for testing in SynthDescLib
+					bufnum: nil,
 					loopStart: loopStartSpec,
 					loopEnd: loopEndSpec,
 					// speed: speedSpec,
@@ -337,19 +337,100 @@ Engine_Ack : CroneEngine {
 		).add;
 
 		SynthDef(
+			(this.stereoSamplePlayerDefName.asString++"_OneShot").asSymbol,
+			{
+				|
+					gate,
+					out=0,
+					delayBus,
+					reverbBus,
+					bufnum,
+					loopStart,
+					loopEnd,
+					// speed, TODO
+					// speedSlew, TODO
+					phasorFreq,
+					phasorFreqSlew,
+					volume,
+					volumeSlew,
+					volumeEnvAttack,
+					volumeEnvRelease,
+					pan,
+					panSlew,
+					filterCutoff,
+					filterCutoffSlew,
+					filterRq,
+					filterRqSlew,
+					filterMode,
+					filterEnvAttack,
+					filterEnvRelease,
+					filterEnvMod,
+					delaySend,
+					reverbSend
+				|
+				var sig = PlayBuf.ar(2, bufnum, phasorFreq, 1);
+
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+
+				sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRq);
+				sig = Balance2.ar(sig[0], sig[1], pan);
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			// rates: [\tr],
+			rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					loopStart: loopStartSpec,
+					loopEnd: loopEndSpec,
+					// speed: speedSpec,
+					// speedSlew: slewSpec,
+					phasorFreq: nil,
+					phasorFreqSlew: slewSpec,
+					volume: volumeSpec,
+					volumeSlew: slewSpec,
+					volumeEnvAttack: volumeEnvAttackSpec,
+					volumeEnvRelease: volumeEnvReleaseSpec,
+					pan: panSpec,
+					panSlew: slewSpec,
+					filterCutoff: filterCutoffSpec,
+					filterCutoffSlew: slewSpec,
+					filterRq: \rq,
+					filterRqSlew: slewSpec,
+					filterMode: filterModeSpec,
+					filterEnvAttack: filterEnvAttackSpec,
+					filterEnvRelease: filterEnvReleaseSpec,
+					filterEnvMod: filterEnvModSpec,
+					delaySend: sendSpec,
+					reverbSend: sendSpec
+				)
+			)
+		).add;
+		SynthDef(
 			this.delayDefName,
 			{ |in, out, delayTime, feedback|
 				var sig = In.ar(in, 2);
-				sig = CombC.ar(sig, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime, decaytime: feedback);
+				var sigfeedback = LocalIn.ar(2);
+				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime);
+				LocalOut.ar(sig * feedback);
 				Out.ar(out, sig);
 			},
-			rates: [nil, nil, nil, nil, nil],
+			rates: [nil, nil, 0.2, 0.2],
 			metadata: (
 				specs: (
 					in: \audiobus,
 					out: \audiobus,
 					delayTime: delayTimeSpec,
-					feedback: delayTimeSpec
+					feedback: delayFeedbackSpec
 				)
 			)
 		).add;
@@ -482,12 +563,10 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdSpeed { |channelnum, f|
-		// TODO channelGroups[channelnum].set(\speed, speedSpec.constrain(f));
-		channelControlBusses[channelnum][\phasorFreq].set(speedSpec.constrain(f)); // TODO: this should be a ctrlBus
+		channelControlBusses[channelnum][\phasorFreq].set(speedSpec.constrain(f));
 	}
 
 	cmdSpeedSlew { |channelnum, f|
-		// TODO channelGroups[channelnum].set(\speedSlew, slewSpec.constrain(f));
 		channelControlBusses[channelnum][\phasorFreqSlew].set(slewSpec.constrain(f));
 	}
 
@@ -560,7 +639,7 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdDelayFeedback { |f|
-		delaySynth.set(\feedback, delayTimeSpec.constrain(f));
+		delaySynth.set(\feedback, delayFeedbackSpec.constrain(f));
 	}
 
 	cmdReverbRoom { |f|
@@ -586,39 +665,9 @@ Engine_Ack : CroneEngine {
 		super.free;
 	}
 
-	// TODO: remove
-	scrambleSamples {
-		var soundsFolder = "/home/pi/dust/audio/hello_ack";
-		// var soundsFolder = "/newthing/dust/audio/hello_ack";
-		var soundsToLoad;
-		var allSounds = PathName(soundsFolder)
-			.deepFiles
-			.select { |pathname| ["aif", "aiff", "wav"].includesEqual(pathname.extension) }
-			.collect(_.fullPath);
+	sampleIsLoaded { |channelnum| ^buffers[channelnum].path.notNil }
 
-		soundsToLoad = allSounds
-			.scramble
-			.keep(numChannels);
-
-		fork {
-			soundsToLoad.do { |path, channelnum|
-				this.loadSample(channelnum, path.asString);
-			};
-
-			context.server.sync;
-
-			"% randomly selected sounds out of % sounds in folder % loaded."
-				.format(soundsToLoad.size, allSounds.size, soundsFolder.quote).inform;
-		};
-	}
-
-	sampleIsLoaded { |channelnum|
-		^buffers[channelnum].path.notNil
-	}
-
-	sampleIsStereo { |channelnum|
-		^buffers[channelnum].numChannels == 2
-	}
+	sampleIsStereo { |channelnum| ^buffers[channelnum].numChannels == 2 }
 
 	loadSample { |channelnum, path|
 		if (channelnum >= 0 and: channelnum < numChannels) {
