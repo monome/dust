@@ -30,9 +30,35 @@ local gridbuf = require 'gridbuf'
 local grid_ctl = gridbuf.new(16, 8)
 local grid_voc = gridbuf.new(16, 8)
 
+local function ledinterp(value, width)
+  local pos = value * (width - 1) + 0.5
+
+  local levels = {}
+  for i = 1, width do
+    levels[i] = 0
+  end
+
+  local left = math.floor(pos - 0.5)
+  local index_left = left + 1
+  local dist_left = math.abs(pos - (left + 0.5))
+
+  local right = math.floor(pos + 0.5)
+  local index_right = right + 1
+  local dist_right = math.abs(pos - (right + 0.5))
+
+  if index_right > width then
+    index_right = 1
+  end
+
+  levels[index_left] = math.floor((1 - dist_left) * 15)
+  levels[index_right] = math.floor((1 - dist_right) * 15)
+
+  return levels
+end
+
 local function update_pos(voice, pos)
-  local led_pos = math.floor(pos * 16) + 1
-  positions[voice] = led_pos
+  --local led_pos = math.floor(pos * 16) + 1
+  positions[voice] = pos
 end
 
 local function start_voice(voice, pos)
@@ -67,7 +93,7 @@ local function gridredraw()
   for i=1, 7 do
     if gates[i] > 0 then
       grid_ctl:led_level_set(i, 1, 7)
-      grid_voc:led_level_set(positions[i], i + 1, 15)
+      grid_voc:led_level_row(1, i + 1, ledinterp(positions[i], 16))
     end
   end
 

@@ -56,13 +56,13 @@ end
 
 function Buffer:led_level_row(x_offset, y, data)
   for i, l in ipairs(data) do
-    self:led_level_set(x_offset + i - 1, y, data)
+    self:led_level_set(x_offset + i - 1, y, data[i])
   end
 end
 
 function Buffer:led_level_col(x, y_offset, data)
   for i, l in ipairs(data) do
-    self:led_level_set(x, y_offset + i - 1, data)
+    self:led_level_set(x, y_offset + i - 1, data[i])
   end
 end
 
