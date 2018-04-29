@@ -33,14 +33,17 @@ Engine_Glut : CroneEngine {
 
 		SynthDef(\synth, {
 			arg out, phase_out, buf, gate=0, pos=0, t_pos=0, rate=1,
-			dur=0.1, density=20, pitch=1.0;
+			jitter=0, dur=0.1, density=20, pitch=1.0;
 			var phase;
 			var phase_jitter;
 			var phase_sig;
 			var sig;
+			var sig_trig;
 			var env;
 
-			phase_jitter = LFNoise1.kr(freq: 50, mul: 0.005);
+			sig_trig = Dust.kr(density);
+
+			phase_jitter = TRand.kr(lo: 0, hi: jitter, trig: sig_trig);
 			phase = Phasor.kr(trig: t_pos,
 				rate: BufDur.kr(buf).reciprocal / ControlRate.ir * rate,
 				resetPos: pos);
@@ -49,7 +52,7 @@ Engine_Glut : CroneEngine {
 			env = EnvGen.ar(Env.adsr(), gate: gate);
 
 			sig = GrainBuf.ar(2,
-				Dust.kr(density), // trig
+				sig_trig, // trig
 				dur,
 				buf,
 				pitch, // rate
@@ -115,6 +118,13 @@ Engine_Glut : CroneEngine {
 			synth.set(\rate, msg[2]);
 		});
 
+		this.addCommand("jitter", "if", { arg msg;
+			var voice = msg[1] - 1;
+			var synth = voices[voice];
+
+			synth.set(\jitter, msg[2]);
+		});
+
 		this.addCommand("dur", "if", { arg msg;
 			var voice = msg[1] - 1;
 			var synth = voices[voice];
@@ -145,6 +155,8 @@ Engine_Glut : CroneEngine {
 	}
 
 	free {
+		voices.do({ arg voice; voice.free; });
+		buf.do({ arg b; b.free; });
 		super.free;
 	}
 }

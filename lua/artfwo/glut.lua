@@ -21,6 +21,7 @@ local focus = 1
 local param_focus = 1
 local param_names = {
   "rate",
+  "jitter",
   "dur",
   "density",
   "pitch",
@@ -133,6 +134,9 @@ function init()
     params:add_control("rate"..v, controlspec.new(-8, 8, "lin", 0, 1, ""))
     params:set_action("rate"..v, function(value) engine.rate(v, value) end)
 
+    params:add_control("jitter"..v, controlspec.new(0, 0.5, "lin", 0, 0.01, "sec"))
+    params:set_action("jitter"..v, function(value) engine.jitter(v, value) end)
+
     params:add_control("dur"..v, controlspec.new(0.001, 10, "lin", 0, 0.1, "sec"))
     params:set_action("dur"..v, function(value) engine.dur(v, value) end)
 
@@ -164,7 +168,7 @@ function enc(n, d)
     if focus > 7 then focus = 7 end
     if focus < 1 then focus = 1 end
   elseif n == 2 then
-    param_focus = util.clamp(param_focus + d, 1, 4)
+    param_focus = util.clamp(param_focus + d, 1, 5)
   elseif n == 3 then
     params:delta(param_names[param_focus]..focus, d / 10)
   end
@@ -181,28 +185,36 @@ function redraw()
   screen.clear()
 
   screen.level(5)
-  screen.move(0, 10)
-  screen.text("voice: "..focus)
+  screen.move(127, 10)
+  screen.text_right("voice: "..focus)
 
   if param_focus == 1 then screen.level(15) else screen.level(5) end
-  screen.move(0, 20)
-  screen.text("rate: "..params:string("rate"..focus))
+  screen.move(0, 10)
+  screen.text("speed: "..params:string("rate"..focus))
 
   if param_focus == 2 then screen.level(15) else screen.level(5) end
+  screen.move(0, 20)
+  screen.text("jitter: "..params:string("jitter"..focus))
+
+  if param_focus == 3 then screen.level(15) else screen.level(5) end
   screen.move(0, 30)
   screen.text("dur: "..params:string("dur"..focus))
 
-  if param_focus == 3 then screen.level(15) else screen.level(5) end
+  if param_focus == 4 then screen.level(15) else screen.level(5) end
   screen.move(0, 40)
   screen.text("density: "..params:string("density"..focus))
 
-  if param_focus == 4 then screen.level(15) else screen.level(5) end
+  if param_focus == 5 then screen.level(15) else screen.level(5) end
   screen.move(0, 50)
   screen.text("pitch: "..params:string("pitch"..focus))
 
   screen.level(5)
+  screen.move(127, 60)
+  screen.text_right("key2 - load")
+
+  screen.level(5)
   screen.move(0, 60)
-  screen.text("key2 - load")
+  screen.text("")
 
   screen.update()
 end
