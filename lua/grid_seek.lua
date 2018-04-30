@@ -69,7 +69,7 @@ gridredraw = function()
   else
     g:led(pos, 1, 3)
   end
-  g:refresh();
+  g:refresh()
 end
 
 enc = function(n, delta)
