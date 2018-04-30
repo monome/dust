@@ -43,7 +43,8 @@ function gridredraw()
       local z
       for j=1,8 do
          if col[j] > 0 then z = val else z = 0 end
-	 g:led(i, j, col[j])
+	 --g:led(i, j, col[j])
+	 g:led(i, j, z)
       end
    end
    g:refresh()
@@ -72,6 +73,21 @@ gridkey = function(x, y, z)
    end
 end
 
+key = function(n,z)
+  if n == 2 and z == 1 then
+    m:stop()
+  elseif n == 3 and z == 1 then
+    m:start()
+  end
+end
+
+enc = function(n, d)
+  if n == 2 then
+    local t = m.time
+    m.time = util.clamp(t + d/100, 0.01, 1)
+  end
+end
+
 
 m.callback = function(stage)
    ca:update()
@@ -95,8 +111,7 @@ m.time = 0.125
 
 
 engine.name = 'TestSine'
-init = function()
-   
+init = function() 
    print("grid: ", g)
    m:start()
 end
