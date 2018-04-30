@@ -1,7 +1,7 @@
 -- system state
-norns.state.script = 'mlr.lua'
-norns.state.out = '7.0'
-norns.state.monitor = '0'
+norns.state.script = 'emb/elca-test.lua'
+norns.state.out = '64'
+norns.state.monitor = '0.0'
 norns.state.monitor_mode = '0'
 norns.state.input_left = '48'
 norns.state.input_right = '48'

@@ -35,7 +35,6 @@ function CA:update()
    local newState = {}
    for i=1,CA.numStates do
       local l, c, r = self:neighbors(i)
---      print (l, c, r)
       local code = CA.code(l, c, r)
       if (self.rule & (1 << code)) > 0 then newState[i] = 1
       else newState[i] = 0 end
@@ -92,13 +91,10 @@ end
 
 -- change current state at index,
 --- and update the rule to that which would have produced the new state
-function CA:set_rule_by_state(val, l, r, c)
-   if self.oldState[i] ~= val then
-      self.oldState[i] = val
-      local code = CA.code(l, r, c)
-      if val then rule = rule | 2
-      else rule = rule & 5 end
-   end
+function CA:set_rule_by_state(val, l, c, r)
+   local code = CA.code(l, c, r)
+   if val then self.rule = self.rule | 2
+   else self.rule = self.rule & 5 end
 end
 
 -- TODO: maybe setter methods that clamp stuff
