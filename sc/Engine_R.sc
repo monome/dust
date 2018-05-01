@@ -246,22 +246,26 @@ RModule {
 	*defName { ^this.asSymbol }
 
 	setParamByIndex { |paramnum, f|
-		(
+		// (
 			this.class.params[paramnum] !? { |param|
 				var name, controlSpec, constrainedParamValue;
 				name = param.key;
 				controlSpec = param.value;
 				constrainedParamValue = controlSpec.constrain(f);
 				synth.set(name, constrainedParamValue);
-				"synth.set(%, %);".format(name, constrainedParamValue);
+				"%: synth.set(%, %); // param: %, spec: %".format(this.class, name, constrainedParamValue, name, controlSpec);
+			} ?? {
+				"%: no param indexed %".format(this.class, paramnum)
 			}
-		).debug([thisMethod.name, paramnum, f]);
+		// ).debug([thisMethod.name, paramnum, f]);
 	}
 
 	setParam { |name, f|
 		this.class.params.detectIndex { |param|
 			param.key == name.asSymbol
-		} !? { |i| this.setParamByIndex(i, f) }
+		} !? { |i| this.setParamByIndex(i, f) } ?? {
+			"%: no param named %".format(this.class, name).error
+		}
 	}
 
 	*new { |context, group, inbus, outbus|
@@ -364,21 +368,21 @@ ROscillatorModule : RModule {
 }
 
 RFMThingModule : RModule {
-	classvar numOscs;
+	classvar numOscs = 3;
 	*params {
 		var params;
 		numOscs.do { |oscnum|
 			params = params.addAll(
 				[
-					"osc%gain".format(oscnum) -> \amp.asSpec,
-					"osc%freq".format(oscnum) -> \widefreq.asSpec,
-					"osc%index".format(oscnum) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
-					"osc%outlevel".format(oscnum) -> \amp.asSpec,
+					"osc%gain".format(oscnum+1) -> \amp.asSpec,
+					"osc%freq".format(oscnum+1) -> \widefreq.asSpec,
+					"osc%index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
+					"osc%outlevel".format(oscnum+1) -> \amp.asSpec,
 				]
 			);
 			numOscs.do { |dest|
 				params = params.add(
-					"osc%_to_osc%freq".format(oscnum, dest) -> \amp.asSpec
+					"osc%_to_osc%freq".format(oscnum+1, dest+1) -> \amp.asSpec
 				);
 			};
 		};
@@ -395,8 +399,8 @@ RFMThingModule : RModule {
 		numOscs.do { |oscnum|
 			params = params.addAll(
 				[
-					"env_to_osc%freq".format(oscnum) -> \bipolar.asSpec,
-					"env_to_osc%gain".format(oscnum) -> \bipolar.asSpec,
+					"env_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
+					"env_to_osc%gain".format(oscnum+1) -> \bipolar.asSpec,
 				]
 			);
 		};
@@ -404,7 +408,7 @@ RFMThingModule : RModule {
 		params = params.collect { |assoc|
 			assoc.key.asSymbol -> assoc.value
 		};
-		params.debug(\debug);
+		// params.collect{ |assoc| assoc.key}.debug(\debug);
 
 		^params;
 	}
@@ -455,21 +459,21 @@ RFMThingModule : RModule {
 					+ (oscfeedback[0] * osc1freq * osc1_to_osc1freq * osc1index) // TODO: move osc1index multiplication out of here
 					+ (oscfeedback[1] * osc1freq * osc2_to_osc1freq * osc1index)
 					+ (oscfeedback[2] * osc1freq * osc3_to_osc1freq * osc1index)
-					+ \freq.asSpec.map(env_to_osc1freq * env)
+					/* TODO + \freq.asSpec.map(env_to_osc1freq * env)*/
 			) * (osc1gain + (env_to_osc1gain * env));
 			var osc2 = SinOsc.ar(
 				osc2freq
 					+ (oscfeedback[0] * osc2freq * osc1_to_osc2freq * osc2index)
 					+ (oscfeedback[1] * osc2freq * osc2_to_osc2freq * osc2index)
 					+ (oscfeedback[2] * osc2freq * osc3_to_osc2freq * osc2index)
-					+ \freq.asSpec.map(env_to_osc2freq * env)
+					/* TODO + \freq.asSpec.map(env_to_osc2freq * env)*/
 			) * (osc2gain + (env_to_osc2gain * env));
 			var osc3 = SinOsc.ar(
 				osc3freq
 					+ (oscfeedback[0] * osc3freq * osc1_to_osc3freq * osc3index)
 					+ (oscfeedback[1] * osc3freq * osc2_to_osc3freq * osc3index)
 					+ (oscfeedback[2] * osc3freq * osc3_to_osc3freq * osc3index)
-					+ \freq.asSpec.map(env_to_osc3freq * env)
+					/* TODO + \freq.asSpec.map(env_to_osc3freq * env)*/
 			) * (osc3gain + (env_to_osc3gain * env));
 			LocalOut.ar([osc1, osc2, osc3]);
 			Out.ar(
@@ -524,26 +528,26 @@ RTheNewPoleModule : RModule {
 				hpfcutoff,
 				hpfres,
 				ampgain,
+				envgate,
 				envattack,
 				envdecay,
 				envsustain,
 				envrelease,
-				envgate,
 				lforate,
 				env_to_lpfcutoff,
-				lfo_to_lpfcutoff,
 				env_to_lpfres,
-				lfo_to_lpfres,
 				env_to_hpfcutoff,
-				lfo_to_hpfcutoff,
 				env_to_hpfres,
+				env_to_ampgain,
+				lfo_to_lpfcutoff,
+				lfo_to_lpfres,
+				lfo_to_hpfcutoff,
 				lfo_to_hpfres,
-				ampenvmod,
 				lfo_to_ampgain
 			;
 			var freqSpec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz");
 			var rqSpec = \rq.asSpec;
-			var env = EnvGen.ar(Env.adsr(envattack/1000, envdecay/1000, envsustain/1000, envrelease/1000), envgate);
+			var env = EnvGen.ar(Env.adsr(envattack/1000, envdecay/1000, envsustain, envrelease/1000), envgate);
 			var lfo = SinOsc.ar(lforate);
 			var hpfrq = rqSpec.map(1-(hpfres + (env * env_to_hpfres) + (lfo * lfo_to_hpfres)));
 			var lpfrq = rqSpec.map(1-(lpfres + (env * env_to_lpfres) + (lfo * lfo_to_lpfres)));
@@ -561,7 +565,7 @@ RTheNewPoleModule : RModule {
 				lpfrq
 			);
 
-			Out.ar(out, sig * (ampgain + (env * ampenvmod) + (lfo * lfo_to_ampgain)));
+			Out.ar(out, sig * (ampgain + (env * env_to_ampgain) + (lfo * lfo_to_ampgain)));
 		}
 	}
 
