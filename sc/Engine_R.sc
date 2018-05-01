@@ -459,21 +459,21 @@ RFMThingModule : RModule {
 					+ (oscfeedback[0] * osc1freq * osc1_to_osc1freq * osc1index) // TODO: move osc1index multiplication out of here
 					+ (oscfeedback[1] * osc1freq * osc2_to_osc1freq * osc1index)
 					+ (oscfeedback[2] * osc1freq * osc3_to_osc1freq * osc1index)
-					/* TODO + \freq.asSpec.map(env_to_osc1freq * env)*/
+					+ (env * osc1freq * env_to_osc1freq * osc1index)
 			) * (osc1gain + (env_to_osc1gain * env));
 			var osc2 = SinOsc.ar(
 				osc2freq
-					+ (oscfeedback[0] * osc2freq * osc1_to_osc2freq * osc2index)
+					+ (osc1 * osc2freq * osc1_to_osc2freq * osc2index)
 					+ (oscfeedback[1] * osc2freq * osc2_to_osc2freq * osc2index)
 					+ (oscfeedback[2] * osc2freq * osc3_to_osc2freq * osc2index)
-					/* TODO + \freq.asSpec.map(env_to_osc2freq * env)*/
+					+ (env * osc2freq * env_to_osc2freq * osc2index)
 			) * (osc2gain + (env_to_osc2gain * env));
 			var osc3 = SinOsc.ar(
 				osc3freq
-					+ (oscfeedback[0] * osc3freq * osc1_to_osc3freq * osc3index)
-					+ (oscfeedback[1] * osc3freq * osc2_to_osc3freq * osc3index)
+					+ (osc1 * osc3freq * osc1_to_osc3freq * osc3index)
+					+ (osc2 * osc3freq * osc2_to_osc3freq * osc3index)
 					+ (oscfeedback[2] * osc3freq * osc3_to_osc3freq * osc3index)
-					/* TODO + \freq.asSpec.map(env_to_osc3freq * env)*/
+					+ (env * osc3freq * env_to_osc3freq * osc3index)
 			) * (osc3gain + (env_to_osc3gain * env));
 			LocalOut.ar([osc1, osc2, osc3]);
 			Out.ar(
@@ -487,6 +487,40 @@ RFMThingModule : RModule {
 
 	*lagTimes {
 		^[
+			nil, // in, // TODO: not used yet
+			nil, // out,
+			0.1, // osc1gain,
+			0.1, // osc1freq,
+			0.1, // osc1index,
+			0.1, // osc1outlevel,
+			0.1, // osc1_to_osc1freq,
+			0.1, // osc1_to_osc2freq,
+			0.1, // osc1_to_osc3freq,
+			0.1, // osc2gain,
+			0.1, // osc2freq,
+			0.1, // osc2index,
+			0.1, // osc2outlevel,
+			0.1, // osc2_to_osc1freq,
+			0.1, // osc2_to_osc2freq,
+			0.1, // osc2_to_osc3freq,
+			0.1, // osc3gain,
+			0.1, // osc3freq,
+			0.1, // osc3index,
+			0.1, // osc3outlevel,
+			0.1, // osc3_to_osc3freq,
+			0.1, // osc3_to_osc2freq,
+			0.1, // osc3_to_osc1freq,
+			// envgate,
+			// envattack,
+			// envdecay,
+			// envsustain,
+			// envrelease,
+			0.1, // env_to_osc1freq,
+			0.1, // env_to_osc1gain,
+			0.1, // env_to_osc2freq,
+			0.1, // env_to_osc2gain,
+			0.1, // env_to_osc3freq,
+			0.1, // env_to_osc3gain
 		]
 	}
 }

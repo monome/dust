@@ -1,6 +1,8 @@
 -- gong
 --
+-- midi controlled
 -- polyphonic fm synth
+--
 
 local ControlSpec = require 'controlspec'
 local Voice = require 'exp/voice'
@@ -12,9 +14,9 @@ local envdecay_spec = ControlSpec.new(0, 5000, 'lin', 0, 500, "ms")
 local envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local envrelease_spec = ControlSpec.new(0, 5000, 'lin', 0, 1000, "ms")
 
-local polyphony = 3
-local midinote_indicator_level
-local midicc_indicator_level
+local POLYPHONY = 4
+local midinote_indicator_level = 0
+local midicc_indicator_level = 0
 local note_downs = {}
 
 local function midicps(note)
@@ -25,7 +27,7 @@ end
 local function screen_update_voice_indicators()
   screen.move(0,16)
   screen.font_size(8)
-  for voicenum=1,polyphony do
+  for voicenum=1,POLYPHONY do
     if note_downs[voicenum] then
       screen.level(15)
     else
@@ -55,7 +57,7 @@ end
 
 local function r_param(name, voiceref, param, value)
   if voiceref == "all" then
-    for voicenum=1,polyphony do
+    for voicenum=1,POLYPHONY do
       -- print('engine.param("'..name..voicenum..'", '..param..', '..value..')')
       engine.param(name..voicenum, param, value)
     end
@@ -66,10 +68,21 @@ local function r_param(name, voiceref, param, value)
 end
 
 local function trig_voice(voicenum, freq)
-  -- print("trig_voice: "..voicenum..", "..freq)
-  r_param("fm", voicenum, "osc1freq", freq * params:get("osc1 partial"))
-  r_param("fm", voicenum, "osc2freq", freq * params:get("osc2 partial"))
-  r_param("fm", voicenum, "osc3freq", freq * params:get("osc3 partial"))
+  if params:get("osc1 type") == 1 then
+    r_param("fm", voicenum, "osc1freq", freq * params:get("osc1 partial no"))
+  else
+    r_param("fm", voicenum, "osc1freq", params:get("osc1 fixed freq"))
+  end
+  if params:get("osc2 type") == 1 then
+    r_param("fm", voicenum, "osc2freq", freq * params:get("osc2 partial no"))
+  else
+    r_param("fm", voicenum, "osc2freq", params:get("osc2 fixed freq"))
+  end
+  if params:get("osc3 type") == 1 then
+    r_param("fm", voicenum, "osc3freq", freq * params:get("osc3 partial no"))
+  else
+    r_param("fm", voicenum, "osc3freq", params:get("osc3 fixed freq"))
+  end
   r_param("fm", voicenum, "envgate", 1)
   r_param("pole", voicenum, "envgate", 1)
 end
@@ -108,9 +121,9 @@ local function note_off(note)
 end
 
 local function setup_r_config()
-  engine.capacity(polyphony*2+2+2)
+  engine.capacity(POLYPHONY*2+2+2)
 
-  for voicenum=1,polyphony do
+  for voicenum=1,POLYPHONY do
     engine.module("fm"..voicenum, "fmthing")
     engine.module("pole"..voicenum, "newpole")
     engine.patch("fm"..voicenum, "pole"..voicenum, 0)
@@ -123,7 +136,7 @@ local function setup_r_config()
   engine.module("rout", "output")
   engine.param("rout", "config", 1) -- TODO: split output up in left and right?
 
-  for voicenum=1,polyphony do
+  for voicenum=1,POLYPHONY do
     engine.patch("pole"..voicenum, "lout", 0)
     engine.patch("pole"..voicenum, "rout", 0)
   end
@@ -138,13 +151,15 @@ local function add_fmthing_params()
     r_param("fm", "all", param, value)
   end
 
-  local partial_spec = ControlSpec.new(1, 10, 'lin', 1, 1)
+  local partial_spec = ControlSpec.new(0.5, 10, 'lin', 0.25, 1)
   local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
 
   for oscnum=1,numoscs do
     params:add_control("osc"..oscnum.." gain", ControlSpec.AMP)
     params:set_action("osc"..oscnum.." gain", function(value) all_fm("osc"..oscnum.."gain", value) end)
-    params:add_control("osc"..oscnum.." partial", partial_spec)
+    params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
+    params:add_control("osc"..oscnum.." partial no", partial_spec)
+    params:add_control("osc"..oscnum.." fixed freq", ControlSpec.WIDEFREQ)
     params:add_control("osc"..oscnum.." index", index_spec)
     params:set_action("osc"..oscnum.." index", function(value) all_fm("osc"..oscnum.."index", value) end)
 
@@ -247,7 +262,7 @@ end
 local function add_delay_params()
   params:add_control("delay send", ControlSpec.DB)
   params:set_action("delay send", function(value)
-    for voicenum=1,polyphony do
+    for voicenum=1,POLYPHONY do
       engine.patch("pole"..voicenum, "ldelay", value)
       engine.patch("pole"..voicenum, "rdelay", value)
     end
@@ -274,8 +289,10 @@ local function add_delay_params()
 end
 
 local function default_patch()
+  params:set("osc2 > osc3 freq", 1)
   params:set("osc3 gain", 1)
   params:set("osc3 > out", 0.1)
+  params:set("env1 > osc2 gain", 1)
   params:set("env2 > amp gain", 1)
   -- params:set("env2 > lpf cutoff", 1)
   params:set("delay send", -20)
@@ -294,7 +311,7 @@ init = function()
   default_patch()
 
   timer = metro[1]
-  timer:start(0.5, 1)
+  timer:start(0.2, 1)
   timer.callback = function()
     -- print("banging..")
     params:bang()
@@ -302,7 +319,7 @@ init = function()
   end
 
 
-  voice = Voice.new(polyphony)
+  voice = Voice.new(POLYPHONY)
   -- params:read("gong.pset")
 
   screen.line_width(1.0)
@@ -377,11 +394,13 @@ norns.midi.event = function(id, data)
     end
     ]]
     note_off(data1)
+    --[[
   elseif status == 176 then
     midicc_indicator_level = math.random(15)
     cc(data1, data2)
     redraw()
   elseif status == 224 then
     bend(data1, data2)
+    ]]
   end
 end
