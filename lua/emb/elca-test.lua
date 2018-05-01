@@ -11,8 +11,11 @@
 
 local elca = require 'emb.elca'
 
-local ca = elca.new()
-local m = metro[1]
+local ca = elca.new() -- CA state
+local seq = metro[1] -- main timer
+
+local n = 8 -- length of window
+local m = 16 -- length of history
 
 ca.state[1] = 1
 ca.state[5] = 1
@@ -20,15 +23,16 @@ ca.state[8] = 1
 ca.rule = 110
 
 ca.bound_mode_l = elca.BOUND_WRAP
-ca.bound_mode_r = elca.BOUND_WRAP
+ca.bound_mode_r = elca.BOUND_LOW
 ca.bound_l = 1
-ca.bound_r = 8
-
+ca.bound_r = elca.NUM_STATES
 
 local history = {}
-for i=1, 16 do
+for i=1,m do
+   print ('i='..i)
    local col = {}
-   for j=1,8 do
+   for j=1,n do
+      print('j='..j)
       col[j] = 0
    end
    table.insert(history, col)
@@ -38,7 +42,7 @@ function gridredraw()
    if g == nil then return end
    local val
    for i=1, 16 do
-   if i == 16 then val = 12 else val = 4 end
+      if i == 16 then val = 12 else val = 4 end
       local col = history[i]
       local z
       for j=1,8 do
@@ -50,17 +54,18 @@ function gridredraw()
 end
 
 gridkey = function(x, y, z)
+   if z == 0 then return end
    if x < 2 then return end
    -- most recent row - set the state
    if x == 16 then
       if ca.state[y] > 0 then ca.state[y] = 0 else ca.state[y] = 1 end
-   -- earlier rows - change the rule such that it would have produced a different value
-   -- (and change the state too)
    else
+      
+      -- earlier rows - change the rule such that it would have produced a different value
+      -- (and change the state too)
       local col = history[x-1]
-      local l
+      local l, r
       if y == 1 then l = col[8] else l = col[y-1] end
-      local r
       if y == 8 then r = col[1] else r = col[y+1] end
       local c = col[y]
       local val
@@ -68,14 +73,18 @@ gridkey = function(x, y, z)
       history[x][y] = val
       ca.state[y] = c
       ca:set_rule_by_state(history[x][y], l, c, r)
+      print("rule by state: ", history[x][y], l, c, r)
+      print("new rule: ", ca.rule)
       gridredraw()
    end
 end
 
 
-m.callback = function(stage)
+seq.callback = function(stage)
    ca:update()
    local col = ca:window(8)
+
+   -- fixme: this mem managment is not good
    table.insert(history, col)
    table.remove(history, 1)
 
@@ -91,12 +100,17 @@ m.callback = function(stage)
    
 end
 
-m.time = 0.125
-
-
 engine.name = 'TestSine'
 init = function()
    
    print("grid: ", g)
-   m:start()
+   
+   seq.time = 0.125
+   seq:start()
+end
+
+function copy_history(newcol) 
+	 
+   for x in 1,n do
+   end
 end
