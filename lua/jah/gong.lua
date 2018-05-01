@@ -290,11 +290,12 @@ end
 
 local function default_patch()
   params:set("osc2 > osc3 freq", 1)
+  params:set("osc2 partial no", 2)
   params:set("osc3 gain", 1)
+  params:set("osc3 index", 5)
   params:set("osc3 > out", 0.1)
   params:set("env1 > osc2 gain", 1)
   params:set("env2 > amp gain", 1)
-  -- params:set("env2 > lpf cutoff", 1)
   params:set("delay send", -20)
   params:set("delay time left", 0.03)
   params:set("delay time right", 0.05)
