@@ -1,7 +1,5 @@
--- @name knaster
--- @version 0.1.0
--- @author jah
--- @txt a very basic example
+-- random noise
+-- grid visualization
 
 engine.name = 'Knaster'
 

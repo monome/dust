@@ -1,4 +1,5 @@
 -- gong
+--
 -- polyphonic fm synth
 
 local ControlSpec = require 'controlspec'
@@ -44,7 +45,6 @@ local function screen_update_voice_indicators()
     end
     screen.text(voicenum)
   end
-  screen.update()
 end
 
 local function screen_update_midi_indicators()
@@ -68,6 +68,7 @@ end
 local function r_param(name, voiceref, param, value)
   if voiceref == "all" then
     for voicenum=1,polyphony do
+      print('engine.param("'..name..voicenum..'", '..param..', '..value..')')
       engine.param(name..voicenum, param, value)
     end
   else
@@ -105,7 +106,7 @@ local function note_on(note, velocity)
     end
     noteslots[note] = slot
     note_downs[voicenum] = true
-    screen_update_voice_indicators()
+    redraw()
   end
 end
 
@@ -114,7 +115,7 @@ local function note_off(note)
   if slot then
     voice:release(slot)
     note_downs[slot.id] = false
-    screen_update_voice_indicators()
+    redraw()
   end
 end
 
@@ -361,12 +362,22 @@ local function add_delay_params()
   params:set("delay feedback", -20)
 end
 
+local timer
+
 init = function()
   setup_r_config()
   add_fmthing_params()
   add_pole_params()
   add_delay_params()
-  params:bang()
+
+  timer = metro[1]
+  timer:start(0.05, 1)
+  timer.callback = function()
+    print("banging..")
+    params:bang()
+    print("..banged")
+  end
+
 
   voice = Voice.new(polyphony)
   -- params:read("gong.pset")
@@ -407,6 +418,8 @@ end
 cleanup = function()
   norns.midi.event = nil
   -- params:write("gong.pset")
+  timer.count = -1 -- TODO: reset to ensure timer set to default, should not be needed
+  timer:stop()
 end
 
 norns.midi.add = function(id, name, dev)

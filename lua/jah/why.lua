@@ -1,6 +1,5 @@
--- @name why
--- @version 1.0
--- @author jmcc
+-- classic supercollider example
+-- by jmcc
 
 engine.name = 'Why'
 

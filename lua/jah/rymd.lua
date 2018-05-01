@@ -1,7 +1,4 @@
--- @name rymd
--- @version 0.1.0
--- @author jah
--- @txt wip echo chamber thing
+-- wip echo chamber thing
 
 ControlSpec = require 'controlspec'
 Control = require 'control'
