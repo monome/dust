@@ -14,8 +14,12 @@ engine.name = 'SoftCut'
 -- state variables
 
 local rate = 1
+
 local rec_state = 1
 local pre_rec = 0.75
+
+local loop_start = 1
+local gpos = 1
 
 init = function()
   engine.list_commands()
@@ -60,10 +64,6 @@ init = function()
   p_buf_dur:update() 
   
   if g ~= nil then g:all(0) end
-  
-  -- why doesn't this work here?
-  screen_redraw()
-
 end
 
 enc = function(n, d)
@@ -128,9 +128,6 @@ screen_redraw = function()
    screen.update()
 end
 
--- phase argument is in samples - should fix this on SC side
-local loop_start = 1
-local gpos = 1
 update_phase = function(phase)
    -- print(phase)
    if g ~= nil then
@@ -143,6 +140,5 @@ update_phase = function(phase)
    
 end
 
-
--- why doesn't this work here either??
-screen_redraw()
+-- called by menu
+redraw = function() screen_redraw() end
