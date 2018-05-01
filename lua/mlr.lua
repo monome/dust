@@ -22,7 +22,7 @@
 engine.name = "SoftCut"
 
 TRACKS = 4
-FADE = 0.25
+FADE = 0.01
 
 vREC = 1
 vCUT = 2 
@@ -35,24 +35,50 @@ eLOOP = 4
 eSPEED = 5
 eREV = 6
 
+quantize = 0
+q = metro[10]
+q.time = 0.5
+q.count = -1
+q.callback = event_q_clock
+
 event = function(e)
   for i=1,4 do
     if pattern[i].rec == 1 then
       pattern_rec_event(i,e)
     end
   end 
-  event_exec(e)
+  if quantize == 1 then
+    event_q(e)
+  else 
+    event_exec(e)
+  end
 end
+
+quantize_events = {}
+
+event_q = function(e)
+  table.insert(quantize_events,e)
+end
+
+event_q_clock = function()
+  if #quantize_events > 0 then
+    for k,e in pairs(quantize_events) do
+      event_exec(e)
+    end
+    quantize_events = {}
+  end
+end
+
 
 event_exec = function(e) 
   if e.t==eCUT then
     if track[e.i].loop == 1 then
       track[e.i].loop = 0
-      engine.loop_start(e.i,1)
-      engine.loop_end(e.i,track[e.i].length+1)
+      engine.loop_start(e.i,track[e.i].clip_start)
+      engine.loop_end(e.i,track[e.i].clip_end)
     end
-    --print(">> e.pos "..e.pos)
-    engine.pos(e.i,e.pos)
+    local cut = (e.pos/16)*track[i].clip_len + track[i].clip_start 
+    engine.pos(e.i,cut)
     engine.reset(e.i)
     if track[e.i].play == 0 then
       track[e.i].play = 1
@@ -71,8 +97,8 @@ event_exec = function(e)
     track[e.i].loop_start = e.loop_start
     track[e.i].loop_end = e.loop_end
     --print("LOOP "..track[e.i].loop_start.." "..track[e.i].loop_end)
-    local lstart = 1+(track[e.i].loop_start-1)/16*track[e.i].length
-    local lend =  1+(track[e.i].loop_end)/16*track[e.i].length-- - FADE
+    local lstart = track[e.i].clip_start + (track[e.i].loop_start-1)/16*track[e.i].clip_len
+    local lend = track[e.i].clip_start + (track[e.i].loop_end-1)/16*track[e.i].clip_len
     --print(">>>> "..lstart.." "..lend)
     engine.loop_start(e.i,lstart)
     engine.loop_end(e.i,lend) 
@@ -91,6 +117,8 @@ event_exec = function(e)
     if view == vREC then gridredraw() end
   end
 end
+
+  
 
 ------ patterns
 pattern = {}
@@ -207,11 +235,29 @@ for i=1,4 do
   track[i].loop = 0
   track[i].loop_start = 0
   track[i].loop_end = 16 
+  track[i].clip_start = 1 + (i-1)*10
+  track[i].clip_len = 4
+  track[i].clip_end = track[i].clip_start + track[i].clip_len
   track[i].pos = 0
   track[i].pos_grid = 0
   track[i].speed = 0
   track[i].rev = 0 
 end
+
+calc_quant = function(i)
+  local q = (track[i].clip_len/16)*48000
+  print("q > "..q)
+  return q
+end
+
+set_clip_length = function(i, len)
+  track[i].clip_len = len
+  track[i].clip_end = track[i].clip_start + len
+  engine.loop_end(i,track[i].clip_end) 
+  engine.quant(i,calc_quant(i))
+  engine.reset(i)
+end
+
 
 held = {}
 heldmax = {}
@@ -242,7 +288,7 @@ set_view = function(x)
   gridredraw()
 end 
 
-controlspec.UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
+UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
 
 -------------------- init
 init = function() 
@@ -256,16 +302,16 @@ init = function()
     engine.rec(i,track[i].rec_level)
     engine.rec_lag(i,0.25)
     engine.fade_rec(i,FADE)
-    engine.set_buf(i,i)
 
     engine.adc_rec(1,i,0.8)
     engine.adc_rec(2,i,0.8)
     engine.play_dac(i,1,1)
     engine.play_dac(i,2,1)
 
-    engine.loop_start(i,1)
-    engine.loop_end(i,5)
+    engine.loop_start(i,track[i].clip_start)
+    engine.loop_end(i,track[i].clip_end)
     engine.loop_on(i,1)
+    engine.quant(i,calc_quant(i))
 
     engine.fade_rec(i,0.25)
     engine.fade(i,FADE)
@@ -273,14 +319,14 @@ init = function()
 
     engine.reset(i)
 
-    local name = "phase_"..i
+    local name = "phase_quant_"..i
     p[i] = poll.set(name, function(x) phase(i,x) end)
-    p[i].time = 0.08
+    --p[i].time = 0.5
     p[i]:start()
 
-    params:add_control("vol"..i,controlspec.UP1)
+    params:add_control("vol"..i,UP1)
     params:set_action("vol"..i, function(x) engine.amp(i,x) end)
-    params:add_control("rec"..i,controlspec.UP1)
+    params:add_control("rec"..i,UP1)
     params:set_action("rec"..i, function(x) engine.rec(i,x) end)
     params:add_control("pre"..i,controlspec.UNIPOLAR)
     params:set_action("pre"..i, function(x) engine.pre(i,x) end)
@@ -295,8 +341,11 @@ end
 
 -- poll callback
 phase = function(n, x)
-  track[n].pos = (x-1) / track[n].length
-  x = math.floor(track[n].pos*16)
+  x = x/48000
+  local pp = ((x - track[n].clip_start) / track[n].clip_len)-- * 16 --TODO 16=div
+  --x = math.floor(track[n].pos*16)
+  --if n==1 then print("> "..x.." "..pp) end
+  x = math.floor(pp * 16)
   if x ~= track[n].pos_grid then
     track[n].pos_grid = x
     if view == vCUT then gridredraw() end
@@ -330,6 +379,11 @@ gridkey_nav = function(x,z)
       else pattern_start(i)
       end 
     elseif x==2 then set_view(vCUT)
+    elseif x==15 then 
+      quantize = 1 - quantize
+      if quantize == 0 then q:stop()
+      else q:start()
+      end 
     elseif x==16 then alt = 1
     end
   elseif z==0 then
@@ -342,6 +396,7 @@ gridredraw_nav = function()
   -- indicate view
   g:led(view,1,15)
   if alt==1 then g:led(16,1,9) end
+  if quantize==1 then g:led(15,1,9) end
   for i=1,4 do
     if pattern[i].rec == 1 then g:led(i+4,1,15)
     elseif pattern[i].play == 1 then g:led(i+4,1,9)
@@ -351,11 +406,19 @@ gridredraw_nav = function()
 end
 
 -------------------- REC
+function fileselect_callback(path)
+  if path ~= "cancel" then
+    print("file > "..focus.." "..path.." "..track[focus].clip_start)
+    engine.read(path, focus, 1000) -- FIXME 1000 seconds to load
+  end
+end 
+
 v.key[vREC] = function(n,z)
-  if n==2 and z==1 then
+  if n==1 and z==1 then
+    fileselect.enter("/home/pi/dust", fileselect_callback)
+  elseif n==2 and z==1 then
     viewinfo[vREC] = 1 - viewinfo[vREC]
     redraw()
-  elseif n==2 then 
   end
 end
 
@@ -527,7 +590,7 @@ v.gridkey[vCUT] = function(x, y, z)
         event(e)
       elseif y<6 and held[y]==1 then
         first[y] = x
-        local cut = ((x-1)/16)*track[i].length + 1
+        local cut = x-1
         --print("pos > "..cut)
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
@@ -571,4 +634,5 @@ cleanup = function()
   p2:stop()
   p3:stop()
   p4:stop()
+  q:stop()
 end 
