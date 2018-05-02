@@ -17,6 +17,8 @@ local envrelease_spec = ControlSpec.new(0, 5000, 'lin', 0, 1000, "ms")
 local POLYPHONY = 4
 local midinote_indicator_level = 0
 local midicc_indicator_level = 0
+local INITIAL_NOTE = 60
+local notes = {}
 local note_downs = {}
 
 local function midicps(note)
@@ -27,7 +29,7 @@ end
 local function screen_update_voice_indicators()
   screen.move(0,16)
   screen.font_size(8)
-  for voicenum=1,POLYPHONY do
+  for voicenum=1, POLYPHONY do
     if note_downs[voicenum] then
       screen.level(15)
     else
@@ -57,7 +59,7 @@ end
 
 local function r_param(name, voiceref, param, value)
   if voiceref == "all" then
-    for voicenum=1,POLYPHONY do
+    for voicenum=1, POLYPHONY do
       -- print('engine.param("'..name..voicenum..'", '..param..', '..value..')')
       engine.param(name..voicenum, param, value)
     end
@@ -67,21 +69,30 @@ local function r_param(name, voiceref, param, value)
   end
 end
 
-local function trig_voice(voicenum, freq)
-  if params:get("osc1 type") == 1 then
-    r_param("fm", voicenum, "osc1freq", freq * params:get("osc1 partial no"))
+local function update_osc_freq(voicenum, oscnum)
+  if voicenum == "all" then
+    for v=1, POLYPHONY do update_osc_freq(v, oscnum) end
   else
-    r_param("fm", voicenum, "osc1freq", params:get("osc1 fixed freq"))
+    local freq
+    if params:get("osc"..oscnum.." type") == 1 then
+      freq = midicps(notes[voicenum] or INITIAL_NOTE) * params:get("osc"..oscnum.." partial no")
+    else
+      freq = params:get("osc"..oscnum.." fixed freq")
+    end
+    r_param("fm", voicenum, "osc"..oscnum.."freq", freq)
+  end
+end
+
+local function trig_voice(voicenum, note)
+  notes[voicenum] = note
+  if params:get("osc1 type") == 1 then
+    update_osc_freq(voicenum, 1)
   end
   if params:get("osc2 type") == 1 then
-    r_param("fm", voicenum, "osc2freq", freq * params:get("osc2 partial no"))
-  else
-    r_param("fm", voicenum, "osc2freq", params:get("osc2 fixed freq"))
+    update_osc_freq(voicenum, 2)
   end
   if params:get("osc3 type") == 1 then
-    r_param("fm", voicenum, "osc3freq", freq * params:get("osc3 partial no"))
-  else
-    r_param("fm", voicenum, "osc3freq", params:get("osc3 fixed freq"))
+    update_osc_freq(voicenum, 3)
   end
   r_param("fm", voicenum, "envgate", 1)
   r_param("pole", voicenum, "envgate", 1)
@@ -100,7 +111,7 @@ local function note_on(note, velocity)
   if not noteslots[note] then
     local slot = voice:get()
     local voicenum = slot.id
-    trig_voice(voicenum, midicps(note))
+    trig_voice(voicenum, note)
     slot.on_release = function()
       release_voice(voicenum)
       noteslots[note] = nil
@@ -123,7 +134,7 @@ end
 local function setup_r_config()
   engine.capacity(POLYPHONY*2+2+2)
 
-  for voicenum=1,POLYPHONY do
+  for voicenum=1, POLYPHONY do
     engine.module("fm"..voicenum, "fmthing")
     engine.module("pole"..voicenum, "newpole")
     engine.patch("fm"..voicenum, "pole"..voicenum, 0)
@@ -136,7 +147,7 @@ local function setup_r_config()
   engine.module("rout", "output")
   engine.param("rout", "config", 1) -- TODO: split output up in left and right?
 
-  for voicenum=1,POLYPHONY do
+  for voicenum=1, POLYPHONY do
     engine.patch("pole"..voicenum, "lout", 0)
     engine.patch("pole"..voicenum, "rout", 0)
   end
@@ -157,9 +168,16 @@ local function add_fmthing_params()
   for oscnum=1,numoscs do
     params:add_control("osc"..oscnum.." gain", ControlSpec.AMP)
     params:set_action("osc"..oscnum.." gain", function(value) all_fm("osc"..oscnum.."gain", value) end)
+
+    local osc_type_action = function(value)
+      update_osc_freq("all", oscnum)
+    end
     params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
+    params:set_action("osc"..oscnum.." type", osc_type_action)
     params:add_control("osc"..oscnum.." partial no", partial_spec)
+    params:set_action("osc"..oscnum.." partial no", osc_type_action)
     params:add_control("osc"..oscnum.." fixed freq", ControlSpec.WIDEFREQ)
+    params:set_action("osc"..oscnum.." fixed freq", osc_type_action)
     params:add_control("osc"..oscnum.." index", index_spec)
     params:set_action("osc"..oscnum.." index", function(value) all_fm("osc"..oscnum.."index", value) end)
 
@@ -262,7 +280,7 @@ end
 local function add_delay_params()
   params:add_control("delay send", ControlSpec.DB)
   params:set_action("delay send", function(value)
-    for voicenum=1,POLYPHONY do
+    for voicenum=1, POLYPHONY do
       engine.patch("pole"..voicenum, "ldelay", value)
       engine.patch("pole"..voicenum, "rdelay", value)
     end
