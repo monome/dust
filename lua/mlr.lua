@@ -344,7 +344,7 @@ phase = function(n, x)
   x = x/48000
   local pp = ((x - track[n].clip_start) / track[n].clip_len)-- * 16 --TODO 16=div
   --x = math.floor(track[n].pos*16)
-  --if n==1 then print("> "..x.." "..pp) end
+  if n==1 then print("> "..x.." "..pp) end
   x = math.floor(pp * 16)
   if x ~= track[n].pos_grid then
     track[n].pos_grid = x
