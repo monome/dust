@@ -98,7 +98,7 @@ event_exec = function(e)
     track[e.i].loop_end = e.loop_end
     --print("LOOP "..track[e.i].loop_start.." "..track[e.i].loop_end)
     local lstart = track[e.i].clip_start + (track[e.i].loop_start-1)/16*track[e.i].clip_len
-    local lend = track[e.i].clip_start + (track[e.i].loop_end-1)/16*track[e.i].clip_len
+    local lend = track[e.i].clip_start + (track[e.i].loop_end)/16*track[e.i].clip_len
     --print(">>>> "..lstart.." "..lend)
     engine.loop_start(e.i,lstart)
     engine.loop_end(e.i,lend) 
@@ -245,7 +245,7 @@ for i=1,4 do
 end
 
 calc_quant = function(i)
-  local q = (track[i].clip_len/16)*48000
+  local q = (track[i].clip_len/16)
   print("q > "..q)
   return q
 end
@@ -313,15 +313,15 @@ init = function()
     engine.loop_on(i,1)
     engine.quant(i,calc_quant(i))
 
-    engine.fade_rec(i,0.25)
+    engine.fade_rec(i,0.1)
     engine.fade(i,FADE)
-    engine.env_time(i,0.25)
+    engine.env_time(i,0.1)
 
-    engine.reset(i)
+    engine.rate_lag(i,0)
 
-    local name = "phase_quant_"..i
-    p[i] = poll.set(name, function(x) phase(i,x) end)
-    --p[i].time = 0.5
+    --engine.reset(i)
+
+    p[i] = poll.set("phase_quant_"..i, function(x) phase(i,x) end)
     p[i]:start()
 
     params:add_control("vol"..i,UP1)
@@ -341,10 +341,10 @@ end
 
 -- poll callback
 phase = function(n, x)
-  x = x/48000
+  --if n == 1 then print(x) end
   local pp = ((x - track[n].clip_start) / track[n].clip_len)-- * 16 --TODO 16=div
   --x = math.floor(track[n].pos*16)
-  if n==1 then print("> "..x.." "..pp) end
+  --if n==1 then print("> "..x.." "..pp) end
   x = math.floor(pp * 16)
   if x ~= track[n].pos_grid then
     track[n].pos_grid = x
@@ -409,7 +409,7 @@ end
 function fileselect_callback(path)
   if path ~= "cancel" then
     print("file > "..focus.." "..path.." "..track[focus].clip_start)
-    engine.read(path, focus, 1000) -- FIXME 1000 seconds to load
+    engine.read(path, track[focus].clip_start, 1000) -- FIXME 1000 seconds to load
   end
 end 
 
