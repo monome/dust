@@ -36,20 +36,27 @@ eSPEED = 5
 eREV = 6
 
 quantize = 0
+quantize_div = 2
 q = metro[10]
-q.time = 0.5
+q.time = 0.125
 q.count = -1
 q.callback = event_q_clock
 
+quantize_set_time = function(interval)
+  q.time = interval / quantize_div
+  print("q_time > "..q.time)
+end
+
+
 event = function(e)
-  for i=1,4 do
-    if pattern[i].rec == 1 then
-      pattern_rec_event(i,e)
-    end
-  end 
   if quantize == 1 then
     event_q(e)
   else 
+    for i=1,4 do
+      if pattern[i].rec == 1 then
+        pattern_rec_event(i,e)
+      end
+    end 
     event_exec(e)
   end
 end
@@ -63,6 +70,11 @@ end
 event_q_clock = function()
   if #quantize_events > 0 then
     for k,e in pairs(quantize_events) do
+      for i=1,4 do
+        if pattern[i].rec == 1 then
+          pattern_rec_event(i,e)
+        end
+      end 
       event_exec(e)
     end
     quantize_events = {}
@@ -238,6 +250,7 @@ for i=1,4 do
   track[i].clip_start = 1 + (i-1)*10
   track[i].clip_len = 4
   track[i].clip_end = track[i].clip_start + track[i].clip_len
+  track[i].step_time = 0.25
   track[i].pos = 0
   track[i].pos_grid = 0
   track[i].speed = 0
@@ -246,15 +259,29 @@ end
 
 calc_quant = function(i)
   local q = (track[i].clip_len/16)
+  track[i].step_time = q
   print("q > "..q)
   return q
+end
+
+calc_quant_off = function(i, q)
+  local off = q
+  if off < track[i].clip_start then
+    off = off + q
+  end
+  off = off - track[i].clip_start
+  print("off > "..off)
+  return off
 end
 
 set_clip_length = function(i, len)
   track[i].clip_len = len
   track[i].clip_end = track[i].clip_start + len
   engine.loop_end(i,track[i].clip_end) 
-  engine.quant(i,calc_quant(i))
+  local q = calc_quant(i)
+  engine.quant(i,q)
+  local off = calc_quant_off(i, q)
+  engine.quant_offset(i,off)
   engine.reset(i)
 end
 
@@ -410,6 +437,12 @@ function fileselect_callback(path)
   if path ~= "cancel" then
     print("file > "..focus.." "..path.." "..track[focus].clip_start)
     engine.read(path, track[focus].clip_start, 1000) -- FIXME 1000 seconds to load
+    local ch, len = sound_file_inspect(path)
+    print("file length > "..len)
+    set_clip_length(focus,len / 48000) 
+    if focus == 1 then
+      quantize_set_time(track[1].step_time)
+    end
   end
 end 
 
