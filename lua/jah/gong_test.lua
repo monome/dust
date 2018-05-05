@@ -1,8 +1,6 @@
--- gong
---
--- midi controlled
--- polyphonic fm synth
---
+-- lag test script
+-- (4 voice gong triggered
+-- by metro)
 
 local ControlSpec = require 'controlspec'
 local Voice = require 'exp/voice'
@@ -15,8 +13,6 @@ local envsustain_spec = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 local envrelease_spec = ControlSpec.new(0, 5000, 'lin', 0, 1000, "ms")
 
 local POLYPHONY = 4
-local midinote_indicator_level = 0
-local midicc_indicator_level = 0
 local INITIAL_NOTE = 60
 local notes = {}
 local note_downs = {}
@@ -24,37 +20,6 @@ local note_downs = {}
 local function midicps(note)
   local exp = (note - 21) / 12
   return 27.5 * 2^exp
-end
-
-local function screen_update_voice_indicators()
-  screen.move(0,16)
-  screen.font_size(8)
-  for voicenum=1, POLYPHONY do
-    if note_downs[voicenum] then
-      screen.level(15)
-    else
-      screen.level(2)
-    end
-    screen.text(voicenum)
-  end
-end
-
-local function screen_update_midi_indicators()
-  --screen.move(125, 20)
-  screen.move(0,60)
-  screen.font_size(8)
-  if midi_available then
-    screen.level(15)
-    screen.text("midi:")
-    screen.text(" ")
-    screen.level(midinote_indicator_level)
-    screen.text("note ")
-    screen.level(midicc_indicator_level)
-    screen.text("cc")
-  else
-    screen.level(3)
-    screen.text("no midi")
-  end
 end
 
 local function r_param(name, voiceref, param, value)
@@ -118,7 +83,6 @@ local function note_on(note, velocity)
     end
     noteslots[note] = slot
     note_downs[voicenum] = true
-    redraw()
   end
 end
 
@@ -127,7 +91,6 @@ local function note_off(note)
   if slot then
     voice:release(slot)
     note_downs[slot.id] = false
-    redraw()
   end
 end
 
@@ -156,18 +119,23 @@ local function setup_r_config()
   engine.patch("rdelay", "rout", 0)
 end
 
+local all_fm = function(param, value)
+  r_param("fm", "all", param, value)
+end
+
 local function add_fmthing_params()
   local numoscs = 3
-  local all_fm = function(param, value)
-    r_param("fm", "all", param, value)
-  end
-
   local partial_spec = ControlSpec.new(0.5, 10, 'lin', 0.25, 1)
   local index_spec = ControlSpec.new(0, 24, 'lin', 0, 3, "")
 
   for oscnum=1,numoscs do
     params:add_control("osc"..oscnum.." gain", ControlSpec.AMP)
-    params:set_action("osc"..oscnum.." gain", function(value) all_fm("osc"..oscnum.."gain", value) end)
+    -- params:set_action("osc"..oscnum.." gain", function(value) all_fm("osc"..oscnum.."gain", value) end)
+    params:set_action("osc"..oscnum.." gain", function(value)
+      for voicenum=1, POLYPHONY do
+        engine.param("fm"..voicenum, "osc"..oscnum.."gain", value)
+      end
+    end)
 
     local osc_type_action = function(value)
       update_osc_freq("all", oscnum)
@@ -314,13 +282,19 @@ local function default_patch()
   params:set("osc3 > out", 0.1)
   params:set("env1 > osc2 gain", 1)
   params:set("env2 > amp gain", 1)
-  params:set("delay send", -20)
-  params:set("delay time left", 0.03)
-  params:set("delay time right", 0.05)
-  params:set("delay feedback", -30)
+  params:set("env2 attack", 5)
+  params:set("env2 decay", 100)
+  params:set("env2 sustain", 0)
+  params:set("env2 release", 150)
+  params:set("delay send", -200)
 end
 
 local timer
+local seqtimer
+local seqmidinote = 60
+local seqnext = "on"
+local bpm = 120
+local note_on_offs_redraw = true
 
 init = function()
   setup_r_config()
@@ -341,6 +315,20 @@ init = function()
   -- params:read("gong.pset")
 
   screen.line_width(1.0)
+
+  seqtimer = metro[2]
+  seqtimer.callback = function()
+    if seqnext == "on" then
+      -- print("on")
+      note_on(seqmidinote, 100)
+      seqnext = "off"
+    else
+      -- print("off")
+      note_off(seqmidinote)
+      seqnext = "on"
+    end
+  end
+  seqtimer:start(60/bpm/4/2) -- trig quarter notes
 end
 
 redraw = function()
@@ -349,76 +337,27 @@ redraw = function()
   screen.move(0, 8)
   screen.font_size(8)
   screen.level(15)
-  screen.text("gong")
-  screen_update_voice_indicators()
-  screen_update_midi_indicators()
+  screen.text("num voices:"..POLYPHONY)
+  screen.move(0, 32)
+  screen.level(15)
+  screen.text("tempo: "..bpm)
+  screen.move(0, 40)
   screen.update()
 end
 
 enc = function(n, delta)
   if n == 1 then
     norns.audio.adjust_output_level(delta)
-  end
-end
-
-key = function(n, z)
-  if n == 2 and z == 1 then
-    note_on(60, 100)
-  elseif n == 2 and z == 0 then
-    note_off(60)
-  elseif n == 3 and z == 1 then
-    note_on(64, 100)
-  elseif n == 3 and z == 0 then
-    note_off(64)
+  elseif n == 2 then
+    bpm = bpm + delta
+    seqtimer.time = 60/bpm/4/2
+    redraw()
   end
 end
 
 cleanup = function()
-  norns.midi.event = nil
   -- params:write("gong.pset")
   timer.count = -1 -- TODO: reset to ensure timer set to default, should not be needed
   timer:stop()
-end
-
-norns.midi.add = function(id, name, dev)
-  midi_available = true
-  midinote_indicator_level = 3
-  midicc_indicator_level = 3
-  redraw()
-end
-
-norns.midi.remove = function(id)
-  midi_available = false
-  redraw()
-end
-
-norns.midi.event = function(id, data)
-  status = data[1]
-  data1 = data[2]
-  data2 = data[3]
-  if status == 144 then
-    midinote_indicator_level = math.random(15)
-    --[[
-    if data1 == 0 then
-      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-    end
-    ]]
-    note_on(data1, data2)
-    redraw()
-  elseif status == 128 then
-    --[[
-    if data1 == 0 then
-      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-    end
-    ]]
-    note_off(data1)
-    --[[
-  elseif status == 176 then
-    midicc_indicator_level = math.random(15)
-    cc(data1, data2)
-    redraw()
-  elseif status == 224 then
-    bend(data1, data2)
-    ]]
-  end
+  seqtimer:stop()
 end
