@@ -330,13 +330,12 @@ init = function()
   default_patch()
 
   timer = metro[1]
-  timer:start(0.2, 1)
   timer.callback = function()
     -- print("banging..")
     params:bang()
     -- print("..banged")
   end
-
+  timer:start(0.2, 1)
 
   voice = Voice.new(POLYPHONY)
   -- params:read("gong.pset")
