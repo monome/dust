@@ -42,6 +42,11 @@ q.time = 0.125
 q.count = -1
 q.callback = event_q_clock
 
+quantize_init = function()
+  q:start()
+end
+
+
 quantize_set_time = function(interval)
   q.time = interval / quantize_div
   print("q_time > "..q.time)
@@ -89,7 +94,7 @@ event_exec = function(e)
       engine.loop_start(e.i,track[e.i].clip_start)
       engine.loop_end(e.i,track[e.i].clip_end)
     end
-    local cut = (e.pos/16)*track[i].clip_len + track[i].clip_start 
+    local cut = (e.pos/16)*track[e.i].clip_len + track[e.i].clip_start 
     engine.pos(e.i,cut)
     engine.reset(e.i)
     if track[e.i].play == 0 then
@@ -266,7 +271,7 @@ end
 
 calc_quant_off = function(i, q)
   local off = q
-  if off < track[i].clip_start then
+  while off < track[i].clip_start do
     off = off + q
   end
   off = off - track[i].clip_start
@@ -279,10 +284,9 @@ set_clip_length = function(i, len)
   track[i].clip_end = track[i].clip_start + len
   engine.loop_end(i,track[i].clip_end) 
   local q = calc_quant(i)
-  engine.quant(i,q)
   local off = calc_quant_off(i, q)
+  engine.quant(i,q)
   engine.quant_offset(i,off)
-  engine.reset(i)
 end
 
 
@@ -361,6 +365,7 @@ init = function()
     params:set_action("speed_mod"..i, function(x) speed_mod(i,x) end)
   end 
 
+  quantize_init()
   pattern_init()
   set_view(vREC)
   gridredraw()

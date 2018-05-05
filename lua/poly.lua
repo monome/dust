@@ -20,7 +20,7 @@ local getHzET = function ( note )
 end
 
 -- table of param values indexed by name
-local params = {
+local pparams = {
   shape = 0.0,
   timbre = 0.5,
   noise =  0.0,
@@ -82,7 +82,7 @@ local param_ranges = {
   verbMix= { 0.0, 1.0 },
 }
 
-local param_names = tab.sort(params)
+local param_names = tab.sort(pparams)
 
 -- current selected parameter
 local cur_param_id = 1
@@ -92,21 +92,78 @@ local nvoices = 0
 
 local incParam = function(name, delta)
   print("inc " .. name .. " " .. delta)
-  local val = params[name] + delta
+  local val = pparams[name] + delta
   if val < param_ranges[name][1] then val = param_ranges[name][1] end
   if val > param_ranges[name][2] then val = param_ranges[name][2] end
-  params[name] = val
+  pparams[name] = val
   engine[name](val)
 end
 
 init = function()
   if g ~= nil then
-    g:all(1)
+    g:all(0)
     g:refresh()
   end
+
+  
+  params:add_control("shape", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("shape", function(x) engine.shape(x) end)
+
+  params:add_control("timbre", controlspec.new(0,1,'lin',0,0.5,""))
+  params:set_action("timbre", function(x) engine.timbre(x) end)
+
+  params:add_control("noise", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("noise", function(x) engine.noise(x) end)
+
+  params:add_control("cut", controlspec.new(0,32,'lin',0,8,""))
+  params:set_action("cut", function(x) engine.cut(x) end)
+
+  params:add_control("cutEnvAmt", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("cutEnvAmt", function(x) engine.cutEnvAmt(x) end)
+
+  params:add_control("detune", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("detune", function(x) engine.detune(x) end)
+
+  params:add_control("verbMix", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("verbMix", function(x) engine.verbMix(x) end)
+
+  params:add_control("room", controlspec.new(0,1,'lin',0,0.5,""))
+  params:set_action("room", function(x) engine.room(x) end)
+
+  params:add_control("damp", controlspec.new(0,1,'lin',0,0,""))
+  params:set_action("damp", function(x) engine.damp(x) end)
+
+  params:add_control("ampAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
+  params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
+
+  params:add_control("ampDec", controlspec.new(0,2,'lin',0,0.1,""))
+  params:set_action("ampDec", function(x) engine.ampDec(x) end)
+
+  params:add_control("ampSus", controlspec.new(0,1,'lin',0,1,""))
+  params:set_action("ampSus", function(x) engine.ampSus(x) end)
+
+  params:add_control("ampRel", controlspec.new(0.01,10,'lin',0,1,""))
+  params:set_action("ampRel", function(x) engine.ampRel(x) end)
+
+  params:add_control("cutAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
+  params:set_action("cutAtk", function(x) engine.cutAtk(x) end)
+
+  params:add_control("cutDec", controlspec.new(0,2,'lin',0,0.1,""))
+  params:set_action("cutDec", function(x) engine.cutDec(x) end)
+
+  params:add_control("cutSus", controlspec.new(0,1,'lin',0,1,""))
+  params:set_action("cutSus", function(x) engine.cutSus(x) end)
+
+  params:add_control("cutRel", controlspec.new(0.01,10,'lin',0,1,""))
+  params:set_action("cutRel", function(x) engine.cutRel(x) end)
+
+  
+
+
   engine.level(0.05)
   engine.stopAll()
-  print("grid/poly")
+
+  params:bang()
 end
 
 gridkey = function(x, y, state)
@@ -117,7 +174,7 @@ gridkey = function(x, y, state)
   if state > 0 then
     if nvoices < 6 then
      --engine.start(id, getHz(x, y-1))
-     print("grid > "..id.." "..note)
+     --print("grid > "..id.." "..note)
      engine.start(id, getHzET(note))
       g:led(x, y, 10)
      nvoices = nvoices + 1
@@ -133,7 +190,7 @@ end
 
 enc = function(n,delta)
   if n==2 then
-    cur_param_id = util.clamp(cur_param_id + delta,1,tab.count(params))
+    cur_param_id = util.clamp(cur_param_id + delta,1,tab.count(pparams))
   elseif n==3 then
     incParam(param_names[cur_param_id], delta * 0.01)
   end
@@ -155,7 +212,10 @@ redraw = function()
    screen.line_width(1)
    screen.level(15)
    screen.move(0,10)
-   screen.text(param_names[cur_param_id] .. " = " .. params[param_names[cur_param_id]])
+   screen.text(param_names[cur_param_id] .. " = " .. pparams[param_names[cur_param_id]])
+
+   screen.move(0,40)
+   screen.text("see: menu > parameters")
 
    screen.update()
 end
@@ -166,7 +226,7 @@ cleanup = function()
   -- nothing to do
 end
 
-norns.midi.event = function(id, data)
+midi.event = function(id, data)
   tab.print(data)
   if data[1] == 144 then
     --[[
@@ -203,3 +263,8 @@ note_off = function(note, vel)
   engine.stop(note)
   nvoices = nvoices - 1
 end
+
+
+pattern_time = require 'pattern_time'
+
+pat = pattern_time.new(metro[1])
