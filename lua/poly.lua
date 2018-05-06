@@ -4,9 +4,15 @@
 -- grid pattern player:
 -- 1 1 record toggle
 -- 1 2 play toggle
+-- 1 8 tranpose mode!
 
 local tab = require 'tabutil'
 pattern_time = require 'pattern_time'
+
+mode_transpose = 0
+transpose_x = 5
+transpose_y = 5
+lit = {}
 
 engine.name = 'PolySub'
 
@@ -164,8 +170,6 @@ init = function()
   params:set_action("cutRel", function(x) engine.cutRel(x) end)
 
   
-
-
   engine.level(0.05)
   engine.stopAll()
 
@@ -178,49 +182,73 @@ gridkey = function(x, y, z)
       if y == 1 and pat.rec == 0 then
         pat:clear()
         pat:rec_start()
-        g:led(1,1,15)
       elseif y == 1 and pat.rec == 1 then
         pat:rec_stop()
-        g:led(1,1,2)
       elseif y == 2 and pat.play == 0 and pat.count > 0 then
         pat:start()
-        g:led(1,2,10) 
       elseif y == 2 and pat.play == 1 then
         pat:stop()
-        g:led(1,2,2) 
+        engine.stopAll()
+        nvoices = 0
+        lit = {}
+      elseif y == 8 then
+        mode_transpose = 1 - mode_transpose
       end
-      g:refresh()
     end
   else
-    local e = {}
-    e.id = x*8 + y
-    e.note = ((7-y)*5) + x
-    e.x = x
-    e.y = y 
-    e.state = z
-
-    pat:watch(e)
-    grid_note(e)
+    if mode_transpose == 0 then
+      local e = {}
+      e.id = x*8 + y
+      e.x = x
+      e.y = y 
+      e.state = z 
+      pat:watch(e)
+      grid_note(e)
+    else
+      transpose_x = x
+      transpose_y = y 
+    end
   end
+  gridredraw()
 end
+
 
 function grid_note(e)
   if e.state > 0 then
     if nvoices < 6 then
       --engine.start(id, getHz(x, y-1))
       --print("grid > "..id.." "..note)
-      engine.start(e.id, getHzET(e.note))
-      g:led(e.x, e.y, 10)
+      local note = ((7-e.y+(5-transpose_y))*5) + e.x + (transpose_x-5)
+      engine.start(e.id, getHzET(note))
+      lit[e.id] = {}
+      lit[e.id].x = e.x + transpose_x - 5
+      lit[e.id].y = e.y + transpose_y - 5
       nvoices = nvoices + 1
     end
   else
     engine.stop(e.id)
-    g:led(e.x, e.y, 0)
+    lit[e.id] = nil
     nvoices = nvoices - 1
+  end 
+  gridredraw()
+end
+
+function gridredraw()
+  g:all(0)
+  g:led(1,1,2 + pat.rec * 10)
+  g:led(1,2,2 + pat.play * 10)
+  g:led(1,8,2 + mode_transpose * 10) 
+
+  if mode_transpose == 1 then g:led(transpose_x, transpose_y, 4) end
+  for i,e in pairs(lit) do
+    g:led(e.x, e.y,15)
   end
 
   g:refresh()
 end
+
+
+
 
 
 enc = function(n,delta)
@@ -262,6 +290,7 @@ end
 
 cleanup = function()
   -- nothing to do
+  engine.stopAll()
   pat:stop()
   pat = nil
 end
