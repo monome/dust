@@ -267,4 +267,4 @@ end
 
 pattern_time = require 'pattern_time'
 
-pat = pattern_time.new(metro[1])
+pat = pattern_time.new()
