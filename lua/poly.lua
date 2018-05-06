@@ -1,9 +1,12 @@
 -- subtractive polysynth
 -- controlled by midi or grid
--- knob 2 selects param
--- knob 3 changes selected param
+-- 
+-- grid pattern player:
+-- 1 1 record toggle
+-- 1 2 play toggle
 
 local tab = require 'tabutil'
+pattern_time = require 'pattern_time'
 
 engine.name = 'PolySub'
 
@@ -100,6 +103,9 @@ local incParam = function(name, delta)
 end
 
 init = function()
+  pat = pattern_time.new()
+  pat.process = grid_note
+
   if g ~= nil then
     g:all(0)
     g:refresh()
@@ -166,35 +172,66 @@ init = function()
   params:bang()
 end
 
-gridkey = function(x, y, state)
-  --- FIXME: implement voice stealing?
-  --if x < 9 and y < 8 then
-  local id = x*8 + y
-  local note = ((7-y)*5) + x
-  if state > 0 then
-    if nvoices < 6 then
-     --engine.start(id, getHz(x, y-1))
-     --print("grid > "..id.." "..note)
-     engine.start(id, getHzET(note))
-      g:led(x, y, 10)
-     nvoices = nvoices + 1
+gridkey = function(x, y, z)
+  if x == 1 then
+    if z == 1 then
+      if y == 1 and pat.rec == 0 then
+        pat:clear()
+        pat:rec_start()
+        g:led(1,1,15)
+      elseif y == 1 and pat.rec == 1 then
+        pat:rec_stop()
+        g:led(1,1,2)
+      elseif y == 2 and pat.play == 0 and pat.count > 0 then
+        pat:start()
+        g:led(1,2,10) 
+      elseif y == 2 and pat.play == 1 then
+        pat:stop()
+        g:led(1,2,2) 
+      end
+      g:refresh()
     end
   else
-    engine.stop(id)
-    g:led(x, y, 0)
-    nvoices = nvoices - 1
+    local e = {}
+    e.id = x*8 + y
+    e.note = ((7-y)*5) + x
+    e.x = x
+    e.y = y 
+    e.state = z
+
+    pat:watch(e)
+    grid_note(e)
   end
-  g:refresh()
-  --end
 end
 
+function grid_note(e)
+  if e.state > 0 then
+    if nvoices < 6 then
+      --engine.start(id, getHz(x, y-1))
+      --print("grid > "..id.." "..note)
+      engine.start(e.id, getHzET(e.note))
+      g:led(e.x, e.y, 10)
+      nvoices = nvoices + 1
+    end
+  else
+    engine.stop(e.id)
+    g:led(e.x, e.y, 0)
+    nvoices = nvoices - 1
+  end
+
+  g:refresh()
+end
+
+
 enc = function(n,delta)
+  --[[
   if n==2 then
     cur_param_id = util.clamp(cur_param_id + delta,1,tab.count(pparams))
   elseif n==3 then
     incParam(param_names[cur_param_id], delta * 0.01)
   end
    redraw()
+   ]]--
 end
 
 key = function(n,z)
@@ -211,11 +248,12 @@ redraw = function()
    screen.clear()
    screen.line_width(1)
    screen.level(15)
-   screen.move(0,10)
-   screen.text(param_names[cur_param_id] .. " = " .. pparams[param_names[cur_param_id]])
+   screen.move(0,30)
+   screen.text("change sound")
+   --screen.text(param_names[cur_param_id] .. " = " .. pparams[param_names[cur_param_id]])
 
    screen.move(0,40)
-   screen.text("see: menu > parameters")
+   screen.text("menu > parameters")
 
    screen.update()
 end
@@ -224,6 +262,8 @@ end
 
 cleanup = function()
   -- nothing to do
+  pat:stop()
+  pat = nil
 end
 
 midi.event = function(id, data)
@@ -265,6 +305,4 @@ note_off = function(note, vel)
 end
 
 
-pattern_time = require 'pattern_time'
 
-pat = pattern_time.new()

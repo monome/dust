@@ -1,8 +1,9 @@
 local pattern = {}
---pattern.__index = pattern
+pattern.__index = pattern
 
 function pattern.new()
-  local i = setmetatable({}, pattern)
+  local i = {}
+  setmetatable(i, pattern)
   i.rec = 0
   i.play = 0
   i.prev_time = 0
@@ -12,6 +13,8 @@ function pattern.new()
   i.step = 0
 
   i.metro = metro.alloc(function() i:next_event() end,1,1)
+
+  i.process = function(e) print("event") end
 
   return i
 end
@@ -48,7 +51,13 @@ function pattern:rec_stop()
   end
 end
 
-function pattern:rec_event()
+function pattern:watch(e)
+  if self.rec == 1 then
+    self:rec_event(e)
+  end
+end
+
+function pattern:rec_event(e)
   local c = self.count + 1
   if c == 1 then
     self.prev_time = util.time() 
@@ -65,6 +74,7 @@ end
 
 function pattern:start()
   print("start pattern ")
+  self.process(self.event[1])
   self.play = 1
   self.step = 1
   self.metro.time = self.time[1]
@@ -75,8 +85,8 @@ function pattern:next_event()
   if self.step == self.count then self.step = 1
   else self.step = self.step + 1 end 
   --print("next step "..self.step)
-  event_exec(self.event[self.step])
-  self:event_process(self.event[self.step])
+  --event_exec(self.event[self.step])
+  self.process(self.event[self.step])
   self.metro.time = self.time[self.step]
   --print("next time "..self.metro.time)
   self.metro:start() 
@@ -84,14 +94,11 @@ end
 
 function pattern:stop()
   if self.play == 1 then
-    print("stop pattern "..x)
+    print("stop pattern ")
     self.play = 0
     self.metro:stop()
   else print("not playing") end
 end
 
-function pattern:event_process(e)
-  print("event")
-end
- 
+
 return pattern
