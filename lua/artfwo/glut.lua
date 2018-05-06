@@ -2,14 +2,6 @@
 --
 -- granular sampler in progress
 --
--- ////////
--- ////
--- //////
--- /////////////
--- //
--- ///////
--- ///
--- /
 
 engine.name = 'Glut'
 
@@ -47,7 +39,117 @@ local grid_voc = gridbuf.new(16, 8)
 local metro_grid_refresh
 
 --[[
-local funcs
+recorder
+]]
+
+local pattern_banks = {}
+local pattern_timers = {}
+local pattern_leds = {} -- for displaying button presses
+local pattern_positions = {} -- playback positions
+local record_bank = -1
+local record_prevtime = -1
+local record_length = -1
+local alt = false
+local blink = 0
+local metro_blink
+
+local function record_event(x, y, z)
+  if record_bank > 0 then
+    -- record first event tick
+    local current_time = util.time()
+
+    if record_prevtime < 0 then
+      record_prevtime = current_time
+    end
+
+    local time_delta = current_time - record_prevtime
+    table.insert(pattern_banks[record_bank], {time_delta, x, y, z})
+    record_prevtime = current_time
+  end
+end
+
+local function start_playback(n)
+  pattern_timers[n]:start(0.001, 1) -- TODO: timer doesn't start immediately with zero
+end
+
+local function stop_playback(n)
+  pattern_timers[n]:stop()
+  pattern_positions[n] = 1
+end
+
+local function arm_recording(n)
+  record_bank = n
+end
+
+local function stop_recording()
+  local recorded_events = #pattern_banks[record_bank]
+
+  if recorded_events > 0 then
+    -- save last delta to first event
+    local current_time = util.time()
+    local final_delta = current_time - record_prevtime
+    pattern_banks[record_bank][1][1] = final_delta
+
+    start_playback(record_bank)
+  end
+
+  record_bank = -1
+  record_prevtime = -1
+end
+
+local function pattern_next(n)
+  local bank = pattern_banks[n]
+  local pos = pattern_positions[n]
+
+  local event = bank[pos]
+  local delta, x, y, z = table.unpack(event)
+  pattern_leds[n] = z
+  gridkey(x, y, z, true)
+
+  local next_pos = pos + 1
+  if next_pos > #bank then
+    next_pos = 1
+  end
+
+  local next_event = bank[next_pos]
+  local next_delta = next_event[1]
+  pattern_positions[n] = next_pos
+
+  -- schedule next event
+  pattern_timers[n]:start(next_delta, 1)
+end
+
+local function record_handler(n)
+  if alt then
+    -- clear pattern
+    if n == record_bank then stop_recording() end
+    if pattern_timers[n].is_running then stop_playback(n) end
+    pattern_banks[n] = {}
+    do return end
+  end
+
+  if n == record_bank then
+    -- stop if pressed current recording
+    stop_recording()
+  else
+    local pattern = pattern_banks[n]
+
+    if #pattern > 0 then
+      -- toggle playback if there's data
+      if pattern_timers[n].is_running then stop_playback(n) else start_playback(n) end
+    else
+      -- stop recording if it's happening
+      if record_bank > 0 then
+        stop_recording()
+      end
+      -- arm new pattern for recording
+      arm_recording(n)
+    end
+  end
+end
+
+--[[
+internals
 ]]
 
 local function ledinterp(value, width)
@@ -101,11 +203,36 @@ local function grid_refresh()
   grid_ctl:led_level_all(0)
   grid_voc:led_level_all(0)
 
+  -- current voice
   for i=1, 16 do
     grid_ctl:led_level_set(i, current_voice + 1, 3)
   end
 
-  for i=1, 7 do
+  -- alt
+  grid_ctl:led_level_set(16, 1, alt and 15 or 1)
+
+  -- pattern banks
+  for i=1, VOICES do
+    local level = 2
+
+    if #pattern_banks[i] > 0 then level = 5 end
+    if pattern_timers[i].is_running then
+      level = 10
+      if pattern_leds[i] > 0 then
+        level = 12
+      end
+    end
+
+    grid_ctl:led_level_set(8 + i, 1, level)
+  end
+
+  -- blink armed pattern
+  if record_bank > 0 then
+      grid_ctl:led_level_set(8 + record_bank, 1, 15 * blink)
+  end
+
+  -- voices
+  for i=1, VOICES do
     if gates[i] > 0 then
       grid_ctl:led_level_set(i, 1, 7)
       grid_voc:led_level_row(1, i + 1, ledinterp(positions[i], 16))
@@ -118,9 +245,20 @@ local function grid_refresh()
 end
 
 function init()
+  -- recorders
+  for v = 1, VOICES do
+    table.insert(pattern_timers, metro.alloc(function(tick) pattern_next(v) end))
+    table.insert(pattern_banks, {})
+    table.insert(pattern_leds, 0)
+    table.insert(pattern_positions, 1)
+  end
+
   -- grid refresh timer, 40 fps
   metro_grid_refresh = metro.alloc(function(stage) grid_refresh() end, 1 / 40)
   metro_grid_refresh:start()
+
+  metro_blink = metro.alloc(function(stage) blink = blink ~ 1 end, 1 / 4)
+  metro_blink:start()
 
   params:add_control("reverb_mix", controlspec.new(0, 1, "lin", 0, 0.5, ""))
   params:set_action("reverb_mix", function(value) engine.reverb_mix(value) end)
@@ -170,19 +308,38 @@ function init()
 end
 
 --[[
-module funcs
+exports
 ]]
 
-function gridkey(x, y, state)
-  if state > 0 then
+function gridkey(x, y, z, skip_record)
+  if y > 1 or (y == 1 and x < 9) then
+    if not skip_record then
+      record_event(x, y, z)
+    end
+  end
+
+  if z > 0 then
     -- set voice pos
     if y > 1 then
       local voice = y - 1
       start_voice(voice, (x - 1) / 16)
     else
-      local voice = x
-      stop_voice(voice)
+      if x == 16 then
+        -- alt
+        alt = true
+      elseif x > 8 then
+        record_handler(x - 8)
+      elseif x == 8 then
+        -- reserved
+      elseif x < 8 then
+        -- stop
+        local voice = x
+        stop_voice(voice)
+      end
     end
+  else
+    -- alt
+    if x == 16 and y == 1 then alt = false end
   end
 end
 
@@ -276,9 +433,7 @@ function redraw()
     screen.move(0, -1 + (8 - current_voice_param_offset) * 10)
     screen.text("spread: "..params:string("spread"..current_voice))
   else
-    --[[
-      glut parameters
-    ]]
+    -- glut parameters
     screen.level(5)
     screen.move(127, 10)
     screen.text_right("voice: all")
@@ -304,5 +459,5 @@ function cleanup()
   for v = 1, VOICES do
     poll.polls['phase_' .. v]:stop()
   end
-  metro_grid_refresh:stop()
+  metro.free_all()
 end
