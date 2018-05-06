@@ -62,13 +62,10 @@ init = function()
      
      engine.fade(i, 0.5)
        
-     -- poll the quantized phase (only fires when quantized phase changes)
      engine.quant(i, 0.25)
      p_phase[i] = poll.set('phase_quant_'..i, function(phase)
-			      --print(i, phase)
 			      update_phase(i, phase)
      end)
-     print(p_phase[i])
      p_phase[i]:start()
 
   end
