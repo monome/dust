@@ -484,8 +484,8 @@ Engine_Ack : CroneEngine {
 		delayBus = Bus.audio(numChannels: 2);
 		reverbBus = Bus.audio(numChannels: 2);
 
-		delayBus.debug(\delayBus);
-		reverbBus.debug(\reverbBus);
+		// delayBus.debug(\delayBus);
+		// reverbBus.debug(\reverbBus);
 
 		context.server.sync;
 
@@ -551,7 +551,7 @@ Engine_Ack : CroneEngine {
 					[key, value.asMap]
 				)
 			};
-			samplePlayerSynthArgs.debug;
+			// samplePlayerSynthArgs.debug;
 
 			samplePlayerSynths[channelnum].release; // TODO
 
