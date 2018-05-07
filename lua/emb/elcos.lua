@@ -2,12 +2,13 @@
 -- makes oscs, hears voice
 -- 
 -- last column: change state
--- earlier columns: change rule
+-- first column: set pitch from input
+-- other columns: change rule
 --
 -- key 2 : clear state
--- key 3 : press to store rule, release to recall
--- enc 2 : rate
--- enc 3 : offset
+-- key 3 : [TODO]
+-- enc 2 : offset
+-- enc 3 : rate
 
 local elca = require 'emb.elca'
 local audio = require 'audio'
