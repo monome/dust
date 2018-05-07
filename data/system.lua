@@ -1,5 +1,5 @@
 -- system state
-norns.state.script = 'poly.lua'
+norns.state.script = 'mlr.lua'
 norns.state.out = '64'
 norns.state.monitor = '0'
 norns.state.monitor_mode = '0'

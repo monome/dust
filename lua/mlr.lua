@@ -26,6 +26,7 @@ FADE = 0.01
 
 vREC = 1
 vCUT = 2 
+vCLIP = 3
 vTIME = 15
 
 -- events
@@ -53,8 +54,8 @@ update_tempo = function()
   print("q > "..interval)
   q.time = interval
   for i=1,4 do
-    if params:get("tempo_map"..i) == 1 then
-
+    if track[i].tempo_map == 1 then
+      update_rate(i)
     end
   end
 end
@@ -98,10 +99,10 @@ event_exec = function(e)
   if e.t==eCUT then
     if track[e.i].loop == 1 then
       track[e.i].loop = 0
-      engine.loop_start(e.i,track[e.i].clip_start)
-      engine.loop_end(e.i,track[e.i].clip_end)
+      engine.loop_start(e.i,clip[track[e.i].clip].s)
+      engine.loop_end(e.i,clip[track[e.i].clip].e)
     end
-    local cut = (e.pos/16)*track[e.i].clip_len + track[e.i].clip_start 
+    local cut = (e.pos/16)*clip[track[e.i].clip].l + clip[track[e.i].clip].s 
     engine.pos(e.i,cut)
     engine.reset(e.i)
     if track[e.i].play == 0 then
@@ -122,8 +123,8 @@ event_exec = function(e)
     track[e.i].loop_start = e.loop_start
     track[e.i].loop_end = e.loop_end
     --print("LOOP "..track[e.i].loop_start.." "..track[e.i].loop_end)
-    local lstart = track[e.i].clip_start + (track[e.i].loop_start-1)/16*track[e.i].clip_len
-    local lend = track[e.i].clip_start + (track[e.i].loop_end)/16*track[e.i].clip_len
+    local lstart = clip[track[e.i].clip].s + (track[e.i].loop_start-1)/16*clip[track[e.i].clip].l
+    local lend = clip[track[e.i].clip].s + (track[e.i].loop_end)/16*clip[track[e.i].clip].l
     --print(">>>> "..lstart.." "..lend)
     engine.loop_start(e.i,lstart)
     engine.loop_end(e.i,lend) 
@@ -208,6 +209,7 @@ end
 
 pattern_start = function(x)
   print("start pattern "..x)
+  event_exec(pattern[x].event[1])
   pattern[x].play = 1
   pattern[x].step = 1
   pattern[x].metro.time = pattern[x].time[1]
@@ -262,9 +264,7 @@ for i=1,4 do
   track[i].loop = 0
   track[i].loop_start = 0
   track[i].loop_end = 16 
-  track[i].clip_start = 1 + (i-1)*10
-  track[i].clip_len = 4
-  track[i].clip_end = track[i].clip_start + track[i].clip_len
+  track[i].clip = i
   track[i].step_time = 0.25
   track[i].pos = 0
   track[i].pos_grid = -1
@@ -274,8 +274,19 @@ for i=1,4 do
   track[i].bpm = 1
 end
 
+clip = {}
+for i=1,16 do
+  clip[i] = {}
+  clip[i].s = 1+ (i-1)*16
+  clip[i].l = 4
+  clip[i].e = clip[i].s + clip[i].l
+  clip[i].name = "-"
+end
+
+
+
 calc_quant = function(i)
-  local q = (track[i].clip_len/16)
+  local q = (clip[track[i].clip].l/16)
   track[i].step_time = q
   print("q > "..q)
   return q
@@ -283,25 +294,29 @@ end
 
 calc_quant_off = function(i, q)
   local off = q
-  while off < track[i].clip_start do
+  while off < clip[track[i].clip].s do
     off = off + q
   end
-  off = off - track[i].clip_start
+  off = off - clip[track[i].clip].s
   print("off > "..off)
   return off
 end
 
 set_clip_length = function(i, len)
-  track[i].clip_len = len
-  track[i].clip_end = track[i].clip_start + len
-  engine.loop_end(i,track[i].clip_end) 
+  clip[track[i].clip].l = len
+  clip[track[i].clip].e = clip[track[i].clip].s + len
+  set_clip(i,track[i].clip)
+end
+
+set_clip = function(i, x) 
+  track[i].clip = x
+  engine.loop_end(i,clip[track[i].clip].e) 
   local q = calc_quant(i)
   local off = calc_quant_off(i, q)
   engine.quant(i,q)
   engine.quant_offset(i,off)
 end
-
-
+ 
 held = {}
 heldmax = {}
 done = {}
@@ -338,9 +353,9 @@ UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
 -------------------- init
 init = function() 
   params:add_number("tempo",40,240,92)
-  params:set_action("tempo", function(x) set_tempo(x) end)
+  params:set_action("tempo", function() update_tempo() end)
   params:add_number("quant_div",1,32,4)
-  params:set_action("quant_div",function(x) set_div(x) end)
+  params:set_action("quant_div",function() update_tempo() end)
   p = {}
   for i=1,TRACKS do
     engine.pre(i,track[i].pre_level)
@@ -357,8 +372,8 @@ init = function()
     engine.play_dac(i,1,1)
     engine.play_dac(i,2,1)
 
-    engine.loop_start(i,track[i].clip_start)
-    engine.loop_end(i,track[i].clip_end)
+    engine.loop_start(i,clip[track[i].clip].s)
+    engine.loop_end(i,clip[track[i].clip].e)
     engine.loop_on(i,1)
     engine.quant(i,calc_quant(i))
 
@@ -380,7 +395,7 @@ init = function()
     params:add_control("pre"..i,controlspec.UNIPOLAR)
     params:set_action("pre"..i, function(x) engine.pre(i,x) end)
     params:add_control("speed_mod"..i, controlspec.BIPOLAR)
-    params:set_action("speed_mod"..i, function() speed_mod(i) end)
+    params:set_action("speed_mod"..i, function() update_rate(i) end)
   end 
 
   quantize_init()
@@ -392,7 +407,7 @@ end
 -- poll callback
 phase = function(n, x)
   --if n == 1 then print(x) end
-  local pp = ((x - track[n].clip_start) / track[n].clip_len)-- * 16 --TODO 16=div
+  local pp = ((x - clip[track[n].clip].s) / clip[track[n].clip].l)-- * 16 --TODO 16=div
   --x = math.floor(track[n].pos*16)
   --if n==1 then print("> "..x.." "..pp) end
   x = math.floor(pp * 16)
@@ -403,11 +418,12 @@ phase = function(n, x)
 end 
 
 
-speed_mod = function(i)
+
+update_rate = function(i)
   local n = math.pow(2,track[i].speed + params:get("speed_mod"..i))
   if track[i].rev == 1 then n = -n end
   if track[i].tempo_map == 1 then
-    local bpmmod = track[i].bpm / params:get("tempo")
+    local bpmmod = params:get("tempo") / track[i].bpm
     print("bpmmod: "..bpmmod)
     n = n * bpmmod 
   end
@@ -420,6 +436,8 @@ end
 gridkey_nav = function(x,z)
   if z==1 then
     if x==1 then set_view(vREC)
+    elseif x==2 then set_view(vCUT)
+    elseif x==3 then set_view(vCLIP)
     elseif x>4 and x <9 then
       i = x - 4 
       if alt == 1 then
@@ -434,7 +452,6 @@ gridkey_nav = function(x,z)
         pattern_stop(i)
       else pattern_start(i)
       end 
-    elseif x==2 then set_view(vCUT)
     elseif x==15 and alt == 0 then 
       quantize = 1 - quantize
       if quantize == 0 then q:stop()
@@ -467,8 +484,8 @@ end
 -------------------- REC
 function fileselect_callback(path)
   if path ~= "cancel" then
-    print("file > "..focus.." "..path.." "..track[focus].clip_start)
-    engine.read(path, track[focus].clip_start, 1000) -- FIXME 1000 seconds to load
+    print("file > "..focus.." "..path.." "..clip[track[focus].clip].s)
+    engine.read(path, clip[track[focus].clip].s, 1000) -- FIXME 1000 seconds to load
     local ch, len = sound_file_inspect(path)
     print("file length > "..len)
     set_clip_length(focus,len / 48000) 
@@ -545,7 +562,7 @@ v.gridkey[vREC] = function(x, y, z)
       if x>2 and x<5 then
         if alt == 1 then
           track[i].tempo_map = 1 - track[i].tempo_map
-          speed_mod(i) 
+          update_rate(i) 
           gridredraw()
         elseif focus ~= i then 
           focus = i
@@ -703,6 +720,62 @@ end
 
 
 
+--------------------CLIP
+v.key[vCLIP] = function(n,z)
+  print("CLIP key")
+end
+
+clip_sel = 1
+
+v.enc[vCLIP] = function(n,d)
+  if n==2 then
+    clip_sel = util.clamp(clip_sel+d,1,4)
+  end 
+  redraw()
+  gridredraw()
+end
+
+v.redraw[vCLIP] = function()
+  screen.clear()
+  screen.level(15)
+  screen.move(10,30)
+  screen.text("CLIP > "..clip_sel)
+
+  screen.move(10,50)
+  screen.text(track[clip_sel].clip)
+  screen.move(70,50)
+  screen.text(clip[clip_sel].name)
+  screen.level(3)
+  screen.move(10,60)
+  screen.text("number")
+  screen.move(70,60)
+  screen.text("name")
+
+  screen.update()
+end
+
+v.gridkey[vCLIP] = function(x, y, z)
+  if y == 1 then gridkey_nav(x,z)
+  elseif z == 1 and y < 6 then
+    clip_sel = y-1
+    set_clip(clip_sel,x)
+    redraw()
+    gridredraw()
+  end 
+end
+
+v.gridredraw[vCLIP] = function()
+  if not g then return end
+  g:all(0)
+  gridredraw_nav()
+  for i=1,16 do g:led(i,clip_sel+1,4) end
+  for i=1,4 do g:led(track[i].clip,i+1,10) end
+  g:refresh();
+end
+
+
+
+
 --------------------TIME
 v.key[vTIME] = function(n,z)
   print("TIME key")
@@ -754,9 +827,5 @@ end
 
 
 cleanup = function()
-  p1:stop()
-  p2:stop()
-  p3:stop()
-  p4:stop()
-  q:stop()
+  -- polls/timers autostopped
 end 
