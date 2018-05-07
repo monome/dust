@@ -98,6 +98,10 @@ function CA:set_rule_by_state(val, l, c, r)
    else self.rule = self.rule & (~(1<<code)) end
 end
 
+function CA:clear()
+   for i=1,CA.NUM_STATES do self.state[i] = 0 end
+end
+
 -- TODO: maybe setter methods that clamp stuff
 
 return CA
