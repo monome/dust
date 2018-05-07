@@ -62,8 +62,10 @@ init = function()
      
      engine.fade(i, 0.5)
        
-     -- poll the quantized phase (only fires when quantized phase changes)
-     p_phase[i] = poll.set('phase_quant_'..i, function(phase)update_phase(i, phase) end)
+     engine.quant(i, 0.25)
+     p_phase[i] = poll.set('phase_quant_'..i, function(phase)
+			      update_phase(i, phase)
+     end)
      p_phase[i]:start()
 
   end
@@ -142,7 +144,7 @@ update_phase = function(i, phase)
    -- print(phase)
    if g ~= nil then
       g:led(gpos[i], i, 0)
-      gpos[i] = (phase - loop_start[i]) * 8 + 1
+      gpos[i] = (phase - loop_start[i]) * 4 + 1
       if(gpos[i] > 16) then gpos[i] = 16 end
       g:led(gpos[i], i, 12)
       g:refresh()
