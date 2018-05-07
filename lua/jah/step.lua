@@ -290,6 +290,7 @@ init = function()
     g:refresh()
   end
   ]]
+  params:read("step.pset")
 
   playing = true
   timer:start()
