@@ -180,11 +180,20 @@ gridkey = function(x, y, z)
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then
+        mode_transpose = 0
+        transpose_x = 5
+        transpose_y = 5 
+        pat:stop()
+        engine.stopAll()
         pat:clear()
         pat:rec_start()
       elseif y == 1 and pat.rec == 1 then
         pat:rec_stop()
+        pat:start()
       elseif y == 2 and pat.play == 0 and pat.count > 0 then
+        if pat.rec == 1 then
+          pat:rec_stop()
+        end
         pat:start()
       elseif y == 2 and pat.play == 1 then
         pat:stop()
@@ -193,6 +202,10 @@ gridkey = function(x, y, z)
         lit = {}
       elseif y == 8 then
         mode_transpose = 1 - mode_transpose
+        if mode_transpose == 0 then
+          transpose_x = 5
+          transpose_y = 5
+        end 
       end
     end
   else
