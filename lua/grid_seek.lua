@@ -24,6 +24,7 @@ init = function()
   end)
 
   t = metro[1]
+  t.count = -1
   t.time = 15/params:get("tempo") 
 
   t.callback = function(stage)
