@@ -38,13 +38,13 @@ eSPEED = 5
 eREV = 6
 
 quantize = 0
-q = metro[10]
-q.time = 0.125
-q.count = -1
-q.callback = event_q_clock
+quantizer = metro.alloc()
+quantizer.time = 0.125
+quantizer.count = -1
+quantizer.callback = event_q_clock
 
 quantize_init = function()
-  q:start()
+  quantizer:start()
 end
 
 update_tempo = function()
@@ -52,7 +52,7 @@ update_tempo = function()
   local d = params:get("quant_div")
   local interval = (60/t) / d
   print("q > "..interval)
-  q.time = interval
+  quantizer.time = interval
   for i=1,4 do
     if track[i].tempo_map == 1 then
       update_rate(i)
@@ -113,11 +113,11 @@ event_exec = function(e)
     track[e.i].play = 0
     track[e.i].pos_grid = -1
     engine.stop(e.i) 
-    gridredraw()
+    dirtygrid=true
   elseif e.t==eSTART then
     track[e.i].play = 1
     engine.start(e.i)
-    gridredraw()
+    dirtygrid=true
   elseif e.t==eLOOP then
     track[e.i].loop = 1
     track[e.i].loop_start = e.loop_start
@@ -128,19 +128,21 @@ event_exec = function(e)
     --print(">>>> "..lstart.." "..lend)
     engine.loop_start(e.i,lstart)
     engine.loop_end(e.i,lend) 
-    if view == vCUT then gridredraw() end
+    if view == vCUT then dirtygrid=true end
   elseif e.t==eSPEED then
     track[e.i].speed = e.speed
-    n = math.pow(2,track[e.i].speed + params:get("speed_mod"..e.i))
-    if track[e.i].rev == 1 then n = -n end
-    engine.rate(e.i,n) 
-    if view == vREC then gridredraw() end
+    update_rate(e.i)
+    --n = math.pow(2,track[e.i].speed + params:get("speed_mod"..e.i))
+    --if track[e.i].rev == 1 then n = -n end
+    --engine.rate(e.i,n) 
+    if view == vREC then dirtygrid=true end
   elseif e.t==eREV then
     track[e.i].rev = e.rev
-    n = math.pow(2,track[e.i].speed + params:get("speed_mod"..e.i))
-    if track[e.i].rev == 1 then n = -n end
-    engine.rate(e.i,n) 
-    if view == vREC then gridredraw() end
+    update_rate(e.i)
+    --n = math.pow(2,track[e.i].speed + params:get("speed_mod"..e.i))
+    --if track[e.i].rev == 1 then n = -n end
+    --engine.rate(e.i,n) 
+    if view == vREC then dirtygrid=true end
   end
 end
 
@@ -166,7 +168,7 @@ pattern_clear = function(x)
   pattern[x].count = 0
   pattern[x].step = 0
 
-  pattern[x].metro = metro[x]
+  pattern[x].metro = metro.alloc()
   pattern[x].metro.count = 1
   pattern[x].metro.callback = function(n) pattern_next(x) end
 end
@@ -260,34 +262,31 @@ for i=1,4 do
   track[i].rec = 0
   track[i].rec_level = 1
   track[i].pre_level = 0
-  track[i].length = 4
   track[i].loop = 0
   track[i].loop_start = 0
   track[i].loop_end = 16 
   track[i].clip = i
-  track[i].step_time = 0.25
   track[i].pos = 0
   track[i].pos_grid = -1
   track[i].speed = 0
   track[i].rev = 0 
   track[i].tempo_map = 0
-  track[i].bpm = 1
 end
 
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 1+ (i-1)*16
+  clip[i].s = 2+ (i-1)*16
   clip[i].l = 4
   clip[i].e = clip[i].s + clip[i].l
   clip[i].name = "-"
+  clip[i].bpm = 1
 end
 
 
 
 calc_quant = function(i)
   local q = (clip[track[i].clip].l/16)
-  track[i].step_time = q
   print("q > "..q)
   return q
 end
@@ -303,18 +302,21 @@ calc_quant_off = function(i, q)
 end
 
 set_clip_length = function(i, len)
-  clip[track[i].clip].l = len
-  clip[track[i].clip].e = clip[track[i].clip].s + len
-  set_clip(i,track[i].clip)
+  clip[i].l = len
+  clip[i].e = clip[i].s + len
 end
 
 set_clip = function(i, x) 
+  track[i].play = 0
+  engine.stop(i)
   track[i].clip = x
+  engine.loop_start(i,clip[track[i].clip].s)
   engine.loop_end(i,clip[track[i].clip].e) 
   local q = calc_quant(i)
   local off = calc_quant_off(i, q)
   engine.quant(i,q)
   engine.quant_offset(i,off)
+  track[i].loop = 0
 end
  
 held = {}
@@ -330,7 +332,10 @@ end
 
 
 key = function(n,z) _key(n,z) end
-enc = function(n,d) _enc(n,d) end
+enc = function(n,d) 
+  if n==1 then norns.audio.adjust_output_level(d)
+  else _enc(n,d) end
+end
 redraw = function() _redraw() end
 gridkey = function(x,y,z) _gridkey(x,y,z) end
 
@@ -343,10 +348,20 @@ set_view = function(x)
   _enc = v.enc[x]
   _redraw = v.redraw[x]
   _gridkey = v.gridkey[x]
-  gridredraw = v.gridredraw[x]
+  _gridredraw = v.gridredraw[x]
   redraw()
-  gridredraw()
+  dirtygrid=true
 end 
+
+gridredraw = function()
+  if not g then return end
+  if dirtygrid == true then
+    _gridredraw()
+    dirtygrid = false
+  end
+end
+
+
 
 UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
 
@@ -401,7 +416,12 @@ init = function()
   quantize_init()
   pattern_init()
   set_view(vREC)
-  gridredraw()
+  update_tempo()
+  
+  gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
+  gridredrawtimer:start()
+
+  dirtygrid = true
 end
 
 -- poll callback
@@ -413,7 +433,7 @@ phase = function(n, x)
   x = math.floor(pp * 16)
   if x ~= track[n].pos_grid then
     track[n].pos_grid = x
-    if view == vCUT then gridredraw() end
+    if view == vCUT then dirtygrid=true end
   end 
 end 
 
@@ -423,7 +443,7 @@ update_rate = function(i)
   local n = math.pow(2,track[i].speed + params:get("speed_mod"..i))
   if track[i].rev == 1 then n = -n end
   if track[i].tempo_map == 1 then
-    local bpmmod = params:get("tempo") / track[i].bpm
+    local bpmmod = params:get("tempo") / clip[track[i].clip].bpm
     print("bpmmod: "..bpmmod)
     n = n * bpmmod 
   end
@@ -454,8 +474,8 @@ gridkey_nav = function(x,z)
       end 
     elseif x==15 and alt == 0 then 
       quantize = 1 - quantize
-      if quantize == 0 then q:stop()
-      else q:start()
+      if quantize == 0 then quantizer:stop()
+      else quantizer:start()
       end 
     elseif x==15 and alt == 1 then
       set_view(vTIME)
@@ -465,7 +485,7 @@ gridkey_nav = function(x,z)
     if x==16 then alt = 0 end
     if x==15 and view == vTIME then set_view(-1) end
   end
-  gridredraw()
+  dirtygrid=true
 end
 
 gridredraw_nav = function()
@@ -482,27 +502,8 @@ gridredraw_nav = function()
 end
 
 -------------------- REC
-function fileselect_callback(path)
-  if path ~= "cancel" then
-    print("file > "..focus.." "..path.." "..clip[track[focus].clip].s)
-    engine.read(path, clip[track[focus].clip].s, 1000) -- FIXME 1000 seconds to load
-    local ch, len = sound_file_inspect(path)
-    print("file length > "..len)
-    set_clip_length(focus,len / 48000) 
-    local bpm = 60 / (len/48000)
-    while bpm < 60 do 
-      bpm = bpm * 2
-      print("bpm > "..bpm)
-    end
-    track[focus].bpm = bpm
-
-  end
-end 
-
 v.key[vREC] = function(n,z)
-  if n==1 and z==1 then
-    fileselect.enter("/home/pi/dust", fileselect_callback)
-  elseif n==2 and z==1 then
+  if n==2 and z==1 then
     viewinfo[vREC] = 1 - viewinfo[vREC]
     redraw()
   end
@@ -563,17 +564,17 @@ v.gridkey[vREC] = function(x, y, z)
         if alt == 1 then
           track[i].tempo_map = 1 - track[i].tempo_map
           update_rate(i) 
-          gridredraw()
+          dirtygrid=true
         elseif focus ~= i then 
           focus = i
           redraw()
-          gridredraw()
+          dirtygrid=true
         end 
       elseif x==1 and y<6 then 
         track[i].rec = 1 - track[i].rec
         print("REC "..track[i].rec)
         engine.rec_on(i,track[i].rec)
-        gridredraw()
+        dirtygrid=true
       elseif x==16 and y<6 then
         if track[i].play == 1 then
           e = {}
@@ -586,7 +587,7 @@ v.gridkey[vREC] = function(x, y, z)
           e.i = i
           event(e)
         end 
-        gridredraw()
+        dirtygrid=true
       elseif x>8 and x<16 and y<6 then
         n = x-12
         e = {} e.t = eSPEED e.i = i e.speed = n
@@ -601,7 +602,6 @@ v.gridkey[vREC] = function(x, y, z)
 end
 
 v.gridredraw[vREC] = function()
-  if not g then return end
   g:all(0)
   g:led(3,focus+1,7)
   g:led(4,focus+1,7)
@@ -701,7 +701,6 @@ v.gridkey[vCUT] = function(x, y, z)
 end
 
 v.gridredraw[vCUT] = function()
-  if not g then return end
   g:all(0)
   gridredraw_nav()
   for i=1,4 do
@@ -721,8 +720,32 @@ end
 
 
 --------------------CLIP
+function fileselect_callback(path)
+  if path ~= "cancel" then
+    print("file > "..path.." "..clip[track[clip_sel].clip].s)
+    engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
+    local ch, len = sound_file_inspect(path)
+    print("file length > "..len)
+    set_clip_length(track[clip_sel].clip, len/48000) 
+    local bpm = 60 / (len/48000)
+    while bpm < 60 do 
+      bpm = bpm * 2
+      print("bpm > "..bpm)
+    end
+    clip[track[clip_sel].clip].bpm = bpm 
+    clip[track[clip_sel].clip].name = path:match("[^/]*$")
+    set_clip(clip_sel,track[clip_sel].clip)
+    update_rate(clip_sel)
+
+    -- TODO re-set_clip any tracks with this clip loaded
+    redraw()
+  end
+end 
+
 v.key[vCLIP] = function(n,z)
-  print("CLIP key")
+  if n==3 and z==0 then
+    fileselect.enter("/home/pi/dust/audio", fileselect_callback)
+  end
 end
 
 clip_sel = 1
@@ -732,7 +755,7 @@ v.enc[vCLIP] = function(n,d)
     clip_sel = util.clamp(clip_sel+d,1,4)
   end 
   redraw()
-  gridredraw()
+  dirtygrid=true
 end
 
 v.redraw[vCLIP] = function()
@@ -742,14 +765,10 @@ v.redraw[vCLIP] = function()
   screen.text("CLIP > "..clip_sel)
 
   screen.move(10,50)
-  screen.text(track[clip_sel].clip)
-  screen.move(70,50)
-  screen.text(clip[clip_sel].name)
+  screen.text(clip[track[clip_sel].clip].name)
   screen.level(3)
   screen.move(10,60)
-  screen.text("number")
-  screen.move(70,60)
-  screen.text("name")
+  screen.text("name "..track[clip_sel].clip)
 
   screen.update()
 end
@@ -760,12 +779,11 @@ v.gridkey[vCLIP] = function(x, y, z)
     clip_sel = y-1
     set_clip(clip_sel,x)
     redraw()
-    gridredraw()
+    dirtygrid=true
   end 
 end
 
 v.gridredraw[vCLIP] = function()
-  if not g then return end
   g:all(0)
   gridredraw_nav()
   for i=1,16 do g:led(i,clip_sel+1,4) end
@@ -810,19 +828,33 @@ v.redraw[vTIME] = function()
 end
 
 v.gridkey[vTIME] = function(x, y, z)
-  if y == 1 then gridkey_nav(x,z)
-  elseif z == 0 and y < 6 then
-      quantize_set_time(track[y-1].step_time)
-  end 
+  if y == 1 then gridkey_nav(x,z) end
 end
 
 v.gridredraw[vTIME] = function()
-  if not g then return end
   g:all(0)
   gridredraw_nav()
   g:refresh();
 end
 
+
+
+
+
+
+norns.midi.event = function(id, data) -- FIXME this should use midi.event (needs setup)
+	--tab.print(data)
+  if data[1] == 176 then
+    --print(data[2] .. " " .. data[3])
+    if(data[2] < 4) then
+      --print("vol"..(data[2]+1).." "..data[3]/127)
+
+      params:set("vol"..(data[2]+1),data[3]/127)
+    end
+    
+		--cc(data1, data2)
+	end
+end
 
 
 
