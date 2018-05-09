@@ -5,6 +5,8 @@ Engine_Vocer : CroneEngine {
 	var <mixBus;
 	var <outPatch;
 	var <voices;
+	var <sines; // TODO
+	var <delay; // TODO
 	
 	*new { arg context, doneCallback;
 		^super.new(context, doneCallback);
@@ -29,7 +31,7 @@ Engine_Vocer : CroneEngine {
 			feedback:false
 		);
 		
-		#[\, \gate, \shift, \stretch, \freeze, \diffuse_rate, \pan].do({
+		#[\gate, \freeze, \shift, \scale, \pan, \atk, \rel].do({
 			arg name;
 			this.addCommand(name, "if", { 
 				arg msg;
@@ -51,6 +53,7 @@ Engine_Vocer : CroneEngine {
 	}
 
 	free {
+		postln("Engine_Vocer: freeing");
 		voices.do({ |v| v.free; });
 		pm.do({ |k, m| m.free; });
 		super.free;
