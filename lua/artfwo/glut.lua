@@ -279,7 +279,7 @@ function init()
     params:add_control(v..sep.."spread", controlspec.new(0, 100, "lin", 0, 0, "%"))
     params:set_action(v..sep.."spread", function(value) engine.spread(v, value / 100) end)
 
-    params:add_control(v..sep.."att / dec", controlspec.new(1, 1000, "exp", 0, 9000, "ms"))
+    params:add_control(v..sep.."att / dec", controlspec.new(1, 9000, "exp", 0, 1000, "ms"))
     params:set_action(v..sep.."att / dec", function(value) engine.envscale(v, value / 1000) end)
   end
 
