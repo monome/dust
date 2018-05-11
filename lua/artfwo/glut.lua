@@ -243,14 +243,14 @@ function init()
 
   local sep = ": "
 
-  params:add_control("*"..sep.."mix", controlspec.new(0, 1, "lin", 0, 0.5, ""))
-  params:set_action("*"..sep.."mix", function(value) engine.reverb_mix(value) end)
+  params:add_number("*"..sep.."mix", 0, 100, 50)
+  params:set_action("*"..sep.."mix", function(value) engine.reverb_mix(value / 100) end)
 
-  params:add_control("*"..sep.."room", controlspec.new(0, 1, "lin", 0, 1, ""))
-  params:set_action("*"..sep.."room", function(value) engine.reverb_room(value) end)
+  params:add_number("*"..sep.."room", 0, 100, 50)
+  params:set_action("*"..sep.."room", function(value) engine.reverb_room(value / 100) end)
 
-  params:add_control("*"..sep.."damp", controlspec.new(0, 1, "lin", 0, 0, ""))
-  params:set_action("*"..sep.."damp", function(value) engine.reverb_damp(value) end)
+  params:add_number("*"..sep.."damp", 0, 100, 50)
+  params:set_action("*"..sep.."damp", function(value) engine.reverb_damp(value / 100) end)
 
   for v = 1, VOICES do
     params:add_separator()
@@ -258,23 +258,25 @@ function init()
     params:add_file(v..sep.."sample")
     params:set_action(v..sep.."sample", function(file) engine.read(v, file) end)
 
-    params:add_control(v..sep.."volume", controlspec.new(0, 100, "lin", 0, 100, "%"))
+    params:add_number(v..sep.."volume", 0, 200, 100)
     params:set_action(v..sep.."volume", function(value) engine.volume(v, value / 100) end)
 
-    params:add_control(v..sep.."speed", controlspec.new(-800, 800, "lin", 0, 100, "%"))
+    -- some of the parameters below use numbers until coarse encoder jumps are fixed
+
+    params:add_number(v..sep.."speed", -800, 800, 100)
     params:set_action(v..sep.."speed", function(value) engine.speed(v, value / 100) end)
 
-    params:add_control(v..sep.."jitter", controlspec.new(1, 500, "exp", 0, 10, "ms"))
+    params:add_number(v..sep.."jitter", 0, 500, 0)
     params:set_action(v..sep.."jitter", function(value) engine.jitter(v, value / 1000) end)
 
-    params:add_control(v..sep.."size", controlspec.new(1, 500, "exp", 1, 100, "ms"))
+    params:add_number(v..sep.."size", 1, 500, 100)
     params:set_action(v..sep.."size", function(value) engine.size(v, value / 1000) end)
 
-    params:add_control(v..sep.."density", controlspec.new(0, 512, "lin", 0, 20, ""))
+    params:add_number(v..sep.."density", 0, 512, 20)
     params:set_action(v..sep.."density", function(value) engine.density(v, value) end)
 
-    params:add_control(v..sep.."pitch", controlspec.new(-24, 24, "lin", 0, 0, ""))
-    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12.0)) end)
+    params:add_number(v..sep.."pitch", -240, 240, 0)
+    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 120)) end)
 
     params:add_control(v..sep.."spread", controlspec.new(0, 100, "lin", 0, 0, "%"))
     params:set_action(v..sep.."spread", function(value) engine.spread(v, value / 100) end)
