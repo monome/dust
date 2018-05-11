@@ -10,13 +10,13 @@ local SCREEN_PARAMS = 6
 
 local positions = {-1, -1, -1, -1, -1, -1, -1}
 local gates = {0, 0, 0, 0, 0, 0, 0}
--- local current_voice = 1
 
 local gridbuf = require 'gridbuf'
 local grid_ctl = gridbuf.new(16, 8)
 local grid_voc = gridbuf.new(16, 8)
 
 local metro_grid_refresh
+local metro_blink
 
 --[[
 recorder
@@ -159,7 +159,7 @@ local function display_voice(phase, width)
 end
 
 local function start_voice(voice, pos)
-  engine.pos(voice, pos)
+  engine.seek(voice, pos)
   engine.gate(voice, 1)
   gates[voice] = 1
 end
@@ -176,11 +176,6 @@ local function grid_refresh()
 
   grid_ctl:led_level_all(0)
   grid_voc:led_level_all(0)
-
-  -- current voice
-  -- for i=1, 16 do
-  --   grid_ctl:led_level_set(i, current_voice + 1, 3)
-  -- end
 
   -- alt
   grid_ctl:led_level_set(16, 1, alt and 15 or 1)
