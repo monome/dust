@@ -46,7 +46,7 @@ Engine_Glut : CroneEngine {
 			var env;
 			var level;
 
-			sig_trig = Dust.kr(density);
+			sig_trig = Impulse.kr(density);
 
 			pan = TRand.kr(lo: spread.neg, hi: spread, trig: sig_trig);
 			phase_jitter = TRand.kr(lo: 0, hi: jitter, trig: sig_trig);
