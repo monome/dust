@@ -34,51 +34,40 @@ Engine_Glut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out, phase_out, buf, gate=0, pos=0, t_pos=0, speed=1,
+			arg out, phase_out, buf, gate=0, pos=0, speed=1,
 			jitter=0, size=0.1, density=20, pitch=1, spread=0, gain=1,
-			envscale=1;
-			var phase;
-			var phase_jitter;
-			var pan;
-			var phase_sig;
+			envscale=1, t_playhead=0;
+
+			var grain_trig;
+			var jitter_sig;
+			var pan_sig;
+			var buf_pos;
+			var pos_sig;
 			var sig;
-			var sig_trig;
+
 			var env;
 			var level;
 
-			sig_trig = Impulse.kr(density);
+			grain_trig = Impulse.kr(density);
 
-			pan = TRand.kr(lo: spread.neg, hi: spread, trig: sig_trig);
-			phase_jitter = TRand.kr(lo: 0, hi: jitter, trig: sig_trig);
+			pan_sig = TRand.kr(lo: spread.neg, hi: spread, trig: grain_trig);
+			// TODO: this should probably be expressed in units
+			jitter_sig = TRand.kr(lo: jitter.neg, hi: jitter, trig: grain_trig);
 
-			phase = Phasor.kr(trig: t_pos,
+			buf_pos = Phasor.kr(trig: t_playhead,
 				rate: BufDur.kr(buf).reciprocal / ControlRate.ir * speed,
 				resetPos: pos);
-			phase_sig = Wrap.kr(phase + phase_jitter);
 
-			env = EnvGen.kr(Env.asr(1, 1, 1, -2),
-				gate: gate,
-				timeScale: envscale);
+			pos_sig = Wrap.kr(buf_pos + jitter_sig);
+			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig, 2, pan_sig, -1);
+			env = EnvGen.kr(Env.asr(1, 1, 1, -2), gate: gate, timeScale: envscale);
 
-			sig = GrainBuf.ar(2,
-				sig_trig, // trig
-				size,
-				buf,
-				pitch,
-				phase_sig, // pos
-				2, // interp
-				pan,
-				-1);
-
-			level = env * gain;
-			sig = sig * level;
-
-			Out.ar(out, sig);
-			Out.kr(phase_out, phase); // or phase_sig?
+			Out.ar(out, sig * env * gain);
+			Out.kr(phase_out, buf_pos);
 		}).add;
 
 		SynthDef(\effect, {
-			arg in, out, mix=0.66, room=1.0, damp=1;
+			arg in, out, mix=0.5, room=0.5, damp=0.5;
 			var sig = In.ar(in, 2);
 			sig = FreeVerb.ar(sig, mix, room, damp);
 			Out.ar(out, sig);
@@ -115,11 +104,11 @@ Engine_Glut : CroneEngine {
 			this.readBuf(msg[1] - 1, msg[2]);
 		});
 
-		this.addCommand("pos", "if", { arg msg;
+		this.addCommand("seek", "if", { arg msg;
 			var voice = msg[1] - 1;
 
 			voices[voice].set(\pos, msg[2]);
-			voices[voice].set(\t_pos, 1);
+			voices[voice].set(\t_playhead, 1);
 		});
 
 		this.addCommand("gate", "ii", { arg msg;
