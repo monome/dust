@@ -744,7 +744,7 @@ end
 
 v.key[vCLIP] = function(n,z)
   if n==3 and z==0 then
-    fileselect.enter("/home/pi/dust/audio", fileselect_callback)
+    fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
   end
 end
 
