@@ -80,12 +80,16 @@ end
 
 init = function()
 
+  if g then
+    g:all(0)
+  end
+  
   poll.list_names();
   local refresh_metro = metro[29] -- TODO: choose this so we don't grab menu timers
   refresh_metro.time = FRAMERATE
 
   refresh_metro.callback = function (stage)
-    if g ~= nil then
+    if g nil then
       g:refresh()
     end
   end
