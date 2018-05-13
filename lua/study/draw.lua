@@ -59,7 +59,7 @@ redraw = function()
   screen.font_face(0)
   screen.font_size(8)
   screen.text_center("center")
-  -- draw right aliged text
+  -- draw right aligned text
   screen.move(127,63)
   screen.text_right("1992")
 
