@@ -102,7 +102,7 @@ init = function()
 	pat = pattern_time.new()
 	pat.process = grid_note
 
-	if g ~= nil then
+	if g then
 		g:all(0)
 		g:refresh()
 	end
