@@ -34,12 +34,14 @@ Engine_Glut : CroneEngine {
 		});
 
 		SynthDef(\synth, {
-			arg out, phase_out, buf, gate=0, pos=0, speed=1,
-			jitter=0, size=0.1, density=20, pitch=1, spread=0, gain=1,
+			arg out, phase_out, buf,
+			gate=0, pos=0, speed=1, jitter=0,
+			size=0.1, density=20, pitch=1, spread=0, gain=1,
 			envscale=1, t_playhead=0;
 
 			var grain_trig;
 			var jitter_sig;
+			var buf_dur;
 			var pan_sig;
 			var buf_pos;
 			var pos_sig;
@@ -49,18 +51,24 @@ Engine_Glut : CroneEngine {
 			var level;
 
 			grain_trig = Impulse.kr(density);
+			buf_dur = BufDur.kr(buf);
 
-			pan_sig = TRand.kr(lo: spread.neg, hi: spread, trig: grain_trig);
-			// TODO: this should probably be expressed in units
-			jitter_sig = TRand.kr(lo: jitter.neg, hi: jitter, trig: grain_trig);
+			pan_sig = TRand.kr(trig: grain_trig,
+				lo: spread.neg,
+				hi: spread);
+
+			jitter_sig = TRand.kr(trig: grain_trig,
+				lo: buf_dur.reciprocal.neg * jitter,
+				hi: buf_dur.reciprocal * jitter);
 
 			buf_pos = Phasor.kr(trig: t_playhead,
-				rate: BufDur.kr(buf).reciprocal / ControlRate.ir * speed,
+				rate: buf_dur.reciprocal / ControlRate.ir * speed,
 				resetPos: pos);
 
 			pos_sig = Wrap.kr(buf_pos + jitter_sig);
-			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig, 2, pan_sig, -1);
-			env = EnvGen.kr(Env.asr(1, 1, 1, -2), gate: gate, timeScale: envscale);
+
+			sig = GrainBuf.ar(2, grain_trig, size, buf, pitch, pos_sig, 2, pan_sig);
+			env = EnvGen.kr(Env.asr(1, 1, 1), gate: gate, timeScale: envscale);
 
 			Out.ar(out, sig * env * gain);
 			Out.kr(phase_out, buf_pos);
