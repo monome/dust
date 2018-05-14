@@ -23,7 +23,7 @@ init = function()
     t.time = 15/n
   end)
 
-  t = metro[1]
+  t = metro.alloc()
   t.count = -1
   t.time = 15/params:get("tempo") 
 
