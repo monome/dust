@@ -24,7 +24,7 @@ end
 function draw_col(x, stage)
   leds = cols[x].leds
 
-  if g ~= nil then
+  if g then
     for y=1, GRID_HEIGHT do
       g:led(x, y, cols[x].running and 5 or 0)
     end
@@ -89,7 +89,7 @@ init = function()
   refresh_metro.time = FRAMERATE
 
   refresh_metro.callback = function (stage)
-    if g nil then
+    if g then
       g:refresh()
     end
   end
