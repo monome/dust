@@ -276,7 +276,7 @@ key = function(n, z)
     all_selected = z == 1
     redraw()
   elseif n==1 and z==1 then
-    FS.enter("/home/pi/dust", newfile)
+    FS.enter(os.getenv("HOME").."/dust", newfile)
   end
 end
 

@@ -24,7 +24,7 @@ end
 function draw_col(x, stage)
   leds = cols[x].leds
 
-  if g ~= nil then
+  if g then
     for y=1, GRID_HEIGHT do
       g:led(x, y, cols[x].running and 5 or 0)
     end
@@ -80,12 +80,16 @@ end
 
 init = function()
 
+  if g then
+    g:all(0)
+  end
+  
   poll.list_names();
   local refresh_metro = metro[29] -- TODO: choose this so we don't grab menu timers
   refresh_metro.time = FRAMERATE
 
   refresh_metro.callback = function (stage)
-    if g ~= nil then
+    if g then
       g:refresh()
     end
   end
