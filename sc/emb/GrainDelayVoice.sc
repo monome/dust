@@ -2,7 +2,6 @@ GrainDelayVoice {
 
 	var <buf;
 	var <syn;
-	var <in_b;
 	var <sync_trig_b;
 	var <grain_trig_b;
 
@@ -61,13 +60,11 @@ GrainDelayVoice {
 	}
 
 
-	*new { arg server, output, target;
-		^super.new.init(server, output, target);
+	*new { arg server, in, out, target, bufDur=128;
+		^super.new.init(server, in, out, target, bufDur);
 	}
 
-	init { arg server, out, target, bufDur=128.0;
-		in_b = Bus.audio(server, 1);
-
+	init { arg server, in, out, target, bufDur;
 		grain_trig_b = Bus.control(server, 1);
 		sync_trig_b = Bus.control(server, 1);
 
@@ -76,7 +73,7 @@ GrainDelayVoice {
 			postln(thebuf);
 			syn = Synth.new(\grainDelay, [
 				\buf, thebuf.bufnum,
-				\in, in_b.index,
+				\in, in,
 				\out, out,
 				\in_grain_trig, grain_trig_b.index,
 				\in_sync_trig, sync_trig_b.index,
@@ -87,7 +84,6 @@ GrainDelayVoice {
 	free {
 		buf.free;
 		syn.free;
-		in_b.free;
 		sync_trig_b.free;
 		grain_trig_b.free;
 	}
