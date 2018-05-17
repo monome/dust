@@ -304,16 +304,21 @@ redraw = function()
   screen.update()
 end
 
-
-
-cleanup = function()
-  -- nothing to do
-  engine.stopAll()
-  pat:stop()
-  pat = nil
+local function note_on(note, vel)
+  if nvoices < 6 then
+    --engine.start(id, getHz(x, y-1))
+    engine.start(note, getHzET(note))
+    nvoices = nvoices + 1
+    redraw()
+  end
 end
 
-norns.midi.event = function(id, data) -- FIXME this should use midi.event (needs setup)
+local function note_off(note, vel)
+  engine.stop(note)
+  nvoices = nvoices - 1
+end
+
+local function midi_event(data) -- FIXME this should use midi.event (needs setup)
   --tab.print(data)
   if data[1] == 144 then
     --[[
@@ -336,21 +341,17 @@ norns.midi.event = function(id, data) -- FIXME this should use midi.event (needs
   end
 end
 
-nvoices = 0
+midi.add = function(dev)
+  print('earthsea: midi device added', dev.id, dev.name)
+  dev.event = midi_event
+end
 
-note_on = function(note, vel)
-  if nvoices < 6 then
-    --engine.start(id, getHz(x, y-1))
-    engine.start(note, getHzET(note))
-    nvoices = nvoices + 1
-    redraw()
+cleanup = function()
+  -- nothing to do
+  engine.stopAll()
+  pat:stop()
+  pat = nil
+  for id,dev in pairs(midi.devices) do
+    dev.event = nil
   end
 end
-
-note_off = function(note, vel)
-  engine.stop(note)
-  nvoices = nvoices - 1
-end
-
-
-
