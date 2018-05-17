@@ -36,7 +36,7 @@ GrainDelayVoice {
 
 				wr_phase = Phasor.ar(0, 1, loop_start * SampleRate.ir, loop_end * SampleRate.ir);
 				wr = BufWrPre.ar(input, buf, wr_phase, K2A.ar(pre_record));
-				wr_phase.poll;
+				// wr_phase.poll;
 
 				gr_pos_reset = ((wr_phase * SampleDur.ir) - delay).wrap(loop_start, loop_end);
 				gr_pos = Phasor.kr(InTrig.kr(in_sync_trig), ControlDur.ir * grain_pos_rate,
@@ -46,7 +46,9 @@ GrainDelayVoice {
 
 				// hm, kr phasor doesn't work as trigger, b/c zero isn't always hit on wrap...
 				// gr_trig = Phasor.kr(trig_reset, trig_hz, 0, ControlRate.ir);
-				gr_trig = Phasor.ar( InTrig.kr(in_grain_trig), grain_pulse_rate, 0, SampleRate.ir);
+				/// gr_trig = Phasor.ar( InTrig.kr(in_grain_trig), grain_pulse_rate, 0, SampleRate.ir);
+				/// arg...
+				gr_trig = Slope.ar( Phasor.ar( InTrig.kr(in_grain_trig), grain_pulse_rate, 0, SampleRate.ir));
 				gr = GrainBuf.ar(numChannels:2, trigger:gr_trig, dur:grain_dur, sndbuf:buf,
 					rate:grain_rate, pos:gr_pos,  interp:2,
 					pan:grain_pan, envbufnum:grain_env_buf);
@@ -82,6 +84,7 @@ GrainDelayVoice {
 	}
 
 	free {
+		postln("GrainDelayVoice.free()");
 		buf.free;
 		syn.free;
 		sync_trig_b.free;
@@ -90,16 +93,20 @@ GrainDelayVoice {
 
 	// triggers
 	trig_grain { grain_trig_b.set(1); }
-	trig_sync { sync_trig_b.set(1); }
+	trig_sync { postln("grain trig_sync"); sync_trig_b.set(1); }
 
 	// setters
+	
+	amp_ { arg x; syn.set(\amp, x); }
+	
 	grain_rate_ { arg x; syn.set(\grain_rate, x); }
 	grain_pulse_rate_ { arg x; syn.set(\grain_pulse_rate, x); }
-	grain_ { arg x; syn.set(\grain, x); }
+	grain_dur_ { arg x; syn.set(\grain_dur, x); }
+	grain_pos_rate { arg x; syn.set(\grain_pos_rate, x); }
 	grain_pan_ { arg x; syn.set(\grain_pan, x); }
 	grain_env_buf_ { arg x; syn.set(\grain_env_buf, x); }
 
-	delay_ { arg x; syn.set(\delay, x); }
+	delay_ { arg x; postln("grain delay_(" ++ x ++ ")"); syn.set(\delay, x); }
 	pre_record_ { arg x; syn.set(\pre_record, x); }
 	loop_start_ { arg x; syn.set(\loop_start, x); }
 	loop_end_ { arg x; syn.set(\loop_end, x); }
