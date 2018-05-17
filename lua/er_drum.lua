@@ -1,10 +1,24 @@
 -- euclidean drummer
 --
+-- enc2 = density
+-- enc3 = length
+-- key2 = reset phase
+-- key3 = select
 --
+-- key1 = ALT
+-- ----------
+-- enc2 = select pattern
+-- key2 = store pattern
+-- key3 = load pattern
 
 require 'er'
 
 engine.name = 'Ack'
+
+ack = require 'jah/ack'
+
+reset = false
+alt = false
 
 function reer(i)
   if track[i].k == 0 then
@@ -25,31 +39,42 @@ end
 track_edit = 1
 
 init = function()
-  print("er")
+  params:add_number("bpm",1,480,160)
+  params:set_action("bpm",function(x) t.time = 15/x end)
+
+  ack.add_params()
+
   t = metro.alloc()
   t.count = -1
-  t.time = 0.25
+  t.time = 15/params:get("bpm")
   t.callback = function()
-    for i=1,4 do
-      track[i].pos = track[i].pos + 1
-      if track[i].pos > track[i].n then track[i].pos = 1 end
+    if reset then
+      for i=1,4 do track[i].pos = 1 end
+      reset = false
+    else
+      for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
     end
+    trig()
     redraw()
   end
   t:start()
+  
+  params:read("er_drum.pset")
+  params:bang()
 end
 
 key = function(n,z)
-  if n==3 and z==1 then
-    track_edit = track_edit + 1
-    if track_edit == 5 then track_edit = 1 end
-  end
+  if n==1 then alt = z
+  elseif n==2 and z==1 then reset = true
+  elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 end
   redraw() 
 end
 
 
 enc = function(n,d) 
-  if n == 2 then
+  if n==1 then
+    params:delta("bpm",d)
+  elseif n == 2 then
     track[track_edit].k = util.clamp(track[track_edit].k+d,0,track[track_edit].n)
   elseif n==3 then 
     track[track_edit].n = util.clamp(track[track_edit].n+d,0,32)
@@ -62,6 +87,9 @@ end
 redraw = function()
   screen.aa(0)
   screen.clear()
+  screen.move(0,10)
+  screen.level(4)
+  screen.text(params:get("bpm"))
   for i=1,4 do
     screen.level((i == track_edit) and 15 or 4)
     screen.move(5, i*10 + 10)
@@ -83,3 +111,10 @@ redraw = function()
   screen.update()
 end
 
+trig = function()
+  for i=1,4 do
+    if track[i].s[track[i].pos] then
+      engine.trig(i-1)
+    end
+  end
+end
