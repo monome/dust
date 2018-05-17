@@ -6,10 +6,16 @@
 engine.name = 'Glut'
 
 local VOICES = 7
-local SCREEN_PARAMS = 6
 
-local positions = {-1, -1, -1, -1, -1, -1, -1}
-local gates = {0, 0, 0, 0, 0, 0, 0}
+local positions = {}
+local gates = {}
+local voice_levels = {}
+
+for i=1, VOICES do
+  positions[i] = -1
+  gates[i] = 0
+  voice_levels[i] = 0
+end
 
 local gridbuf = require 'gridbuf'
 local grid_ctl = gridbuf.new(16, 8)
@@ -202,8 +208,8 @@ local function grid_refresh()
 
   -- voices
   for i=1, VOICES do
-    if gates[i] > 0 then
-      grid_ctl:led_level_set(i, 1, 7)
+    if voice_levels[i] > 0 then
+      grid_ctl:led_level_set(i, 1, math.min(math.ceil(voice_levels[i] * 15), 15))
       grid_voc:led_level_row(1, i + 1, display_voice(positions[i], 16))
     end
   end
@@ -219,6 +225,10 @@ function init()
     local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
     phase_poll.time = 0.05
     phase_poll:start()
+
+    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
+    level_poll.time = 0.05
+    level_poll:start()
   end
 
   -- recorders
@@ -238,13 +248,13 @@ function init()
 
   local sep = ": "
 
-  params:add_number("*"..sep.."mix", 0, 100, 50)
+  params:add_taper("*"..sep.."mix", 0, 100, 50, 0, "%")
   params:set_action("*"..sep.."mix", function(value) engine.reverb_mix(value / 100) end)
 
-  params:add_number("*"..sep.."room", 0, 100, 50)
+  params:add_taper("*"..sep.."room", 0, 100, 50, 0, "%")
   params:set_action("*"..sep.."room", function(value) engine.reverb_room(value / 100) end)
 
-  params:add_number("*"..sep.."damp", 0, 100, 50)
+  params:add_taper("*"..sep.."damp", 0, 100, 50, 0, "%")
   params:set_action("*"..sep.."damp", function(value) engine.reverb_damp(value / 100) end)
 
   for v = 1, VOICES do
@@ -253,30 +263,28 @@ function init()
     params:add_file(v..sep.."sample")
     params:set_action(v..sep.."sample", function(file) engine.read(v, file) end)
 
-    params:add_number(v..sep.."volume", 0, 200, 100)
-    params:set_action(v..sep.."volume", function(value) engine.volume(v, value / 100) end)
+    params:add_taper(v..sep.."volume", -60, 20, 0, 0, "dB")
+    params:set_action(v..sep.."volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
-    -- some of the parameters below use numbers until coarse encoder jumps are fixed
-
-    params:add_number(v..sep.."speed", -800, 800, 100)
+    params:add_taper(v..sep.."speed", -200, 200, 100, 0, "%")
     params:set_action(v..sep.."speed", function(value) engine.speed(v, value / 100) end)
 
-    params:add_number(v..sep.."jitter", 0, 500, 0)
+    params:add_taper(v..sep.."jitter", 0, 500, 0, 5, "ms")
     params:set_action(v..sep.."jitter", function(value) engine.jitter(v, value / 1000) end)
 
-    params:add_number(v..sep.."size", 1, 500, 100)
+    params:add_taper(v..sep.."size", 1, 500, 100, 5, "ms")
     params:set_action(v..sep.."size", function(value) engine.size(v, value / 1000) end)
 
-    params:add_number(v..sep.."density", 0, 512, 20)
+    params:add_taper(v..sep.."density", 0, 512, 20, 6, "hz")
     params:set_action(v..sep.."density", function(value) engine.density(v, value) end)
 
-    params:add_number(v..sep.."pitch", -240, 240, 0)
-    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 120)) end)
+    params:add_taper(v..sep.."pitch", -24, 24, 0, 0, "st")
+    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
 
-    params:add_control(v..sep.."spread", controlspec.new(0, 100, "lin", 0, 0, "%"))
+    params:add_taper(v..sep.."spread", 0, 100, 0, 0, "%")
     params:set_action(v..sep.."spread", function(value) engine.spread(v, value / 100) end)
 
-    params:add_control(v..sep.."att / dec", controlspec.new(1, 9000, "exp", 0, 1000, "ms"))
+    params:add_taper(v..sep.."att / dec", 1, 9000, 1000, 3, "ms")
     params:set_action(v..sep.."att / dec", function(value) engine.envscale(v, value / 1000) end)
   end
 
@@ -328,10 +336,13 @@ end
 function redraw()
   -- do return end
   screen.clear()
+  screen.level(15)
 
   screen.move(0, 10)
-  screen.text("glut")
-
+  screen.text("^ load samples")
+  screen.move(0, 20)
+  screen.text("  via menu > parameters")
+  
   screen.update()
 end
 
@@ -339,6 +350,7 @@ end
 function cleanup()
   for v = 1, VOICES do
     poll.polls['phase_' .. v]:stop()
+    poll.polls['level_' .. v]:stop()
   end
   metro.free_all()
 end
