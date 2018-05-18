@@ -8,7 +8,7 @@ ScapeOscVoice {
 	*initClass {
 		StartUp.add {
 			var scapeOscDef = SynthDef.new(\scape_osc, {
-				arg in, out=0, amp=0.125, hz=220,
+				arg in, out=0, amp=0, hz=220,
 
 				shape_buf_a, shape_buf_b,
 				shape_select=0,
@@ -60,13 +60,11 @@ ScapeOscVoice {
 	}
 
 
-	*new { arg server, output, target;
-		^super.new.init(server, output, target);
+	*new { arg server, input, output, target;
+		^super.new.init(server, input, output, target);
 	}
 
-	init { arg server, out, target;
-		in_b = Bus.audio(server, 1);
-
+	init { arg server, in, out, target;
 		Buffer.allocConsecutive(2, server, 1024, 1, {
 			arg bufs;
 			shape_buf_a = bufs[0];
@@ -74,7 +72,7 @@ ScapeOscVoice {
 			syn = Synth.new(\scape_osc, [
 				\shape_buf_a, shape_buf_a.bufnum,
 				\shape_buf_b, shape_buf_b.bufnum,
-				\in, in_b.index,
+				\in, in,
 				\out, out
 			], target:target);
 		});
