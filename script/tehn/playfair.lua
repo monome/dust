@@ -59,7 +59,7 @@ init = function()
   end
   t:start()
   
-  params:read("er_drum.pset")
+  params:read("playfair.pset")
   params:bang()
 end
 
