@@ -1,7 +1,7 @@
 -- r engine test
 
 ControlSpec = require 'controlspec'
-Control = require 'control'
+Control = require 'params/control'
 Scroll = require 'jah/scroll'
 Formatters = require 'jah/formatters'
 R = require 'jah/r'
@@ -21,70 +21,70 @@ filter_freq_spec.default = 0.5
 local delay_time_spec = ControlSpec.DELAY:copy()
 delay_time_spec.maxval = 3
 
-local osc1_freq = Control.new("osc1 freq", ControlSpec.WIDEFREQ, Formatters.round(0.01))
-local osc1_index = Control.new("osc1 index", index_spec, Formatters.round(0.01))
-local osc1_filter_patch = Control.new("osc1 > filter", ControlSpec.DB, Formatters.std)
-local osc1_osc1_patch = Control.new("osc1 > osc1", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
-local osc1_osc2_patch = Control.new("osc1 > osc2", ControlSpec.DB, Formatters.std)
-local osc1_osc3_patch = Control.new("osc1 > osc3", ControlSpec.DB, Formatters.std)
+local osc1_freq = Control.new("osc1 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
+local osc1_index = Control.new("osc1 index", index_spec, Formatters.round_with_label(0.01))
+local osc1_filter_patch = Control.new("osc1 > filter", ControlSpec.DB, Formatters.std_with_label)
+local osc1_osc1_patch = Control.new("osc1 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc1_osc2_patch = Control.new("osc1 > osc2", ControlSpec.DB, Formatters.std_with_label)
+local osc1_osc3_patch = Control.new("osc1 > osc3", ControlSpec.DB, Formatters.std_with_label)
 
 osc1_freq:set(to_hz(69+12)) -- TODO: move to init() or bang in init() ?
 osc1_index:set(3)
 osc1_osc2_patch:set(-20)
 osc1_osc3_patch:set(-20)
 
-local osc2_freq = Control.new("osc2 freq", ControlSpec.WIDEFREQ, Formatters.round(0.01))
-local osc2_index = Control.new("osc2 index", index_spec, Formatters.round(0.01))
-local osc2_filter_patch = Control.new("osc2 > filter", ControlSpec.DB, Formatters.std)
-local osc2_osc1_patch = Control.new("osc2 > osc1", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
-local osc2_osc2_patch = Control.new("osc2 > osc2", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
-local osc2_osc3_patch = Control.new("osc2 > osc3", ControlSpec.DB, Formatters.std)
+local osc2_freq = Control.new("osc2 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
+local osc2_index = Control.new("osc2 index", index_spec, Formatters.round_with_label(0.01))
+local osc2_filter_patch = Control.new("osc2 > filter", ControlSpec.DB, Formatters.std_with_label)
+local osc2_osc1_patch = Control.new("osc2 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc2_osc2_patch = Control.new("osc2 > osc2", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc2_osc3_patch = Control.new("osc2 > osc3", ControlSpec.DB, Formatters.std_with_label)
 
 osc2_freq:set(to_hz(69-12)) -- TODO: move to init() or bang in init() ?
 osc2_index:set(9)
 osc2_filter_patch:set(-20)
 
-local osc3_freq = Control.new("osc3 freq", ControlSpec.WIDEFREQ, Formatters.round(0.01))
-local osc3_index = Control.new("osc3 index", index_spec, Formatters.round(0.01))
-local osc3_filter_patch = Control.new("osc3 > filter", ControlSpec.DB, Formatters.std)
-local osc3_osc1_patch = Control.new("osc3 > osc1", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
-local osc3_osc2_patch = Control.new("osc3 > osc2", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
-local osc3_osc3_patch = Control.new("osc3 > osc3", ControlSpec.DB, Formatters.std) -- TODO: i dunno about feedback
+local osc3_freq = Control.new("osc3 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
+local osc3_index = Control.new("osc3 index", index_spec, Formatters.round_with_label(0.01))
+local osc3_filter_patch = Control.new("osc3 > filter", ControlSpec.DB, Formatters.std_with_label)
+local osc3_osc1_patch = Control.new("osc3 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc3_osc2_patch = Control.new("osc3 > osc2", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc3_osc3_patch = Control.new("osc3 > osc3", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
 
 osc3_freq:set(to_hz(69)) -- TODO: move to init() or bang in init() ?
 osc3_index:set(3)
 osc3_filter_patch:set(-20)
 
-local filter_freq = Control.new("filter freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
-local filter_res = Control.new("filter res", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
-local filter_lforate = Control.new("filter lforate", ControlSpec.LOFREQ, Formatters.round(0.01))
-local filter_lfodepth = Control.new("filter lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
+local filter_freq = Control.new("filter freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq_with_label)
+local filter_res = Control.new("filter res", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage_with_label)
+local filter_lforate = Control.new("filter lforate", ControlSpec.LOFREQ, Formatters.round_with_label(0.01))
+local filter_lfodepth = Control.new("filter lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage_with_label)
 
 filter_freq:set(0.4) -- TODO: move to init() or bang in init() ?
 filter_res:set(0.1)
 filter_lforate:set(0.1)
 filter_lfodepth:set(0.1)
 
-local delayl_delaytime = Control.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
+local delayl_delaytime = Control.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms_with_label)
 delayl_delaytime:set(0.23)
-local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
+local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms_with_label)
 delayr_delaytime:set(0.45)
 
-local delay_send = Control.new("delay send level", ControlSpec.DB, Formatters.std)
+local delay_send = Control.new("delay send level", ControlSpec.DB, Formatters.std_with_label)
 delay_send:set(-30)
 delay_send.action = function(value)
   engine.patch('filter', 'delayl', value)
   engine.patch('filter', 'delayr', value)
 end
 
-local delay_feedback = Control.new("delay feedback", ControlSpec.DB, Formatters.std)
+local delay_feedback = Control.new("delay feedback", ControlSpec.DB, Formatters.std_with_label)
 delay_feedback:set(-20)
 delay_feedback.action = function(value)
   engine.patch('delayl', 'delayr', value)
   engine.patch('delayr', 'delayl', value)
 end
 
-local output_level = Control.new("output level", ControlSpec.DB, Formatters.std)
+local output_level = Control.new("output level", ControlSpec.DB, Formatters.std_with_label)
 output_level:set(-40)
 output_level.action = function(value)
   engine.patch('delayl', 'outl', value)
