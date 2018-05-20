@@ -1,8 +1,6 @@
--- gong
---
--- midi controlled
+-- gong:
 -- polyphonic fm synth
---
+-- controlled by midi
 
 local ControlSpec = require 'controlspec'
 local Voice = require 'exp/voice'
@@ -29,7 +27,7 @@ end
 local function screen_update_voice_indicators()
   screen.move(0,16)
   screen.font_size(8)
-  for voicenum=1, POLYPHONY do
+  for voicenum=1,POLYPHONY do
     if note_downs[voicenum] then
       screen.level(15)
     else
@@ -40,7 +38,6 @@ local function screen_update_voice_indicators()
 end
 
 local function screen_update_midi_indicators()
-  --screen.move(125, 20)
   screen.move(0,60)
   screen.font_size(8)
   if midi_available then
@@ -59,19 +56,17 @@ end
 
 local function r_param(name, voiceref, param, value)
   if voiceref == "all" then
-    for voicenum=1, POLYPHONY do
-      -- print('engine.param("'..name..voicenum..'", '..param..', '..value..')')
+    for voicenum=1,POLYPHONY do
       engine.param(name..voicenum, param, value)
     end
   else
-    -- print(name..voiceref, param, value)
     engine.param(name..voiceref, param, value)
   end
 end
 
 local function update_osc_freq(voicenum, oscnum)
   if voicenum == "all" then
-    for v=1, POLYPHONY do update_osc_freq(v, oscnum) end
+    for v=1,POLYPHONY do update_osc_freq(v, oscnum) end
   else
     local freq
     if params:get("osc"..oscnum.." type") == 1 then
@@ -99,7 +94,6 @@ local function trig_voice(voicenum, note)
 end
 
 local function release_voice(voicenum)
-  -- print("release_voice: "..voicenum)
   r_param("fm", voicenum, "envgate", 0)
   r_param("pole", voicenum, "envgate", 0)
 end
@@ -107,7 +101,6 @@ end
 local noteslots = {}
 
 local function note_on(note, velocity)
-  -- print("note_on: "..note..", "..velocity)
   if not noteslots[note] then
     local slot = voice:get()
     local voicenum = slot.id
@@ -134,7 +127,7 @@ end
 local function setup_r_config()
   engine.capacity(POLYPHONY*2+2+2)
 
-  for voicenum=1, POLYPHONY do
+  for voicenum=1,POLYPHONY do
     engine.module("fm"..voicenum, "fmthing")
     engine.module("pole"..voicenum, "newpole")
     engine.patch("fm"..voicenum, "pole"..voicenum, 0)
@@ -147,7 +140,7 @@ local function setup_r_config()
   engine.module("rout", "output")
   engine.param("rout", "config", 1) -- TODO: split output up in left and right?
 
-  for voicenum=1, POLYPHONY do
+  for voicenum=1,POLYPHONY do
     engine.patch("pole"..voicenum, "lout", 0)
     engine.patch("pole"..voicenum, "rout", 0)
   end
@@ -280,7 +273,7 @@ end
 local function add_delay_params()
   params:add_control("delay send", ControlSpec.DB)
   params:set_action("delay send", function(value)
-    for voicenum=1, POLYPHONY do
+    for voicenum=1,POLYPHONY do
       engine.patch("pole"..voicenum, "ldelay", value)
       engine.patch("pole"..voicenum, "rdelay", value)
     end
@@ -331,9 +324,7 @@ init = function()
 
   timer = metro[1]
   timer.callback = function()
-    -- print("banging..")
     params:bang()
-    -- print("..banged")
   end
   timer:start(0.2, 1)
 
