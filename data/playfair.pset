@@ -1,5 +1,5 @@
 1,110
-2,/home/we/dust/audio/606-BD.wav
+2,/home/we/dust/audio/common/606/606-BD.wav
 3,0.6535
 4,-1.6
 5,0.001
@@ -12,7 +12,7 @@
 12,0
 13,-60
 14,-29.4
-15,/home/we/dust/audio/606-CH.wav
+15,/home/we/dust/audio/common/606/606-CH.wav
 16,1.0
 17,-10.0
 18,0.001
@@ -25,7 +25,7 @@
 25,0
 26,-60
 27,-4.2
-28,/home/we/dust/audio/606-HT.wav
+28,/home/we/dust/audio/common/606/606-HT.wav
 29,0.901
 30,-10.0
 31,0.001
@@ -38,7 +38,7 @@
 38,0
 39,-60
 40,-60
-41,/home/we/dust/audio/606-LT.wav
+41,/home/we/dust/audio/common/606/606-LT.wav
 42,0.901
 43,-10.0
 44,0.001

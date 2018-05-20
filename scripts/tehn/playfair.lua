@@ -15,12 +15,22 @@ require 'er'
 
 engine.name = 'Ack'
 
-ack = require 'jah/ack'
+local ack = require 'jah/ack'
 
-reset = false
-alt = false
+local reset = false
+local alt = false
+local track_edit = 1
 
-function reer(i)
+local track = {}
+for i=1,4 do
+  track[i] = {}
+  track[i].k = 0
+  track[i].n = 9 - i
+  track[i].pos = 1
+  track[i].s = {}
+end
+
+local function reer(i)
   if track[i].k == 0 then
     for n=1,32 do track[i].s[n] = false end
   else
@@ -28,17 +38,17 @@ function reer(i)
   end
 end
 
-track = {}
-for i=1,4 do
-  track[i] = {}
-  track[i].k = 1
-  track[i].n = 4
-  track[i].pos = 1
-  reer(i)
+local function trig()
+  for i=1,4 do
+    if track[i].s[track[i].pos] then
+      engine.trig(i-1)
+    end
+  end
 end
-track_edit = 1
 
-init = function()
+function init()
+  for i=1,4 do reer(i) end
+
   params:add_number("bpm",1,480,160)
   params:set_action("bpm",function(x) t.time = 15/x end)
 
@@ -59,32 +69,31 @@ init = function()
   end
   t:start()
   
-  params:read("er_drum.pset")
+  params:read("playfair.pset")
   params:bang()
 end
 
-key = function(n,z)
+function key(n,z)
   if n==1 then alt = z
   elseif n==2 and z==1 then reset = true
   elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 end
   redraw() 
 end
 
-
-enc = function(n,d) 
+function enc(n,d) 
   if n==1 then
     params:delta("bpm",d)
   elseif n == 2 then
     track[track_edit].k = util.clamp(track[track_edit].k+d,0,track[track_edit].n)
   elseif n==3 then 
-    track[track_edit].n = util.clamp(track[track_edit].n+d,0,32)
+    track[track_edit].n = util.clamp(track[track_edit].n+d,1,32)
     track[track_edit].k = util.clamp(track[track_edit].k,0,track[track_edit].n)
   end
   reer(track_edit)
   redraw()
 end
 
-redraw = function()
+function redraw()
   screen.aa(0)
   screen.clear()
   screen.move(0,10)
@@ -109,12 +118,4 @@ redraw = function()
     end
   end
   screen.update()
-end
-
-trig = function()
-  for i=1,4 do
-    if track[i].s[track[i].pos] then
-      engine.trig(i-1)
-    end
-  end
 end
