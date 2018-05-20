@@ -4,35 +4,35 @@ local function format(param, value, units)
   return value.." "..(units or param.controlspec.units or "")
 end
 
-function Formatters.lbl_std(param)
+function Formatters.std_with_label(param)
   return param.name..": "..Formatters.std(param)
 end
 
-function Formatters.lbl_unipolar_as_percentage(param)
+function Formatters.unipolar_as_percentage_with_label(param)
   return param.name..": "..Formatters.unipolar_as_percentage(param)
 end
 
-function Formatters.lbl_secs_as_ms(param)
+function Formatters.secs_as_ms_with_label(param)
   return param.name..": "..Formatters.secs_as_ms(param)
 end
 
-function Formatters.lbl_unipolar_as_true_false(param)
+function Formatters.unipolar_as_true_false_with_label(param)
   return param.name..": "..Formatters.unipolar_as_true_false(param)
 end
 
-function Formatters.lbl_unipolar_as_enabled_disabled(param)
+function Formatters.unipolar_as_enabled_disabled_with_label(param)
   return param.name..": "..Formatters.unipolar_as_enabled_disabled(param)
 end
 
-function Formatters.lbl_bipolar_as_pan_widget(param)
+function Formatters.bipolar_as_pan_widget_with_label(param)
   return param.name..": "..Formatters.unipolar_as_pan_widget(param)
 end
 
-function Formatters.lbl_unipolar_as_multimode_filter_freq(param)
+function Formatters.unipolar_as_multimode_filter_freq_with_label(param)
   return param.name..": "..Formatters.unipolar_as_multimode_filter_freq(param)
 end
 
-function Formatters.lbl_round(precision)
+function Formatters.round_with_label(precision)
   return function(param)
     return param.name..": "..Formatters.round(precision)(param)
   end
