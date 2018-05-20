@@ -63,7 +63,7 @@ function Formatters.unipolar_as_enabled_disabled(param)
 end
 
 function Formatters.bipolar_as_pan_widget(param)
-  local dots_per_side = 3
+  local dots_per_side = 10
   local widget
   local function add_dots(num_dots)
     for i=1,num_dots do widget = (widget or "").."." end
@@ -73,20 +73,21 @@ function Formatters.bipolar_as_pan_widget(param)
   end
 
   local value = param:get()
-  local pan_side_percentage = util.round(math.abs(value)*100)
+  local pan_side = math.abs(value)
+  local pan_side_percentage = util.round(pan_side*100)
   local descr
 
   if value > 0 then
-    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
-    dots_right = util.round((100-pan_side_percentage)/dots_per_side)
+    dots_left = dots_per_side+util.round(pan_side*dots_per_side)
+    dots_right = util.round((1-pan_side)*dots_per_side)
     if pan_side_percentage >= 1 then
       descr = "R"..pan_side_percentage
     end
   elseif value < 0 then
-    dots_left = util.round((100-pan_side_percentage)/dots_per_side)
-    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
+    dots_left = util.round((1-pan_side)*dots_per_side)
+    dots_right = dots_per_side+util.round(pan_side*dots_per_side)
     if pan_side_percentage >= 1 then
-      descr = "L"..pan_side_percentage
+     descr = "L"..pan_side_percentage
     end
   else
     dots_left = dots_per_side
