@@ -4,8 +4,8 @@ local function format(param, value, units)
   return value.." "..(units or param.controlspec.units or "")
 end
 
-function Formatters.std_with_label(param)
-  return param.name..": "..Formatters.std(param)
+function Formatters.default_with_label(param)
+  return param.name..": "..Formatters.default(param)
 end
 
 function Formatters.unipolar_as_percentage_with_label(param)
@@ -25,7 +25,7 @@ function Formatters.unipolar_as_enabled_disabled_with_label(param)
 end
 
 function Formatters.bipolar_as_pan_widget_with_label(param)
-  return param.name..": "..Formatters.unipolar_as_pan_widget(param)
+  return param.name..": "..Formatters.bipolar_as_pan_widget(param)
 end
 
 function Formatters.unipolar_as_multimode_filter_freq_with_label(param)
@@ -38,7 +38,7 @@ function Formatters.round_with_label(precision)
   end
 end
 
-function Formatters.std(param)
+function Formatters.default(param)
   return Formatters.round(0.01)(param)
 end
 
@@ -63,7 +63,7 @@ function Formatters.unipolar_as_enabled_disabled(param)
 end
 
 function Formatters.bipolar_as_pan_widget(param)
-  local dots_per_side = 10
+  local dots_per_side = 3
   local widget
   local function add_dots(num_dots)
     for i=1,num_dots do widget = (widget or "").."." end
@@ -103,7 +103,7 @@ function Formatters.bipolar_as_pan_widget(param)
   add_dots(dots_right)
   add_bar()
 
-  return format(param, widget.." "..descr, "")
+  return format(param, descr.." "..widget, "")
 end
 
 function Formatters.unipolar_as_multimode_filter_freq(param)
