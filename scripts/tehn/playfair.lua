@@ -49,6 +49,7 @@ end
 function init()
   for i=1,4 do reer(i) end
 
+  screen.line_width(1)
   params:add_number("bpm",1,480,160)
   params:set_action("bpm",function(x) t.time = 15/x end)
 
