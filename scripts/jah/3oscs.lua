@@ -1,4 +1,4 @@
--- r engine test
+-- a drone script
 
 ControlSpec = require 'controlspec'
 Control = require 'params/control'
@@ -23,22 +23,22 @@ delay_time_spec.maxval = 3
 
 local osc1_freq = Control.new("osc1 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
 local osc1_index = Control.new("osc1 index", index_spec, Formatters.round_with_label(0.01))
-local osc1_filter_patch = Control.new("osc1 > filter", ControlSpec.DB, Formatters.std_with_label)
-local osc1_osc1_patch = Control.new("osc1 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
-local osc1_osc2_patch = Control.new("osc1 > osc2", ControlSpec.DB, Formatters.std_with_label)
-local osc1_osc3_patch = Control.new("osc1 > osc3", ControlSpec.DB, Formatters.std_with_label)
+local osc1_filter_patch = Control.new("osc1 > filter", ControlSpec.DB, Formatters.default_with_label)
+local osc1_osc1_patch = Control.new("osc1 > osc1", ControlSpec.DB, Formatters.default_with_label)
+local osc1_osc2_patch = Control.new("osc1 > osc2", ControlSpec.DB, Formatters.default_with_label)
+local osc1_osc3_patch = Control.new("osc1 > osc3", ControlSpec.DB, Formatters.default_with_label)
 
-osc1_freq:set(to_hz(69+12)) -- TODO: move to init() or bang in init() ?
+osc1_freq:set(to_hz(69+12))
 osc1_index:set(3)
 osc1_osc2_patch:set(-20)
 osc1_osc3_patch:set(-20)
 
 local osc2_freq = Control.new("osc2 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
 local osc2_index = Control.new("osc2 index", index_spec, Formatters.round_with_label(0.01))
-local osc2_filter_patch = Control.new("osc2 > filter", ControlSpec.DB, Formatters.std_with_label)
-local osc2_osc1_patch = Control.new("osc2 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
-local osc2_osc2_patch = Control.new("osc2 > osc2", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
-local osc2_osc3_patch = Control.new("osc2 > osc3", ControlSpec.DB, Formatters.std_with_label)
+local osc2_filter_patch = Control.new("osc2 > filter", ControlSpec.DB, Formatters.default_with_label)
+local osc2_osc1_patch = Control.new("osc2 > osc1", ControlSpec.DB, Formatters.default_with_label)
+local osc2_osc2_patch = Control.new("osc2 > osc2", ControlSpec.DB, Formatters.default_with_label)
+local osc2_osc3_patch = Control.new("osc2 > osc3", ControlSpec.DB, Formatters.default_with_label)
 
 osc2_freq:set(to_hz(69-12)) -- TODO: move to init() or bang in init() ?
 osc2_index:set(9)
@@ -46,10 +46,10 @@ osc2_filter_patch:set(-20)
 
 local osc3_freq = Control.new("osc3 freq", ControlSpec.WIDEFREQ, Formatters.round_with_label(0.01))
 local osc3_index = Control.new("osc3 index", index_spec, Formatters.round_with_label(0.01))
-local osc3_filter_patch = Control.new("osc3 > filter", ControlSpec.DB, Formatters.std_with_label)
-local osc3_osc1_patch = Control.new("osc3 > osc1", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
-local osc3_osc2_patch = Control.new("osc3 > osc2", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
-local osc3_osc3_patch = Control.new("osc3 > osc3", ControlSpec.DB, Formatters.std_with_label) -- TODO: i dunno about feedback
+local osc3_filter_patch = Control.new("osc3 > filter", ControlSpec.DB, Formatters.default_with_label)
+local osc3_osc1_patch = Control.new("osc3 > osc1", ControlSpec.DB, Formatters.default_with_label)
+local osc3_osc2_patch = Control.new("osc3 > osc2", ControlSpec.DB, Formatters.default_with_label)
+local osc3_osc3_patch = Control.new("osc3 > osc3", ControlSpec.DB, Formatters.default_with_label)
 
 osc3_freq:set(to_hz(69)) -- TODO: move to init() or bang in init() ?
 osc3_index:set(3)
@@ -70,39 +70,27 @@ delayl_delaytime:set(0.23)
 local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms_with_label)
 delayr_delaytime:set(0.45)
 
-local delay_send = Control.new("delay send level", ControlSpec.DB, Formatters.std_with_label)
+local delay_send = Control.new("delay send level", ControlSpec.DB, Formatters.default_with_label)
 delay_send:set(-30)
 delay_send.action = function(value)
   engine.patch('filter', 'delayl', value)
   engine.patch('filter', 'delayr', value)
 end
 
-local delay_feedback = Control.new("delay feedback", ControlSpec.DB, Formatters.std_with_label)
+local delay_feedback = Control.new("delay feedback", ControlSpec.DB, Formatters.default_with_label)
 delay_feedback:set(-20)
 delay_feedback.action = function(value)
   engine.patch('delayl', 'delayr', value)
   engine.patch('delayr', 'delayl', value)
 end
 
-local output_level = Control.new("output level", ControlSpec.DB, Formatters.std_with_label)
+local output_level = Control.new("output level", ControlSpec.DB, Formatters.default_with_label)
 output_level:set(-40)
 output_level.action = function(value)
   engine.patch('delayl', 'outl', value)
   engine.patch('delayr', 'outr', value)
   engine.patch('filter', 'outl', value)
   engine.patch('filter', 'outr', value)
-end
-
-local function init_delay()
-  for key,param in pairs({delayl_delaytime, delayr_delaytime}) do
-    param.action = function(value)
-      R.send_r_param_value_to_engine(engine, param)
-    end
-    param:bang()
-  end
-end
-
-local function init_output()
 end
 
 local function note_on(note, velocity)
