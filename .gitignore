@@ -8,7 +8,6 @@
 # vim
 *.swp
 
-# waf
-.lock-waf*
-.waf*
-build/
+# settings
+data/system.lua
+data/system.pset
