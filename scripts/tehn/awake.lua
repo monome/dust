@@ -19,7 +19,7 @@ local cs = require 'controlspec'
 engine.name = 'PolyPerc'
 
 local KEY3 = false
-alt = false
+local alt = false
 
 local one = {
   pos = 0,
@@ -28,16 +28,16 @@ local one = {
 }
 local two = {
   pos = 0,
-  length = 9,
+  length = 7,
   data = {6,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 }
 
 local scale_degrees = {2,1,2,2,2,1,2}
-notes = {}
-freqs = {}
+local notes = {}
+local freqs = {}
 
-edit_mode = 1
-edit_pos = 1
+local edit_mode = 1
+local edit_pos = 1
 
 
 function build_scale()
