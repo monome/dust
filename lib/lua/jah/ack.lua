@@ -46,20 +46,20 @@ function Ack.add_params()
         engine.loadSample(i-1, value)
       end
     end)
-    params:add_control(i..": start", Ack.specs.sample_start, Formatters.unipolar_as_percentage)
-    params:set_action(i..": start", function(value) engine.sample_start(i-1, value) end)
-    params:add_control(i..": end", Ack.specs.sample_end, Formatters.unipolar_as_percentage)
-    params:set_action(i..": end", function(value) engine.sample_end(i-1, value) end)
-    params:add_control(i..": loop point", Ack.specs.loop_point, Formatters.unipolar_as_percentage)
-    params:set_action(i..": loop point", function(value) engine.loopPoint(i-1, value) end)
     params:add_option(i..": loop", {"off", "on"})
     params:set_action(i..": loop", function(value)
-      if value == "on" then
+      if value == 2 then
         engine.enableLoop(i-1)
       else
         engine.disableLoop(i-1)
       end
     end)
+    params:add_control(i..": start pos", Ack.specs.sample_start, Formatters.unipolar_as_percentage)
+    params:set_action(i..": start pos", function(value) engine.sampleStart(i-1, value) end)
+    params:add_control(i..": end pos", Ack.specs.sample_end, Formatters.unipolar_as_percentage)
+    params:set_action(i..": end pos", function(value) engine.sampleEnd(i-1, value) end)
+    params:add_control(i..": loop point", Ack.specs.loop_point, Formatters.unipolar_as_percentage)
+    params:set_action(i..": loop point", function(value) engine.loopPoint(i-1, value) end)
     params:add_control(i..": speed", Ack.specs.speed, Formatters.unipolar_as_percentage)
     params:set_action(i..": speed", function(value) engine.speed(i-1, value) end)
     params:add_control(i..": vol", Ack.specs.volume, Formatters.default)
@@ -74,10 +74,8 @@ function Ack.add_params()
     params:set_action(i..": filter cutoff", function(value) engine.filterCutoff(i-1, value) end)
     params:add_control(i..": filter res", Ack.specs.filter_res, Formatters.unipolar_as_percentage)
     params:set_action(i..": filter res", function(value) engine.filterRes(i-1, value) end)
-    --[[
-    params:add_option(i..": filter mode", filter_mode_spec, {"lowpass", "highpass", "bandpass", "notch"}) -- TODO
-    params:set_action(function(value) engine.filterMode(i-1, value) end)
-    ]]
+    params:add_option(i..": filter mode", {"lowpass", "bandpass", "highpass", "notch", "peak"})
+    params:set_action(i..": filter mode", function(value) engine.filterMode(i-1, value-1) end)
     params:add_control(i..": filter env atk", Ack.specs.filter_env_attack, Formatters.secs_as_ms)
     params:set_action(i..": filter env atk", function(value) engine.filterEnvAttack(i-1, value) end)
     params:add_control(i..": filter env rel", Ack.specs_filter_env_release, Formatters.secs_as_ms)

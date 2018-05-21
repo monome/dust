@@ -1,6 +1,6 @@
--- sample based
--- grid controlled
--- step sequencer
+-- step.
+-- sample based step sequencer
+-- controlled by grid
 -- 
 -- key2 = stop sequencer
 -- key3 = play sequencer
@@ -8,19 +8,10 @@
 -- enc3 = swing amount
 -- 
 -- grid = edit trigs
---
--- last grid row can be 
--- configured for cutting
---
-
---[[
--- grid+enc2/enc3 lock params
--- grid+key2 clear locks
-]]
+-- 
 engine.name = 'Ack'
 
 local ControlSpec = require 'controlspec'
--- local Grid = require 'grid'
 local Ack = require 'jah/ack'
 
 local TRIG_LEVEL = 15
@@ -429,22 +420,6 @@ gridkey = function(x, y, state)
   end
   redraw()
 end
-
---[[
-function Grid.add(grid)
-  print("grid added")
-  refresh_grid()
-  grid_available = grid.serial
-  gridbutton_indicator_level = 3
-  redraw()
-end
-
-function Grid.remove()
-  print("grid removed")
-  grid_available = nil
-  redraw()
-end
-]]
 
 cleanup = function()
   if g then

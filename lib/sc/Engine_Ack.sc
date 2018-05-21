@@ -34,7 +34,6 @@ Engine_Ack : CroneEngine {
 
 	alloc {
 		loopEnabled = Array.fill(8) { false };
-
 		channelSpecs = IdentityDictionary.new;
 		channelSpecs[\sampleStart] = \unipolar.asSpec;
 		channelSpecs[\sampleEnd] = \unipolar.asSpec.copy.default_(1);
@@ -65,7 +64,8 @@ Engine_Ack : CroneEngine {
 
 		reverbRoomSpec = \unipolar.asSpec.copy.default_(0.75);
 		reverbDampSpec = \unipolar.asSpec.copy.default_(0.5);
-		delayLevelSpec = \db.asSpec.copy.default_(-10);
+		reverbLevelSpec = \db.asSpec.copy.default_(-10);
+
 
 		SynthDef(
 			(this.monoSamplePlayerDefName.asString++"_OneShot").asSymbol,
@@ -150,8 +150,8 @@ Engine_Ack : CroneEngine {
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
-					delaySend: channelSpecs[\send],
-					reverbSend: channelSpecs[\send]
+					delaySend: channelSpecs[\delaySend],
+					reverbSend: channelSpecs[\reverbSend]
 /*
 	TODO
 					speedSlew: slewSpec,
@@ -249,7 +249,6 @@ Engine_Ack : CroneEngine {
 					pan: channelSpecs[\pan],
 					filterCutoff: channelSpecs[\filterCutoff],
 					filterRes: channelSpecs[\filterRes],
-					filterMode: channelSpecs[\filterMode],
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
@@ -367,13 +366,115 @@ Engine_Ack : CroneEngine {
 		).add;
 
 		SynthDef(
+			(this.stereoSamplePlayerDefName.asString++"_Loop").asSymbol,
+			{
+				|
+					gate,
+					out=0,
+					delayBus,
+					reverbBus,
+					bufnum,
+					sampleStart,
+					sampleEnd,
+					loopPoint,
+					speed,
+					volume,
+					volumeEnvAttack,
+					volumeEnvRelease,
+					pan,
+					filterCutoff,
+					filterRes,
+					filterLowpassLevel,
+					filterBandpassLevel,
+					filterHighpassLevel,
+					filterNotchLevel,
+					filterPeakLevel,
+					filterEnvAttack,
+					filterEnvRelease,
+					filterEnvMod,
+					delaySend,
+					reverbSend
+/*
+	TODO
+					speedSlew,
+					phasorFreqSlew,
+					volumeSlew,
+					panSlew,
+					filterCutoffSlew,
+					filterResSlew,
+*/
+				|
+				var bufFrames = BufFrames.kr(bufnum);
+				var startPos = bufFrames * sampleStart;
+				var endLoop = bufFrames * sampleEnd;
+				var startLoop = startPos + ((endLoop-startPos)*loopPoint);
+				var sig = LoopBuf.ar(2, bufnum, speed, 1, startPos, startLoop, endLoop, 4);
+
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				sig = SVF.ar(
+					sig,
+					filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv),
+					filterRes,
+					filterLowpassLevel,
+					filterBandpassLevel,
+					filterHighpassLevel,
+					filterNotchLevel,
+					filterPeakLevel
+				);
+				sig = Balance2.ar(sig[0], sig[1], pan);
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			// rates: [\tr],
+			rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					sampleStart: channelSpecs[\sampleStart],
+					sampleEnd: channelSpecs[\sampleEnd],
+					speed: channelSpecs[\speed],
+					volume: channelSpecs[\volume],
+					volumeEnvAttack: channelSpecs[\volumeEnvAttack],
+					volumeEnvRelease: channelSpecs[\volumeEnvRelease],
+					pan: channelSpecs[\pan],
+					filterCutoff: channelSpecs[\filterCutoff],
+					filterRes: channelSpecs[\filterRes],
+					filterEnvAttack: channelSpecs[\filterEnvAttack],
+					filterEnvRelease: channelSpecs[\filterEnvRelease],
+					filterEnvMod: channelSpecs[\filterEnvMod],
+					delaySend: channelSpecs[\send],
+					reverbSend: channelSpecs[\send]
+/*
+	TODO
+					speedSlew: slewSpec,
+					phasorFreqSlew: slewSpec,
+					volumeSlew: slewSpec,
+					panSlew: slewSpec,
+					filterCutoffSlew: slewSpec,
+					filterResSlew: slewSpec,
+*/
+				)
+			)
+		).add;
+
+		SynthDef(
 			this.delayDefName,
 			{ |in, out, delayTime, feedback, level|
 				var sig = In.ar(in, 2);
 				var sigfeedback = LocalIn.ar(2);
 				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime);
 				LocalOut.ar(sig * feedback);
-				Out.ar(out, sig*level);
+				Out.ar(out, sig * level.dbamp);
 			},
 			rates: [nil, nil, 0.2, 0.2],
 			metadata: (
@@ -381,7 +482,8 @@ Engine_Ack : CroneEngine {
 					in: \audiobus,
 					out: \audiobus,
 					delayTime: delayTimeSpec,
-					feedback: delayFeedbackSpec
+					feedback: delayFeedbackSpec,
+					level: delayLevelSpec
 				)
 			)
 		).add;
@@ -391,13 +493,14 @@ Engine_Ack : CroneEngine {
 			{ |in, out, room, damp, level|
 				var sig = In.ar(in, 2);
 				sig = FreeVerb.ar(sig, 1, room, damp);
-				Out.ar(out, sig * level);
+				Out.ar(out, sig * level.dbamp);
 			},
 			metadata: (
 				specs: (
 					out: \audiobus,
 					room: reverbRoomSpec,
-					damp: reverbDampSpec
+					damp: reverbDampSpec,
+					level: reverbLevelSpec
 				)
 			)
 		).add;
@@ -475,7 +578,7 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\pan, "if") { |msg| this.cmdPan(msg[1], msg[2]) };
 		this.addCommand(\filterCutoff, "if") { |msg| this.cmdFilterCutoff(msg[1], msg[2]) };
 		this.addCommand(\filterRes, "if") { |msg| this.cmdFilterRes(msg[1], msg[2]) };
-		this.addCommand(\filterMode, "is") { |msg| this.cmdFilterMode(msg[1], msg[2]) };
+		this.addCommand(\filterMode, "ii") { |msg| this.cmdFilterMode(msg[1], msg[2]) };
 		this.addCommand(\filterEnvAttack, "if") { |msg| this.cmdFilterEnvAttack(msg[1], msg[2]) };
 		this.addCommand(\filterEnvRelease, "if") { |msg| this.cmdFilterEnvRelease(msg[1], msg[2]) };
 		this.addCommand(\filterEnvMod, "if") { |msg| this.cmdFilterEnvMod(msg[1], msg[2]) };
@@ -596,38 +699,38 @@ Engine_Ack : CroneEngine {
 		channelControlBusses[channelnum][\filterRes].set(channelSpecs[\filterRes].constrain(f));
 	}
 
-	cmdFilterMode { |channelnum, str|
+	cmdFilterMode { |channelnum, i|
 		var busses = channelControlBusses[channelnum];
-		switch (str)
-			{ 'lowpass' } {
+		switch (i)
+			{ 0 } {
 				busses[\filterLowpassLevel].set(1);
 				busses[\filterBandpassLevel].set(0);
 				busses[\filterHighpassLevel].set(0);
 				busses[\filterNotchLevel].set(0);
 				busses[\filterPeakLevel].set(0);
 			}
-			{ 'bandpass' } {
+			{ 1 } {
 				busses[\filterLowpassLevel].set(0);
 				busses[\filterBandpassLevel].set(1);
 				busses[\filterHighpassLevel].set(0);
 				busses[\filterNotchLevel].set(0);
 				busses[\filterPeakLevel].set(0);
 			}
-			{ 'highpass' } {
+			{ 2 } {
 				busses[\filterLowpassLevel].set(0);
 				busses[\filterBandpassLevel].set(0);
 				busses[\filterHighpassLevel].set(1);
 				busses[\filterNotchLevel].set(0);
 				busses[\filterPeakLevel].set(0);
 			}
-			{ 'notch' } {
+			{ 3 } {
 				busses[\filterLowpassLevel].set(0);
 				busses[\filterBandpassLevel].set(0);
 				busses[\filterHighpassLevel].set(0);
 				busses[\filterNotchLevel].set(1);
 				busses[\filterPeakLevel].set(0);
 			}
-			{ 'peak' } {
+			{ 4 } {
 				busses[\filterLowpassLevel].set(0);
 				busses[\filterBandpassLevel].set(0);
 				busses[\filterHighpassLevel].set(0);
@@ -649,11 +752,11 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdDelaySend { |channelnum, f|
-		channelControlBusses[channelnum][\delaySend].set(channelSpecs[\send].constrain(f));
+		channelControlBusses[channelnum][\delaySend].set(channelSpecs[\delaySend].constrain(f));
 	}
 
 	cmdReverbSend { |channelnum, f|
-		channelControlBusses[channelnum][\reverbSend].set(channelSpecs[\send].constrain(f));
+		channelControlBusses[channelnum][\reverbSend].set(channelSpecs[\reverbSend].constrain(f));
 	}
 
 	cmdDelayTime { |f|
