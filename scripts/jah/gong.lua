@@ -1,4 +1,4 @@
--- gong:
+-- gong.
 -- polyphonic fm synth
 -- controlled by midi
 
