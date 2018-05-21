@@ -6,19 +6,15 @@
 -- grid pattern player:
 -- 1 1 record toggle
 -- 1 2 play toggle
--- 1 8 tranpose mode
+-- 1 8 transpose mode
 
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
 
-mode_transpose = 0
-root = {}
-root.x = 5
-root.y = 5
-trans = {}
-trans.x = 5
-trans.y = 5
-lit = {}
+local mode_transpose = 0
+local root = { x=5, y=5 }
+local trans = { x=5, y=5 }
+local lit = {}
 
 engine.name = 'PolySub'
 
@@ -26,69 +22,69 @@ engine.name = 'PolySub'
 local ratios = { 1, 9/8, 6/5, 5/4, 4/3, 3/2, 27/16, 16/9 }
 local base = 27.5 -- low A
 
-local getHz = function ( deg, oct )
+local function getHz(deg,oct)
   return base * ratios[deg] * (2^oct)
 end
 
-local getHzET = function ( note )
+local function getHzET(note)
   return 55*2^(note/12)
 end
 -- current count of active voices
 local nvoices = 0
 
-init = function()
+function init()
   pat = pattern_time.new()
   pat.process = grid_note_trans
 
-  params:add_control("shape", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("shape", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("shape", function(x) engine.shape(x) end)
 
-  params:add_control("timbre", controlspec.new(0,1,'lin',0,0.5,""))
+  params:add_control("timbre", controlspec.new(0,1,"lin",0,0.5,""))
   params:set_action("timbre", function(x) engine.timbre(x) end)
 
-  params:add_control("noise", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("noise", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("noise", function(x) engine.noise(x) end)
 
-  params:add_control("cut", controlspec.new(0,32,'lin',0,8,""))
+  params:add_control("cut", controlspec.new(0,32,"lin",0,8,""))
   params:set_action("cut", function(x) engine.cut(x) end)
 
-  params:add_control("cutEnvAmt", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("cutEnvAmt", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("cutEnvAmt", function(x) engine.cutEnvAmt(x) end)
 
-  params:add_control("detune", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("detune", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("detune", function(x) engine.detune(x) end)
 
-  params:add_control("verbMix", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("verbMix", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("verbMix", function(x) engine.verbMix(x) end)
 
-  params:add_control("room", controlspec.new(0,1,'lin',0,0.5,""))
+  params:add_control("room", controlspec.new(0,1,"lin",0,0.5,""))
   params:set_action("room", function(x) engine.room(x) end)
 
-  params:add_control("damp", controlspec.new(0,1,'lin',0,0,""))
+  params:add_control("damp", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("damp", function(x) engine.damp(x) end)
 
-  params:add_control("ampAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
+  params:add_control("ampAtk", controlspec.new(0.01,10,"lin",0,0.05,""))
   params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
 
-  params:add_control("ampDec", controlspec.new(0,2,'lin',0,0.1,""))
+  params:add_control("ampDec", controlspec.new(0,2,"lin",0,0.1,""))
   params:set_action("ampDec", function(x) engine.ampDec(x) end)
 
-  params:add_control("ampSus", controlspec.new(0,1,'lin',0,1,""))
+  params:add_control("ampSus", controlspec.new(0,1,"lin",0,1,""))
   params:set_action("ampSus", function(x) engine.ampSus(x) end)
 
-  params:add_control("ampRel", controlspec.new(0.01,10,'lin',0,1,""))
+  params:add_control("ampRel", controlspec.new(0.01,10,"lin",0,1,""))
   params:set_action("ampRel", function(x) engine.ampRel(x) end)
 
-  params:add_control("cutAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
+  params:add_control("cutAtk", controlspec.new(0.01,10,"lin",0,0.05,""))
   params:set_action("cutAtk", function(x) engine.cutAtk(x) end)
 
-  params:add_control("cutDec", controlspec.new(0,2,'lin',0,0.1,""))
+  params:add_control("cutDec", controlspec.new(0,2,"lin",0,0.1,""))
   params:set_action("cutDec", function(x) engine.cutDec(x) end)
 
-  params:add_control("cutSus", controlspec.new(0,1,'lin',0,1,""))
+  params:add_control("cutSus", controlspec.new(0,1,"lin",0,1,""))
   params:set_action("cutSus", function(x) engine.cutSus(x) end)
 
-  params:add_control("cutRel", controlspec.new(0.01,10,'lin',0,1,""))
+  params:add_control("cutRel", controlspec.new(0.01,10,"lin",0,1,""))
   params:set_action("cutRel", function(x) engine.cutRel(x) end)
 
 
@@ -209,8 +205,6 @@ function gridredraw()
 
   g:refresh()
 end
-
-
 
 
 

@@ -24,12 +24,12 @@ alt = false
 local one = {
   pos = 0,
   length = 8,
-  data = {}
+  data = {0,0,6,4,7,3,0,0,0,0,0,0,0,0,0,0}
 }
 local two = {
   pos = 0,
-  length = 6,
-  data = {0,0,0,0,7,7,0,0,0,0,0,0,0,0,0,0}
+  length = 9,
+  data = {6,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 }
 
 local scale_degrees = {2,1,2,2,2,1,2}
@@ -54,9 +54,7 @@ end
 init = function()
   print("grid/seek")
 
-  for i=1, 16 do one.data[i] = math.floor(math.random()*8) end
-
-  params:add_number("tempo",1,240,60)
+  params:add_number("tempo",1,240,48)
   params:set_action("tempo", function(n) 
     t.time = 15/n
   end) 
