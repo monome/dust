@@ -111,13 +111,15 @@ init = function()
 
   params:add_control("cut", controlspec.new(0,32,'lin',0,8,""))
   params:set_action("cut", function(x) engine.cut(x) end)
+  
+  params:add_control("fgain", controlspec.new(0,6,'lin',0,0,""))
+  params:set_action("fgain", function(x) engine.fgain(x) end)
 
   params:add_control("cutEnvAmt", controlspec.new(0,1,'lin',0,0,""))
   params:set_action("cutEnvAmt", function(x) engine.cutEnvAmt(x) end)
 
   params:add_control("detune", controlspec.new(0,1,'lin',0,0,""))
   params:set_action("detune", function(x) engine.detune(x) end)
-
 
   params:add_control("ampAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
   params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
