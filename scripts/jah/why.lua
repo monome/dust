@@ -1,3 +1,4 @@
+-- why.
 -- classic supercollider example
 -- by jmcc
 
