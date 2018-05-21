@@ -4,41 +4,41 @@ local function format(param, value, units)
   return value.." "..(units or param.controlspec.units or "")
 end
 
-function Formatters.lbl_std(param)
-  return param.name..": "..Formatters.std(param)
+function Formatters.default_with_label(param)
+  return param.name..": "..Formatters.default(param)
 end
 
-function Formatters.lbl_unipolar_as_percentage(param)
+function Formatters.unipolar_as_percentage_with_label(param)
   return param.name..": "..Formatters.unipolar_as_percentage(param)
 end
 
-function Formatters.lbl_secs_as_ms(param)
+function Formatters.secs_as_ms_with_label(param)
   return param.name..": "..Formatters.secs_as_ms(param)
 end
 
-function Formatters.lbl_unipolar_as_true_false(param)
+function Formatters.unipolar_as_true_false_with_label(param)
   return param.name..": "..Formatters.unipolar_as_true_false(param)
 end
 
-function Formatters.lbl_unipolar_as_enabled_disabled(param)
+function Formatters.unipolar_as_enabled_disabled_with_label(param)
   return param.name..": "..Formatters.unipolar_as_enabled_disabled(param)
 end
 
-function Formatters.lbl_bipolar_as_pan_widget(param)
-  return param.name..": "..Formatters.unipolar_as_pan_widget(param)
+function Formatters.bipolar_as_pan_widget_with_label(param)
+  return param.name..": "..Formatters.bipolar_as_pan_widget(param)
 end
 
-function Formatters.lbl_unipolar_as_multimode_filter_freq(param)
+function Formatters.unipolar_as_multimode_filter_freq_with_label(param)
   return param.name..": "..Formatters.unipolar_as_multimode_filter_freq(param)
 end
 
-function Formatters.lbl_round(precision)
+function Formatters.round_with_label(precision)
   return function(param)
     return param.name..": "..Formatters.round(precision)(param)
   end
 end
 
-function Formatters.std(param)
+function Formatters.default(param)
   return Formatters.round(0.01)(param)
 end
 
@@ -73,20 +73,21 @@ function Formatters.bipolar_as_pan_widget(param)
   end
 
   local value = param:get()
-  local pan_side_percentage = util.round(math.abs(value)*100)
+  local pan_side = math.abs(value)
+  local pan_side_percentage = util.round(pan_side*100)
   local descr
 
   if value > 0 then
-    dots_left = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
-    dots_right = util.round((100-pan_side_percentage)/dots_per_side)
+    dots_left = dots_per_side+util.round(pan_side*dots_per_side)
+    dots_right = util.round((1-pan_side)*dots_per_side)
     if pan_side_percentage >= 1 then
       descr = "R"..pan_side_percentage
     end
   elseif value < 0 then
-    dots_left = util.round((100-pan_side_percentage)/dots_per_side)
-    dots_right = dots_per_side+util.round(pan_side_percentage/dots_per_side)+1
+    dots_left = util.round((1-pan_side)*dots_per_side)
+    dots_right = dots_per_side+util.round(pan_side*dots_per_side)
     if pan_side_percentage >= 1 then
-      descr = "L"..pan_side_percentage
+     descr = "L"..pan_side_percentage
     end
   else
     dots_left = dots_per_side
@@ -103,7 +104,7 @@ function Formatters.bipolar_as_pan_widget(param)
   add_dots(dots_right)
   add_bar()
 
-  return format(param, widget.." "..descr, "")
+  return format(param, descr.." "..widget, "")
 end
 
 function Formatters.unipolar_as_multimode_filter_freq(param)

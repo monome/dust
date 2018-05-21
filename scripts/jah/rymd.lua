@@ -1,7 +1,7 @@
 -- wip echo chamber thing
 
 ControlSpec = require 'controlspec'
-Control = require 'control'
+Control = require 'params/control'
 Scroll = require 'jah/scroll'
 Formatters = require 'jah/formatters'
 R = require 'jah/r'
@@ -23,38 +23,38 @@ delay_feedback_spec.default = -5
 local output_level_spec = ControlSpec.DB:copy()
 output_level_spec.default = -20
 
-local delay_send = Control.new("delay send level", delay_send_spec, Formatters.std)
+local delay_send = Control.new("delay send level", delay_send_spec, Formatters.std_with_label)
 delay_send.action = function(value)
   engine.patch('inl', 'delayl', value)
   engine.patch('inr', 'delayr', value)
 end
 
-local delayl_delaytime = Control.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms)
+local delayl_delaytime = Control.new("delayl delaytime", delay_time_spec, Formatters.secs_as_ms_with_label)
 delayl_delaytime:set(0.52)
-local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms)
+local delayr_delaytime = Control.new("delayr delaytime", delay_time_spec, Formatters.secs_as_ms_with_label)
 delayr_delaytime:set(0.44)
 
-local filterl_freq = Control.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+local filterl_freq = Control.new("filterl freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq_with_label)
 filterl_freq:set(0.36)
-local filterl_lforate = Control.new("filterl lforate", ControlSpec.LOFREQ, Formatters.std)
+local filterl_lforate = Control.new("filterl lforate", ControlSpec.LOFREQ, Formatters.std_with_label)
 filterl_lforate:set(0.08)
-local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
+local filterl_lfodepth = Control.new("filterl lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage_with_label)
 filterl_lfodepth:set(0.1)
 
-local filterr_freq = Control.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq)
+local filterr_freq = Control.new("filterr freq", filter_freq_spec, Formatters.unipolar_as_multimode_filter_freq_with_label)
 filterr_freq:set(0.36)
-local filterr_lforate = Control.new("filterr lforate", ControlSpec.LOFREQ, Formatters.std)
+local filterr_lforate = Control.new("filterr lforate", ControlSpec.LOFREQ, Formatters.std_with_label)
 filterr_lforate:set(0.14)
-local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage)
+local filterr_lfodepth = Control.new("filterr lfodepth", ControlSpec.UNIPOLAR, Formatters.unipolar_as_percentage_with_label)
 filterr_lfodepth:set(0.1)
 
-local delay_feedback = Control.new("delay feedback", delay_feedback_spec, Formatters.std)
+local delay_feedback = Control.new("delay feedback", delay_feedback_spec, Formatters.std_with_label)
 delay_feedback.action = function(value)
   engine.patch('filterl', 'delayr', value)
   engine.patch('filterr', 'delayl', value)
 end
 
-local output_level = Control.new("output level", output_level_spec, Formatters.std)
+local output_level = Control.new("output level", output_level_spec, Formatters.std_with_label)
 output_level.action = function(value)
   engine.patch('inl', 'outl', value)
   engine.patch('inr', 'outr', value)
