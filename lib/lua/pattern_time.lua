@@ -73,12 +73,14 @@ function pattern:rec_event(e)
 end
 
 function pattern:start()
-  print("start pattern ")
-  self.process(self.event[1])
-  self.play = 1
-  self.step = 1
-  self.metro.time = self.time[1]
-  self.metro:start() 
+  if self.count > 0 then
+    print("start pattern ")
+    self.process(self.event[1])
+    self.play = 1
+    self.step = 1
+    self.metro.time = self.time[1]
+    self.metro:start() 
+  end
 end 
 
 function pattern:next_event()
