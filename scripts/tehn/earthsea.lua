@@ -47,21 +47,15 @@ function init()
 
   params:add_control("cut", controlspec.new(0,32,"lin",0,8,""))
   params:set_action("cut", function(x) engine.cut(x) end)
+  
+  params:add_control("fgain", controlspec.new(0,6,"lin",0,0,""))
+  params:set_action("fgain", function(x) engine.fgain(x) end)
 
   params:add_control("cutEnvAmt", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("cutEnvAmt", function(x) engine.cutEnvAmt(x) end)
 
   params:add_control("detune", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("detune", function(x) engine.detune(x) end)
-
-  params:add_control("verbMix", controlspec.new(0,1,"lin",0,0,""))
-  params:set_action("verbMix", function(x) engine.verbMix(x) end)
-
-  params:add_control("room", controlspec.new(0,1,"lin",0,0.5,""))
-  params:set_action("room", function(x) engine.room(x) end)
-
-  params:add_control("damp", controlspec.new(0,1,"lin",0,0,""))
-  params:set_action("damp", function(x) engine.damp(x) end)
 
   params:add_control("ampAtk", controlspec.new(0.01,10,"lin",0,0.05,""))
   params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
