@@ -43,17 +43,8 @@ local pparams = {
   cutCurve =  -1.0, cutEnvAmt = 0.0,
   fgain = 0.0,
   detune = 0,
-  delTime = 0.2, delMix = 0.0, delFb = 0.0,
-  delSpread = 0.0,
   width = 0.5,
-  thresh = 0.6,
-  atk = 0.01,
-  rel = 0.1,
-  slope = 8.0,
-  compMix = 1.0,
-  room=0.5,
-  damp=0.0,
-  verbMix=0.0
+
 }
 
 -- FIXME: i guess we need to set up some range / scaling / warping descriptor system. arg!
@@ -78,19 +69,8 @@ local param_ranges = {
 
   fgain = { 0.0, 4.0 },
   detune = { 0.0, 2.0 },
-  delTime = { 0.0, 0.8 },
-  delMix = { 0.0, 1.0 },
-  delFb = { 0.0, 0.9 },
-  delSpread = { 0.0, 0.4 },
   width = { 0.0, 1.0 },
   thresh = { 0.2, 1.0 },
-  atk = { 0.0, 0.5 },
-  rel = { 0.0, 0.5 },
-  slope = { 1.0, 24.0 },
-  compMix = { 0.0, 1.0 },
-  room= { 0.0, 1.0 },
-  damp= { 0.0, 1.0 },
-  verbMix= { 0.0, 1.0 },
 }
 
 local param_names = tab.sort(pparams)
@@ -138,14 +118,6 @@ init = function()
   params:add_control("detune", controlspec.new(0,1,'lin',0,0,""))
   params:set_action("detune", function(x) engine.detune(x) end)
 
-  params:add_control("verbMix", controlspec.new(0,1,'lin',0,0,""))
-  params:set_action("verbMix", function(x) engine.verbMix(x) end)
-
-  params:add_control("room", controlspec.new(0,1,'lin',0,0.5,""))
-  params:set_action("room", function(x) engine.room(x) end)
-
-  params:add_control("damp", controlspec.new(0,1,'lin',0,0,""))
-  params:set_action("damp", function(x) engine.damp(x) end)
 
   params:add_control("ampAtk", controlspec.new(0.01,10,'lin',0,0.05,""))
   params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
@@ -175,7 +147,7 @@ init = function()
   engine.level(0.05)
   engine.stopAll()
 
-  params:read("earthsea.pset")
+--  params:read("earthsea.pset")
 
   params:bang()
 end
