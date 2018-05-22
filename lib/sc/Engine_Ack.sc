@@ -113,7 +113,8 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 		
-				PauseSelf.kr(phase > sampleEnd);
+				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
+				sig = sig * (phase < sampleEnd);
 				
 				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
@@ -415,7 +416,8 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 		
-				PauseSelf.kr(phase > sampleEnd);
+				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
+				sig = sig * (phase < sampleEnd);
 				
 				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
