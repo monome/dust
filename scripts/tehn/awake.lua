@@ -53,7 +53,7 @@ function build_scale()
   local n = 0
   for i=1,16 do
     notes[i] = n
-    n = n + scale_degrees[(params:get("scale mode") + n)%7 + 1]
+    n = n + scale_degrees[(params:get("scale mode") + i)%7 + 1]
   end
   --tab.print(notes)
   for i=1,16 do freqs[i] = 110*2^((notes[i]+params:get("trans"))/12) end
@@ -63,11 +63,11 @@ end
 function init()
   print("grid/seek")
 
-  params:add_number("tempo",1,240,48)
+  params:add_number("tempo",20,240,48)
   params:set_action("tempo", function(n) 
     t.time = 15/n
   end) 
-  params:add_number("scale mode",1,7,1)
+  params:add_number("scale mode",1,7,3)
   params:set_action("scale mode", function(n) 
     build_scale()
   end) 
@@ -219,7 +219,9 @@ function key(n,z)
         end
       else
         for i=1,two.length do
-          two.data[i] = util.clamp(two.data[i]+math.floor(math.random()*3)-1,0,8)
+          if two.data[i] > 0 then
+            two.data[i] = util.clamp(two.data[i]+math.floor(math.random()*3)-1,0,8)
+          end
         end
       end 
     end
