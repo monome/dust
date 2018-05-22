@@ -105,7 +105,7 @@ Engine_Ack : CroneEngine {
 				filterResSlew,
 				*/
 				|
-				var phase = sampleStart + Sweep.ar(1, speed * BufRateScale.kr(bufnum));
+				var phase = sampleStart + Sweep.ar(1, (speed*BufRateScale.kr(bufnum)).poll);
 		
 				var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
 		

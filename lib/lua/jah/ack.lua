@@ -46,7 +46,6 @@ function Ack.add_params()
         engine.loadSample(i-1, value)
       end
     end)
-	--[[
     params:add_option(i..": loop", {"off", "on"})
     params:set_action(i..": loop", function(value)
       if value == 2 then
@@ -61,7 +60,6 @@ function Ack.add_params()
     params:set_action(i..": end pos", function(value) engine.sampleEnd(i-1, value) end)
     params:add_control(i..": loop point", Ack.specs.loop_point, Formatters.unipolar_as_percentage)
     params:set_action(i..": loop point", function(value) engine.loopPoint(i-1, value) end)
-	]]
     params:add_control(i..": speed", Ack.specs.speed, Formatters.unipolar_as_percentage)
     params:set_action(i..": speed", function(value) engine.speed(i-1, value) end)
     params:add_control(i..": vol", Ack.specs.volume, Formatters.default)

@@ -244,31 +244,35 @@ key = function(n, z)
 end
 
 redraw = function()
+  screen.font_size(8)
   screen.clear()
   screen.level(15)
   screen.move(10,30)
   if playing then
     screen.level(3)
-    screen.text("stop")
+    screen.text("[] stop")
   else
     screen.level(15)
-    screen.text("stopped")
+    screen.text("[] stopped")
   end
+  --[[
   screen.level(3)
   screen.move(50,30)
   if playing then
-    screen.text(" < ")
-  else
     screen.text(" > ")
+  else
+    screen.text(" < ")
   end
+  ]]
+  screen.font_size(8)
   screen.move(70,30)
   if playing then
     screen.level(15)
-    screen.text("playing")
+    screen.text("|> playing")
     screen.text(" "..playpos+1)
   else
     screen.level(3)
-    screen.text("play")
+    screen.text("|> play")
   end
   screen.level(15)
   screen.move(10,50)
