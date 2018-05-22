@@ -21,33 +21,27 @@
 
 engine.name = "SoftCut"
 
-TRACKS = 4
-FADE = 0.01
+local pattern_time = require 'pattern_time'
 
-vREC = 1
-vCUT = 2 
-vCLIP = 3
-vTIME = 15
+local TRACKS = 4
+local FADE = 0.01
+
+local vREC = 1
+local vCUT = 2 
+local vCLIP = 3
+local vTIME = 15
 
 -- events
-eCUT = 1
-eSTOP = 2
-eSTART = 3
-eLOOP = 4
-eSPEED = 5
-eREV = 6
+local eCUT = 1
+local eSTOP = 2
+local eSTART = 3
+local eLOOP = 4
+local eSPEED = 5
+local eREV = 6
 
-quantize = 0
-quantizer = metro.alloc()
-quantizer.time = 0.125
-quantizer.count = -1
-quantizer.callback = event_q_clock
+local quantize = 0
 
-quantize_init = function()
-  quantizer:start()
-end
-
-update_tempo = function()
+local function update_tempo()
   local t = params:get("tempo")
   local d = params:get("quant_div")
   local interval = (60/t) / d
@@ -61,32 +55,28 @@ update_tempo = function()
 end
 
 
-event = function(e)
+function event(e)
   if quantize == 1 then
     event_q(e)
   else 
     for i=1,4 do
-      if pattern[i].rec == 1 then
-        pattern_rec_event(i,e)
-      end
+      pattern[i]:watch(e)
     end 
     event_exec(e)
   end
 end
 
-quantize_events = {}
+local quantize_events = {}
 
-event_q = function(e)
+function event_q(e)
   table.insert(quantize_events,e)
 end
 
-event_q_clock = function()
+function event_q_clock()
   if #quantize_events > 0 then
     for k,e in pairs(quantize_events) do
       for i=1,4 do
-        if pattern[i].rec == 1 then
-          pattern_rec_event(i,e)
-        end
+        pattern[i]:watch(e)
       end 
       event_exec(e)
     end
@@ -95,7 +85,7 @@ event_q_clock = function()
 end
 
 
-event_exec = function(e) 
+function event_exec(e)
   if e.t==eCUT then
     if track[e.i].loop == 1 then
       track[e.i].loop = 0
@@ -150,92 +140,14 @@ end
 
 ------ patterns
 pattern = {}
-
-pattern_init = function()
-  for i=1,4 do
-    pattern[i] = {}
-    pattern_clear(i)
-  end
-end 
-
-pattern_clear = function(x)
-  print("clear pattern "..x)
-  pattern[x].rec = 0
-  pattern[x].play = 0
-  pattern[x].prev_time = 0
-  pattern[x].event = {}
-  pattern[x].time = {}
-  pattern[x].count = 0
-  pattern[x].step = 0
-
-  pattern[x].metro = metro.alloc()
-  pattern[x].metro.count = 1
-  pattern[x].metro.callback = function(n) pattern_next(x) end
-end
-
-pattern_rec_start = function(x)
-  print("pattern rec start "..x)
-  pattern[x].rec = 1
-end
-
-pattern_rec_stop = function(x)
-  if pattern[x].rec == 1 then
-    pattern[x].rec = 0
-    if pattern[x].count ~= 0 then
-      print("count "..pattern[x].count)
-      local t = pattern[x].prev_time
-      pattern[x].prev_time = util.time()
-      pattern[x].time[pattern[x].count] = pattern[x].prev_time - t
-      --tab.print(pattern[x].time)
-    else
-      print("no events recorded")
-    end 
-  else print("not recording")
-  end
-end
-
-pattern_rec_event = function(x,e)
-  local c = pattern[x].count + 1
-  if c == 1 then
-    pattern[x].prev_time = util.time() 
-    --print("first event")
-  else
-    local t = pattern[x].prev_time
-    pattern[x].prev_time = util.time()
-    pattern[x].time[c-1] = pattern[x].prev_time - t
-    --print(pattern[x].time[c-1])
-  end
-  pattern[x].count = c
-  pattern[x].event[c] = e
-end
-
-pattern_start = function(x)
-  print("start pattern "..x)
-  event_exec(pattern[x].event[1])
-  pattern[x].play = 1
-  pattern[x].step = 1
-  pattern[x].metro.time = pattern[x].time[1]
-  pattern[x].metro:start() 
-end 
-
-pattern_next = function(x)
-  if pattern[x].step == pattern[x].count then pattern[x].step = 1
-  else pattern[x].step = pattern[x].step + 1 end 
-  --print("next step "..pattern[x].step)
-  event_exec(pattern[x].event[pattern[x].step])
-  pattern[x].metro.time = pattern[x].time[pattern[x].step]
-  --print("next time "..pattern[x].metro.time)
-  pattern[x].metro:start() 
-end
-
-pattern_stop = function(x)
-  if pattern[x].play == 1 then
-    print("stop pattern "..x)
-    pattern[x].play = 0
-    pattern[x].metro:stop()
-  else print("not playing") end
-end
-  
+pattern[1] = pattern_time.new()
+pattern[2] = pattern_time.new()
+pattern[3] = pattern_time.new()
+pattern[4] = pattern_time.new()
+pattern[1].process = event_exec
+pattern[2].process = event_exec
+pattern[3].process = event_exec
+pattern[4].process = event_exec
 
 view = vREC
 view_prev = view
@@ -256,8 +168,9 @@ focus = 1
 alt = 0
 
 track = {}
-for i=1,4 do
+for i=1,7 do
   track[i] = {}
+  track[i].head = (i-1)%4+1
   track[i].play = 0
   track[i].rec = 0
   track[i].rec_level = 1
@@ -323,17 +236,19 @@ held = {}
 heldmax = {}
 done = {}
 first = {}
+second = {}
 for i = 1,8 do
   held[i] = 0
   heldmax[i] = 0
   done[i] = 0
   first[i] = 0
+  second[i] = 0
 end
 
 
 key = function(n,z) _key(n,z) end
 enc = function(n,d) 
-  if n==1 then norns.audio.adjust_output_level(d)
+  if n==1 then mix:delta("output",d)
   else _enc(n,d) end
 end
 redraw = function() _redraw() end
@@ -413,11 +328,15 @@ init = function()
     params:set_action("speed_mod"..i, function() update_rate(i) end)
   end 
 
-  quantize_init()
-  pattern_init()
+  quantizer = metro.alloc()
+  quantizer.time = 0.125
+  quantizer.count = -1
+  quantizer.callback = event_q_clock 
+  quantizer:start() 
+  --pattern_init()
   set_view(vREC)
   update_tempo()
-  
+
   gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
   gridredrawtimer:start()
 
@@ -444,7 +363,7 @@ update_rate = function(i)
   if track[i].rev == 1 then n = -n end
   if track[i].tempo_map == 1 then
     local bpmmod = params:get("tempo") / clip[track[i].clip].bpm
-    print("bpmmod: "..bpmmod)
+    --print("bpmmod: "..bpmmod)
     n = n * bpmmod 
   end
   engine.rate(i,n) 
@@ -461,16 +380,17 @@ gridkey_nav = function(x,z)
     elseif x>4 and x <9 then
       i = x - 4 
       if alt == 1 then
-        pattern_rec_stop(i)
-        pattern_stop(i)
-        pattern_clear(i)
+        pattern[i]:rec_stop()
+        pattern[i]:stop()
+        pattern[i]:clear()
       elseif pattern[i].rec == 1 then
-        pattern_rec_stop(i)
+        pattern[i]:rec_stop()
+        pattern[i]:start()
       elseif pattern[i].count == 0 then
-        pattern_rec_start(i)
+        pattern[i]:rec_start()
       elseif pattern[i].play == 1 then
-        pattern_stop(i)
-      else pattern_start(i)
+        pattern[i]:stop()
+      else pattern[i]:start()
       end 
     elseif x==15 and alt == 0 then 
       quantize = 1 - quantize
@@ -533,9 +453,9 @@ v.redraw[vREC] = function()
   screen.text("REC > "..focus)
   if viewinfo[vREC] == 0 then
     screen.move(10,50)
-    screen.text(params:get("vol"..focus))
+    screen.text(params:string("vol"..focus))
     screen.move(70,50)
-    screen.text(params:get("speed_mod"..focus))
+    screen.text(params:string("speed_mod"..focus))
     screen.level(3)
     screen.move(10,60)
     screen.text("volume")
@@ -543,9 +463,9 @@ v.redraw[vREC] = function()
     screen.text("speed mod")
   else
     screen.move(10,50)
-    screen.text(params:get("rec"..focus))
+    screen.text(params:string("rec"..focus))
     screen.move(70,50)
-    screen.text(params:get("pre"..focus))
+    screen.text(params:string("pre"..focus))
     screen.level(3)
     screen.move(10,60)
     screen.text("rec level")
@@ -572,6 +492,16 @@ v.gridkey[vREC] = function(x, y, z)
         end 
       elseif x==1 and y<6 then 
         track[i].rec = 1 - track[i].rec
+        if track[i].rec == 1 then
+          for n=1,4 do
+            if n ~=i then
+              if track[n].rec == 1 then
+                track[n].rec = 0
+                engine.rec_on(n,track[n].rec)
+              end
+            end
+          end
+        end
         print("REC "..track[i].rec)
         engine.rec_on(i,track[i].rec)
         dirtygrid=true
@@ -685,6 +615,8 @@ v.gridkey[vCUT] = function(x, y, z)
         --print("pos > "..cut)
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
+      elseif y<6 and held[y]==2 then
+        second[y] = x
       end 
     elseif z==0 then
       if y<6 and held[y] == 1 and heldmax[y]==2 then
@@ -692,8 +624,8 @@ v.gridkey[vCUT] = function(x, y, z)
         e.t = eLOOP
         e.i = i
         e.loop = 1
-        e.loop_start = first[y]
-        e.loop_end = x
+        e.loop_start = math.min(first[y],second[y])
+        e.loop_end = math.max(first[y],second[y])
         event(e)
       end
     end 
@@ -718,24 +650,31 @@ end
 
 
 
-
 --------------------CLIP
+
+clip_sel = 1
+clip_clear_mult = 3 
+
 function fileselect_callback(path)
   if path ~= "cancel" then
-    print("file > "..path.." "..clip[track[clip_sel].clip].s)
-    engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
-    local ch, len = sound_file_inspect(path)
-    print("file length > "..len)
-    set_clip_length(track[clip_sel].clip, len/48000) 
-    local bpm = 60 / (len/48000)
-    while bpm < 60 do 
-      bpm = bpm * 2
-      print("bpm > "..bpm)
+    if path:find(".aif") or path:find(".wav") then
+      print("file > "..path.." "..clip[track[clip_sel].clip].s)
+      engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
+      local ch, len = sound_file_inspect(path)
+      print("file length > "..len)
+      set_clip_length(track[clip_sel].clip, len/48000) 
+      local bpm = 60 / (len/48000)
+      while bpm < 60 do 
+        bpm = bpm * 2
+        print("bpm > "..bpm)
+      end
+      clip[track[clip_sel].clip].bpm = bpm 
+      clip[track[clip_sel].clip].name = path:match("[^/]*$")
+      set_clip(clip_sel,track[clip_sel].clip)
+      update_rate(clip_sel)
+    else
+      print("not a sound file")
     end
-    clip[track[clip_sel].clip].bpm = bpm 
-    clip[track[clip_sel].clip].name = path:match("[^/]*$")
-    set_clip(clip_sel,track[clip_sel].clip)
-    update_rate(clip_sel)
 
     -- TODO re-set_clip any tracks with this clip loaded
     redraw()
@@ -743,16 +682,16 @@ function fileselect_callback(path)
 end 
 
 v.key[vCLIP] = function(n,z)
-  if n==3 and z==0 then
+  if n==2 and z==0 then
     fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
   end
 end
 
-clip_sel = 1
-
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel+d,1,4)
+    clip_sel = util.clamp(clip_sel-d,1,4)
+  elseif n==3 then
+    clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end 
   redraw()
   dirtygrid=true
@@ -769,6 +708,12 @@ v.redraw[vCLIP] = function()
   screen.level(3)
   screen.move(10,60)
   screen.text("name "..track[clip_sel].clip)
+
+  screen.move(70,50)
+  screen.text(2^(clip_clear_mult-2))
+  screen.level(3)
+  screen.move(70,60)
+  screen.text("clear/resize")
 
   screen.update()
 end
@@ -839,25 +784,27 @@ end
 
 
 
-
-
-
-norns.midi.event = function(id, data) -- FIXME this should use midi.event (needs setup)
-	--tab.print(data)
+-- map cc's to track volumes
+local function midi_event(data)
   if data[1] == 176 then
-    --print(data[2] .. " " .. data[3])
     if(data[2] < 4) then
-      --print("vol"..(data[2]+1).." "..data[3]/127)
-
       params:set("vol"..(data[2]+1),data[3]/127)
     end
-    
-		--cc(data1, data2)
 	end
 end
 
+midi.add = function(dev)
+  print('mlr: midi device added', dev.id, dev.name)
+  dev.event = midi_event
+end
 
-
-cleanup = function()
-  -- polls/timers autostopped
-end 
+function cleanup()
+  engine.stopAll()
+  for i=1,4 do
+    pattern[i]:stop()
+    pattern[i] = nil
+  end
+  for id,dev in pairs(midi.devices) do
+    dev.event = nil
+  end
+end

@@ -27,6 +27,5 @@ Engine_TestSine : CroneEngine {
 
 	free {
 		synth.free;
-		super.free;
 	}
 }
