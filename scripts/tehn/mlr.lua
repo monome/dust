@@ -168,8 +168,9 @@ focus = 1
 alt = 0
 
 track = {}
-for i=1,4 do
+for i=1,7 do
   track[i] = {}
+  track[i].head = (i-1)%4+1
   track[i].play = 0
   track[i].rec = 0
   track[i].rec_level = 1
@@ -247,7 +248,7 @@ end
 
 key = function(n,z) _key(n,z) end
 enc = function(n,d) 
-  if n==1 then norns.audio.adjust_output_level(d)
+  if n==1 then mix:delta("output",d)
   else _enc(n,d) end
 end
 redraw = function() _redraw() end
@@ -362,7 +363,7 @@ update_rate = function(i)
   if track[i].rev == 1 then n = -n end
   if track[i].tempo_map == 1 then
     local bpmmod = params:get("tempo") / clip[track[i].clip].bpm
-    print("bpmmod: "..bpmmod)
+    --print("bpmmod: "..bpmmod)
     n = n * bpmmod 
   end
   engine.rate(i,n) 
@@ -384,6 +385,7 @@ gridkey_nav = function(x,z)
         pattern[i]:clear()
       elseif pattern[i].rec == 1 then
         pattern[i]:rec_stop()
+        pattern[i]:start()
       elseif pattern[i].count == 0 then
         pattern[i]:rec_start()
       elseif pattern[i].play == 1 then
@@ -451,9 +453,9 @@ v.redraw[vREC] = function()
   screen.text("REC > "..focus)
   if viewinfo[vREC] == 0 then
     screen.move(10,50)
-    screen.text(params:get("vol"..focus))
+    screen.text(params:string("vol"..focus))
     screen.move(70,50)
-    screen.text(params:get("speed_mod"..focus))
+    screen.text(params:string("speed_mod"..focus))
     screen.level(3)
     screen.move(10,60)
     screen.text("volume")
@@ -461,9 +463,9 @@ v.redraw[vREC] = function()
     screen.text("speed mod")
   else
     screen.move(10,50)
-    screen.text(params:get("rec"..focus))
+    screen.text(params:string("rec"..focus))
     screen.move(70,50)
-    screen.text(params:get("pre"..focus))
+    screen.text(params:string("pre"..focus))
     screen.level(3)
     screen.move(10,60)
     screen.text("rec level")
@@ -490,6 +492,16 @@ v.gridkey[vREC] = function(x, y, z)
         end 
       elseif x==1 and y<6 then 
         track[i].rec = 1 - track[i].rec
+        if track[i].rec == 1 then
+          for n=1,4 do
+            if n ~=i then
+              if track[n].rec == 1 then
+                track[n].rec = 0
+                engine.rec_on(n,track[n].rec)
+              end
+            end
+          end
+        end
         print("REC "..track[i].rec)
         engine.rec_on(i,track[i].rec)
         dirtygrid=true
