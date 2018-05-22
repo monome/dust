@@ -107,3 +107,25 @@ init = function()
    engine.offset(4, -10)
    
 end
+
+local rate1_seq = metro.alloc()
+
+local x = 0.7
+local a = 3.77
+local r = 1
+
+rate1_seq.callback =function(stage)
+   x = a*x*x*x + (1-a)*x
+   r = math.pow(2, math.floor(x))
+   engine.rate(1, r)
+end
+
+key = function(n, z)
+   if n == 2 then
+      if z > 0 then 
+	 rate1_seq:start()
+      else
+	 rate1_seq:stop()
+      end
+   end
+end
