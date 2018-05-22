@@ -290,7 +290,7 @@ end
 -- encoder function
 enc = function(n, delta)
   if n == 1 then
-    norns.audio.adjust_output_level(delta)
+    mix:delta("output", delta)
   elseif n == 2 then
     params:delta("tempo", delta)
   elseif n == 3 then
