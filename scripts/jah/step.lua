@@ -38,8 +38,6 @@ local even_ppqn
 local trigger_indicators = {}
 local grid_available
 
--- TODO local gridbutton_indicator_level
-
 local locks = {}
 
 local set_lock = function(x, y, value)
@@ -66,44 +64,6 @@ end
 local trig_is_set = function(x, y)
   return trigs[y*maxwidth+x]
 end
-
---[[
-local held = {}
-
-local get_all_held = function()
-  result = {}
-  for i, h in ipairs(held) do
-    if h then
-      result[#result+1] = i
-    end
-  end
-  return result
-end
-
-local set_held = function(x, y, value)
-  held[y*maxwidth+x] = value
-  -- all_held = get_all_held()
-  print(#held.." held:")
-  for i,h in ipairs(held) do
-    local x = i%maxwidth
-    local y = i/maxwidth
-    print(x, y)
-  end
-end
-
-local trig_is_held = function(x, y)
-  return trigs[y*maxwidth+x]
-end
-
-local any_held = function()
-  for _, h in ipairs(held) do
-    if h then
-      return true
-    end
-  end
-  return false
-end
-]]
 
 local refresh_grid_button = function(x, y, refresh)
   if g then
@@ -203,36 +163,6 @@ local function tick()
   end
 end
 
---[[
-local function screen_update_voice_indicators()
-  screen.move(0,16)
-  screen.font_size(8)
-  for channelnum=1,8 do
-    if trigger_indicators[channelnum] then
-      screen.level(15)
-    else
-      screen.level(2)
-    end
-    screen.text(channelnum)
-  end
-end
-
-local function screen_update_grid_indicator()
-  screen.move(0,60)
-  screen.font_size(8)
-  if grid_available then
-    screen.level(15)
-    screen.text("grid:")
-    screen.text(" ")
-    screen.level(gridbutton_indicator_level or 0)
-    screen.text(grid_available)
-  else
-    screen.level(3)
-    screen.text("no grid")
-  end
-end
-]]
-
 local function update_metro_time()
   timer.time = 60/params:get("tempo")/ppqn/params:get("beats per pattern")
 end
@@ -250,12 +180,10 @@ init = function()
     end
   end
 
-  timer = metro[1]
-  -- timer.count = -1 -- TODO: default, should not be needed
+  timer = metro[1] -- TODO: this is probably no longer the way to spawn metros(?)
   timer.callback = tick
 
-  -- TODO params:add_option("grid brightness", {"mono", "vari"}, 2)
-  params:add_option("grid width", {"8", "16"}, 2) -- TODO
+  params:add_option("grid width", {"8", "16"}, 2) -- TODO: can now be inferred from grid metadata
   params:set_action("grid width", function(value) update_metro_time() end)
   params:add_option("last row cuts", {"no", "yes"}, 1)
   params:set_action("last row cuts", function(value)
@@ -275,37 +203,18 @@ init = function()
   Ack.add_params()
   params:bang()
 
-  --[[
-  if g then
-    g:all(0)
-    g:refresh()
-  end
-  ]]
   params:read("step.pset")
 
   playing = true
   timer:start()
 end
 
--- encoder function
 enc = function(n, delta)
   if n == 1 then
     norns.audio.adjust_output_level(delta)
   elseif n == 2 then
     params:delta("tempo", delta)
   elseif n == 3 then
-    --[[
-    if any_held() then
-      held = get_all_held()
-      for i,h in ipairs(held) do
-        local x = i%maxwidth
-        local y = i/maxwidth
-        print(x, y)
-      end
-    else
-      params:delta("swing amount", delta)
-    end
-    ]]
     params:delta("swing amount", delta)
   end
   redraw()
@@ -335,25 +244,6 @@ key = function(n, z)
 end
 
 redraw = function()
-  --[[
-  screen.clear()
-  screen.level(15)
-  screen.move(0,8)
-  screen.text("step")
-  screen.move(0, 24)
-  screen.text("tempo: "..params:string("tempo"))
-  screen.move(0, 32)
-  screen.text("swing: "..params:string("swing amount"))
-  screen.move(0, 48)
-  if playing then
-    screen.text("playing")
-    if playpos then
-      screen.text(" "..playpos+1)
-    end
-  else
-    screen.text("stopped")
-  end
-  ]]
   screen.clear()
   screen.level(15)
   screen.move(10,30)
@@ -390,15 +280,10 @@ redraw = function()
   screen.text("tempo")
   screen.move(70,60)
   screen.text("swing")
-
-  -- screen_update_voice_indicators()
-  -- screen_update_grid_indicator()
-  --
   screen.update()
 end
 
 gridkey = function(x, y, state)
-  -- TODO gridbutton_indicator_level = math.random(15)
   if state == 1 then
     if params:get("last row cuts") == 2 and y == 8 then
       queued_playpos = x-1
@@ -414,9 +299,6 @@ gridkey = function(x, y, state)
     if g then
       g:refresh()
     end
-    -- TODO set_held(x, y, true)
-  else
-    -- TODO set_held(x, y, false)
   end
   redraw()
 end
