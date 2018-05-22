@@ -56,6 +56,5 @@ Engine_Vocer : CroneEngine {
 		postln("Engine_Vocer: freeing");
 		voices.do({ |v| v.free; });
 		pm.do({ |k, m| m.free; });
-		super.free;
 	}
 }

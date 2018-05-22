@@ -2,7 +2,7 @@
 
 user data for the norns system
 
-- `script` - scripts, subfolders by author
+- `scripts` - scripts, subfolders by author
 - `lib/sc` - engines
 - `lib/lua` - lua modules
 - `data` - various script data, including `system.lua` which stores the last script run. authors/scripts can create their own subfolders here to store presets, audio data, etc.

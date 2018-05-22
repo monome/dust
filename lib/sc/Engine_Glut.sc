@@ -230,6 +230,5 @@ Engine_Glut : CroneEngine {
 		buffers.do({ arg b; b.free; });
 		effect.free;
 		mixBus.free;
-		super.free;
 	}
 }

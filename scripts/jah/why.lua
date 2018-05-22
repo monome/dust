@@ -1,3 +1,4 @@
+-- why.
 -- classic supercollider example
 -- by jmcc
 
@@ -9,7 +10,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    norns.audio.adjust_output_level(delta)
+    mix:delta("output", delta)
   end
 end
 

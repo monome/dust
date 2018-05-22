@@ -1,14 +1,16 @@
--- hello ack
+-- hello ack.
+-- sample player
+-- controlled by midi
 --
--- ack test script
---
--- midi controllable
+-- enc2: select sample
+-- enc3: change pitch
+-- key2: trig sample
+-- key3: all modifier
 --
 
 local ControlSpec = require 'controlspec'
 local Formatters = require 'jah/formatters'
 local Ack = require 'jah/ack'
-local FS = require 'fileselect'
 
 engine.name = 'Ack'
 
@@ -16,8 +18,6 @@ local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
 
 local selected_channel = 0
 local all_selected = false
-local midinote_indicator_level
-local midicc_indicator_level
 local note_downs = {}
 
 local function screen_update_channels()
@@ -43,17 +43,11 @@ local function screen_update_channels()
 end
 
 local function screen_update_midi_indicators()
-  --screen.move(125, 20)
   screen.move(0,60)
   screen.font_size(8)
   if midi_available then
     screen.level(15)
-    screen.text("midi:")
-    screen.text(" ")
-    screen.level(midinote_indicator_level)
-    screen.text("note ")
-    screen.level(midicc_indicator_level)
-    screen.text("cc")
+    screen.text("midi")
   else
     screen.level(3)
     screen.text("no midi")
@@ -91,7 +85,7 @@ local function note_on(note, velocity)
       if params:get("midi selects channel") == 2 then
         selected_channel = channel
       end
-      screen_update_channels()
+      redraw()
     end
   end
 end
@@ -100,7 +94,7 @@ local function note_off(note)
   local channel = channel_from_midinote(note)
   if channel then
     note_downs[channel] = false
-    screen_update_channels()
+    redraw()
   end
 end
 
@@ -126,19 +120,19 @@ local function cc(ctl, value)
   local spec
   if ctl == params:get("filter cutoff cc") then
     param = "filter cutoff"
-    spec = Ack.FILTER_CUTOFF_SPEC
+    spec = Ack.specs.filter_cutoff
     abs = params:get("filter cutoff cc type") == 1
   elseif ctl == params:get("filter res cc") then
     param = "filter res"
-    spec = Ack.FILTER_RES_SPEC
+    spec = Ack.specs.filter_res
     abs = params:get("filter res cc type") == 1
   elseif ctl == params:get("delay send cc") then
     param = "delay send"
-    spec = Ack.SEND_SPEC
+    spec = Ack.specs.send
     abs = params:get("delay send cc type") == 1
   elseif ctl == params:get("reverb send cc") then
     param = "reverb send"
-    spec = Ack.SEND_SPEC
+    spec = Ack.specs.send
     abs = params:get("reverb send cc type") == 1
   end
   if param then
@@ -183,11 +177,10 @@ init = function()
   params:add_option("delay send cc type", cc_type)
   params:add_option("reverb send cc", cc_list, 4)
   params:add_option("reverb send cc type", cc_type)
-  -- TODO params:add_option("trig on param change", bool)
 
   Ack.add_params()
 
-  -- params:read("param_ack.pset")
+  params:read("hello_ack.pset")
   params:bang()
 end
 
@@ -205,7 +198,7 @@ end
 
 enc = function(n, delta)
   if n == 1 then
-    norns.audio.adjust_output_level(delta)
+    mix:delta("output", delta)
     return
   elseif n == 2 then
     local new_selection
@@ -275,20 +268,20 @@ key = function(n, z)
   elseif n == 3 then
     all_selected = z == 1
     redraw()
-  elseif n==1 and z==1 then
-    FS.enter(os.getenv("HOME").."/dust", newfile)
   end
+end
+
+gridkey = function(x, y, z)
+	print(x, y, z)
 end
 
 cleanup = function()
   norns.midi.event = nil
-  -- params:write("param_ack.pset")
+  params:write("hello_ack.pset")
 end
 
 norns.midi.add = function(id, name, dev)
   midi_available = true
-  midinote_indicator_level = 3
-  midicc_indicator_level = 3
   redraw()
 end
 
@@ -303,27 +296,13 @@ norns.midi.event = function(id, data)
   data2 = data[3]
   if params:get("midi in") == 2 then
     if status == 144 then
-      midinote_indicator_level = math.random(15)
-      --[[
-      if data1 == 0 then
-        return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-      end
-      ]]
       note_on(data1, data2)
       redraw()
     elseif status == 128 then
-      --[[
-      if data1 == 0 then
-        return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-      end
-      ]]
       note_off(data1)
     elseif status == 176 then
-      midicc_indicator_level = math.random(15)
       cc(data1, data2)
       redraw()
-    elseif status == 224 then
-      bend(data1, data2)
     end
   end
 end
