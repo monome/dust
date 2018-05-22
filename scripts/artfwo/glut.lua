@@ -1,6 +1,13 @@
 -- glut
 --
 -- granular sampler in progress
+-- (currently requires a grid)
+--
+-- trigger voices
+-- using grid rows 2-8
+--
+-- mute voices and record
+-- patterns using grid row 1
 --
 
 engine.name = 'Glut'
