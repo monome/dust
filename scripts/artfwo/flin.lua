@@ -1,4 +1,11 @@
+-- flin
+--
 -- cyclic poly-rhythm music box
+--
+-- originally by tehn
+--
+-- press buttons on the grid to
+-- start cycling notes
 
 engine.name = 'PolySub'
 
