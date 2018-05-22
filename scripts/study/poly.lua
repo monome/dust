@@ -171,7 +171,7 @@ end
 
 enc = function(n,delta)
 	if n == 1 then
-		norns.audio.adjust_output_level(delta) 
+		mix:delta("output", delta)
 	elseif n==2 then
 		cur_param_id = util.clamp(cur_param_id + delta,1,tab.count(pparams))
 	elseif n==3 then
