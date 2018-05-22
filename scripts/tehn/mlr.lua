@@ -235,11 +235,13 @@ held = {}
 heldmax = {}
 done = {}
 first = {}
+second = {}
 for i = 1,8 do
   held[i] = 0
   heldmax[i] = 0
   done[i] = 0
   first[i] = 0
+  second[i] = 0
 end
 
 
@@ -601,6 +603,8 @@ v.gridkey[vCUT] = function(x, y, z)
         --print("pos > "..cut)
         e = {} e.t = eCUT e.i = i e.pos = cut
         event(e)
+      elseif y<6 and held[y]==2 then
+        second[y] = x
       end 
     elseif z==0 then
       if y<6 and held[y] == 1 and heldmax[y]==2 then
@@ -608,8 +612,8 @@ v.gridkey[vCUT] = function(x, y, z)
         e.t = eLOOP
         e.i = i
         e.loop = 1
-        e.loop_start = first[y]
-        e.loop_end = x
+        e.loop_start = math.min(first[y],second[y])
+        e.loop_end = math.max(first[y],second[y])
         event(e)
       end
     end 
