@@ -105,7 +105,7 @@ Engine_Ack : CroneEngine {
 				filterResSlew,
 				*/
 				|
-				var phase = sampleStart + Sweep.ar(1, (speed*BufRateScale.kr(bufnum)).poll);
+				var phase = sampleStart + Sweep.ar(1, speed/BufDur.kr(bufnum));
 		
 				var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
 		
@@ -115,10 +115,10 @@ Engine_Ack : CroneEngine {
 		
 				PauseSelf.kr(phase > sampleEnd);
 				
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
-					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv),
+					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
 					filterRes,
 					filterLowpassLevel,
 					filterBandpassLevel,
@@ -213,7 +213,7 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
 					filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv),
@@ -309,13 +309,13 @@ Engine_Ack : CroneEngine {
 				var startPos = bufFrames * sampleStart;
 				var endLoop = bufFrames * sampleEnd;
 				var startLoop = startPos + ((endLoop-startPos)*loopPoint);
-				var sig = LoopBuf.ar(1, bufnum, speed, 1, startPos, startLoop, endLoop, 4);
+				var sig = LoopBuf.ar(1, bufnum, speed*BufRateScale.kr(bufnum), 1, startPos, startLoop, endLoop, 4);
 
 				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
 					filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv),
@@ -407,7 +407,7 @@ Engine_Ack : CroneEngine {
 				filterResSlew,
 				*/
 				|
-				var phase = sampleStart + Sweep.ar(1, speed * BufRateScale.kr(bufnum));
+				var phase = sampleStart + Sweep.ar(1, speed/BufDur.kr(bufnum));
 		
 				var sig = BufRd.ar(2, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
 		
@@ -417,10 +417,10 @@ Engine_Ack : CroneEngine {
 		
 				PauseSelf.kr(phase > sampleEnd);
 				
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
-					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv),
+					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
 					filterRes,
 					filterLowpassLevel,
 					filterBandpassLevel,
@@ -515,7 +515,7 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
 					filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv),
@@ -611,13 +611,13 @@ Engine_Ack : CroneEngine {
 				var startPos = bufFrames * sampleStart;
 				var endLoop = bufFrames * sampleEnd;
 				var startLoop = startPos + ((endLoop-startPos)*loopPoint);
-				var sig = LoopBuf.ar(2, bufnum, speed, 1, startPos, startLoop, endLoop, 4);
+				var sig = LoopBuf.ar(2, bufnum, speed*BufRateScale.kr(bufnum), 1, startPos, startLoop, endLoop, 4);
 
 				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes);
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
 					sig,
 					filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv),
