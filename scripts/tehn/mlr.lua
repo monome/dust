@@ -21,33 +21,25 @@
 
 engine.name = "SoftCut"
 
-TRACKS = 4
-FADE = 0.01
+local TRACKS = 4
+local FADE = 0.01
 
-vREC = 1
-vCUT = 2 
-vCLIP = 3
-vTIME = 15
+local vREC = 1
+local vCUT = 2 
+local vCLIP = 3
+local vTIME = 15
 
 -- events
-eCUT = 1
-eSTOP = 2
-eSTART = 3
-eLOOP = 4
-eSPEED = 5
-eREV = 6
+local eCUT = 1
+local eSTOP = 2
+local eSTART = 3
+local eLOOP = 4
+local eSPEED = 5
+local eREV = 6
 
-quantize = 0
-quantizer = metro.alloc()
-quantizer.time = 0.125
-quantizer.count = -1
-quantizer.callback = event_q_clock
+local quantize = 0
 
-quantize_init = function()
-  quantizer:start()
-end
-
-update_tempo = function()
+local function update_tempo()
   local t = params:get("tempo")
   local d = params:get("quant_div")
   local interval = (60/t) / d
@@ -413,11 +405,15 @@ init = function()
     params:set_action("speed_mod"..i, function() update_rate(i) end)
   end 
 
-  quantize_init()
+  quantizer = metro.alloc()
+  quantizer.time = 0.125
+  quantizer.count = -1
+  quantizer.callback = event_q_clock 
+  quantizer:start() 
   pattern_init()
   set_view(vREC)
   update_tempo()
-  
+
   gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
   gridredrawtimer:start()
 
@@ -722,20 +718,24 @@ end
 --------------------CLIP
 function fileselect_callback(path)
   if path ~= "cancel" then
-    print("file > "..path.." "..clip[track[clip_sel].clip].s)
-    engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
-    local ch, len = sound_file_inspect(path)
-    print("file length > "..len)
-    set_clip_length(track[clip_sel].clip, len/48000) 
-    local bpm = 60 / (len/48000)
-    while bpm < 60 do 
-      bpm = bpm * 2
-      print("bpm > "..bpm)
+    if path:find(".aif") or path:find(".wav") then
+      print("file > "..path.." "..clip[track[clip_sel].clip].s)
+      engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
+      local ch, len = sound_file_inspect(path)
+      print("file length > "..len)
+      set_clip_length(track[clip_sel].clip, len/48000) 
+      local bpm = 60 / (len/48000)
+      while bpm < 60 do 
+        bpm = bpm * 2
+        print("bpm > "..bpm)
+      end
+      clip[track[clip_sel].clip].bpm = bpm 
+      clip[track[clip_sel].clip].name = path:match("[^/]*$")
+      set_clip(clip_sel,track[clip_sel].clip)
+      update_rate(clip_sel)
+    else
+      print("not a sound file")
     end
-    clip[track[clip_sel].clip].bpm = bpm 
-    clip[track[clip_sel].clip].name = path:match("[^/]*$")
-    set_clip(clip_sel,track[clip_sel].clip)
-    update_rate(clip_sel)
 
     -- TODO re-set_clip any tracks with this clip loaded
     redraw()
@@ -743,16 +743,19 @@ function fileselect_callback(path)
 end 
 
 v.key[vCLIP] = function(n,z)
-  if n==3 and z==0 then
+  if n==2 and z==0 then
     fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
   end
 end
 
-clip_sel = 1
+local clip_sel = 1
+local clip_clear_mult = 3
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel+d,1,4)
+    clip_sel = util.clamp(clip_sel-d,1,4)
+  elseif n==3 then
+    clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end 
   redraw()
   dirtygrid=true
@@ -769,6 +772,12 @@ v.redraw[vCLIP] = function()
   screen.level(3)
   screen.move(10,60)
   screen.text("name "..track[clip_sel].clip)
+
+  screen.move(70,50)
+  screen.text(2^(clip_clear_mult-2))
+  screen.level(3)
+  screen.move(70,60)
+  screen.text("clear/resize")
 
   screen.update()
 end
@@ -839,25 +848,25 @@ end
 
 
 
-
-
-
-norns.midi.event = function(id, data) -- FIXME this should use midi.event (needs setup)
-	--tab.print(data)
+-- map cc's to track volumes
+local function midi_event(data)
   if data[1] == 176 then
-    --print(data[2] .. " " .. data[3])
     if(data[2] < 4) then
-      --print("vol"..(data[2]+1).." "..data[3]/127)
-
       params:set("vol"..(data[2]+1),data[3]/127)
     end
-    
-		--cc(data1, data2)
 	end
 end
 
+midi.add = function(dev)
+  print('mlr: midi device added', dev.id, dev.name)
+  dev.event = midi_event
+end
 
-
-cleanup = function()
-  -- polls/timers autostopped
-end 
+function cleanup()
+  engine.stopAll()
+  pat:stop()
+  pat = nil
+  for id,dev in pairs(midi.devices) do
+    dev.event = nil
+  end
+end

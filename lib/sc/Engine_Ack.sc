@@ -794,8 +794,6 @@ Engine_Ack : CroneEngine {
 		reverbBus.free;
 		delaySynth.free;
 		reverbSynth.free;
-
-		super.free;
 	}
 
 	sampleIsLoaded { |channelnum| ^buffers[channelnum].path.notNil }

@@ -40,6 +40,5 @@ Engine_Sines : CroneEngine {
 
 	free {
 		synth.do({ |syn| syn.free; });
-		super.free;
 	}
 }

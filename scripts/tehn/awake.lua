@@ -51,7 +51,7 @@ function build_scale()
   --tab.print(freqs) 
 end 
 
-init = function()
+function init()
   print("grid/seek")
 
   params:add_number("tempo",1,240,48)
@@ -110,12 +110,13 @@ init = function()
     redraw()
   end
 
+  params:read("awake.pset")
   params:bang()
 
   t:start()
 end
 
-gridkey = function(x, y, z) 
+function gridkey(x, y, z)
   if z > 0 then
     if edit_mode == 1 then
       if one.data[x] == 9-y then
@@ -135,7 +136,7 @@ gridkey = function(x, y, z)
   end 
 end
 
-gridredraw = function()
+function gridredraw()
   g:all(0) 
   if edit_mode == 1 then
     for x = 1, 16 do
@@ -159,7 +160,7 @@ gridredraw = function()
   g:refresh()
 end
 
-enc = function(n, delta)
+function enc(n, delta)
   if alt and n==1 then
     params:delta("scale mode",delta)
   elseif KEY3 and n==1 then
@@ -187,7 +188,7 @@ enc = function(n, delta)
   redraw()
 end
 
-key = function(n,z)
+function key(n,z)
   if n==1 then
     alt = z==1
   elseif n == 3 and z == 1 then
@@ -214,7 +215,7 @@ key = function(n,z)
   end
 end
 
-redraw = function()
+function redraw()
   screen.clear()
   screen.line_width(1)
   screen.aa(0)

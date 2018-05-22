@@ -40,6 +40,5 @@ Engine_Why : CroneEngine {
 
 	free {
 		synth.free;
-		super.free;
 	}
 }
