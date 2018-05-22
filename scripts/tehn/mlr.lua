@@ -21,6 +21,8 @@
 
 engine.name = "SoftCut"
 
+local pattern_time = require 'pattern_time'
+
 local TRACKS = 4
 local FADE = 0.01
 
@@ -53,32 +55,28 @@ local function update_tempo()
 end
 
 
-event = function(e)
+function event(e)
   if quantize == 1 then
     event_q(e)
   else 
     for i=1,4 do
-      if pattern[i].rec == 1 then
-        pattern_rec_event(i,e)
-      end
+      pattern[i]:watch(e)
     end 
     event_exec(e)
   end
 end
 
-quantize_events = {}
+local quantize_events = {}
 
-event_q = function(e)
+function event_q(e)
   table.insert(quantize_events,e)
 end
 
-event_q_clock = function()
+function event_q_clock()
   if #quantize_events > 0 then
     for k,e in pairs(quantize_events) do
       for i=1,4 do
-        if pattern[i].rec == 1 then
-          pattern_rec_event(i,e)
-        end
+        pattern[i]:watch(e)
       end 
       event_exec(e)
     end
@@ -87,7 +85,7 @@ event_q_clock = function()
 end
 
 
-event_exec = function(e) 
+function event_exec(e)
   if e.t==eCUT then
     if track[e.i].loop == 1 then
       track[e.i].loop = 0
@@ -142,92 +140,14 @@ end
 
 ------ patterns
 pattern = {}
-
-pattern_init = function()
-  for i=1,4 do
-    pattern[i] = {}
-    pattern_clear(i)
-  end
-end 
-
-pattern_clear = function(x)
-  print("clear pattern "..x)
-  pattern[x].rec = 0
-  pattern[x].play = 0
-  pattern[x].prev_time = 0
-  pattern[x].event = {}
-  pattern[x].time = {}
-  pattern[x].count = 0
-  pattern[x].step = 0
-
-  pattern[x].metro = metro.alloc()
-  pattern[x].metro.count = 1
-  pattern[x].metro.callback = function(n) pattern_next(x) end
-end
-
-pattern_rec_start = function(x)
-  print("pattern rec start "..x)
-  pattern[x].rec = 1
-end
-
-pattern_rec_stop = function(x)
-  if pattern[x].rec == 1 then
-    pattern[x].rec = 0
-    if pattern[x].count ~= 0 then
-      print("count "..pattern[x].count)
-      local t = pattern[x].prev_time
-      pattern[x].prev_time = util.time()
-      pattern[x].time[pattern[x].count] = pattern[x].prev_time - t
-      --tab.print(pattern[x].time)
-    else
-      print("no events recorded")
-    end 
-  else print("not recording")
-  end
-end
-
-pattern_rec_event = function(x,e)
-  local c = pattern[x].count + 1
-  if c == 1 then
-    pattern[x].prev_time = util.time() 
-    --print("first event")
-  else
-    local t = pattern[x].prev_time
-    pattern[x].prev_time = util.time()
-    pattern[x].time[c-1] = pattern[x].prev_time - t
-    --print(pattern[x].time[c-1])
-  end
-  pattern[x].count = c
-  pattern[x].event[c] = e
-end
-
-pattern_start = function(x)
-  print("start pattern "..x)
-  event_exec(pattern[x].event[1])
-  pattern[x].play = 1
-  pattern[x].step = 1
-  pattern[x].metro.time = pattern[x].time[1]
-  pattern[x].metro:start() 
-end 
-
-pattern_next = function(x)
-  if pattern[x].step == pattern[x].count then pattern[x].step = 1
-  else pattern[x].step = pattern[x].step + 1 end 
-  --print("next step "..pattern[x].step)
-  event_exec(pattern[x].event[pattern[x].step])
-  pattern[x].metro.time = pattern[x].time[pattern[x].step]
-  --print("next time "..pattern[x].metro.time)
-  pattern[x].metro:start() 
-end
-
-pattern_stop = function(x)
-  if pattern[x].play == 1 then
-    print("stop pattern "..x)
-    pattern[x].play = 0
-    pattern[x].metro:stop()
-  else print("not playing") end
-end
-  
+pattern[1] = pattern_time.new()
+pattern[2] = pattern_time.new()
+pattern[3] = pattern_time.new()
+pattern[4] = pattern_time.new()
+pattern[1].process = event_exec
+pattern[2].process = event_exec
+pattern[3].process = event_exec
+pattern[4].process = event_exec
 
 view = vREC
 view_prev = view
@@ -410,7 +330,7 @@ init = function()
   quantizer.count = -1
   quantizer.callback = event_q_clock 
   quantizer:start() 
-  pattern_init()
+  --pattern_init()
   set_view(vREC)
   update_tempo()
 
@@ -457,16 +377,16 @@ gridkey_nav = function(x,z)
     elseif x>4 and x <9 then
       i = x - 4 
       if alt == 1 then
-        pattern_rec_stop(i)
-        pattern_stop(i)
-        pattern_clear(i)
+        pattern[i]:rec_stop()
+        pattern[i]:stop()
+        pattern[i]:clear()
       elseif pattern[i].rec == 1 then
-        pattern_rec_stop(i)
+        pattern[i]:rec_stop()
       elseif pattern[i].count == 0 then
-        pattern_rec_start(i)
+        pattern[i]:rec_start()
       elseif pattern[i].play == 1 then
-        pattern_stop(i)
-      else pattern_start(i)
+        pattern[i]:stop()
+      else pattern[i]:start()
       end 
     elseif x==15 and alt == 0 then 
       quantize = 1 - quantize
@@ -714,8 +634,11 @@ end
 
 
 
-
 --------------------CLIP
+
+clip_sel = 1
+clip_clear_mult = 3 
+
 function fileselect_callback(path)
   if path ~= "cancel" then
     if path:find(".aif") or path:find(".wav") then
@@ -747,9 +670,6 @@ v.key[vCLIP] = function(n,z)
     fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
   end
 end
-
-local clip_sel = 1
-local clip_clear_mult = 3
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
@@ -864,8 +784,10 @@ end
 
 function cleanup()
   engine.stopAll()
-  pat:stop()
-  pat = nil
+  for i=1,4 do
+    pattern[i]:stop()
+    pattern[i] = nil
+  end
   for id,dev in pairs(midi.devices) do
     dev.event = nil
   end
