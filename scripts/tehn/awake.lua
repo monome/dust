@@ -1,18 +1,27 @@
 -- awake: time changes 
+-- (grid optional)
+--
+-- top sequence plays.
+-- bottom sequence adds
+-- modifies note played.
 --
 -- ENC1 = tempo
 -- ENC2 = nav
 -- ENC3 = edit
--- KEY2 = mutate
--- KEY3 = toggle
+-- KEY2 = morph
+-- KEY3 = toggle edit
 --
--- KEY3 + 2 = reset pos
--- KEY3 hold + ENC2/3 = length
+-- KEY3 hold + KEY2 = reset pos
+-- KEY3 hold + ENC1 = transpose
+-- KEY3 hold + ENC2/3 = lengths
 --
 -- KEY1 hold = ALT
 -- ALT+ENC1 = scale mode
 -- ALT+ENC2 = filter
 -- ALT+ENC3 = release
+--
+-- modify sound params in
+-- SYSTEM > AUDIO menu
 
 local cs = require 'controlspec'
 
@@ -44,7 +53,7 @@ function build_scale()
   local n = 0
   for i=1,16 do
     notes[i] = n
-    n = n + scale_degrees[(params:get("scale mode") + n)%7 + 1]
+    n = n + scale_degrees[(params:get("scale mode") + i)%7 + 1]
   end
   --tab.print(notes)
   for i=1,16 do freqs[i] = 110*2^((notes[i]+params:get("trans"))/12) end
@@ -54,11 +63,11 @@ end
 function init()
   print("grid/seek")
 
-  params:add_number("tempo",1,240,48)
+  params:add_number("tempo",20,240,48)
   params:set_action("tempo", function(n) 
     t.time = 15/n
   end) 
-  params:add_number("scale mode",1,7,1)
+  params:add_number("scale mode",1,7,3)
   params:set_action("scale mode", function(n) 
     build_scale()
   end) 
@@ -71,27 +80,27 @@ function init()
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
   params:add_control("amp",cs.AMP)
   params:set_action("amp",
-    function(x) engine.amp(x) end) 
+  function(x) engine.amp(x) end) 
 
   cs.PW = cs.new(0,100,'lin',0,50,'%')
   params:add_control("pw",cs.PW)
   params:set_action("pw",
-    function(x) engine.pw(x/100) end) 
+  function(x) engine.pw(x/100) end) 
 
   cs.REL = cs.new(0.1,3.2,'lin',0,1.2,'s') 
   params:add_control("release",cs.REL)
   params:set_action("release",
-    function(x) engine.release(x) end) 
+  function(x) engine.release(x) end) 
 
   cs.CUT = cs.new(50,5000,'exp',0,480,'hz')
   params:add_control("cutoff",cs.CUT)
   params:set_action("cutoff",
-    function(x) engine.cutoff(x) end) 
+  function(x) engine.cutoff(x) end) 
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
   params:add_control("gain",cs.GAIN)
   params:set_action("gain",
-    function(x) engine.gain(x) end) 
+  function(x) engine.gain(x) end) 
 
   t = metro.alloc()
   t.count = -1
@@ -204,11 +213,15 @@ function key(n,z)
     else
       if edit_mode == 1 then
         for i=1,one.length do
-          one.data[i] = util.clamp(one.data[i]+math.floor(math.random()*3)-1,0,8)
+          if one.data[i] > 0 then
+            one.data[i] = util.clamp(one.data[i]+math.floor(math.random()*3)-1,0,8)
+          end
         end
       else
         for i=1,two.length do
-          two.data[i] = util.clamp(two.data[i]+math.floor(math.random()*3)-1,0,8)
+          if two.data[i] > 0 then
+            two.data[i] = util.clamp(two.data[i]+math.floor(math.random()*3)-1,0,8)
+          end
         end
       end 
     end
