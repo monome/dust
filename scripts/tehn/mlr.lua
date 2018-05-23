@@ -160,7 +160,7 @@ v.gridkey = {}
 v.gridredraw = {}
 
 viewinfo = {}
-viewinfo[vREC] = 0
+viewinfo[vREC] = 1
 viewinfo[vCUT] = 0
 viewinfo[vTIME] = 0
 
@@ -186,15 +186,30 @@ for i=1,7 do
   track[i].tempo_map = 0
 end
 
+
+set_clip_length = function(i, len)
+  clip[i].l = len
+  clip[i].e = clip[i].s + len
+  local bpm = 60 / len
+  while bpm < 60 do 
+    bpm = bpm * 2
+    print("bpm > "..bpm)
+  end
+  clip[i].bpm = bpm 
+end 
+
+clip_reset = function(i, length)
+  set_clip_length(i, length)
+  clip[i].name = "-"
+end
+
 clip = {}
 for i=1,16 do
   clip[i] = {}
   clip[i].s = 2+ (i-1)*16
-  clip[i].l = 4
-  clip[i].e = clip[i].s + clip[i].l
   clip[i].name = "-"
-  clip[i].bpm = 1
-end
+  set_clip_length(i,4)
+end 
 
 
 
@@ -212,11 +227,6 @@ calc_quant_off = function(i, q)
   off = off - clip[track[i].clip].s
   print("off > "..off)
   return off
-end
-
-set_clip_length = function(i, len)
-  clip[i].l = len
-  clip[i].e = clip[i].s + len
 end
 
 set_clip = function(i, x) 
@@ -663,12 +673,6 @@ function fileselect_callback(path)
       local ch, len = sound_file_inspect(path)
       print("file length > "..len)
       set_clip_length(track[clip_sel].clip, len/48000) 
-      local bpm = 60 / (len/48000)
-      while bpm < 60 do 
-        bpm = bpm * 2
-        print("bpm > "..bpm)
-      end
-      clip[track[clip_sel].clip].bpm = bpm 
       clip[track[clip_sel].clip].name = path:match("[^/]*$")
       set_clip(clip_sel,track[clip_sel].clip)
       update_rate(clip_sel)
@@ -684,6 +688,10 @@ end
 v.key[vCLIP] = function(n,z)
   if n==2 and z==0 then
     fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+  elseif n==3 and z==1 then
+    clip_reset(clip_sel,60/params:get("tempo")*(2^(clip_clear_mult-2))) 
+    set_clip(clip_sel,track[clip_sel].clip)
+    update_rate(clip_sel)
   end
 end
 
@@ -713,7 +721,7 @@ v.redraw[vCLIP] = function()
   screen.text(2^(clip_clear_mult-2))
   screen.level(3)
   screen.move(70,60)
-  screen.text("clear/resize")
+  screen.text("resize")
 
   screen.update()
 end
