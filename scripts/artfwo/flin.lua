@@ -11,14 +11,17 @@ engine.name = 'PolySub'
 
 local GRID_HEIGHT = 8
 local DURATION_1 = 1 / 20
-local FRAMERATE = 1 / 60
+local GRID_FRAMERATE = 1 / 60
+local SCREEN_FRAMERATE = 1 / 30
 
 local notes = { 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28 }
 local cycles = {}
 local cycle_metros = {}
 local current_cycle = 1
+local transpose = 48
 
-local refresh_metro
+local grid_refresh_metro
+local screen_refresh_metro
 
 local function midicps(m)
   return (440 / 32) * math.pow(2, (m - 9) / 12)
@@ -76,6 +79,7 @@ end
 
 local function stop_cycle(x)
   cycle_metros[x]:stop()
+  cycle_metros[x].callback = nil
   cycles[x].running = false
   draw_cycle(x)
   engine.stop(x)
@@ -100,6 +104,9 @@ function init()
   params:add_number("transpose", 0, 127, 48)
 
   params:add_separator()
+
+  params:add_control("legato", controlspec.new(0, 3, "lin", 0, 0.1, "s"))
+  params:set_action("legato", function(x) engine.hzLag(x) end)
 
   params:add_control("shape", controlspec.new(0,1,"lin",0,0,""))
   params:set_action("shape", function(x) engine.shape(x) end)
@@ -148,14 +155,19 @@ function init()
 
   if g then g:all(0) end
 
-  refresh_metro = metro.alloc()
-  refresh_metro.time = FRAMERATE
-
-  refresh_metro.callback = function(stage)
+  grid_refresh_metro = metro.alloc()
+  grid_refresh_metro.time = GRID_FRAMERATE
+  grid_refresh_metro.callback = function(stage)
     if g then g:refresh() end
   end
+  grid_refresh_metro:start()
 
-  refresh_metro:start()
+  screen_refresh_metro = metro.alloc()
+  screen_refresh_metro.time = SCREEN_FRAMERATE
+  screen_refresh_metro.callback = function(stage)
+    redraw()
+  end
+  screen_refresh_metro:start()
 end
 
 function gridkey(x, y, s)
@@ -183,12 +195,27 @@ function gridkey(x, y, s)
   end
 end
 
+function key(n, z)
+  if z == 1 then
+    if n == 2 then
+      current_cycle = util.clamp(current_cycle - 1, 1, 16)
+      redraw()
+    elseif n == 3 then
+      current_cycle = util.clamp(current_cycle + 1, 1, 16)
+      redraw()
+    end
+  end
+end
+
 function enc(n, d)
-  if n == 2 then
+  if n == 1 then
+    mix:delta("output", d)
+    redraw()
+  elseif n == 2 then
     current_cycle = util.clamp(current_cycle + d, 1, 16)
     redraw()
   elseif n == 3 then
-    notes[current_cycle] = notes[current_cycle] + d
+    notes[current_cycle] = util.clamp(notes[current_cycle] + d, -32, 32)
     redraw()
   end
 end
@@ -196,9 +223,28 @@ end
 function redraw()
   screen.clear()
 
+  screen.level(1)
+  screen.move(0, 32)
+  screen.line(128,32)
+  screen.stroke()
+
   for i=1,16 do
-    screen.level(i == current_cycle and 15 or 3)
-    screen.rect ((i-1) * 8, 32, 5, -notes[i])
+    local x = (i-1) * 8
+    local y = 32 - notes[i] - 2
+
+    if i == current_cycle then
+      screen.level(1)
+      screen.move(x+2, 0)
+      screen.line(x+2, 64)
+      screen.stroke()
+    end
+
+    if cycles[i].leds[1] > 0 then
+      screen.level(15)
+    else
+      screen.level(i == current_cycle and 7 or 2)
+    end
+    screen.rect (x, y, 5, 4)
     screen.fill()
   end
 
