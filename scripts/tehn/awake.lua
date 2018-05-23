@@ -92,7 +92,7 @@ function init()
   params:set_action("release",
   function(x) engine.release(x) end) 
 
-  cs.CUT = cs.new(50,5000,'exp',0,880,'hz')
+  cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
   params:add_control("cutoff",cs.CUT)
   params:set_action("cutoff",
   function(x) engine.cutoff(x) end) 
