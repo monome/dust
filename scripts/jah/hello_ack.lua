@@ -300,7 +300,6 @@ cleanup = function()
   params:write("hello_ack.pset")
 end
 
--- TODO: look at other scripts for midi best practices ?
 norns.midi.add = function(id, name, dev)
   midi_available = true
   redraw()
