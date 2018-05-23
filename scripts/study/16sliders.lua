@@ -7,22 +7,22 @@
 -- key 2 = random walk
 -- key 3 = mutate
 
-sliders = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-edit = 1
-accum = 1
-step = 0
+local sliders = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+local edit = 1
+local accum = 1
+local step = 0
 
 engine.name = 'TestSine'
 
 
-init = function()
+function init()
   print("16sliders: loaded engine")
   engine.hz(100)
   engine.amp(0.1)
   k:start()
 end
 
-k = metro[1]
+local k = metro[1]
 k.count = -1
 k.time = 0.1
 k.callback = function(stage)
@@ -32,7 +32,7 @@ k.callback = function(stage)
 end
 
 
-enc = function(n, delta)
+function enc(n, delta)
   if n == 2 then
     accum = (accum + delta) % 16
     edit = accum
@@ -44,9 +44,9 @@ enc = function(n, delta)
   redraw()
 end
 
-key = function(n, z)
+function key(n, z)
   if n == 2 and z == 1 then
-    sliders[1] = math.random()*4
+    sliders[1] = math.floor(math.random()*4)
     for i=2, 16 do
       sliders[i] = sliders[i-1]+math.floor(math.random()*9)-3
     end
@@ -59,7 +59,7 @@ key = function(n, z)
   end
 end
 
-redraw = function()
+function redraw()
   screen.aa(1)
   screen.line_width(1.0)
   screen.clear()
