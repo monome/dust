@@ -19,6 +19,7 @@ local seq = metro.alloc() -- main timer
 local n = 8 -- length of window
 local m = 16 -- length of history
 
+local hz_ratio = 1
 local hzin = 55.0 -- current input pitch
 local phz -- hz poll
 
@@ -27,7 +28,7 @@ local offset = 0
 local offset_max = num_sines - 8
 local rule = 126
 
-local dt = 0.125
+local dt = 0.63
 
 engine.name = 'Sines'
 
@@ -74,15 +75,29 @@ enc = function(n, z)
       if dt < 0.01 then dt = 0.01 end
       seq.time = dt
       for i=1,num_sines do 
-	 engine.amplag(i, 0.5 * dt)
+	 engine.amp_atk(i, 0.125 * dt)
+	 engine.amp_rel(i, 2.0 * dt)
       end
    end
+   update_screen()
+end
+
+function update_screen()
+   screen.clear()
+   screen.level(15)
+   screen.move(10, 20)
+   screen.text("time step: " .. dt)
+   screen.move(10, 30)
+   screen.text("offset: " .. ca.offset)
+   screen.move(10, 40)
+   screen.text("hz: " .. hzin .. " * " .. hz_ratio)
+   screen.update()
 end
 
 function refresh_grid_ca()
    if g == nil then return end
    local val
-   for i=2, 16 do
+   for i=5, 16 do
       if i == 16 then val = 12 else val = 4 end
       local col = history[i]
       local z
@@ -125,8 +140,10 @@ gridkey = function(x, y, z)
    if x == 16 then      
       if z == 0 then return end
       y = y + offset
-      if ca.state[y] > 0 then ca.state[y] = 0 else ca.state[y] = 1 end
-   elseif x > 1 then      
+      if ca.state[y] > 0 then ca.state[y] = 0 else ca.state[y] = 1 end      
+      refresh_grid_ca()
+      refresh_amp()
+   elseif x > 4 then      
       if z == 0 then return end
       -- earlier rows - change the rule such that it would have produced a different value
       -- (and change the state too)
@@ -145,16 +162,26 @@ gridkey = function(x, y, z)
       refresh_grid_ca()
       refresh_amp()
    else
-      if z > 0 then
-	 set_hz(y)
+      if z == 1 then
+	 set_hz(y, 0.5)
+      elseif z == 2 then
+	 set_hz(y, 1.0)
+      elseif z == 3 then
+	 set_hz(y, 2.0)
+      elseif z == 4 then
+	 set_hz(y, 4.0)
       end
-      g:led(1, y, z)
+      g:led(x, y, z)
       g:refresh()
    end
 end
 
-set_hz = function(i)
-   engine.hz(i + offset, hzin)
+set_hz = function(i, ratio)
+   if hzin > 0 then
+      if ratio ~= nil then hz_ratio = ratio end
+      engine.hz(i + offset, hzin * hz_ratio)
+      update_screen()
+   end
 end
 
 
@@ -168,19 +195,14 @@ seq.callback = function(stage)
 
    refresh_grid_ca()
    refresh_amp()
-
-   -- check GC
-   local kb = math.floor(collectgarbage("count"))
-   local str = "used: " .. kb .. " kB"
-   
 end
 
 init = function()
    
    -- wrapped harmonix
    for i=1,num_sines do
-      local hz = 55 * (i+3)
-      while hz > 1000 do hz = hz / 2 end
+      local hz = 27.5 * (i+3)
+      while hz > 3520  do hz = hz / 4 end
       print(hz)
       engine.hz(i, hz)
       -- without this sleep, some of the messages seem to get lost :/
@@ -192,11 +214,8 @@ init = function()
    phz = poll.set('pitch_in_l', function(f) hzin = f end)
    phz:start()
    
-   seq.time = 0.125
+   seq.time = dt
    seq:start()
 end
 
-function copy_history(newcol)
-   for x in 1,n do
-   end
-end
+

@@ -92,7 +92,7 @@ function init()
   params:set_action("release",
   function(x) engine.release(x) end) 
 
-  cs.CUT = cs.new(50,5000,'exp',0,480,'hz')
+  cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
   params:add_control("cutoff",cs.CUT)
   params:set_action("cutoff",
   function(x) engine.cutoff(x) end) 
@@ -202,8 +202,13 @@ function key(n,z)
     alt = z==1
   elseif n == 3 and z == 1 then
     KEY3 = true
-    if edit_mode == 1 then edit_mode = 2
-    else edit_mode = 1 end
+    if edit_mode == 1 then
+      edit_mode = 2
+      if edit_pos > two.length then edit_pos = two.length end
+    else
+      edit_mode = 1
+      if edit_pos > one.length then edit_pos = one.length end
+    end
   elseif n==3 and z==0 then
     KEY3 = false
   elseif n == 2 and z == 1 then
@@ -232,25 +237,27 @@ function redraw()
   screen.clear()
   screen.line_width(1)
   screen.aa(0)
-  screen.move(26 + edit_pos*6 + 2, edit_mode==1 and 3 or 33)
-  screen.line_rel(0,27)
-  screen.level(1)
+  screen.move(26 + edit_pos*6, edit_mode==1 and 33 or 63)
+  screen.line_rel(4,0)
+  screen.level(15)
   screen.stroke()
-  screen.move(34,30)
-  screen.line_rel(one.length*6-6,0)
+  screen.move(32,30)
+  screen.line_rel(one.length*6-2,0)
   screen.level(2)
   screen.stroke()
-  screen.move(34,60)
-  screen.line_rel(two.length*6-6,0)
+  screen.move(32,60)
+  screen.line_rel(two.length*6-2,0)
   screen.level(2)
   screen.stroke()
-  for i=1,16 do
+  for i=1,one.length do
     if one.data[i] > 0 then
       screen.move(26 + i*6, 30 - one.data[i]*3)
       screen.line_rel(4,0)
       screen.level(i == one.pos and 15 or (edit_mode == 1 and 4 or 1))
       screen.stroke()
     end
+  end
+  for i=1,two.length do
     if two.data[i] > 0 then
       screen.move(26 + i*6, 60 - two.data[i]*3)
       screen.line_rel(4,0)
