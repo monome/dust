@@ -1,11 +1,29 @@
 -- hello ack.
 -- sample player
--- controlled by midi
+-- controlled by grid or midi
 --
 -- enc2: select sample
--- enc3: change pitch
+-- enc3: change pitch*
 -- key2: trig sample
 -- key3: all modifier
+--
+-- *more parameters in
+-- menu > parameters
+--
+-- grid bottom row:
+-- trigger samples
+--
+-- midi notes:
+-- trigger samples
+--
+-- midi cc:
+-- tweak cutoff, resonance,
+-- reverb, delay of selected
+-- sample(s)
+--
+-- midi notes and cc are 
+-- configurable in
+-- menu > parameters
 --
 
 local ControlSpec = require 'controlspec'
@@ -13,6 +31,8 @@ local Formatters = require 'jah/formatters'
 local Ack = require 'jah/ack'
 
 engine.name = 'Ack'
+
+local midi_note_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
 
 local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
 
@@ -280,6 +300,7 @@ cleanup = function()
   params:write("hello_ack.pset")
 end
 
+-- TODO: look at other scripts for midi best practices ?
 norns.midi.add = function(id, name, dev)
   midi_available = true
   redraw()
