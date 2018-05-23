@@ -6,8 +6,12 @@
 -- specify dsp engine to load:
 engine.name = 'TestSine'
 
+function init()
+  engine.amp(0)
+end
+
 -- screen redraw function
-redraw = function()
+function redraw()
   -- clear screen
   screen.clear()
   -- set pixel brightness (0-15)

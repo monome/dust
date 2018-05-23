@@ -4,7 +4,8 @@
 
 engine.name = 'TestSine'
 
-init = function()
+function init()
+  engine.amp(0.1)
   params:add_number("num")
   params:add_option("output",{"MIDI","OSC","SYNTH","CV"})
   params:add_control("something",controlspec.UNIPOLAR)
@@ -15,7 +16,7 @@ init = function()
   params:read("ptest.pset")
 end
 
-key = function(n,z)
+function key(n,z)
   if z==1 then
     if n == 2 then
       params:read("ptest.pset")
@@ -26,7 +27,7 @@ key = function(n,z)
   redraw()
 end
 
-enc = function(n,d)
+function enc(n,d)
   if n == 2 then
     params:delta("freq",d/10)
   elseif n==3 then
@@ -35,7 +36,7 @@ enc = function(n,d)
   redraw()
 end
 
-redraw = function()
+function redraw()
   screen.clear()
   screen.move(0,10)
   screen.level(15)
@@ -44,6 +45,6 @@ redraw = function()
 end
 
 
-cleanup = function() 
-  --params:write("ptest.pset")
+function cleanup() 
+  params:write("ptest.pset")
 end

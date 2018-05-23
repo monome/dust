@@ -1,5 +1,5 @@
-print('test_hid.lua')
-require 'norns'
+-- HID test
+
 local hid = require 'hid'
 
 --- local variables
