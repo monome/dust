@@ -242,12 +242,6 @@ local function reset_channel(channel)
   end
 end
 
-local function newfile(what)
-  if what ~= "-" then
-    engine.loadSample(selected_channel, what)
-  end
-end
-
 key = function(n, z)
   if n == 2 then
     if z == 1 then
@@ -271,8 +265,14 @@ key = function(n, z)
   end
 end
 
-gridkey = function(x, y, z)
-	print(x, y, z)
+gridkey = function(x, y, s)
+  if y == 8 and x < 9 then
+    if s == 1 then
+      trig_channel(x)
+    else
+      reset_channel(x)
+    end
+  end
 end
 
 cleanup = function()
