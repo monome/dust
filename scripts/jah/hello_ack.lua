@@ -87,6 +87,34 @@ local function channels_from_midinote(midinote)
   return channels
 end
 
+local function trig_channel(channel)
+  engine.trig(channel-1)
+  if not note_downs[channel] then
+    note_downs[channel] = true
+  end
+end
+
+local function trig_channels(channels)
+  local arr = {}
+  for channel=1,8 do
+    if contains(channels, channel) then
+      arr[channel] = 1
+      if not note_downs[channel] then
+        note_downs[channel] = true
+      end
+    else
+      arr[channel] = 0
+    end
+  end
+  engine.multiTrig(arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8])
+end
+
+local function reset_channel(channel)
+  if note_downs[channel] then
+    note_downs[channel] = false
+  end
+end
+
 local function note_on(note, velocity)
   local channels = channels_from_midinote(note)
   if #channels > 0 then
@@ -95,13 +123,12 @@ local function note_on(note, velocity)
     end
     for _, channel in pairs(channels) do
       if not note_downs[channel] then
-        note_downs[channel] = true
-        engine.trig(channel-1)
         if params:get("midi selects channel") == 2 then
           table.insert(selected_channels, channel)
         end
       end
     end
+    trig_channels(channels)
     redraw()
   end
 end
@@ -179,25 +206,18 @@ local function cc(ctl, value)
 end
 
 local function grid_refresh()
-  if g == nil then
-    return
-  end
+  if g then
+    for channel=1,8 do
+      local brightness
+      if contains(selected_channels, channel) or all_modifier_is_held then
+        brightness = 15
+      else
+        brightness = 5
+      end
 
-  for x=1,8 do
-    g:led_level_set(x, 8, 16)
-  end
-end
-
-local function trig_channel(channel)
-  engine.trig(channel-1)
-  if not note_downs[channel] then
-    note_downs[channel] = true
-  end
-end
-
-local function reset_channel(channel)
-  if note_downs[channel] then
-    note_downs[channel] = false
+      g:led(channel, 8, brightness)
+    end
+    g:refresh()
   end
 end
 
@@ -206,10 +226,10 @@ function init()
   screen.line_width(1.0)
 
   local bool = {"false", "true"}
+  params:add_option("grid selects channel", bool, 2)
+  params:add_separator()
   params:add_option("midi in", {"disabled", "enabled"}, 2)
   params:add_option("midi selects channel", bool, 2)
-
-  params:add_separator()
 
   local midi_cc_note_list = {}
   for i=0,127 do
@@ -235,9 +255,13 @@ function init()
   params:add_separator()
   Ack.add_effects_params()
 
-  -- grid refresh timer, 40 fps
-  metro_grid_refresh = metro.alloc(function(stage) grid_refresh() end, 1 / 40)
-  metro_grid_refresh:start()
+  refresh_metro = metro.alloc(
+    function(stage)
+      grid_refresh()
+    end,
+    1 / 40
+  )
+  refresh_metro:start()
 
   params:read("hello_ack.pset")
   params:bang()
@@ -301,11 +325,9 @@ function key(n, z)
   if n == 2 then
     if z == 1 then
       if all_modifier_is_held then
-        for channel=1,8 do trig_channel(channel) end
+        trig_channels({1,2,3,4,5,6,7,8})
       else
-        for _, channel in pairs(selected_channels) do
-          trig_channel(channel)
-        end
+        trig_channels(selected_channels)
       end
       screen_update_channels()
     else
@@ -328,6 +350,10 @@ function gridkey(x, y, s)
   if y == 8 and x < 9 then
     if s == 1 then
       trig_channel(x)
+      if params:get("grid selects channel") == 2 then
+        selected_channels = {x}
+        redraw()
+      end
     else
       reset_channel(x)
     end
