@@ -356,6 +356,7 @@ function gridkey(x, y, s)
       end
     else
       reset_channel(x)
+      redraw()
     end
   end
 end
