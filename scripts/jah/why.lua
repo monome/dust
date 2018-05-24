@@ -4,17 +4,17 @@
 
 engine.name = 'Why'
 
-init = function()
+function init()
   redraw()
 end
 
-enc = function(n, delta)
+function enc(n, delta)
   if n == 1 then
     mix:delta("output", delta)
   end
 end
 
-redraw = function()
+function redraw()
   screen.clear()
   screen.level(15)
   screen.move(0, 8)

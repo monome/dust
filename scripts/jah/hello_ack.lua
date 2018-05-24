@@ -4,7 +4,7 @@
 --
 -- enc2: select sample
 -- enc3: change pitch*
--- key2: trig sample
+-- key2: trig selected sample(s)
 -- key3: all modifier
 --
 -- * more parameters in
@@ -24,19 +24,24 @@
 --
 
 local ControlSpec = require 'controlspec'
-local Formatters = require 'jah/formatters'
 local Ack = require 'jah/ack'
 
 engine.name = 'Ack'
 
-local midi_note_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
-local default_channel_midi_notes = { 60, 62, 64, 65, 67, 69, 71, 72 }
-
 local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
-
-local selected_channel = 1
-local all_selected = false
+local default_channel_midi_notes = { 60, 62, 64, 65, 67, 69, 71, 72 }
+local selected_channels = {1}
+local all_modifier_is_held = false
 local note_downs = {}
+
+local function contains(table, value)
+  for i=1,#table do
+    if value == table[i] then
+      return true
+    end
+  end
+  return false
+end
 
 local function screen_update_channels()
   screen.move(0,16)
@@ -44,14 +49,14 @@ local function screen_update_channels()
   for channel=1,8 do
     if note_downs[channel] then
       screen.level(15)
-    elseif selected_channel == channel or all_selected then
+    elseif contains(selected_channels, channel) or all_modifier_is_held then
       screen.level(6)
     else
       screen.level(2)
     end
     screen.text(channel)
   end
-  if all_selected then
+  if all_modifier_is_held then
     screen.level(6)
   else
     screen.level(0)
@@ -72,33 +77,41 @@ local function screen_update_midi_indicators()
   end
 end
 
-local function channel_from_midinote(midinote)
+local function channels_from_midinote(midinote)
+  channels = {}
   for channel=1,8 do
     if params:get(channel..": midi note") == midinote then
-      return channel
+      table.insert(channels, channel)
     end
   end
-  return nil
+  return channels
 end
 
 local function note_on(note, velocity)
-  local channel = channel_from_midinote(note)
-  if channel then
-    if not note_downs[channel] then
-      note_downs[channel] = true
-      engine.trig(channel-1)
-      if params:get("midi selects channel") == 2 then
-        selected_channel = channel
-      end
-      redraw()
+  local channels = channels_from_midinote(note)
+  if #channels > 0 then
+    if params:get("midi selects channel") == 2 then
+      selected_channels = {}
     end
+    for _, channel in pairs(channels) do
+      if not note_downs[channel] then
+        note_downs[channel] = true
+        engine.trig(channel-1)
+        if params:get("midi selects channel") == 2 then
+          table.insert(selected_channels, channel)
+        end
+      end
+    end
+    redraw()
   end
 end
 
 local function note_off(note)
-  local channel = channel_from_midinote(note)
-  if channel then
-    note_downs[channel] = false
+  local channels = channels_from_midinote(note)
+  if #channels > 0 then
+    for _, channel in pairs(channels) do
+      note_downs[channel] = false
+    end
     redraw()
   end
 end
@@ -121,47 +134,74 @@ local function cc_delta_control(name, controlspec, value)
 end
 
 local function cc(ctl, value)
-  local param
+  local param_name
   local spec
   if ctl == params:get("filter cutoff cc") then
-    param = "filter cutoff"
+    param_name = "filter cutoff"
     spec = Ack.specs.filter_cutoff
     abs = params:get("filter cutoff cc type") == 1
   elseif ctl == params:get("filter res cc") then
-    param = "filter res"
+    param_name = "filter res"
     spec = Ack.specs.filter_res
     abs = params:get("filter res cc type") == 1
   elseif ctl == params:get("delay send cc") then
-    param = "delay send"
+    param_name = "delay send"
     spec = Ack.specs.send
     abs = params:get("delay send cc type") == 1
   elseif ctl == params:get("reverb send cc") then
-    param = "reverb send"
+    param_name = "reverb send"
     spec = Ack.specs.send
     abs = params:get("reverb send cc type") == 1
   end
-  if param then
+  if param_name then
     if abs then
-      if all_selected then
+      if all_modifier_is_held then
         for channel=1,8 do
-          cc_set_control(channel..": "..param, spec, value)
+          cc_set_control(channel..": "..param_name, spec, value)
         end
       else
-        cc_set_control((selected_channel)..": "..param, spec, value)
+        for _, channel in pairs(selected_channels) do
+          cc_set_control(channel..": "..param_name, spec, value)
+        end
       end
     else
-      if all_selected then
+      if all_modifier_is_held then
         for channel=1,8 do
-          cc_delta_control(channel..": "..param, spec, value)
+          cc_delta_control(channel..": "..param_name, spec, value)
         end
       else
-        cc_delta_control((selected_channel)..": "..param, spec, value)
+        for _, channel in pairs(selected_channels) do
+          cc_delta_control(channel..": "..param_name, spec, value)
+        end
       end
     end
   end
 end
 
-init = function()
+local function grid_refresh()
+  if g == nil then
+    return
+  end
+
+  for x=1,8 do
+    g:led_level_set(x, 8, 16)
+  end
+end
+
+local function trig_channel(channel)
+  engine.trig(channel-1)
+  if not note_downs[channel] then
+    note_downs[channel] = true
+  end
+end
+
+local function reset_channel(channel)
+  if note_downs[channel] then
+    note_downs[channel] = false
+  end
+end
+
+function init()
   screen.aa(1)
   screen.line_width(1.0)
 
@@ -195,11 +235,15 @@ init = function()
   params:add_separator()
   Ack.add_effects_params()
 
+  -- grid refresh timer, 40 fps
+  metro_grid_refresh = metro.alloc(function(stage) grid_refresh() end, 1 / 40)
+  metro_grid_refresh:start()
+
   params:read("hello_ack.pset")
   params:bang()
 end
 
-redraw = function()
+function redraw()
   screen.clear()
   screen.aa(1)
   screen.move(0, 8)
@@ -211,91 +255,101 @@ redraw = function()
   screen.update()
 end
 
-enc = function(n, delta)
+function enc(n, delta)
   if n == 1 then
     mix:delta("output", delta)
     return
   elseif n == 2 then
+    local min_selected_channel = selected_channels[1]
+    for i=2,#selected_channels do
+      if min_selected_channel > selected_channels[i] then
+        min_selected_channel = selected_channels[i]
+      end
+    end
     local new_selection
+
     if delta < 0 then
-      if selected_channel ~= 1 then
-        new_selection = selected_channel - 1
+      if min_selected_channel ~= 1 then
+        new_selection = { min_selected_channel - 1 }
       end
     else
-      if selected_channel ~= 8 then
-        new_selection = selected_channel + 1
+      if min_selected_channel ~= 8 then
+        new_selection = { min_selected_channel + 1 }
       end
     end
     if new_selection then
-      if note_downs[selected_channel] then
-        note_downs[selected_channel] = false
+      for _, channel in pairs(selected_channels) do
+        reset_channel(channel)
       end
-      selected_channel = new_selection
+      selected_channels = new_selection
       redraw()
     end
   else
-    if all_selected then
+    if all_modifier_is_held then
       for channel=1,8 do
         params:delta(channel..": speed", delta)
       end
     else
-      params:delta((selected_channel)..": speed", delta)
+      for _, channel in pairs(selected_channels) do
+        params:delta(channel..": speed", delta)
+      end
     end
   end
 end
 
-local function trig_channel(channel)
-  engine.trig(channel-1)
-  if not note_downs[channel] then
-    note_downs[channel] = true
-  end
-end
-
-local function reset_channel(channel)
-  if note_downs[channel] then
-    note_downs[channel] = false
-  end
-end
-
-key = function(n, z)
+function key(n, z)
   if n == 2 then
     if z == 1 then
-      if all_selected then
+      if all_modifier_is_held then
         for channel=1,8 do trig_channel(channel) end
       else
-        trig_channel(selected_channel)
+        for _, channel in pairs(selected_channels) do
+          trig_channel(channel)
+        end
       end
       screen_update_channels()
     else
-      if all_selected then
+      if all_modifier_is_held then
         for channel=1,8 do reset_channel(channel) end
       else
-        reset_channel(selected_channel)
+        for _, channel in pairs(selected_channels) do
+          reset_channel(channel)
+        end
       end
       screen_update_channels()
     end
   elseif n == 3 then
-    all_selected = z == 1
+    all_modifier_is_held = z == 1
     redraw()
   end
 end
 
-cleanup = function()
+function gridkey(x, y, s)
+  if y == 8 and x < 9 then
+    if s == 1 then
+      trig_channel(x)
+    else
+      reset_channel(x)
+    end
+  end
+end
+
+function cleanup()
   norns.midi.event = nil
   params:write("hello_ack.pset")
 end
 
-norns.midi.add = function(id, name, dev)
+function norns.midi.add(id, name, dev)
   midi_available = true
   redraw()
 end
 
-norns.midi.remove = function(id)
+function norns.midi.remove(id)
   midi_available = false
   redraw()
 end
 
-norns.midi.event = function(id, data)
+function norns.midi.event(id, data)
   status = data[1]
   data1 = data[2]
   data2 = data[3]
