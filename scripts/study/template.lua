@@ -20,6 +20,26 @@
 -- specify dsp engine to load:
 engine.name = 'TestSine'
 
+-- make a variable
+local t = 0
+-- make an array for storing
+local numbers = {0, 0, 0, 0, 0, 0, 0}
+-- make a var, led brightness for grid
+local level = 5
+
+-- set up a metro
+local c = metro[1]
+-- count forever
+c.count = -1
+-- count interval to 1 second
+c.time = 1
+-- callback function on each count
+c.callback = function(stage)
+  t = t + 1
+  norns.log.post("tick "..t)
+  redraw()
+end
+
 -- init function
 function init()
   -- print to command line
@@ -34,13 +54,6 @@ function init()
   -- start timer
   c:start()
 end
-
--- make a variable
-local t = 0
--- make an array for storing
-local numbers = {0, 0, 0, 0, 0, 0, 0}
--- make a var, led brightness for grid
-local level = 5
 
 -- encoder function
 function enc(n, delta)
@@ -79,21 +92,6 @@ function redraw()
 
   -- refresh screen
   screen.update()
-end
-
-
-
--- set up a metro
-local c = metro[1]
--- count forever
-c.count = -1
--- count interval to 1 second
-c.time = 1
--- callback function on each count
-c.callback = function(stage)
-  t = t + 1
-  norns.log.post("tick "..t)
-  redraw()
 end
 
 -- grid key function
