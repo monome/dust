@@ -26,7 +26,7 @@ Ack.specs.filter_cutoff = ControlSpec.FREQ:copy()
 Ack.specs.filter_cutoff.default = 20000
 
 Ack.specs.filter_res = ControlSpec.UNIPOLAR
-Ack.specs.filter_env_mod = ControlSpec.UNIPOLAR
+Ack.specs.filter_env_mod = ControlSpec.BIPOLAR
 
 Ack.specs.delay_time = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
 Ack.specs.delay_feedback = ControlSpec.new(0, 1.25, 'lin', 0, 0.5, "")

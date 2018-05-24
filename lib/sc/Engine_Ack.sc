@@ -55,7 +55,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\filterHighpassLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterNotchLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterPeakLevel] = ControlSpec(0, 1, step: 1, default: 0);
-		channelSpecs[\filterEnvMod] = \unipolar.asSpec;
+		channelSpecs[\filterEnvMod] = \bipolar.asSpec;
 		// TODO slewSpec = ControlSpec(0, 5, default: 0);
 
 		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
