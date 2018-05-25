@@ -38,6 +38,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\sampleStart] = \unipolar.asSpec;
 		channelSpecs[\sampleEnd] = \unipolar.asSpec.copy.default_(1);
 		channelSpecs[\loopPoint] = \unipolar.asSpec;
+		channelSpecs[\loopEnable] = ControlSpec(0, 1, step: 1, default: 1);
 		channelSpecs[\speed] = ControlSpec(0, 5, default: 1);
 		channelSpecs[\volume] = \db.asSpec.copy.default_(-10);
 		channelSpecs[\delaySend] = \db.asSpec;
@@ -65,6 +66,118 @@ Engine_Ack : CroneEngine {
 		reverbRoomSpec = \unipolar.asSpec.copy.default_(0.75);
 		reverbDampSpec = \unipolar.asSpec.copy.default_(0.5);
 		reverbLevelSpec = \db.asSpec.copy.default_(-10);
+
+		SynthDef(
+			(this.monoSamplePlayerDefName.asString++"_Test").asSymbol,
+			{
+				|
+				gate,
+				out=0,
+				delayBus,
+				reverbBus,
+				bufnum,
+				sampleStart,
+				sampleEnd,
+				loopPoint,
+				loopEnable,
+				speed,
+				volume,
+				volumeEnvAttack,
+				volumeEnvRelease,
+				pan,
+				filterCutoff,
+				filterRes,
+				filterLowpassLevel,
+				filterBandpassLevel,
+				filterHighpassLevel,
+				filterNotchLevel,
+				filterPeakLevel,
+				filterEnvAttack,
+				filterEnvRelease,
+				filterEnvMod,
+				delaySend,
+				reverbSend
+				/*
+				TODO
+				speedSlew,
+				phasorFreqSlew,
+				volumeSlew,
+				panSlew,
+				filterCutoffSlew,
+				filterResSlew,
+				*/
+				|
+				var phase = Sweep.ar(1, speed/BufDur.kr(bufnum));
+				var phaseFromSampleStart = sampleStart + phase;
+				var loopPhase = phaseFromSampleStart.wrap(loopPoint, sampleEnd);
+		
+				// var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
+				var sig = BufRd.ar(
+					1,
+					bufnum,
+					Select.ar(phaseFromSampleStart < sampleEnd, loopPhase, phaseFromSampleStart).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					interpolation: 4
+				); // TODO: tryout BLBufRd
+		
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+		
+				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
+				sig = sig * ((phase < sampleEnd) * (0 == loopEnable));
+				
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
+				sig = SVF.ar(
+					sig,
+					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
+					filterRes,
+					filterLowpassLevel,
+					filterBandpassLevel,
+					filterHighpassLevel,
+					filterNotchLevel,
+					filterPeakLevel
+				);
+				sig = Pan2.ar(sig, pan); // Mono
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			// rates: [\tr],
+			rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					sampleStart: channelSpecs[\sampleStart],
+					sampleEnd: channelSpecs[\sampleEnd],
+					speed: channelSpecs[\speed],
+					volume: channelSpecs[\volume],
+					volumeEnvAttack: channelSpecs[\volumeEnvAttack],
+					volumeEnvRelease: channelSpecs[\volumeEnvRelease],
+					pan: channelSpecs[\pan],
+					filterCutoff: channelSpecs[\filterCutoff],
+					filterRes: channelSpecs[\filterRes],
+					filterEnvAttack: channelSpecs[\filterEnvAttack],
+					filterEnvRelease: channelSpecs[\filterEnvRelease],
+					filterEnvMod: channelSpecs[\filterEnvMod],
+					delaySend: channelSpecs[\delaySend],
+					reverbSend: channelSpecs[\reverbSend]
+/*
+	TODO
+					speedSlew: slewSpec,
+					phasorFreqSlew: slewSpec,
+					volumeSlew: slewSpec,
+					panSlew: slewSpec,
+					filterCutoffSlew: slewSpec,
+					filterResSlew: slewSpec,
+*/
+				)
+			)
+		).add;
 
 		SynthDef(
 			(this.monoSamplePlayerDefName.asString++"_Sweep").asSymbol,
@@ -834,8 +947,15 @@ Engine_Ack : CroneEngine {
 
 			samplePlayerSynths[channelnum].release;
 
+/*
 			samplePlayerSynths[channelnum] = Synth.new(
 				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++if (this.sampleHasLoopEnabled(channelnum), "_Loop", "_Sweep")).asSymbol,
+				args: samplePlayerSynthArgs,
+				target: channelGroups[channelnum]
+			);
+*/
+			samplePlayerSynths[channelnum] = Synth.new(
+				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++"_Test").asSymbol,
 				args: samplePlayerSynthArgs,
 				target: channelGroups[channelnum]
 			);
