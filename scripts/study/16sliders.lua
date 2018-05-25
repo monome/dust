@@ -14,14 +14,6 @@ local step = 0
 
 engine.name = 'TestSine'
 
-
-function init()
-  print("16sliders: loaded engine")
-  engine.hz(100)
-  engine.amp(0.1)
-  k:start()
-end
-
 local k = metro[1]
 k.count = -1
 k.time = 0.1
@@ -31,6 +23,12 @@ k.callback = function(stage)
   redraw()
 end
 
+function init()
+  print("16sliders: loaded engine")
+  engine.hz(100)
+  engine.amp(0.1)
+  k:start()
+end
 
 function enc(n, delta)
   if n == 2 then
