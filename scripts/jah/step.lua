@@ -180,7 +180,7 @@ function init()
     end
   end
 
-  timer = metro[1] -- TODO: this is probably no longer the way to spawn metros(?)
+  timer = metro.alloc()
   timer.callback = tick
 
   params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata(?)
