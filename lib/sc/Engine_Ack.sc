@@ -124,7 +124,7 @@ Engine_Ack : CroneEngine {
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 		
 				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
-				sig = sig * ((phase < sampleEnd) * (0 == loopEnable));
+				sig = sig * ((phase < sampleEnd) * (loopEnable < 1));
 				
 				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
