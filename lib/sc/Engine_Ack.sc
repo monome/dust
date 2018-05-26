@@ -107,16 +107,31 @@ Engine_Ack : CroneEngine {
 				filterResSlew,
 				*/
 				|
-				var phase = Sweep.ar(1, speed/BufDur.kr(bufnum));
-				var phaseFromSampleStart = sampleStart + phase;
-				var loopPhase = phaseFromSampleStart.wrap(sampleStart + (loopPoint*(sampleEnd-sampleStart)), sampleEnd);
-				// var loopPhase = phaseFromSampleStart.wrap(sampleStart, sampleEnd);
+				var onset = Latch.ar(sampleStart, Impulse.ar(0));
+				var sweep = Sweep.ar(1, speed/BufDur.kr(bufnum));
+				var oneshotPhase = onset + sweep;
+				var oneshotPhaseDone = oneshotPhase > sampleEnd;
+
+				var loopSize = (1-loopPoint)*(sampleEnd-sampleStart);
+				var loopOffset = loopPoint*(sampleEnd-sampleStart);
+				var absoluteLoopPoint = sampleStart + loopOffset;
+				// var loopPhase = oneshotPhase.wrap(sampleStart + (loopPoint*(sampleEnd-sampleStart)), sampleEnd);
+				var loopPhaseOnset = Latch.ar(oneshotPhase, oneshotPhaseDone);
+				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize)+absoluteLoopPoint;
+				// var loopPhase = oneshotPhase.wrap(sampleStart, sampleEnd);
 		
-				// var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
+/*
 				var sig = BufRd.ar(
 					1,
 					bufnum,
-					Select.ar(phaseFromSampleStart < sampleEnd, [loopPhase, phaseFromSampleStart]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					Select.ar(oneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					interpolation: 4
+				); // TODO: tryout BLBufRd
+*/
+				var sig = BufRd.ar(
+					1,
+					bufnum,
+					Select.ar(oneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 		
@@ -124,8 +139,14 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 		
+/*
+				oneshotPhase.poll(label: 'oneshotPhase');
+				loopPhase.poll(label: 'loopPhase');
+				loopPhaseOnset.poll(label: 'loopPhaseOnset');
+*/
+
 				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
-				sig = sig * (((phaseFromSampleStart < sampleEnd) + (loopEnable > 0)) > 0); // basically: as long as phaseFromSampleStart < sampleEnd or loopEnable == 1, continue playing
+				sig = sig * (((oneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
 				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
