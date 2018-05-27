@@ -76,10 +76,10 @@ Engine_Ack : CroneEngine {
 				delayBus,
 				reverbBus,
 				bufnum,
-				sampleStart,
-				sampleEnd,
-				loopPoint,
-				loopEnable,
+				sampleStart, // start point of playing back sample normalized to 0..1
+				sampleEnd, // end point of playing back sample normalized to 0..1. sampleEnd prior to sampleStart will play sample reversed
+				loopPoint, // loop point position between sampleStart and sampleEnd expressed in 0..1
+				loopEnable, // loop enabled switch (1 = play looped, 0 = play oneshot). argument is initial rate so it cannot be changed after a synth starts to play
 				speed,
 				volume,
 				volumeEnvAttack,
@@ -107,31 +107,38 @@ Engine_Ack : CroneEngine {
 				filterResSlew,
 				*/
 				|
-				var onset = Latch.ar(sampleStart, Impulse.ar(0));
-				var sweep = Sweep.ar(1, speed/BufDur.kr(bufnum));
-				var oneshotPhase = onset + sweep;
-				var oneshotPhaseDone = oneshotPhase > sampleEnd;
+				var direction = (sampleEnd-sampleStart).sign; // 1 = forward, -1 = backward
+				var leftmostSamplePosExtent = min(sampleStart, sampleEnd);
+				var rightmostSamplePosExtent = max(sampleStart, sampleEnd);
+				var onset = Latch.ar(sampleStart, Impulse.ar(0)); // "fixes" onset to sample start at the time of spawning the synth, whereas sample end and *absolute* loop position (calculated from possibly modulating start and end positions) may vary
+				var sweep = Sweep.ar(1, speed/BufDur.kr(bufnum)*direction); // sample duration normalized to 0..1 (sweeping 0..1 sweeps entire sample).
+				var oneshotPhase = onset + sweep; // align phase to actual onset (fixed sample start at the time of spawning the synth)
 
-				var loopSize = (1-loopPoint)*(sampleEnd-sampleStart);
-				var loopOffset = loopPoint*(sampleEnd-sampleStart);
-				var absoluteLoopPoint = sampleStart + loopOffset;
-				// var loopPhase = oneshotPhase.wrap(sampleStart + (loopPoint*(sampleEnd-sampleStart)), sampleEnd);
-				var loopPhaseOnset = Latch.ar(oneshotPhase, oneshotPhaseDone);
-				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize)+absoluteLoopPoint;
+				var fwdOneshotPhaseDone = ((oneshotPhase > sampleEnd) * (direction > (-1))) > 0; // condition fulfilled if phase is above current sample end and direction is positive
+				var revOneshotPhaseDone = ((oneshotPhase < sampleEnd) * (direction < 0)) > 0; // condition fulfilled if phase is above current sample end and direction is positive
+				var loopPhaseStartTrig = (fwdOneshotPhaseDone + revOneshotPhaseDone) > 0;
+
+				var oneshotSize = rightmostSamplePosExtent-leftmostSamplePosExtent;
+				var loopOffset = loopPoint*oneshotSize; // loop point normalized to entire sample 0..1
+				var loopSize = (1-loopPoint)*oneshotSize; // TODO: this should be fixed / latch for every initialized loop phase / run
+				var absoluteLoopPoint = sampleStart + (loopOffset * direction); // TODO: this should be fixed / latch for every initialized loop phase / run
+
+				var loopPhaseOnset = Latch.ar(oneshotPhase, loopPhaseStartTrig);
+				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize) + (absoluteLoopPoint * direction); // TODO
 				// var loopPhase = oneshotPhase.wrap(sampleStart, sampleEnd);
 		
 /*
 				var sig = BufRd.ar(
 					1,
 					bufnum,
-					Select.ar(oneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					Select.ar(fwdOneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 */
 				var sig = BufRd.ar(
 					1,
 					bufnum,
-					Select.ar(oneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					Select.ar(fwdOneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 		
@@ -139,14 +146,16 @@ Engine_Ack : CroneEngine {
 				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
 				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
 		
-/*
+				loopPhaseStartTrig.poll(label: 'loopPhaseStartTrig');
+				absoluteLoopPoint.poll(label: 'absoluteLoopPoint');
+				loopPhaseOnset.poll(label: 'loopPhaseOnset');
 				oneshotPhase.poll(label: 'oneshotPhase');
 				loopPhase.poll(label: 'loopPhase');
-				loopPhaseOnset.poll(label: 'loopPhaseOnset');
-*/
+				loopSize.poll(label: 'loopSize');
 
-				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
-				sig = sig * (((oneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
+				//FreeSelf.kr(); TODO: if release message is sent from Ack sclang logic to voice *group*, this might be a better option applicable to both oneshots phase done conditions and amp envelope. tho the cutoff envelope still would apply, for voice cutting
+				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
+				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
 				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
 				sig = SVF.ar(
@@ -1085,7 +1094,7 @@ Engine_Ack : CroneEngine {
 				)
 			};
 
-			samplePlayerSynths[channelnum].release;
+			samplePlayerSynths[channelnum].release; // TODO: direct this to channel group instead, and synths could be freed independently (release would no turn into an ugly error message)
 
 /*
 			samplePlayerSynths[channelnum] = Synth.new(
