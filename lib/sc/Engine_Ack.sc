@@ -124,7 +124,7 @@ Engine_Ack : CroneEngine {
 				var absoluteLoopPoint = sampleStart + (loopOffset * direction); // TODO: this should be fixed / latch for every initialized loop phase / run
 
 				var loopPhaseOnset = Latch.ar(oneshotPhase, loopPhaseStartTrig);
-				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize) + (absoluteLoopPoint * direction); // TODO
+				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize * direction) + absoluteLoopPoint; // TODO
 				// var loopPhase = oneshotPhase.wrap(sampleStart, sampleEnd);
 		
 /*
@@ -138,7 +138,7 @@ Engine_Ack : CroneEngine {
 				var sig = BufRd.ar(
 					1,
 					bufnum,
-					Select.ar(fwdOneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					Select.ar(loopPhaseStartTrig, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 		
@@ -154,6 +154,7 @@ Engine_Ack : CroneEngine {
 				loopSize.poll(label: 'loopSize');
 
 				//FreeSelf.kr(); TODO: if release message is sent from Ack sclang logic to voice *group*, this might be a better option applicable to both oneshots phase done conditions and amp envelope. tho the cutoff envelope still would apply, for voice cutting
+
 				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
