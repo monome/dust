@@ -46,6 +46,10 @@ function Formatters.unipolar_as_percentage(param)
   return format(param, util.round(param:get()*100), "%")
 end
 
+function Formatters.bipolar_as_percentage(param)
+  return format(param, util.round(param:get()*100), "%")
+end
+
 function Formatters.secs_as_ms(param)
   return format(param, util.round(param:get()*1000), "ms")
 end

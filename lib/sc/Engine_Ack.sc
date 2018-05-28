@@ -38,6 +38,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\sampleStart] = \unipolar.asSpec;
 		channelSpecs[\sampleEnd] = \unipolar.asSpec.copy.default_(1);
 		channelSpecs[\loopPoint] = \unipolar.asSpec;
+		channelSpecs[\loopEnable] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\speed] = ControlSpec(0, 5, default: 1);
 		channelSpecs[\volume] = \db.asSpec.copy.default_(-10);
 		channelSpecs[\delaySend] = \db.asSpec;
@@ -55,7 +56,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\filterHighpassLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterNotchLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterPeakLevel] = ControlSpec(0, 1, step: 1, default: 0);
-		channelSpecs[\filterEnvMod] = \unipolar.asSpec;
+		channelSpecs[\filterEnvMod] = \bipolar.asSpec;
 		// TODO slewSpec = ControlSpec(0, 5, default: 0);
 
 		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
@@ -65,6 +66,152 @@ Engine_Ack : CroneEngine {
 		reverbRoomSpec = \unipolar.asSpec.copy.default_(0.75);
 		reverbDampSpec = \unipolar.asSpec.copy.default_(0.5);
 		reverbLevelSpec = \db.asSpec.copy.default_(-10);
+
+		SynthDef(
+			(this.monoSamplePlayerDefName.asString++"_Test").asSymbol,
+			{
+				|
+				gate,
+				out=0,
+				delayBus,
+				reverbBus,
+				bufnum,
+				sampleStart, // start point of playing back sample normalized to 0..1
+				sampleEnd, // end point of playing back sample normalized to 0..1. sampleEnd prior to sampleStart will play sample reversed
+				loopPoint, // loop point position between sampleStart and sampleEnd expressed in 0..1
+				loopEnable, // loop enabled switch (1 = play looped, 0 = play oneshot). argument is initial rate so it cannot be changed after a synth starts to play
+				speed,
+				volume,
+				volumeEnvAttack,
+				volumeEnvRelease,
+				pan,
+				filterCutoff,
+				filterRes,
+				filterLowpassLevel,
+				filterBandpassLevel,
+				filterHighpassLevel,
+				filterNotchLevel,
+				filterPeakLevel,
+				filterEnvAttack,
+				filterEnvRelease,
+				filterEnvMod,
+				delaySend,
+				reverbSend
+				/*
+				TODO
+				speedSlew,
+				phasorFreqSlew,
+				volumeSlew,
+				panSlew,
+				filterCutoffSlew,
+				filterResSlew,
+				*/
+				|
+				var direction = (sampleEnd-sampleStart).sign; // 1 = forward, -1 = backward
+				var leftmostSamplePosExtent = min(sampleStart, sampleEnd);
+				var rightmostSamplePosExtent = max(sampleStart, sampleEnd);
+				var onset = Latch.ar(sampleStart, Impulse.ar(0)); // "fixes" onset to sample start at the time of spawning the synth, whereas sample end and *absolute* loop position (calculated from possibly modulating start and end positions) may vary
+				var sweep = Sweep.ar(1, speed/BufDur.kr(bufnum)*direction); // sample duration normalized to 0..1 (sweeping 0..1 sweeps entire sample).
+				var oneshotPhase = onset + sweep; // align phase to actual onset (fixed sample start at the time of spawning the synth)
+
+				var fwdOneshotPhaseDone = ((oneshotPhase > sampleEnd) * (direction > (-1))) > 0; // condition fulfilled if phase is above current sample end and direction is positive
+				var revOneshotPhaseDone = ((oneshotPhase < sampleEnd) * (direction < 0)) > 0; // condition fulfilled if phase is above current sample end and direction is positive
+				var loopPhaseStartTrig = (fwdOneshotPhaseDone + revOneshotPhaseDone) > 0;
+
+				var oneshotSize = rightmostSamplePosExtent-leftmostSamplePosExtent;
+				var loopOffset = loopPoint*oneshotSize; // loop point normalized to entire sample 0..1
+				var loopSize = (1-loopPoint)*oneshotSize; // TODO: this should be fixed / latch for every initialized loop phase / run
+				var absoluteLoopPoint = sampleStart + (loopOffset * direction); // TODO: this should be fixed / latch for every initialized loop phase / run
+
+				var loopPhaseOnset = Latch.ar(oneshotPhase, loopPhaseStartTrig);
+				var loopPhase = (oneshotPhase-loopPhaseOnset).wrap(0, loopSize * direction) + absoluteLoopPoint; // TODO
+				// var loopPhase = oneshotPhase.wrap(sampleStart, sampleEnd);
+		
+/*
+				var sig = BufRd.ar(
+					1,
+					bufnum,
+					Select.ar(fwdOneshotPhaseDone, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					interpolation: 4
+				); // TODO: tryout BLBufRd
+*/
+				var sig = BufRd.ar(
+					1,
+					bufnum,
+					Select.ar(loopPhaseStartTrig, [oneshotPhase, loopPhase]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					interpolation: 4
+				); // TODO: tryout BLBufRd
+		
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+		
+				loopPhaseStartTrig.poll(label: 'loopPhaseStartTrig');
+				absoluteLoopPoint.poll(label: 'absoluteLoopPoint');
+				loopPhaseOnset.poll(label: 'loopPhaseOnset');
+				oneshotPhase.poll(label: 'oneshotPhase');
+				loopPhase.poll(label: 'loopPhase');
+				loopSize.poll(label: 'loopSize');
+
+				//FreeSelf.kr(); TODO: if release message is sent from Ack sclang logic to voice *group*, this might be a better option applicable to both oneshots phase done conditions and amp envelope. tho the cutoff envelope still would apply, for voice cutting
+
+				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
+				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
+				
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
+				sig = SVF.ar(
+					sig,
+					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
+					filterRes,
+					filterLowpassLevel,
+					filterBandpassLevel,
+					filterHighpassLevel,
+					filterNotchLevel,
+					filterPeakLevel
+				);
+				sig = Pan2.ar(sig, pan); // Mono
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			rates: [nil, nil, nil, nil, nil, nil, nil, nil, \ir], // loopEnable is \ir
+			// rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					sampleStart: channelSpecs[\sampleStart],
+					sampleEnd: channelSpecs[\sampleEnd],
+					loopEnable: channelSpecs[\loopEnable],
+					loopPoint: channelSpecs[\loopPoint],
+					speed: channelSpecs[\speed],
+					volume: channelSpecs[\volume],
+					volumeEnvAttack: channelSpecs[\volumeEnvAttack],
+					volumeEnvRelease: channelSpecs[\volumeEnvRelease],
+					pan: channelSpecs[\pan],
+					filterCutoff: channelSpecs[\filterCutoff],
+					filterRes: channelSpecs[\filterRes],
+					filterEnvAttack: channelSpecs[\filterEnvAttack],
+					filterEnvRelease: channelSpecs[\filterEnvRelease],
+					filterEnvMod: channelSpecs[\filterEnvMod],
+					delaySend: channelSpecs[\delaySend],
+					reverbSend: channelSpecs[\reverbSend]
+/*
+	TODO
+					speedSlew: slewSpec,
+					phasorFreqSlew: slewSpec,
+					volumeSlew: slewSpec,
+					panSlew: slewSpec,
+					filterCutoffSlew: slewSpec,
+					filterResSlew: slewSpec,
+*/
+				)
+			)
+		).add;
 
 		SynthDef(
 			(this.monoSamplePlayerDefName.asString++"_Sweep").asSymbol,
@@ -356,6 +503,121 @@ Engine_Ack : CroneEngine {
 					filterEnvMod: channelSpecs[\filterEnvMod],
 					delaySend: channelSpecs[\send],
 					reverbSend: channelSpecs[\send]
+/*
+	TODO
+					speedSlew: slewSpec,
+					phasorFreqSlew: slewSpec,
+					volumeSlew: slewSpec,
+					panSlew: slewSpec,
+					filterCutoffSlew: slewSpec,
+					filterResSlew: slewSpec,
+*/
+				)
+			)
+		).add;
+
+		SynthDef(
+			(this.stereoSamplePlayerDefName.asString++"_Test").asSymbol,
+			{
+				|
+				gate,
+				out=0,
+				delayBus,
+				reverbBus,
+				bufnum,
+				sampleStart,
+				sampleEnd,
+				loopPoint,
+				loopEnable,
+				speed,
+				volume,
+				volumeEnvAttack,
+				volumeEnvRelease,
+				pan,
+				filterCutoff,
+				filterRes,
+				filterLowpassLevel,
+				filterBandpassLevel,
+				filterHighpassLevel,
+				filterNotchLevel,
+				filterPeakLevel,
+				filterEnvAttack,
+				filterEnvRelease,
+				filterEnvMod,
+				delaySend,
+				reverbSend
+				/*
+				TODO
+				speedSlew,
+				phasorFreqSlew,
+				volumeSlew,
+				panSlew,
+				filterCutoffSlew,
+				filterResSlew,
+				*/
+				|
+				var phase = Sweep.ar(1, speed/BufDur.kr(bufnum));
+				var phaseFromSampleStart = sampleStart + phase;
+				var loopPhase = phaseFromSampleStart.wrap(sampleStart + (loopPoint*(sampleEnd-sampleStart)), sampleEnd);
+				// var loopPhase = phaseFromSampleStart.wrap(sampleStart, sampleEnd);
+		
+				// var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
+				var sig = BufRd.ar(
+					2,
+					bufnum,
+					Select.ar(phaseFromSampleStart < sampleEnd, [loopPhase, phaseFromSampleStart]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
+					interpolation: 4
+				); // TODO: tryout BLBufRd
+		
+				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+		
+				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
+				sig = sig * (((phaseFromSampleStart < sampleEnd) + (loopEnable > 0)) > 0); // basically: as long as phaseFromSampleStart < sampleEnd or loopEnable == 1, continue playing
+				
+				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
+				sig = SVF.ar(
+					sig,
+					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
+					filterRes,
+					filterLowpassLevel,
+					filterBandpassLevel,
+					filterHighpassLevel,
+					filterNotchLevel,
+					filterPeakLevel
+				);
+				sig = Balance2.ar(sig[0], sig[1], pan);
+				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				Out.ar(out, sig);
+				Out.ar(delayBus, sig*delaySend.dbamp);
+				Out.ar(reverbBus, sig*reverbSend.dbamp);
+			},
+			rates: [nil, nil, nil, nil, nil, nil, nil, nil, \ir], // loopEnable is \ir
+			// rates: [nil],
+			metadata: (
+				specs: (
+					// gate: ControlSpec(0, 1, step: 1, default: 0),
+					out: \audiobus,
+					delayBus: \audiobus,
+					reverbBus: \audiobus,
+					bufnum: nil,
+					sampleStart: channelSpecs[\sampleStart],
+					sampleEnd: channelSpecs[\sampleEnd],
+					loopEnable: channelSpecs[\loopEnable],
+					loopPoint: channelSpecs[\loopPoint],
+					speed: channelSpecs[\speed],
+					volume: channelSpecs[\volume],
+					volumeEnvAttack: channelSpecs[\volumeEnvAttack],
+					volumeEnvRelease: channelSpecs[\volumeEnvRelease],
+					pan: channelSpecs[\pan],
+					filterCutoff: channelSpecs[\filterCutoff],
+					filterRes: channelSpecs[\filterRes],
+					filterEnvAttack: channelSpecs[\filterEnvAttack],
+					filterEnvRelease: channelSpecs[\filterEnvRelease],
+					filterEnvMod: channelSpecs[\filterEnvMod],
+					delaySend: channelSpecs[\delaySend],
+					reverbSend: channelSpecs[\reverbSend]
 /*
 	TODO
 					speedSlew: slewSpec,
@@ -716,6 +978,7 @@ Engine_Ack : CroneEngine {
 				sampleStart,
 				sampleEnd,
 				loopPoint,
+				loopEnable,
 				speed,
 				volume,
 				volumeEnvAttack,
@@ -832,10 +1095,17 @@ Engine_Ack : CroneEngine {
 				)
 			};
 
-			samplePlayerSynths[channelnum].release;
+			samplePlayerSynths[channelnum].release; // TODO: direct this to channel group instead, and synths could be freed independently (release would no turn into an ugly error message)
 
+/*
 			samplePlayerSynths[channelnum] = Synth.new(
 				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++if (this.sampleHasLoopEnabled(channelnum), "_Loop", "_Sweep")).asSymbol,
+				args: samplePlayerSynthArgs,
+				target: channelGroups[channelnum]
+			);
+*/
+			samplePlayerSynths[channelnum] = Synth.new(
+				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++"_Test").asSymbol,
 				args: samplePlayerSynthArgs,
 				target: channelGroups[channelnum]
 			);
@@ -854,8 +1124,19 @@ Engine_Ack : CroneEngine {
 		channelControlBusses[channelnum][\loopPoint].set(channelSpecs[\loopPoint].constrain(f));
 	}
 
+/*
 	cmdEnableLoop { |channelnum| loopEnabled[channelnum] = true }
 	cmdDisableLoop { |channelnum| loopEnabled[channelnum] = false }
+*/
+	cmdEnableLoop { |channelnum|
+		"enableLoop".debug;
+		channelControlBusses[channelnum][\loopEnable].debug.set(1);
+	}
+
+	cmdDisableLoop { |channelnum|
+		"disableLoop".debug;
+		channelControlBusses[channelnum][\loopEnable].debug.set(0);
+	}
 
 	cmdSpeed { |channelnum, f|
 		channelControlBusses[channelnum][\speed].set(channelSpecs[\speed].constrain(f));
