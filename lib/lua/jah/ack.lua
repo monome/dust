@@ -192,6 +192,7 @@ end
 function Ack.add_params()
   for channel=1,8 do
     Ack.add_channel_params(channel)
+    params:add_separator()
   end
 
   Ack.add_effects_params()

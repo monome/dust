@@ -200,6 +200,7 @@ function init()
   params:add_control("swing amount", swing_amount_spec)
   params:set_action("swing amount", update_swing)
 
+  params:add_separator()
   Ack.add_params()
   params:bang()
 
