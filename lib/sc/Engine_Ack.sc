@@ -171,7 +171,8 @@ Engine_Ack : CroneEngine {
 				Out.ar(delayBus, sig*delaySend.dbamp);
 				Out.ar(reverbBus, sig*reverbSend.dbamp);
 			},
-			rates: [nil, nil, nil, nil, nil, nil, nil, nil, \ir], // loopEnable is \ir
+			// TODO: some of below \irs are temporary. sample start, end and loop point should be modulatable once audio glitches are fixed
+			rates: [nil, nil, nil, nil, nil, \ir, \ir, \ir, \ir], // loopEnable is \ir
 			// rates: [nil],
 			metadata: (
 				specs: (
@@ -312,82 +313,8 @@ Engine_Ack : CroneEngine {
 				Out.ar(delayBus, sig*delaySend.dbamp);
 				Out.ar(reverbBus, sig*reverbSend.dbamp);
 			},
-			{
-				|
-				gate,
-				out=0,
-				delayBus,
-				reverbBus,
-				bufnum,
-				sampleStart,
-				sampleEnd,
-				loopPoint,
-				loopEnable,
-				speed,
-				volume,
-				volumeEnvAttack,
-				volumeEnvRelease,
-				pan,
-				filterCutoff,
-				filterRes,
-				filterLowpassLevel,
-				filterBandpassLevel,
-				filterHighpassLevel,
-				filterNotchLevel,
-				filterPeakLevel,
-				filterEnvAttack,
-				filterEnvRelease,
-				filterEnvMod,
-				delaySend,
-				reverbSend
-				/*
-				TODO
-				speedSlew,
-				phasorFreqSlew,
-				volumeSlew,
-				panSlew,
-				filterCutoffSlew,
-				filterResSlew,
-				*/
-				|
-				var phase = Sweep.ar(1, speed/BufDur.kr(bufnum));
-				var phaseFromSampleStart = sampleStart + phase;
-				var loopPhase = phaseFromSampleStart.wrap(sampleStart + (loopPoint*(sampleEnd-sampleStart)), sampleEnd);
-				// var loopPhase = phaseFromSampleStart.wrap(sampleStart, sampleEnd);
-		
-				// var sig = BufRd.ar(1, bufnum, phase.linlin(0, 1, 0, BufFrames.kr(bufnum)), interpolation: 4); // TODO: tryout BLBufRd
-				var sig = BufRd.ar(
-					2,
-					bufnum,
-					Select.ar(phaseFromSampleStart < sampleEnd, [loopPhase, phaseFromSampleStart]).linlin(0, 1, 0, BufFrames.kr(bufnum)),
-					interpolation: 4
-				); // TODO: tryout BLBufRd
-		
-				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
-				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
-				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
-		
-				//PauseSelf.kr(phase > sampleEnd); TODO: i'm quite sure this does not release synths properly
-				sig = sig * (((phaseFromSampleStart < sampleEnd) + (loopEnable > 0)) > 0); // basically: as long as phaseFromSampleStart < sampleEnd or loopEnable == 1, continue playing
-				
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
-				sig = SVF.ar(
-					sig,
-					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
-					filterRes,
-					filterLowpassLevel,
-					filterBandpassLevel,
-					filterHighpassLevel,
-					filterNotchLevel,
-					filterPeakLevel
-				);
-				sig = Balance2.ar(sig[0], sig[1], pan);
-				sig = sig * volumeEnv * freeEnv * volume.dbamp;
-				Out.ar(out, sig);
-				Out.ar(delayBus, sig*delaySend.dbamp);
-				Out.ar(reverbBus, sig*reverbSend.dbamp);
-			},
-			rates: [nil, nil, nil, nil, nil, nil, nil, nil, \ir], // loopEnable is \ir
+			// TODO: some of below \irs are temporary. sample start, end and loop point should be modulatable once audio glitches are fixed
+			rates: [nil, nil, nil, nil, nil, \ir, \ir, \ir, \ir], // loopEnable is \ir
 			// rates: [nil],
 			metadata: (
 				specs: (
@@ -587,6 +514,7 @@ Engine_Ack : CroneEngine {
 			};
 
 			samplePlayerSynths[channelnum].release; // TODO: direct this to channel group instead and synths could free themselves (and a release would not turn into an ugly error message, the 'Buffer UGen channel mismatch: expected 1, yet buffer has 2 channels' would not appear)
+			// TODO: this combined group/synth method could facilitate self-freeing synths without unneccessary node does not exist error messages in a general SynthDef-generating engine too
 
 			samplePlayerSynths[channelnum] = Synth.new(
 				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++"_Test").asSymbol,
