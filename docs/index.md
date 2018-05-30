@@ -17,4 +17,4 @@
 
 ## contributing
 
-dust is the work of many people. contributions are welcome. submit changes and additions via [github](https://github.com/monome/dust).
+dust was created many people. contributions are welcome. submit changes and additions via [github](https://github.com/monome/dust).
