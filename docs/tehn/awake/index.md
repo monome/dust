@@ -17,11 +17,13 @@ best experienced with the AUX reverb turned on.
 - KEY2 morphs the current sequence.
 
 HOLD KEY3, then:
+
 - ENC1 changes transposition.
 - ENC2 and ENC3 change sequence lengths.
 - KEY2 resets sequence positions.
 
 HOLD KEY1, then:
+
 - ENC1 changes scale mode.
 - ENC2 changes filter cutoff.
 - ENC3 changes release time.
