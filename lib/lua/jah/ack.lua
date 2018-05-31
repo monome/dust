@@ -184,7 +184,7 @@ function Ack.add_effects_params()
   params:add_control("reverb room", Ack.specs.reverb_room, Formatters.unipolar_as_percentage)
   params:set_action("reverb room", engine.reverbRoom)
   params:add_control("reverb damp", Ack.specs.reverb_damp, Formatters.unipolar_as_percentage)
-  params:set_action("reverb damp", engine.reverbRoom)
+  params:set_action("reverb damp", engine.reverbDamp)
   params:add_control("reverb level", Ack.specs.reverb_level, Formatters.default)
   params:set_action("reverb level", engine.reverbLevel)
 end
