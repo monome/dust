@@ -5,11 +5,11 @@
 
 ### GRID-optional
 
-a sequencer which creates notes my stacking two independent sequences. these sequences can have different loop lengths which create a longer phased pattern.
+a sequencer which creates notes by stacking two independent sequences. these sequences can have different loop lengths which create a longer phased pattern.
 
 synthesis parameters controlled via PARAMETERS (main menu).
 
-best experienced with the AUX reverb turned on.
+best experienced with the AUX reverb turned on (under MENU->AUDIO).
 
 - ENC1 changes the tempo.
 - ENC2 navigates position, ENC3 changes position.
