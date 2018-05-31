@@ -117,7 +117,7 @@ Effects settings:
 - delay time f: 0-5000 ms
 - delay feedback f: 0-125%
 - delay level: expressed in dB
-- reverb room: room size 0-100%
-- reverb damp: reverb damp 0-100%
+- reverb room size: 0-100%
+- reverb damp: 0-100%
 - reverb level: expressed in dB
 
