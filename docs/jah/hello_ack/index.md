@@ -24,13 +24,11 @@ MIDI: Midi notes triggers
 
 ## Grid Support
 
-Hello Ack is based on varibright grids and utilizes 8 columns and 8 rows
+Hello Ack is based on varibright grid use.
 
 ## Options
 
 Options are available in the MENU > PARAMETERS list.
 
-Script options:
-
-The script also exposes ack engine parameters for each channel.
+The script exposes [../ack](ack engine parameters) for each channel.
 

@@ -3,7 +3,7 @@
 
 # Step
 
-Sample based grid controlled step sequencer
+Sample based, grid controlled step sequencer
 
 ## Features
 
@@ -24,7 +24,7 @@ Sample based grid controlled step sequencer
 
 ## Grid Support
 
-Step is based on varibright grids. It utilizes 8 rows of and 8 or 16 columns of buttons.
+Step is designed for varibright grids. It utilizes 8 rows and 8 or 16 columns of buttons.
 
 ## Options
 
@@ -34,9 +34,8 @@ Script options:
 
 - grid width: 8 or 16
 - last row cuts: yes or no. If yes, row 8 will cut playhead position.
-- beats per pattern: 
-- tempo: 20 - 300 BPM
-- swing amount: 0 - 100%
+- tempo: 20-300 BPM
+- swing amount: amount to swing odd steps (0-100%)
 
-The script also exposes [../ack](ack engine parameters) for each channel.
+The script exposes [../ack](ack engine parameters) for each channel.
 

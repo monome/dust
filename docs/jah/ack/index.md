@@ -8,9 +8,10 @@ Simple sample player
 ## Features
 
 - 8 voice sample playback of mono or stereo samples
-- Dynamic sample start / end and loop positions
+- Sample start / end and loop positions
 - Resonant multimode filter
 - Envelopes for volume and filter cutoff
+- Master delay and reverb
 
 ## Commands
 
@@ -18,8 +19,8 @@ _Note: channels are indexed 0-7 in commands._
 
 ### Triggering
 
-- trig i: trig single channel given channelnum
-- multiTrig iiiiiiii: trigger multiple channels. one 1/0 argument for each channel. 1 means trigger.
+- trig i: triggers single channel given a channelnum.
+- multiTrig iiiiiiii: triggers multiple channels. one 1/0 argument for each channel. 1 means trigger.
 
 ### Channel Settings
 
@@ -30,7 +31,7 @@ First argument is always channelnum.
 - sampleEnd if: set position at which sample ends playing or starts to loop, expressed in 0-1. position is fixed after a sample has been triggered. if sample end is lower than sample start sample will playback reversed.
 - loopPoint if: set position within sample start - end at which loop will start, expressed in 0-1.
 - enableLoop i: enables loop
-- disableLoop i: disable loop
+- disableLoop i: disables loop, sample is played as a oneshot
 - speed if: playback speed. 0-5 where 1 is normal playback.
 - volume if: if: playback volume expressed in dB.
 - volumeEnvAttack if: volume envelope attack time
@@ -56,33 +57,33 @@ First argument is always channelnum.
 
 ## Using the Ack Lua Module
 
-_Note: In lua channels are indexed from 1-8._
+_Note: channels are indexed 1-8 in the ack lua module._
 
 Default Ack parameters to control channel and effects settings can be added to the global paramset using the Ack lua module.
 
 Require the Ack module:
 
-```
+``` lua
 local Ack = require 'lib/jah/ack'
 ```
 
 To add all params:
 
-```
+``` lua
 function init()
-	--- ...
-	Ack.add_params()
-	--- ...
+  --- ...
+  Ack.add_params()
+  --- ...
 end
 ```
 
 To add params for the first channel:
 
-```
+``` lua
 function init()
-	--- ...
-	Ack.add_channel_params(1)
-	--- ...
+  --- ...
+  Ack.add_channel_params(1)
+  --- ...
 end
 ```
 
@@ -92,24 +93,28 @@ Parameters are self-explanatory. See details and ranges below.
 
 Settings per channel:
 
-- sample start/end/loop point/loop: sample will play from start % position to end %, then loop from loop point % within start and end point if loop is enabled
-- speed: 0-500%
+- sample: sample to play
+- sample start: position in sample where playback will start
+- sample end: position in sample where playback will end (if oneshot sample) or loop (if loop is enabled)
+- loop point: position within sample start / end where sample will retrigger if loop is enabled
+- loop: loop enable / disable
+- speed: 5-500%
 - volume: expressed in dB
-- volume env atk: 1-3000 ms
-- volume env rel: 1-3000 ms
+- volume env atk: 0-1000 ms
+- volume env rel: 0-3000 ms
 - pan: L100 to MID to R100
+- filter mode: lowpass/bandpass/highpass/notch/peak
 - filter cutoff: 20-20000 Hz
 - filter res: 0-100%
-- filter mode: lowpass/bandpass/highpass/notch/peak
-- filter env atk: 1-3000 ms
-- filter env rel: 1-3000 ms
+- filter env atk: 0-1000 ms
+- filter env rel: 0-3000 ms
 - filter env mod: bipolar -100..100%
 - delay send: expressed in dB
 - reverb send: expressed in dB
 
 Effects settings:
 
-- delay time f: 0.001-5 seconds
+- delay time f: 0-5000 ms
 - delay feedback f: 0-125%
 - delay level: expressed in dB
 - reverb room: room size 0-100%
