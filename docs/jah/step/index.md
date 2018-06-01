@@ -7,20 +7,18 @@ Sample based, grid controlled step sequencer
 
 ## Features
 
-- 8 voice sample playback
-- Tempo and swing
-- Bottom row (row 8) optionally used to cut playback position
+- 8 voice sample playback.
+- Tempo and swing.
+- Bottom row (row 8) optionally used to cut playback position.
 
 ## Operation
 
-- ENC1: Volume
-- ENC2: Tempo (20-300 BPM)
-- ENC3: Swing Amount (0-100%)
-
-- KEY2: Stop Sequencer
-- KEY3: Start Sequencer
-
-- GRID: Edit Trigs
+- ENC1 adjusts volume.
+- ENC2 changes tempo (20-300 BPM).
+- ENC3 changes swing amount (0-100%).
+- KEY2 stops sequencer.
+- KEY3 starts sequencer.
+- GRID toggles trigs.
 
 ## Grid Support
 
@@ -32,10 +30,10 @@ Options are available in the MENU > PARAMETERS list.
 
 Script options:
 
-- grid width: 8 or 16
-- last row cuts: yes or no. If yes, row 8 will cut playhead position.
-- tempo: 20-300 BPM
-- swing amount: amount to swing odd steps (0-100%)
+- `grid width` - 8 or 16.
+- `last row cuts` - yes or no. If yes row 8 will cut playhead position.
+- `tempo` - 20-300 BPM.
+- `swing amount` - amount to swing odd steps (0-100%).
 
-The script exposes [../ack](ack engine parameters) for each channel.
+The script exposes [ack engine parameters](../ack) for each channel.
 
