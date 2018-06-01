@@ -31,7 +31,9 @@ function init()
 end
 
 function enc(n, delta)
-  if n == 2 then
+  if n == 1 then
+    mix:delta("output", delta)
+  elseif n == 2 then
     accum = (accum + delta) % 16
     edit = accum
   elseif n == 3 then
