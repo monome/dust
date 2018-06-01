@@ -11,20 +11,17 @@ Sample player controlled by grid or midi
 
 ## Operation
 
-ENC1: Volume
-ENC2: Select Channel
-ENC3: Change Pitch
-
-KEY2: Trigger Selected Channel(s)
-KEY3: Selcet all modifier
-
-GRID: Row 8 triggers samples
-
-MIDI: Midi notes triggers 
+- ENC1: Volume
+- ENC2: Select Channel
+- ENC3: Change Pitch
+- KEY2: Trigger Selected Channel(s)
+- KEY3: Select all modifier
+- GRID: First 8 buttons of row 8 triggers samples
+- MIDI: Midi notes triggers 
 
 ## Grid Support
 
-Hello Ack is based on varibright grid use.
+Hello Ack is designed for varibright grids.
 
 ## Options
 

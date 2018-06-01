@@ -13,14 +13,12 @@ Sample based, grid controlled step sequencer
 
 ## Operation
 
-- ENC1: Volume
-- ENC2: Tempo (20-300 BPM)
-- ENC3: Swing Amount (0-100%)
-
-- KEY2: Stop Sequencer
-- KEY3: Start Sequencer
-
-- GRID: Edit Trigs
+- ENC1 - Volume
+- ENC2 - Tempo (20-300 BPM)
+- ENC3 - Swing Amount (0-100%)
+- KEY2 - Stop Sequencer
+- KEY3 - Start Sequencer
+- GRID - Edit Trigs
 
 ## Grid Support
 
