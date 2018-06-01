@@ -19,41 +19,41 @@ _Note: channels are indexed 0-7 in commands._
 
 ### Triggering
 
-- trig i: triggers single channel.
-- multiTrig iiiiiiii: triggers multiple channels. one 1/0 argument for each channel. 1 means trigger.
+- `trig i` - triggers single channel.
+- `multiTrig iiiiiiii` - triggers multiple channels. one 1/0 argument for each channel. 1 means trigger.
 
 ### Channel Settings
 
 First argument is always channel.
 
-- `loadSample is`: load sample given an absolute path.
-- `sampleStart if`: set position at which sample starts to play, expressed in 0-1. position is fixed after a sample has been triggered.
-- `sampleEnd if`: set position at which sample ends playing or starts to loop, expressed in 0-1. position is fixed after a sample has been triggered. if sample end is lower than sample start sample will playback reversed.
-- `loopPoint if`: set position within sample start - end at which loop will start, expressed in 0-1.
-- `enableLoop i`: enables loop.
-- `disableLoop i`: disables loop, sample is played as a oneshot.
-- `speed if`: playback speed. 0-5 where 1 is normal playback.
-- `volume if`: if: playback volume expressed in dB.
-- `volumeEnvAttack if`: volume envelope attack time.
-- `volumeEnvRelease if`: volume envelope release time.
-- `pan if`: pan -1...1.
-- `filterCutoff if`: filter cutoff expressed in Hz.
-- `filterRes if`: filter resonance 0-1.
-- `filterMode ii`: 0=lowpass, 1=bandpass, 2=highpass, 3=notch, 4=peak.
-- `filterEnvAttack if`: filter envelope attack time.
-- `filterEnvRelease if`: filter envelope release time.
-- `filterEnvMod if`: filter cutoff envelope modulation -1...1.
-- `delaySend if`: delay send expressed in dB.
-- `reverbSend if`: reverb send expressed in dB.
+- `loadSample is` - load sample given an absolute path.
+- `sampleStart if` - set position at which sample starts to play, expressed in 0-1. position is fixed after a sample has been triggered.
+- `sampleEnd if` - set position at which sample ends playing or starts to loop, expressed in 0-1. position is fixed after a sample has been triggered. if sample end is lower than sample start sample will playback reversed.
+- `loopPoint if` - set position within sample start - end at which loop will start, expressed in 0-1.
+- `enableLoop i` - enables loop.
+- `disableLoop i` - disables loop, sample is played as a oneshot.
+- `speed if` - playback speed. 0-5 where 1 is normal playback.
+- `volume if` - playback volume expressed in dB.
+- `volumeEnvAttack if` - volume envelope attack time.
+- `volumeEnvRelease if` - volume envelope release time.
+- `pan if` - pan -1...1.
+- `filterCutoff if` - filter cutoff expressed in Hz.
+- `filterRes if` - filter resonance 0-1.
+- `filterMode ii` - 0=lowpass, 1=bandpass, 2=highpass, 3=notch, 4=peak.
+- `filterEnvAttack if` - filter envelope attack time.
+- `filterEnvRelease if` - filter envelope release time.
+- `filterEnvMod if` - filter cutoff envelope modulation -1...1.
+- `delaySend if` - delay send expressed in dB.
+- `reverbSend if` - reverb send expressed in dB.
 
 ### Effects Settings
 
-- `delayTime f`: delay time in seconds 0.0001 .. 5.
-- `delayFeedback f`: reverb feedback 0 .. 1.25.
-- `delayLevel f`: reverb level expressed in dB.
-- `reverbRoom f`: reverb room 0 .. 1.
-- `reverbDamp f`: reverb damp 0 .. 1.
-- `reverbLevel f`: reverb level expressed in dB.
+- `delayTime f` - delay time in seconds 0.0001 .. 5.
+- `delayFeedback f` - reverb feedback 0 .. 1.25.
+- `delayLevel f` - reverb level expressed in dB.
+- `reverbRoom f` - reverb room 0 .. 1.
+- `reverbDamp f` - reverb damp 0 .. 1.
+- `reverbLevel f` - reverb level expressed in dB.
 
 ## Using the Ack Lua Module
 
@@ -93,31 +93,31 @@ Parameters are self-explanatory. See details and ranges below.
 
 Settings per channel:
 
-- `sample`: sample to play
-- `sample start`: position in sample where playback will start
-- `sample end`: position in sample where playback will end (if oneshot sample) or loop (if loop is enabled)
-- `loop point`: position within sample start / end where sample will retrigger if loop is enabled
-- `loop`: loop enable / disable
-- `speed`: 5-500%
-- `volume`: expressed in dB
-- `volume env atk`: 0-1000 ms
-- `volume env rel`: 0-3000 ms
-- `pan`: L100 to MID to R100
-- `filter mode`: lowpass/bandpass/highpass/notch/peak
-- `filter cutoff`: 20-20000 Hz
-- `filter res`: 0-100%
-- `filter env atk`: 0-1000 ms
-- `filter env rel`: 0-3000 ms
-- `filter env mod`: bipolar -100..100%
-- `delay send`: expressed in dB
-- `reverb send`: expressed in dB
+- `sample` - sample to play
+- `sample start` - position in sample where playback will start
+- `sample end` - position in sample where playback will end (if oneshot sample) or loop (if loop is enabled)
+- `loop point` - position within sample start / end where sample will retrigger if loop is enabled
+- `loop` - loop enable / disable
+- `speed` - 5-500%
+- `volume` - expressed in dB
+- `volume env atk` - 0-1000 ms
+- `volume env rel` - 0-3000 ms
+- `pan` - L100 to MID to R100
+- `filter mode` - lowpass/bandpass/highpass/notch/peak
+- `filter cutoff` - 20-20000 Hz
+- `filter res` - 0-100%
+- `filter env atk` - 0-1000 ms
+- `filter env rel` - 0-3000 ms
+- `filter env mod` - bipolar -100..100%
+- `delay send` - expressed in dB
+- `reverb send` - expressed in dB
 
 Effects settings:
 
-- `delay time f`: 0-5000 ms
-- `delay feedback f`: 0-125%
-- `delay level`: expressed in dB
-- `reverb room size`: 0-100%
-- `reverb damp`: 0-100%
-- `reverb level`: expressed in dB
+- `delay time` - 0-5000 ms
+- `delay feedback` - 0-125%
+- `delay level` - expressed in dB
+- `reverb room size` - 0-100%
+- `reverb damp` - 0-100%
+- `reverb level` - expressed in dB
 
