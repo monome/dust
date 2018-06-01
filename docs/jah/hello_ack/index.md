@@ -17,7 +17,7 @@ Sample player controlled by grid or midi
 - KEY2: Trigger Selected Channel(s)
 - KEY3: Select all modifier
 - GRID: First 8 buttons of row 8 triggers samples
-- MIDI: Midi notes triggers 
+- MIDI: Midi notes triggers samples
 
 ## Grid Support
 
@@ -27,5 +27,23 @@ Hello Ack is designed for varibright grids.
 
 Options are available in the MENU > PARAMETERS list.
 
-The script exposes [../ack](ack engine parameters) for each channel.
+Script options:
+
+- grid selects channel - yes/no.
+- midi in - disabled/enabled. Default is enabled.
+- midi selects channel - yes/no.
+- filter cutoff cc - What midi control change message controls filter cutoff of selected param(s): 0...127. default is 1.
+- filter cutoff cc type - abs/rel.
+- filter res cc - What midi control change message controls filter resonance of selected param(s): 0...127. default is 2.
+- filter res cc type - abs/rel.
+- delay send cc - What midi control change message controls delay send of selected param(s): 0...127. default is 3.
+- delay send cc type - abs/rel.
+- reverb send cc - What midi control change message controls reverb send of selected param(s): 0...127. default is 4.
+- reverb send cc type - abs/rel.
+
+For each channel:
+
+- channel: midi note - midi note mapped to trigger sample loaded in channel
+
+The script exposes [ack engine parameters](../ack) for each channel.
 

@@ -30,10 +30,10 @@ Options are available in the MENU > PARAMETERS list.
 
 Script options:
 
-- grid width: 8 or 16
-- last row cuts: yes or no. If yes, row 8 will cut playhead position.
-- tempo: 20-300 BPM
-- swing amount: amount to swing odd steps (0-100%)
+- grid width - 8 or 16.
+- last row cuts - yes or no. If yes row 8 will cut playhead position.
+- tempo - 20-300 BPM.
+- swing amount - amount to swing odd steps (0-100%).
 
-The script exposes [../ack](ack engine parameters) for each channel.
+The script exposes [ack engine parameters](../ack) for each channel.
 
