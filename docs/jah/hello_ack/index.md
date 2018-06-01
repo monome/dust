@@ -11,13 +11,13 @@ Sample player controlled by grid or midi
 
 ## Operation
 
-- ENC1: Volume
-- ENC2: Select Channel
-- ENC3: Change Pitch
-- KEY2: Trigger Selected Channel(s)
-- KEY3: Select all modifier
-- GRID: First 8 buttons of row 8 triggers samples
-- MIDI: Midi notes triggers samples
+- ENC1 adjusts volume.
+- ENC2 selects channel.
+- ENC3 changes pitch of selected channel(s).
+- KEY2 triggers selected channel(s).
+- KEY3 select all channels (momentarily).
+- GRID - first 8 buttons of row 8 triggers samples.
+- MIDI notes triggers samples.
 
 ## Grid Support
 
@@ -29,21 +29,21 @@ Options are available in the MENU > PARAMETERS list.
 
 Script options:
 
-- grid selects channel - yes/no.
-- midi in - disabled/enabled. Default is enabled.
-- midi selects channel - yes/no.
-- filter cutoff cc - What midi control change message controls filter cutoff of selected param(s): 0...127. default is 1.
-- filter cutoff cc type - abs/rel.
-- filter res cc - What midi control change message controls filter resonance of selected param(s): 0...127. default is 2.
-- filter res cc type - abs/rel.
-- delay send cc - What midi control change message controls delay send of selected param(s): 0...127. default is 3.
-- delay send cc type - abs/rel.
-- reverb send cc - What midi control change message controls reverb send of selected param(s): 0...127. default is 4.
-- reverb send cc type - abs/rel.
+- `grid selects channel` - yes/no.
+- `midi in` - disabled/enabled. Default is enabled.
+- `midi selects channel` - yes/no.
+- `filter cutoff cc` - MIDI controller no changing filter cutoff of selected param(s): 0...127. default is 1.
+- `filter cutoff cc type` - abs/rel.
+- `filter res cc` - MIDI controller no changing filter resonance of selected param(s): 0...127. default is 2.
+- `filter res cc type` - abs/rel.
+- `delay send cc` - MIDI controller no changing delay send of selected param(s): 0...127. default is 3.
+- `delay send cc type` - abs/rel.
+- `reverb send cc` - MIDI controller no changing reverb send of selected param(s): 0...127. default is 4.
+- `reverb send cc type` - abs/rel.
 
 For each channel:
 
-- channel: midi note - midi note mapped to trigger sample loaded in channel
+- `[channel]: midi note` - MIDI note mapped to trigger sample loaded in channel.
 
 The script exposes [ack engine parameters](../ack) for each channel.
 
