@@ -1,26 +1,31 @@
+
+
 -- Euclidean rythm (http://en.wikipedia.org/wiki/Euclidean_Rhythm)
-function er(k,n)
-    local r = {}
-    for i = 1,n do
-        r[i] = {i <= k}
-    end
-    
-    local function cat(i,k)
-        for _,v in ipairs(r[k]) do
-            r[i][#r[i]+1] = v
-        end
-        r[k] = nil
-    end
-    
-    while #r > k do
-        for i = 1,math.min(k, #r-k) do
-            cat(i, #r)
-        end
-    end
+-- @param k : number of pulses
+-- @param n : total number of steps
+function er(k, n)
 
-    while #r > 1 do
-       cat(#r-1, #r) 
-    end
+   -- total number of steps
+   local m = k - n
+   -- results array, intialliy all zero
+   local r = {}
+   for i=1,n do r[i] = false end
 
-    return r[1]
+   -- using the "bucket method"
+   -- for each step in the output, add K to the bucket.
+   -- if the bucket overflows, this step contains a pulse.
+   local b = 0
+   for i=1,n do
+      b = b + k
+      if b >= n then
+	 b = b - n
+	 -- r[i] = true
+	 --- hm, let's rotate left by 1 (or forward by N)
+	 --- this means that pulse will always be on first step, instead of last step
+	 r[(i+n+1)%n] = true
+      end
+   end
+
+   return r
+   
 end
