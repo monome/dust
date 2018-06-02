@@ -1,10 +1,10 @@
 
 
--- Euclidean rythm (http://en.wikipedia.org/wiki/Euclidean_Rhythm)
+-- Euclidean rhythm (http://en.wikipedia.org/wiki/Euclidean_Rhythm)
 -- @param k : number of pulses
 -- @param n : total number of steps
 function er(k, n)
-   -- results array, intialliy all zero
+   -- results array, intially all zero
    local r = {}
    for i=1,n do r[i] = false end
 
