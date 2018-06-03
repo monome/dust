@@ -102,6 +102,7 @@ function init()
   
   screen_refresh_metro = metro.alloc()
   screen_refresh_metro.callback = function(stage)
+    update()
     redraw()
   end
   screen_refresh_metro:start(1 / screen_framerate)
@@ -289,16 +290,9 @@ function stop_all_screen_notes()
   end
 end
 
-function redraw()
-  screen.clear()
-  screen.aa(0)
-  screen.line_width(1)
-  
+function update()
   for n_key, n_val in pairs(screen_notes) do
     for r_key, r_val in pairs(n_val.ripples) do
-      screen.level(math.max(1,math.floor(r_val.alpha * 15 + 0.5)))
-      screen.circle(n_val.x, n_val.y, r_val.radius)
-      screen.stroke()
       
       r_val.radius = r_val.radius + ripple_growth_rate
       r_val.alpha = r_val.alpha - ripple_fade_rate
@@ -309,6 +303,25 @@ function redraw()
     end
     if #n_val.ripples == 0 and not n_val.metro.is_running then
       screen_notes[n_key] = nil
+    end
+  end
+end
+
+function redraw()
+  screen.clear()
+  screen.aa(0)
+  screen.line_width(1)
+  
+  local first_ripple = true
+  for n_key, n_val in pairs(screen_notes) do
+    for r_key, r_val in pairs(n_val.ripples) do
+      if first_ripple then -- Avoid extra line when returning from menu
+        screen.move(n_val.x + r_val.radius, n_val.y)
+        first_ripple = false
+      end
+      screen.level(math.max(1,math.floor(r_val.alpha * 15 + 0.5)))
+      screen.circle(n_val.x, n_val.y, r_val.radius)
+      screen.stroke()
     end
   end
   
