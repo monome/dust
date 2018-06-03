@@ -85,7 +85,7 @@ function init()
   engine.level(0.05)
   engine.stopAll()
 
-  params:read("earthsea.pset")
+  params:read("tehn/earthsea.pset")
 
   params:bang()
 

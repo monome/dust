@@ -119,7 +119,7 @@ function init()
     redraw()
   end
 
-  params:read("awake.pset")
+  params:read("tehn/awake.pset")
   params:bang()
 
   t:start()
