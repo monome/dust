@@ -94,7 +94,7 @@ function init()
   engine.stopAll()
   stop_all_screen_notes()
 
-  params:read("earthsea.pset")
+  params:read("tehn/earthsea.pset")
 
   params:bang()
 

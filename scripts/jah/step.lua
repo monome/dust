@@ -204,7 +204,7 @@ function init()
   Ack.add_params()
   params:bang()
 
-  params:read("step.pset")
+  params:read("jah/step.pset")
 
   playing = true
   timer:start()

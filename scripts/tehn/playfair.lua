@@ -72,7 +72,7 @@ function init()
   end
   t:start()
   
-  params:read("playfair.pset")
+  params:read("tehn/playfair.pset")
   params:bang()
 end
 
