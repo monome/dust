@@ -19,9 +19,9 @@ local lit = {}
 local screen_framerate = 15
 local screen_refresh_metro
 
-local ripple_timeout = 0.5
-local ripple_growth_rate = 50 / screen_framerate
-local ripple_fade_rate = 1 / ripple_timeout / screen_framerate
+local ripple_repeat_rate = 1 / 0.3 / screen_framerate
+local ripple_decay_rate = 1 / 0.5 / screen_framerate
+local ripple_growth_rate = 1 / 0.02 / screen_framerate
 local screen_notes = {}
 
 engine.name = 'PolySub'
@@ -242,43 +242,34 @@ function key(n,z)
 end
 
 function start_screen_note(note)
-  if #screen_notes > 8 then return end
-  
-  local screen_note
+  local screen_note = nil
   
   -- Get an existing screen_note if it exists
-  local found = false;
+  local count = 0
   for key, val in pairs(screen_notes) do
     if val.note == note then
       screen_note = val
-      screen_note.metro:start()
-      found = true;
       break
     end
+    count = count + 1
+    if count > 8 then return end
   end
   
-  -- If not, add a new screen_note
-  if not found then
-    screen_note = {note = note, x = math.random(128), y = math.random(64), init_radius = math.random(8,18), ripples = {}, metro = metro.alloc() }
-    screen_note.metro.time = 0.4
-    screen_note.metro.callback = function(stage)
-      local ripple = {radius = screen_note.init_radius, alpha = 1}
-      table.insert(screen_note.ripples, ripple)
-    end
-    screen_note.metro:start()
+  if screen_note then
+    screen_note.active = true
+  else
+    screen_note = {note = note, active = true, repeat_timer = 0, x = math.random(128), y = math.random(64), init_radius = math.random(6,18), ripples = {} }
     table.insert(screen_notes, screen_note)
   end
   
-  -- Add a ripple
-  local ripple = {radius = screen_note.init_radius, alpha = 1}
-  table.insert(screen_note.ripples, ripple)
+  add_ripple(screen_note)
   
 end
 
 function stop_screen_note(note)
   for key, val in pairs(screen_notes) do
     if val.note == note then
-      metro.free(val.metro.id)
+      val.active = false
       break
     end
   end
@@ -286,22 +277,41 @@ end
 
 function stop_all_screen_notes()
   for key, val in pairs(screen_notes) do
-    metro.free(val.metro.id)
+    val.active = false
+  end
+end
+
+function add_ripple(screen_note)
+  if tab.count(screen_note.ripples) < 6 then
+    local ripple = {radius = screen_note.init_radius, life = 1}
+    table.insert(screen_note.ripples, ripple)
   end
 end
 
 function update()
   for n_key, n_val in pairs(screen_notes) do
-    for r_key, r_val in pairs(n_val.ripples) do
-      
-      r_val.radius = r_val.radius + ripple_growth_rate
-      r_val.alpha = r_val.alpha - ripple_fade_rate
-      
-      if r_val.alpha <= 0 then
-        n_val.ripples[r_key] = nil
+    
+    if n_val.active then
+      n_val.repeat_timer = n_val.repeat_timer + ripple_repeat_rate
+      if n_val.repeat_timer >= 1 then
+        add_ripple(n_val)
+        n_val.repeat_timer = 0
       end
     end
-    if #n_val.ripples == 0 and not n_val.metro.is_running then
+    
+    local r_count = 0
+    for r_key, r_val in pairs(n_val.ripples) do
+      r_val.radius = r_val.radius + ripple_growth_rate
+      r_val.life = r_val.life - ripple_decay_rate
+      
+      if r_val.life <= 0 then
+        n_val.ripples[r_key] = nil
+      else
+        r_count = r_count + 1
+      end
+    end
+    
+    if r_count == 0 and not n_val.active then
       screen_notes[n_key] = nil
     end
   end
@@ -319,7 +329,7 @@ function redraw()
         screen.move(n_val.x + r_val.radius, n_val.y)
         first_ripple = false
       end
-      screen.level(math.max(1,math.floor(r_val.alpha * 15 + 0.5)))
+      screen.level(math.max(1,math.floor(r_val.life * 15 + 0.5)))
       screen.circle(n_val.x, n_val.y, r_val.radius)
       screen.stroke()
     end
