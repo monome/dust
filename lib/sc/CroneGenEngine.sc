@@ -15,7 +15,7 @@ CroneGenEngine : CroneEngine {
 
 	initCroneGenEngine {
 		var synthDef;
-		synthDef = this.synthDef;
+		synthDef = this.class.synthDef;
 
 		if (synthDef.name == 'nil') { // TODO: even needed, or should this simply be overwritten to classname?
 			synthDef.name = this.asString.asSymbol;
@@ -50,7 +50,7 @@ CroneGenEngine : CroneEngine {
 			'amp_env1', // TODO: possibly map amp_env in synth output bus index to this argument
 			'pitch_trk0', // TODO: possibly map pitch out synth output bus index to this argument, not sure about whether pitch is before or after processing, so skip for now
 			'pitch_trk1' // TODO: possibly map pitch out synth output bus index to this argument, not sure about whether pitch is before or after processing, so skip for now
-		] ++ if (inControlName, [inControlName], []) ++ if (outControlName, [outControlName], []);
+		] ++ if (inControlName.notNil, [inControlName], []) ++ if (outControlName.notNil, [outControlName], []);
 
 		controlsToExposeAsCommands = synthDesc.controls.reject { |control|
 			controlsNotToExposeAsCommands.includes(control.name);
@@ -59,15 +59,15 @@ CroneGenEngine : CroneEngine {
 		controlBusses = IdentityDictionary.new;
 
         args = this.autorouteInputs(inControlName, args);
-		this.trace(\autorouteInputs, args);
+		this.class.trace(\autorouteInputs, args);
         args = this.autorouteOutputs(outControlName, args);
-		this.trace(\autorouteOutputs, args);
+		this.class.trace(\autorouteOutputs, args);
         args = this.autorouteAmplitudeEnvelope(args);
-		this.trace(\autorouteAmp, args);
+		this.class.trace(\autorouteAmp, args);
         args = this.autoroutePitchTracker(args);
-		this.trace(\autoroutePitch, args);
+		this.class.trace(\autoroutePitch, args);
 
-		this.trace(\type, type);
+		this.class.trace(\type, type);
 
 		switch (type)
 			{\persistent} {
@@ -110,7 +110,7 @@ CroneGenEngine : CroneEngine {
 						if (synthDesc.hasControlNamed(\amp)) {
 							noteOnArgs = [\amp, \midivelocity.asSpec.unmap(velocity)].addAll(noteOnArgs); // TODO: fix amp curve
 						};
-						this.trace(\noteOnArgs, noteOnArgs);
+						this.class.trace(\noteOnArgs, noteOnArgs);
 						context.server.makeBundle(nil, {
 							synths[midinote] !? _.release;
 							synths[midinote] = Synth(
@@ -234,11 +234,11 @@ CroneGenEngine : CroneEngine {
 		context.server.sync;
 
 		specs = synthDesc.metadata !? { |metadata| metadata.specs } ? ();
-		// this.trace(\specs, specs);
+		// this.class.trace(\specs, specs);
 
 		args = this.addCommandsForControlsToExposeAsCommands(controlsToExposeAsCommands, specs, args);
 
-		this.trace(\argsComplete, args);
+		this.class.trace(\argsComplete, args);
 
 		context.server.sync; // TODO: don't think this is needed, test
 
@@ -299,7 +299,7 @@ CroneGenEngine : CroneEngine {
 			var controlName = control.name;
 			var spec;
 			var busArgs;
-			this.trace(\controlName, controlName);
+			this.class.trace(\controlName, controlName);
 			spec = if (specs[controlName].notNil) { specs[controlName].asSpec } { controlName.asSpec };
 			controlBusses[controlName] = Bus.control;
 			if (spec.notNil) {
@@ -309,7 +309,7 @@ CroneGenEngine : CroneEngine {
 			};
 			busArgs = [controlName, controlBusses[controlName].asMap];
 			args = args.addAll(busArgs);
-			this.trace(\controlBusArg, busArgs);
+			this.class.trace(\controlBusArg, busArgs);
 			this.addCommand( // TODO: these controls are suited as possible direct-to-scsynth commands
 				controlName.asString,
 				"f",
@@ -317,13 +317,13 @@ CroneGenEngine : CroneEngine {
 					{ |msg|
 						var value = msg[1];
 						var constrainedValue = spec.constrain(value);
-						this.trace(\speccedControlBusCommand, [controlName, controlBusses[controlName], value, constrainedValue]);
+						this.class.trace(\speccedControlBusCommand, [controlName, controlBusses[controlName], value, constrainedValue]);
 						controlBusses[controlName].set(constrainedValue);
 					}
 				} {
 					{ |msg|
 						var value = msg[1];
-						this.trace(\unspeccedControlBusCommand, [controlName, controlBusses[controlName], value]);
+						this.class.trace(\unspeccedControlBusCommand, [controlName, controlBusses[controlName], value]);
 						controlBusses[controlName].set(value);
 					}
 				}
@@ -465,7 +465,7 @@ CroneSynthDefIntrospectionUtil {
 			ampenvControls: [],
 			pitchtrkControls: [],
 			controlsToExposeAsCommands: controlsToExposeAsCommands
-		)
+		);
 	}
 
     *retrieveInputControlName { |synthDesc|
@@ -488,7 +488,7 @@ CroneSynthDefIntrospectionUtil {
 }
 
 + SynthDesc {
-	*hasControlNamed { |controlName|
+	hasControlNamed { |controlName|
 		^this.controls.any {|control| control.name == controlName};
 	}
 }

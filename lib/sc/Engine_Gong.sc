@@ -5,29 +5,36 @@ Engine_Gong : CroneGenEngine {
 
 	*ugenGraphFunc {
 		^{
-			arg 
+			arg
 				amp_env0,
 				amp_env1,
 				pitch_trk0,
 				pitch_trk1,
 				out,
-freq, // TODO: fixme
+				gate,
+				freq, // TODO: fixme
 				osc1gain,
-				osc1freq,
+				osc1partial,
+				osc1freerunning,
+				osc1freefreq,
 				osc1index,
 				osc1outlevel,
 				osc1_to_osc1freq,
 				osc1_to_osc2freq,
 				osc1_to_osc3freq,
 				osc2gain,
-				osc2freq,
+				osc2partial,
+				osc2freerunning,
+				osc2freefreq,
 				osc2index,
 				osc2outlevel,
 				osc2_to_osc1freq,
 				osc2_to_osc2freq,
 				osc2_to_osc3freq,
 				osc3gain,
-				osc3freq,
+				osc3partial,
+				osc3freerunning,
+				osc3freefreq,
 				osc3index,
 				osc3outlevel,
 				osc3_to_osc3freq,
@@ -44,7 +51,6 @@ freq, // TODO: fixme
 				lfo_to_hpfcutoff,
 				lfo_to_hpfres,
 				lfo_to_ampgain,
-				gate,
 				envattack,
 				envdecay,
 				envsustain,
@@ -79,9 +85,12 @@ freq, // TODO: fixme
 			var lpfrq = rqSpec.map(1-(lpfres + (env * env_to_lpfres) + (lfo * lfo_to_lpfres)));
 			var sig;
 
-			osc1freq = freq*3;
-			osc2freq = freq*2;
-			osc3freq = freq;
+			var osc1freq, osc2freq, osc3freq;
+
+			osc1freq = Select.kr(osc1freerunning, [freq*osc1partial, osc1freefreq]);
+			osc2freq = Select.kr(osc2freerunning, [freq*osc2partial, osc2freefreq]);
+			osc3freq = Select.kr(osc3freerunning, [freq*osc3partial, osc3freefreq]);
+
 			osc1 = SinOsc.ar(
 				osc1freq
 					+ (oscfeedback[0] * osc1freq * osc1_to_osc1freq * osc1index) // TODO: moving index multiplication is likely more optimal
@@ -132,7 +141,9 @@ freq, // TODO: fixme
 			sp = sp.addAll(
 				[
 					"osc%gain".format(oscnum+1) -> \amp.asSpec,
-					"osc%freq".format(oscnum+1) -> \widefreq.asSpec,
+					"osc%partial".format(oscnum+1) -> ControlSpec(0.5, 12, 'lin', 0.5, 1, ""),
+					"osc%freerunning".format(oscnum+1) -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+					"osc%freefreq".format(oscnum+1) -> \widefreq.asSpec,
 					"osc%index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
 					"osc%outlevel".format(oscnum+1) -> \amp.asSpec,
 				]
@@ -188,7 +199,7 @@ freq, // TODO: fixme
 		^sp;
     }
 
-	*synthDef { // TODO: remove, this is just due to wrapping of out not working right
+	*synthDef { // TODO: remove, this is just due to wrapping of out not working right atm
 		^SynthDef(
 			\abcd,
 			this.ugenGraphFunc,
