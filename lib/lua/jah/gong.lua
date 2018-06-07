@@ -2,10 +2,21 @@ local ControlSpec = require 'controlspec'
 local Formatters = require 'jah/formatters'
 local Gong = {}
 
-Gong.specs = {}
+local specs = {}
 
-Gong.specs.send = ControlSpec.DB:copy()
-Gong.specs.send.default = -60
+specs.timbre = ControlSpec.new(0, 5, 'lin', nil, 1, "")
+specs.timemod = ControlSpec.new(0, 5, 'lin', nil, 1, "")
+
+specs.oscgain = ControlSpec.AMP
+specs.oscfixed = ControlSpec.new(0, 1, 'lin', 1, 0, "")
+specs.oscfixedfreq = ControlSpec.WIDE_FREQ
+specs.oscpartial = ControlSpec.new()
+
+					"osc%partial".format(oscnum+1) -> ControlSpec(0.5, 12, 'lin', 0.5, 1, ""),
+					"osc%fixed".format(oscnum+1) -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+					"osc%fixedfreq".format(oscnum+1) -> \widefreq.asSpec,
+					"osc%index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
+					"osc%outlevel".format(oscnum+1) -> \amp.asSpec,
 
 Gong.specs.sample_start = ControlSpec.UNIPOLAR
 Gong.specs.sample_end = ControlSpec.new(0, 1, 'lin', 0, 1, "")
@@ -37,6 +48,8 @@ Gong.specs.reverb_room = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 Gong.specs.reverb_damp = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
 Gong.specs.reverb_level = ControlSpec.DB:copy()
 Gong.specs.reverb_level.default = -10
+
+Gong.specs = specs
 
 function Gong.add_channel_sample_param(channel)
   params:add_file(channel..": sample")
