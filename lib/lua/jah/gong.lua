@@ -41,11 +41,6 @@ specs.env_to_ampgain = ControlSpec.BIPOLAR
 
 Gong.specs = specs
 
-function Gong.add_reverb_send_param(channel)
-  params:add_control(channel..": reverb send", GonGong.specs.send, Formatters.default)
-  params:set_action(channel..": reverb send", function(value) engine.reverbSend(channel-1, value) end)
-end
-
 local function bind(paramname, id, formatter, specref)
   params:add_control(paramname, specs[specref or id], formatter)
   params:set_action(paramname, engine[id])
@@ -58,8 +53,6 @@ function Gong.add_params()
   bind("timemod", "timemod", Formatters.percentage)
 
   for oscnum=1,numoscs do
-    -- params:add_control("osc"..oscnum.." gain", specs.oscgain, Formatters.percentage)
-    -- params:set_action("osc"..oscnum.." gain", engine["osc"..oscnum.."gain"])
     bind("osc"..oscnum.." gain", "osc"..oscnum.."gain", Formatters.percentage, "oscgain")
 
     params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
@@ -71,30 +64,15 @@ function Gong.add_params()
       end
     end)
 
-    -- params:add_control("osc"..oscnum.." partial no", specs.oscpartial)
-    -- params:set_action("osc"..oscnum.." partial no", engine["osc"..oscnum.."partial"])
     bind("osc"..oscnum.." partial no", "osc"..oscnum.."partial", nil, "oscpartial")
 
-    -- params:add_control("osc"..oscnum.." fixed freq", specs.oscfixedfreq)
-    -- params:set_action("osc"..oscnum.." fixed freq", engine["osc"..oscnum.."fixedfreq"])
     bind("osc"..oscnum.." fixed freq", "osc"..oscnum.."fixedfreq", nil, "oscfixedfreq")
 
-    -- params:add_control("osc"..oscnum.." index", specs.oscindex)
-    -- params:set_action("osc"..oscnum.." index", engine["osc"..oscnum.."index"])
     bind("osc"..oscnum.." index", "osc"..oscnum.."index", nil, "oscindex")
 
-    -- params:add_control("osc"..oscnum.." > out", specs.oscoutlevel)
-    -- params:set_action("osc"..oscnum.." > out", engine["osc"..oscnum.."outlevel"])
     bind("osc"..oscnum.." > out", "osc"..oscnum.."outlevel", Formatters.percentage, "oscoutlevel")
 
     for src=1,numoscs do
-      --[[
-      params:add_control("osc"..src.." > osc"..oscnum.." freq", specs.osc_to_oscfreq)
-      params:set_action(
-        "osc"..src.." > osc"..oscnum.." freq",
-        engine["osc"..src.."_to_osc"..oscnum.."freq"]
-      )
-      ]]
       bind(
         "osc"..src.." > osc"..oscnum.." freq",
         "osc"..src.."_to_osc"..oscnum.."freq",
@@ -102,26 +80,18 @@ function Gong.add_params()
         "osc_to_oscfreq"
       )
     end
-    --[[
-    params:add_control("env > osc"..oscnum.." freq", specs.env_to_oscfreq)
-    params:set_action("env > osc"..oscnum.." freq", engine["env_to_osc"..oscnum.."freq"])
-    ]]
-      bind(
-        "env > osc"..oscnum.." freq",
-        "env_to_osc"..oscnum.."freq",
-        Formatters.percentage,
-        "env_to_oscfreq"
-      )
-    --[[
-    params:add_control("env > osc"..oscnum.." gain", specs.env_to_oscgain)
-    params:set_action("env > osc"..oscnum.." gain", engine["env_to_osc"..oscnum.."freq"])
-    ]]
-      bind(
-        "env > osc"..oscnum.." gain",
-        "env_to_osc"..oscnum.."gain",
-        Formatters.percentage,
-        "env_to_oscgain"
-      )
+    bind(
+      "env > osc"..oscnum.." freq",
+      "env_to_osc"..oscnum.."freq",
+      Formatters.percentage,
+      "env_to_oscfreq"
+    )
+    bind(
+      "env > osc"..oscnum.." gain",
+      "env_to_osc"..oscnum.."gain",
+      Formatters.percentage,
+      "env_to_oscgain"
+    )
   end
 
   bind("env attack", "envattack")
@@ -132,18 +102,18 @@ function Gong.add_params()
   bind("lpf resonance", "lpfres")
   bind("hpf cutoff", "hpfcutoff")
   bind("hpf resonance", "hpfres")
-  bind("amp gain", "ampgain")
+  bind("amp gain", "ampgain", Formatters.percentage)
   bind("lfo rate", "lforate")
-  bind("lfo > lpf cutoff", "lfo_to_lpfcutoff")
-  bind("lfo > lpf resonance", "lfo_to_lpfres")
-  bind("lfo > hpf cutoff", "lfo_to_hpfcutoff")
-  bind("lfo > hpf resonance", "lfo_to_hpfres")
-  bind("lfo > amp gain", "lfo_to_ampgain")
-  bind("env > amp gain", "env_to_ampgain")
-  bind("env > lpf cutoff", "env_to_lpfcutoff")
-  bind("env > lpf resonance", "env_to_lpfres")
-  bind("env > hpf cutoff", "env_to_hpfcutoff")
-  bind("env > hpf resonance", "env_to_hpfres")
+  bind("lfo > lpf cutoff", "lfo_to_lpfcutoff", Formatters.percentage)
+  bind("lfo > lpf resonance", "lfo_to_lpfres", Formatters.percentage)
+  bind("lfo > hpf cutoff", "lfo_to_hpfcutoff", Formatters.percentage)
+  bind("lfo > hpf resonance", "lfo_to_hpfres", Formatters.percentage)
+  bind("lfo > amp gain", "lfo_to_ampgain", Formatters.percentage)
+  bind("env > amp gain", "env_to_ampgain", Formatters.percentage)
+  bind("env > lpf cutoff", "env_to_lpfcutoff", Formatters.percentage)
+  bind("env > lpf resonance", "env_to_lpfres", Formatters.percentage)
+  bind("env > hpf cutoff", "env_to_hpfcutoff", Formatters.percentage)
+  bind("env > hpf resonance", "env_to_hpfres", Formatters.percentage)
 end
 
 return Gong

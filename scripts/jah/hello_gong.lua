@@ -1,5 +1,3 @@
--- hello_gong:
-
 -- hello gong.
 -- 6 voice polyphonic fm synth
 -- controlled by midi
@@ -8,10 +6,10 @@
 -- enc3: time macro control
 -- key2: trig random note
 --
--- more parameters in
--- menu > parameters
---
 -- midi: play notes
+--
+-- synth parameters in
+-- menu > parameters
 --
 
 local ControlSpec = require 'controlspec'
@@ -56,11 +54,11 @@ local function screen_update_midi_indicators()
 end
 
 local function trig_voice(voicenum, note)
-  engine.noteOn(voicenum, note)
+  engine.noteOn(voicenum-1, note)
 end
 
 local function release_voice(voicenum)
-  engine.noteOff(voicenum)
+  engine.off(voicenum-1)
 end
 
 local noteslots = {}
@@ -90,17 +88,19 @@ local function note_off(note)
 end
 
 local function default_patch()
-  params:set("osc2 > osc3 freq", 1)
-  params:set("osc2 partial no", 2)
+  params:set("osc1 > osc3 freq", 1)
+  params:set("osc1 partial no", 2)
   params:set("osc3 gain", 1)
   params:set("osc3 index", 5)
   params:set("osc3 > out", 0.1)
-  params:set("env1 > osc2 gain", 1)
-  params:set("env2 > amp gain", 1)
+  params:set("env > osc1 gain", 0.5)
+  params:set("env > amp gain", 1)
+  --[[
   params:set("delay send", -20)
   params:set("delay time left", 0.03)
   params:set("delay time right", 0.05)
   params:set("delay feedback", -30)
+  ]]
 end
 
 function init()
@@ -109,6 +109,7 @@ function init()
   voice = Voice.new(POLYPHONY)
   -- params:read("gong.pset")
 
+  default_patch()
   screen.line_width(1.0)
 end
 
@@ -124,9 +125,9 @@ function redraw()
   screen.update()
 end
 
-enc = function(n, delta)
+function enc(n, delta)
   if n == 1 then
-    norns.audio.adjust_output_level(delta)
+    mix:delta("output", delta)
   elseif n == 2 then
     params:delta("timbre", delta)
   elseif n == 3 then
@@ -134,15 +135,14 @@ enc = function(n, delta)
   end
 end
 
-key = function(n, z)
+local lastkeynote
+
+function key(n, z)
   if n == 2 and z == 1 then
-    note_on(60, 100)
+    lastkeynote = math.random(60) + 20
+    note_on(lastkeynote, 100)
   elseif n == 2 and z == 0 then
-    note_off(60)
-  elseif n == 3 and z == 1 then
-    note_on(64, 100)
-  elseif n == 3 and z == 0 then
-    note_off(64)
+    note_off(lastkeynote)
   end
 end
 
