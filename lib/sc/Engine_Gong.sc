@@ -166,6 +166,9 @@ Engine_Gong : CroneGenEngine {
 					"osc%fixedfreq".format(oscnum+1) -> \widefreq.asSpec,
 					"osc%index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
 					"osc%outlevel".format(oscnum+1) -> \amp.asSpec,
+					"env_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
+					"env_to_osc%gain".format(oscnum+1) -> \bipolar.asSpec,
+					"lfo_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
 				]
 			);
 			numOscs.do { |dest|
@@ -183,13 +186,10 @@ Engine_Gong : CroneGenEngine {
 				'ampgain' -> \amp.asSpec,
 				'lforate' -> \rate.asSpec,
 				'lfo_to_lpfcutoff' -> \bipolar.asSpec,
-				'lfo_to_lpfres' -> \amp.asSpec,
-				'lfo_to_hpfcutoff' -> \amp.asSpec,
-				'lfo_to_hpfres' -> \amp.asSpec,
+				'lfo_to_lpfres' -> \bipolar.asSpec,
+				'lfo_to_hpfcutoff' -> \bipolar.asSpec,
+				'lfo_to_hpfres' -> \bipolar.asSpec,
 				'lfo_to_ampgain' -> \bipolar.asSpec,
-				'lfo_to_osc1freq' -> \bipolar.asSpec,
-				'lfo_to_osc2freq' -> \bipolar.asSpec,
-				'lfo_to_osc3freq' -> \bipolar.asSpec,
 				'gate' -> \unipolar.asSpec,
 				'envattack' -> ControlSpec(0, 5000, 'lin', 0, 5, "ms"),
 				'envdecay' -> ControlSpec(0, 5000, 'lin', 0, 30, "ms"),
@@ -202,15 +202,6 @@ Engine_Gong : CroneGenEngine {
 				'env_to_ampgain' -> \bipolar.asSpec,
 			]
 		);
-
-		numOscs.do { |oscnum|
-			sp = sp.addAll(
-				[
-					"env_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
-					"env_to_osc%gain".format(oscnum+1) -> \bipolar.asSpec,
-				]
-			);
-		};
 
 		sp = sp.collect { |assoc|
 			assoc.key.asSymbol -> assoc.value
