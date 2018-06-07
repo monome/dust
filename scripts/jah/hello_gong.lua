@@ -20,6 +20,7 @@ local Gong = require 'jah/gong'
 
 engine.name = 'Gong'
 
+local POLYPHONY = 6
 local midinote_indicator_level = 0
 local midicc_indicator_level = 0
 local note_downs = {}

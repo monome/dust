@@ -8,8 +8,8 @@ specs.timbre = ControlSpec.new(0, 5, 'lin', nil, 1, "")
 specs.timemod = ControlSpec.new(0, 5, 'lin', nil, 1, "")
 
 specs.oscgain = ControlSpec.AMP
-specs.oscfixed = ControlSpec.new(0, 1, 'lin', 1, 0, "")
-specs.oscfixedfreq = ControlSpec.WIDE_FREQ
+-- TODO specs.oscfixed = ControlSpec.new(0, 1, 'lin', 1, 0, "")
+specs.oscfixedfreq = ControlSpec.WIDEFREQ
 specs.oscpartial = ControlSpec.new(0.5, 12, 'lin', 0.5, 1, "")
 specs.oscindex = ControlSpec.new(0, 24, 'lin', 0, 3, "")
 specs.oscoutlevel = ControlSpec.AMP
@@ -46,77 +46,94 @@ function Gong.add_reverb_send_param(channel)
   params:set_action(channel..": reverb send", function(value) engine.reverbSend(channel-1, value) end)
 end
 
-local function bind(paramname, id)
-  params:add_control(paramname, specs[id])
+local function bind(paramname, id, formatter, specref)
+  params:add_control(paramname, specs[specref or id], formatter)
   params:set_action(paramname, engine[id])
 end
 
 function Gong.add_params()
   local numoscs = 3
 
+  bind("timbre", "timbre", Formatters.percentage)
+  bind("timemod", "timemod", Formatters.percentage)
+
   for oscnum=1,numoscs do
-    params:add_control("osc"..oscnum.." gain", specs.oscgain)
-    -- params:set_action("osc"..oscnum.." gain", function(value) engine["osc"..oscnum.."gain"](value) end)
-    params:set_action("osc"..oscnum.." gain", engine["osc"..oscnum.."gain"])
+    -- params:add_control("osc"..oscnum.." gain", specs.oscgain, Formatters.percentage)
+    -- params:set_action("osc"..oscnum.." gain", engine["osc"..oscnum.."gain"])
+    bind("osc"..oscnum.." gain", "osc"..oscnum.."gain", Formatters.percentage, "oscgain")
 
     params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
     params:set_action("osc"..oscnum.." type", function(value)
       if value == 1 then
-        engine["oscfixed"](0)
+        engine["osc"..oscnum.."fixed"](0)
       else
-        engine["oscfixed"](1)
+        engine["osc"..oscnum.."fixed"](1)
       end
     end)
 
-    params:add_control("osc"..oscnum.." partial no", specs.oscpartial)
-    params:set_action("osc"..oscnum.." partial no", engine["osc"..oscnum.."partial"])
+    -- params:add_control("osc"..oscnum.." partial no", specs.oscpartial)
+    -- params:set_action("osc"..oscnum.." partial no", engine["osc"..oscnum.."partial"])
+    bind("osc"..oscnum.." partial no", "osc"..oscnum.."partial", nil, "oscpartial")
 
-    params:add_control("osc"..oscnum.." fixed freq", specs.oscfixedfreq)
-    params:set_action("osc"..oscnum.." fixed freq", engine["osc"..oscnum.."fixedfreq"])
+    -- params:add_control("osc"..oscnum.." fixed freq", specs.oscfixedfreq)
+    -- params:set_action("osc"..oscnum.." fixed freq", engine["osc"..oscnum.."fixedfreq"])
+    bind("osc"..oscnum.." fixed freq", "osc"..oscnum.."fixedfreq", nil, "oscfixedfreq")
 
-    params:add_control("osc"..oscnum.." index", specs.oscindex)
-    params:set_action("osc"..oscnum.." index", engine["osc"..oscnum.."index"])
+    -- params:add_control("osc"..oscnum.." index", specs.oscindex)
+    -- params:set_action("osc"..oscnum.." index", engine["osc"..oscnum.."index"])
+    bind("osc"..oscnum.." index", "osc"..oscnum.."index", nil, "oscindex")
 
-    params:add_control("osc"..oscnum.." > out", specs.oscoutlevel)
-    params:set_action("osc"..oscnum.." > out", engine["osc"..oscnum.."outlevel"])
+    -- params:add_control("osc"..oscnum.." > out", specs.oscoutlevel)
+    -- params:set_action("osc"..oscnum.." > out", engine["osc"..oscnum.."outlevel"])
+    bind("osc"..oscnum.." > out", "osc"..oscnum.."outlevel", Formatters.percentage, "oscoutlevel")
 
     for src=1,numoscs do
+      --[[
       params:add_control("osc"..src.." > osc"..oscnum.." freq", specs.osc_to_oscfreq)
       params:set_action(
         "osc"..src.." > osc"..oscnum.." freq",
         engine["osc"..src.."_to_osc"..oscnum.."freq"]
       )
+      ]]
+      bind(
+        "osc"..src.." > osc"..oscnum.." freq",
+        "osc"..src.."_to_osc"..oscnum.."freq",
+        Formatters.percentage,
+        "osc_to_oscfreq"
+      )
     end
-  end
-
-  -- params:add_control("env attack", specs.envattack)
-  -- params:set_action("env attack", engine["envattack"])
-  bind("env attack", "envattack")
-
-  -- params:add_control("env decay", specs.envdecay)
-  -- params:set_action("env decay", engine["envdecay"])
-  bind("env decay", "envdecay")
-
-  -- params:add_control("env sustain", specs.envsustain)
-  -- params:set_action("env sustain", engine["envsustain"])
-  bind("env sustain", "envsustain")
-
-  bind("env release", "envrelease")
-
-  for oscnum=1,numoscs do
+    --[[
     params:add_control("env > osc"..oscnum.." freq", specs.env_to_oscfreq)
     params:set_action("env > osc"..oscnum.." freq", engine["env_to_osc"..oscnum.."freq"])
+    ]]
+      bind(
+        "env > osc"..oscnum.." freq",
+        "env_to_osc"..oscnum.."freq",
+        Formatters.percentage,
+        "env_to_oscfreq"
+      )
+    --[[
     params:add_control("env > osc"..oscnum.." gain", specs.env_to_oscgain)
     params:set_action("env > osc"..oscnum.." gain", engine["env_to_osc"..oscnum.."freq"])
+    ]]
+      bind(
+        "env > osc"..oscnum.." gain",
+        "env_to_osc"..oscnum.."gain",
+        Formatters.percentage,
+        "env_to_oscgain"
+      )
   end
 
+  bind("env attack", "envattack")
+  bind("env decay", "envdecay")
+  bind("env sustain", "envsustain")
+  bind("env release", "envrelease")
   bind("lpf cutoff", "lpfcutoff")
   bind("lpf resonance", "lpfres")
   bind("hpf cutoff", "hpfcutoff")
   bind("hpf resonance", "hpfres")
   bind("amp gain", "ampgain")
   bind("lfo rate", "lforate")
-
   bind("lfo > lpf cutoff", "lfo_to_lpfcutoff")
   bind("lfo > lpf resonance", "lfo_to_lpfres")
   bind("lfo > hpf cutoff", "lfo_to_hpfcutoff")
