@@ -155,7 +155,7 @@ Engine_Gong : CroneGenEngine {
 		var sp;
 
 		sp = sp.add("timbre" -> ControlSpec(0, 5, 'lin', nil, 1, ""));
-		sp = sp.add("timemod" -> ControlSpec(0, 5, 'lin', nil, 1, ""));
+		sp = sp.add("timemod" -> ControlSpec(1, 5, 'lin', nil, 1, ""));
 
 		numOscs.do { |oscnum|
 			sp = sp.addAll(
@@ -184,7 +184,7 @@ Engine_Gong : CroneGenEngine {
 				'hpfcutoff' -> ControlSpec(1, 10000, 'exp', 0, 1, "Hz"),
 				'hpfres' -> \unipolar.asSpec,
 				'ampgain' -> \amp.asSpec,
-				'lforate' -> \rate.asSpec,
+				'lforate' -> ControlSpec(0.125, 8, 'exp', 0, 1, "Hz"), // TODO \rate.asSpec,
 				'lfo_to_lpfcutoff' -> \bipolar.asSpec,
 				'lfo_to_lpfres' -> \bipolar.asSpec,
 				'lfo_to_hpfcutoff' -> \bipolar.asSpec,

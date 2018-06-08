@@ -466,7 +466,7 @@ CroneGenEngine : CroneEngine {
 				if (spec.class == Symbol) {
 					"\\" ++ spec.asString
 				} {
-					spec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[spec.minval, spec.maxval, spec.warp.asSpecifier, spec.step, spec.default, spec.units.quote].join(", ")++")")
+					spec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[spec.minval, spec.maxval, spec.warp.asSpecifier.quote, spec.step, spec.default, spec.units.quote].join(", ")++")")
 				}
 			} {
 				"nil";

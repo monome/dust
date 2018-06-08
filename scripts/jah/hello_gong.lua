@@ -89,7 +89,8 @@ end
 
 local function default_patch()
   params:set("osc1 > osc3 freq", 1)
-  params:set("osc1 partial no", 2)
+  params:set("osc1 partial no", 2) -- TODO: something's not right here
+  -- params:set_raw("osc1 partial no", 0.13043) -- = 2 mapped
   params:set("osc3 gain", 1)
   params:set("osc3 index", 5)
   params:set("osc3 > out", 0.1)
