@@ -4,6 +4,7 @@ local Gong = {}
 
 local specs = {}
 
+--[[
 specs.timbre = ControlSpec.new(0, 5, 'lin', nil, 1, "")
 specs.timemod = ControlSpec.new(0, 5, 'lin', nil, 1, "")
 
@@ -30,9 +31,71 @@ specs.lfo_to_hpfres = ControlSpec.AMP
 specs.lfo_to_ampgain = ControlSpec.BIPOLAR
 specs.gate = ControlSpec.UNIPOLAR
 specs.envattack = ControlSpec.new(0, 5000, 'lin', 0, 5, "ms")
-specs.envdecay = ControlSpec.new(0, 5000, 'lin', 0, 30, "ms")
+specs.envdecay = ControlSpec.new(0, 5000, 'lin', 0, 400, "ms")
 specs.envsustain = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
-specs.envrelease = ControlSpec.new(0, 5000, 'lin', 0, 250, "ms")
+specs.envrelease = ControlSpec.new(0, 5000, 'lin', 0, 400, "ms")
+specs.env_to_lpfcutoff = ControlSpec.BIPOLAR
+specs.env_to_lpfres = ControlSpec.BIPOLAR
+specs.env_to_hpfcutoff = ControlSpec.BIPOLAR
+specs.env_to_hpfres = ControlSpec.BIPOLAR
+specs.env_to_ampgain = ControlSpec.BIPOLAR
+]]
+
+specs = {}
+
+specs.timbre = ControlSpec.new(0, 5, linear, 0, 1, "")
+specs.timemod = ControlSpec.new(0, 5, linear, 0, 1, "")
+specs.osc1gain = ControlSpec.AMP
+specs.osc1partial = ControlSpec.new(0.5, 12, linear, 0.5, 1, "")
+specs.osc1fixed = ControlSpec.new(0, 1, linear, 1, 0, "")
+specs.osc1fixedfreq = ControlSpec.WIDEFREQ
+specs.osc1index = ControlSpec.new(0, 24, linear, 0, 3, "")
+specs.osc1outlevel = ControlSpec.AMP
+specs.osc1_to_osc1freq = ControlSpec.AMP
+specs.osc1_to_osc2freq = ControlSpec.AMP
+specs.osc1_to_osc3freq = ControlSpec.AMP
+specs.osc2gain = ControlSpec.AMP
+specs.osc2partial = ControlSpec.new(0.5, 12, linear, 0.5, 1, "")
+specs.osc2fixed = ControlSpec.new(0, 1, linear, 1, 0, "")
+specs.osc2fixedfreq = ControlSpec.WIDEFREQ
+specs.osc2index = ControlSpec.new(0, 24, linear, 0, 3, "")
+specs.osc2outlevel = ControlSpec.AMP
+specs.osc2_to_osc1freq = ControlSpec.AMP
+specs.osc2_to_osc2freq = ControlSpec.AMP
+specs.osc2_to_osc3freq = ControlSpec.AMP
+specs.osc3gain = ControlSpec.AMP
+specs.osc3partial = ControlSpec.new(0.5, 12, linear, 0.5, 1, "")
+specs.osc3fixed = ControlSpec.new(0, 1, linear, 1, 0, "")
+specs.osc3fixedfreq = ControlSpec.WIDEFREQ
+specs.osc3index = ControlSpec.new(0, 24, linear, 0, 3, "")
+specs.osc3outlevel = ControlSpec.AMP
+specs.osc3_to_osc3freq = ControlSpec.AMP
+specs.osc3_to_osc2freq = ControlSpec.AMP
+specs.osc3_to_osc1freq = ControlSpec.AMP
+specs.lpfcutoff = ControlSpec.new(20, 10000, exp, 0, 10000, "Hz")
+specs.lpfres = ControlSpec.UNIPOLAR
+specs.hpfcutoff = ControlSpec.new(1, 10000, exp, 0, 1, "Hz")
+specs.hpfres = ControlSpec.UNIPOLAR
+specs.ampgain = ControlSpec.AMP
+specs.lforate = ControlSpec.RATE
+specs.lfo_to_lpfcutoff = ControlSpec.BIPOLAR
+specs.lfo_to_lpfres = ControlSpec.BIPOLAR
+specs.lfo_to_hpfcutoff = ControlSpec.BIPOLAR
+specs.lfo_to_hpfres = ControlSpec.BIPOLAR
+specs.lfo_to_ampgain = ControlSpec.BIPOLAR
+specs.lfo_to_osc1freq = ControlSpec.BIPOLAR
+specs.lfo_to_osc2freq = ControlSpec.BIPOLAR
+specs.lfo_to_osc3freq = ControlSpec.BIPOLAR
+specs.envattack = ControlSpec.new(0, 5000, linear, 0, 5, "ms")
+specs.envdecay = ControlSpec.new(0, 5000, linear, 0, 400, "ms")
+specs.envsustain = ControlSpec.new(0, 1, linear, 0, 0.5, "")
+specs.envrelease = ControlSpec.new(0, 5000, linear, 0, 400, "ms")
+specs.env_to_osc1freq = ControlSpec.BIPOLAR
+specs.env_to_osc1gain = ControlSpec.BIPOLAR
+specs.env_to_osc2freq = ControlSpec.BIPOLAR
+specs.env_to_osc2gain = ControlSpec.BIPOLAR
+specs.env_to_osc3freq = ControlSpec.BIPOLAR
+specs.env_to_osc3gain = ControlSpec.BIPOLAR
 specs.env_to_lpfcutoff = ControlSpec.BIPOLAR
 specs.env_to_lpfres = ControlSpec.BIPOLAR
 specs.env_to_hpfcutoff = ControlSpec.BIPOLAR
@@ -53,7 +116,7 @@ function Gong.add_params()
   bind("timemod", "timemod", Formatters.percentage)
 
   for oscnum=1,numoscs do
-    bind("osc"..oscnum.." gain", "osc"..oscnum.."gain", Formatters.percentage, "oscgain")
+    bind("osc"..oscnum.." gain", "osc"..oscnum.."gain", Formatters.percentage)
 
     params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
     params:set_action("osc"..oscnum.." type", function(value)
@@ -64,34 +127,17 @@ function Gong.add_params()
       end
     end)
 
-    bind("osc"..oscnum.." partial no", "osc"..oscnum.."partial", nil, "oscpartial")
-
-    bind("osc"..oscnum.." fixed freq", "osc"..oscnum.."fixedfreq", nil, "oscfixedfreq")
-
-    bind("osc"..oscnum.." index", "osc"..oscnum.."index", nil, "oscindex")
-
-    bind("osc"..oscnum.." > out", "osc"..oscnum.."outlevel", Formatters.percentage, "oscoutlevel")
+    bind("osc"..oscnum.." partial no", "osc"..oscnum.."partial")
+    bind("osc"..oscnum.." fixed freq", "osc"..oscnum.."fixedfreq")
+    bind("osc"..oscnum.." index", "osc"..oscnum.."index")
+    bind("osc"..oscnum.." > out", "osc"..oscnum.."outlevel", Formatters.percentage)
 
     for src=1,numoscs do
-      bind(
-        "osc"..src.." > osc"..oscnum.." freq",
-        "osc"..src.."_to_osc"..oscnum.."freq",
-        Formatters.percentage,
-        "osc_to_oscfreq"
-      )
+      bind("osc"..src.." > osc"..oscnum.." freq", "osc"..src.."_to_osc"..oscnum.."freq", Formatters.percentage)
     end
-    bind(
-      "env > osc"..oscnum.." freq",
-      "env_to_osc"..oscnum.."freq",
-      Formatters.percentage,
-      "env_to_oscfreq"
-    )
-    bind(
-      "env > osc"..oscnum.." gain",
-      "env_to_osc"..oscnum.."gain",
-      Formatters.percentage,
-      "env_to_oscgain"
-    )
+
+    bind( "env > osc"..oscnum.." freq", "env_to_osc"..oscnum.."freq", Formatters.percentage)
+    bind( "env > osc"..oscnum.." gain", "env_to_osc"..oscnum.."gain", Formatters.percentage)
   end
 
   bind("env attack", "envattack")
@@ -99,9 +145,9 @@ function Gong.add_params()
   bind("env sustain", "envsustain")
   bind("env release", "envrelease")
   bind("lpf cutoff", "lpfcutoff")
-  bind("lpf resonance", "lpfres")
+  bind("lpf resonance", "lpfres", Formatters.percentage)
   bind("hpf cutoff", "hpfcutoff")
-  bind("hpf resonance", "hpfres")
+  bind("hpf resonance", "hpfres", Formatters.percentage)
   bind("amp gain", "ampgain", Formatters.percentage)
   bind("lfo rate", "lforate")
   bind("lfo > lpf cutoff", "lfo_to_lpfcutoff", Formatters.percentage)
