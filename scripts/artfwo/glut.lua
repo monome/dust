@@ -352,11 +352,3 @@ function redraw()
   
   screen.update()
 end
-
--- called on script quit, release memory
-function cleanup()
-  for v = 1, VOICES do
-    poll.polls['phase_' .. v]:stop()
-    poll.polls['level_' .. v]:stop()
-  end
-end
