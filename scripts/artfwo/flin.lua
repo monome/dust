@@ -252,7 +252,3 @@ function redraw()
 
   screen.update()
 end
-
-function cleanup()
-  metro.free_all()
-end
