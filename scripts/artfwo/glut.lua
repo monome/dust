@@ -359,5 +359,4 @@ function cleanup()
     poll.polls['phase_' .. v]:stop()
     poll.polls['level_' .. v]:stop()
   end
-  metro.free_all()
 end
