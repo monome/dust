@@ -807,7 +807,6 @@ midi.add = function(dev)
 end
 
 function cleanup()
-  engine.stopAll()
   for i=1,4 do
     pattern[i]:stop()
     pattern[i] = nil
