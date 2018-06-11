@@ -371,7 +371,6 @@ midi.add = function(dev)
 end
 
 function cleanup()
-  engine.stopAll()
   stop_all_screen_notes()
   pat:stop()
   pat = nil
