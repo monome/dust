@@ -62,8 +62,6 @@ specs.env_to_osc3freq = ControlSpec.BIPOLAR
 specs.env_to_osc3gain = ControlSpec.BIPOLAR
 specs.env_to_filtercutoff = ControlSpec.BIPOLAR
 specs.env_to_filterres = ControlSpec.BIPOLAR
-specs.env_to_hpfcutoff = \env_to_hpfcutoff
-specs.env_to_hpfres = \env_to_hpfres
 specs.env_to_ampgain = ControlSpec.BIPOLAR
 
 Gong.specs = specs
@@ -116,8 +114,11 @@ function Gong.add_params()
   bind("env decay", "envdecay")
   bind("env sustain", "envsustain")
   bind("env release", "envrelease")
+  bind("env curve", "envcurve")
   bind("filter cutoff", "filtercutoff")
   bind("filter resonance", "filterres", Formatters.percentage)
+  params:add_option("filter mode", {"lowpass", "bandpass", "highpass", "notch", "peak"})
+  params:set_action("filter mode", function(value) engine.filtermode(value-1) end)
   bind("amp gain", "ampgain", Formatters.percentage)
   bind("lfo rate", "lforate", Formatters.round(3))
   bind("lfo > filter cutoff", "lfo_to_filtercutoff", Formatters.percentage)
