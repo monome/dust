@@ -39,110 +39,110 @@ Engine_Gong : CroneGenEngine {
 				osc3_to_osc3freq,
 				osc3_to_osc2freq,
 				osc3_to_osc1freq,
-				lpfcutoff,
-				lpfres,
-				hpfcutoff,
-				hpfres,
+				filtermode,
+				filtercutoff,
+				filterres,
 				ampgain,
 				lforate,
-				lfo_to_lpfcutoff,
-				lfo_to_lpfres,
-				lfo_to_hpfcutoff,
-				lfo_to_hpfres,
 				lfo_to_ampgain,
+				lfo_to_filtercutoff,
+				lfo_to_filterres,
 				lfo_to_osc1freq,
 				lfo_to_osc2freq,
 				lfo_to_osc3freq,
+				lfo_to_osc1gain,
+				lfo_to_osc2gain,
+				lfo_to_osc3gain,
 				envattack,
 				envdecay,
 				envsustain,
 				envrelease,
+				envcurve,
 				env_to_osc1freq,
 				env_to_osc1gain,
 				env_to_osc2freq,
 				env_to_osc2gain,
 				env_to_osc3freq,
 				env_to_osc3gain,
-				env_to_lpfcutoff,
-				env_to_lpfres,
+				env_to_filtercutoff,
+				env_to_filterres,
 				env_to_hpfcutoff,
 				env_to_hpfres,
 				env_to_ampgain
 /*
 	TODO
-				amp_env0,
-				amp_env1,
 				pitch_trk0,
 				pitch_trk1,
+				pitchtrk0_to_osc1freq,
+				pitchtrk0_to_osc2freq,
+				pitchtrk0_to_osc3freq,
+				pitchtrk1_to_osc1freq,
+				pitchtrk1_to_osc2freq,
+				pitchtrk1_to_osc3freq,
+				amp_env0,
+				amp_env1
 				ampenv_to_osc1freq,
 				ampenv_to_osc2freq,
 				ampenv_to_osc3freq,
-				pitchenv_to_osc1freq,
-				pitchenv_to_osc2freq,
-				pitchenv_to_osc3freq
 */
 			;
-			var env = EnvGen.ar(Env.adsr((envattack*timemod).clip(0, 5000)/1000, (envdecay*timemod).clip(0, 5000)/1000, envsustain, (envrelease*timemod).clip(0, 5000)/1000), gate); // TODO: clip?
-			var oscfeedback = LocalIn.ar(3);
-			var osc1;
-			var osc2;
-			var osc3;
+			var sig;
+			var env = EnvGen.ar(Env.adsr((envattack*timemod).clip(0, 5000)/1000, (envdecay*timemod).clip(0, 5000)/1000, envsustain, (envrelease*timemod).clip(0, 5000)/1000, curve: envcurve), gate);
 			var freqSpec = ControlSpec(20, 10000, 'exp', 0, 440, " Hz");
 			var rqSpec = \rq.asSpec;
-			var lfo = SinOsc.ar((lforate*timemod).clip(0.125, 8)); // TODO: clip?
-			var hpfrq = rqSpec.map(1-(hpfres + (env * env_to_hpfres) + (lfo * lfo_to_hpfres)));
-			var lpfrq = rqSpec.map(1-(lpfres + (env * env_to_lpfres) + (lfo * lfo_to_lpfres)));
-			var sig;
+			var lfo = SinOsc.ar((lforate/timemod).clip(0.125, 8));
 
+			var osc1, osc2, osc3;
 			var osc1freq, osc2freq, osc3freq;
+			var osc1freqbasemod, osc2freqbasemod, osc3freqbasemod;
+			var oscfeedback = LocalIn.ar(3);
 
 			osc1freq = Select.kr(osc1fixed, [freq*osc1partial, osc1fixedfreq]);
 			osc2freq = Select.kr(osc2fixed, [freq*osc2partial, osc2fixedfreq]);
 			osc3freq = Select.kr(osc3fixed, [freq*osc3partial, osc3fixedfreq]);
 
-			osc1index = osc1index * timbre;
-			osc2index = osc2index * timbre;
-			osc3index = osc3index * timbre;
+			osc1freqbasemod = osc1index * osc1freq * timbre;
+			osc2freqbasemod = osc2index * osc2freq * timbre;
+			osc3freqbasemod = osc3index * osc3freq * timbre;
 
 			osc1 = SinOsc.ar(
 				osc1freq
-					+ (oscfeedback[0] * osc1freq * osc1_to_osc1freq * osc1index) // TODO: moving index multiplication is likely more optimal
-					+ (oscfeedback[1] * osc1freq * osc2_to_osc1freq * osc1index)
-					+ (oscfeedback[2] * osc1freq * osc3_to_osc1freq * osc1index)
-					+ (env * osc1freq * env_to_osc1freq * osc1index)
-					+ (lfo * osc1freq * lfo_to_osc1freq * osc1index)
-			) * (osc1gain + (env_to_osc1gain * env));
+					+ (osc1freqbasemod * oscfeedback[0] * osc1_to_osc1freq) // TODO: moving index multiplication is likely more optimal
+					+ (osc1freqbasemod * oscfeedback[1] * osc2_to_osc1freq)
+					+ (osc1freqbasemod * oscfeedback[2] * osc3_to_osc1freq)
+					+ (osc1freqbasemod * env * env_to_osc1freq)
+					+ (osc1freqbasemod * lfo * lfo_to_osc1freq)
+			) * (osc1gain + (env_to_osc1gain * env) + (lfo * lfo_to_osc1gain)).clip(0, 1);
 
 			osc2 = SinOsc.ar(
 				osc2freq
-					+ (osc1 * osc2freq * osc1_to_osc2freq * osc2index) // TODO: moving index multiplication is likely more optimal
-					+ (oscfeedback[1] * osc2freq * osc2_to_osc2freq * osc2index)
-					+ (oscfeedback[2] * osc2freq * osc3_to_osc2freq * osc2index)
-					+ (env * osc2freq * env_to_osc2freq * osc2index)
-					+ (lfo * osc2freq * lfo_to_osc2freq * osc1index)
-			) * (osc2gain + (env_to_osc2gain * env));
+					+ (osc2freqbasemod * osc1 * osc1_to_osc2freq) // TODO: moving index multiplication is likely more optimal
+					+ (osc2freqbasemod * oscfeedback[1] * osc2_to_osc2freq)
+					+ (osc2freqbasemod * oscfeedback[2] * osc3_to_osc2freq)
+					+ (osc2freqbasemod * env * env_to_osc2freq)
+					+ (osc2freqbasemod * lfo * lfo_to_osc2freq)
+			) * (osc2gain + (env_to_osc2gain * env) + (lfo * lfo_to_osc2gain)).clip(0, 1);
 
 			osc3 = SinOsc.ar(
 				osc3freq
-					+ (osc1 * osc3freq * osc1_to_osc3freq * osc3index) // TODO: moving index multiplication is likely more optimal
-					+ (osc2 * osc3freq * osc2_to_osc3freq * osc3index)
-					+ (oscfeedback[2] * osc3freq * osc3_to_osc3freq * osc3index)
-					+ (env * osc3freq * env_to_osc3freq * osc3index)
-					+ (lfo * osc3freq * lfo_to_osc3freq * osc1index)
-			) * (osc3gain + (env_to_osc3gain * env));
+					+ (osc3freqbasemod * osc1 * osc1_to_osc3freq) // TODO: moving index multiplication is likely more optimal
+					+ (osc3freqbasemod * osc2 * osc2_to_osc3freq)
+					+ (osc3freqbasemod * oscfeedback[2] * osc3_to_osc3freq)
+					+ (osc3freqbasemod * env * env_to_osc3freq)
+					+ (osc3freqbasemod * lfo * lfo_to_osc3freq)
+			) * (osc3gain + (env_to_osc3gain * env) + (lfo * lfo_to_osc3gain)).clip(0, 1);
 
 			sig = (osc1 * osc1outlevel) + (osc2 * osc2outlevel) + (osc3 * osc3outlevel);
 
-			sig = RHPF.ar(
-				sig,
-				freqSpec.map(freqSpec.unmap(hpfcutoff) + (env * env_to_hpfcutoff) + (lfo * lfo_to_hpfcutoff)),
-				hpfrq
-			);
-
-			sig = RLPF.ar(
-				sig,
-				freqSpec.map(freqSpec.unmap(lpfcutoff) + (env * env_to_lpfcutoff) + (lfo * lfo_to_lpfcutoff)),
-				lpfrq
+			sig = SVF.ar(
+				signal: sig,
+				cutoff: freqSpec.map(freqSpec.unmap(filtercutoff)+(env * env_to_filtercutoff) + (lfo * lfo_to_filtercutoff)),
+				res: (filterres+(env * env_to_filterres) + (lfo * lfo_to_filterres)).clip(0, 1),
+				lowpass: filtermode < 1,
+				bandpass: (filtermode > 0) * (filtermode < 2),
+				highpass: (filtermode > 1) * (filtermode < 3),
+				notch: (filtermode > 2) * (filtermode < 4),
+				peak: (filtermode > 3) * (filtermode < 5)
 			);
 
 			sig = sig * (ampgain + (env * env_to_ampgain) + (lfo * lfo_to_ampgain)).clip(0, 1);
@@ -169,6 +169,7 @@ Engine_Gong : CroneGenEngine {
 					"env_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
 					"env_to_osc%gain".format(oscnum+1) -> \bipolar.asSpec,
 					"lfo_to_osc%freq".format(oscnum+1) -> \bipolar.asSpec,
+					"lfo_to_osc%gain".format(oscnum+1) -> \bipolar.asSpec,
 				]
 			);
 			numOscs.do { |dest|
@@ -179,27 +180,29 @@ Engine_Gong : CroneGenEngine {
 		};
 		sp = sp.addAll(
 			[
-				'lpfcutoff' -> ControlSpec(20, 10000, 'exp', 0, 10000, "Hz"),
-				'lpfres' -> \unipolar.asSpec,
-				'hpfcutoff' -> ControlSpec(1, 10000, 'exp', 0, 1, "Hz"),
-				'hpfres' -> \unipolar.asSpec,
+				'filtermode' -> ControlSpec(0, 5, 'lin', 1, 0, ""),
+				'filtercutoff' -> ControlSpec(20, 10000, 'exp', 0, 10000, "Hz"),
+				'filterres' -> \unipolar.asSpec,
 				'ampgain' -> \amp.asSpec,
 				'lforate' -> ControlSpec(0.125, 8, 'exp', 0, 1, "Hz"), // TODO \rate.asSpec,
-				'lfo_to_lpfcutoff' -> \bipolar.asSpec,
-				'lfo_to_lpfres' -> \bipolar.asSpec,
-				'lfo_to_hpfcutoff' -> \bipolar.asSpec,
-				'lfo_to_hpfres' -> \bipolar.asSpec,
+				'lfo_to_filtercutoff' -> \bipolar.asSpec,
+				'lfo_to_filterres' -> \bipolar.asSpec,
 				'lfo_to_ampgain' -> \bipolar.asSpec,
 				'gate' -> \unipolar.asSpec,
 				'envattack' -> ControlSpec(0, 5000, 'lin', 0, 5, "ms"),
 				'envdecay' -> ControlSpec(0, 5000, 'lin', 0, 400, "ms"),
 				'envsustain' -> ControlSpec(0, 1, 'lin', 0, 0.5, ""),
 				'envrelease' -> ControlSpec(0, 5000, 'lin', 0, 400, "ms"),
-				'env_to_lpfcutoff' -> \bipolar.asSpec,
-				'env_to_lpfres' -> \bipolar.asSpec,
-				'env_to_hpfcutoff' -> \bipolar.asSpec,
-				'env_to_hpfres' -> \bipolar.asSpec,
+				'envcurve' -> ControlSpec(-20, 20, 'lin', 0, -4, ""),
+				'env_to_filtercutoff' -> \bipolar.asSpec,
+				'env_to_filterres' -> \bipolar.asSpec,
 				'env_to_ampgain' -> \bipolar.asSpec,
+				'pitchenv0_to_osc1freq' -> \unipolar.asSpec,
+				'pitchenv0_to_osc2freq' -> \unipolar.asSpec,
+				'pitchenv0_to_osc3freq' -> \unipolar.asSpec,
+				'pitchenv1_to_osc1freq' -> \unipolar.asSpec,
+				'pitchenv1_to_osc2freq' -> \unipolar.asSpec,
+				'pitchenv1_to_osc3freq' -> \unipolar.asSpec
 			]
 		);
 
