@@ -115,7 +115,7 @@ end
 -- create all of the note and probability data on init
 function create_sequence_data()
   for i=1, 64 do
-    sequence.note_data[i] = scale_data[math.random (1, 24)];
+    sequence.note_data[i] = scale_data[math.random (1, #scale_data)];
     sequence.prob_data[i] = math.random (1, 100);
   end
 end
