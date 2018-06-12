@@ -5,7 +5,7 @@ Engine_KarplusRings : CroneEngine {
 	var freq = 440;
 	var decay = 5;
 	var coef = 0.1;
-    var lpf_freq = 3000;
+  var lpf_freq = 3000;
 	var lpf_gain = 1;
 	var bpf_freq = 2000;
 	var bpf_res = 0.3;
@@ -15,7 +15,7 @@ Engine_KarplusRings : CroneEngine {
 	}
 
 	alloc {
-		SynthDef("karplus_rings", {arg amp = amp, freq = freq, decay = decay, coef = coef, lpf_freq = lpf_freq, lpf_gain = lpf_gain, bpf_freq = bpf_freq, bpf_res = bpf_res;
+		SynthDef("karplus_rings", {arg outbus, amp = amp, freq = freq, decay = decay, coef = coef, lpf_freq = lpf_freq, lpf_gain = lpf_gain, bpf_freq = bpf_freq, bpf_res = bpf_res;
 			var env, snd;
 			env = EnvGen.kr(Env.linen(0, decay, 0), doneAction: 2);
 			snd = Pluck.ar(
@@ -26,7 +26,7 @@ Engine_KarplusRings : CroneEngine {
 				delaytime: freq.reciprocal,
 				decaytime: decay,
 				coef: coef);
-			Out.ar(0, MoogFF.ar(in: [snd, snd], freq: lpf_freq, gain: lpf_gain));
+			Out.ar(outbus, MoogFF.ar(in: [snd, snd], freq: lpf_freq, gain: lpf_gain));
 		}).add;
 
 		this.addCommand("hz", "f", { arg msg;
@@ -64,5 +64,3 @@ Engine_KarplusRings : CroneEngine {
 	}
 
 }
-
-

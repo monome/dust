@@ -96,9 +96,20 @@ function init()
   params:bang()
 end
 
--- want a custom scale? define it here
 function create_scale_data()
-  scale_data = {0,2,3,5,7,10,12,14,15,17,19,22,24,26,27,29,31,34,36,38,39,41,43,46}
+  -- want a custom scale? define it here.
+  scale = {0,2,3,5,7,10}
+
+  scale_data = {}
+
+  -- copy the scale over 4 octaves
+  for octave=0,3 do
+    for scale_note = 1,#scale do
+      if scale[scale_note] > 11 then error("Note values must be between 0 and 11 inclusive") end
+      table.insert(scale_data, (scale[scale_note]+(octave*12)))
+    end
+  end
+  -- scale_data = {0,2,3,5,7,10,12,14,15,17,19,22,24,26,27,29,31,34,36,38,39,41,43,46}
 end
 
 -- create all of the note and probability data on init
