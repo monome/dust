@@ -186,10 +186,12 @@ function grid_note(e)
       nvoices = nvoices + 1
     end
   else
-    engine.stop(e.id)
-    stop_screen_note(note)
-    lit[e.id] = nil
-    nvoices = nvoices - 1
+    if lit[e.id] ~= nil then
+      engine.stop(e.id)
+      stop_screen_note(note)
+      lit[e.id] = nil
+      nvoices = nvoices - 1
+    end
   end 
   gridredraw()
 end
