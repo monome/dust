@@ -46,10 +46,14 @@ local function screen_update_midi_indicators()
     screen.level(midinote_indicator_level)
     screen.text("note ")
     screen.level(midicc_indicator_level)
-    screen.text("cc")
-  else
+    screen.text("cc  ")
+  end
+  if g then
+    screen.text("grid") 
+  end
+  if not midi_available and not g then
     screen.level(3)
-    screen.text("no midi")
+    screen.text("no midi / grid")
   end
 end
 
@@ -145,6 +149,18 @@ function key(n, z)
   elseif n == 2 and z == 0 then
     note_off(lastkeynote)
   end
+end
+
+function gridkey(x, y, z)
+  local note = x * 8 + y
+  if z == 1 then
+    note_on(note, 5)
+    g:led(x, y, 15)
+  else
+    note_off(note)
+    g:led(x, y, 0)
+  end
+  g:refresh()
 end
 
 cleanup = function()
