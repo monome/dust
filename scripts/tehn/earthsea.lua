@@ -357,7 +357,11 @@ end
 
 local function midi_event(data)
   if data[1] == 144 then
-    note_on(data[2], data[3])
+    if data[3] == 0 then
+      note_off(data[2])
+    else
+      note_on(data[2], data[3])
+    end
   elseif data[1] == 128 then
     note_off(data[2])
   elseif data[1] == 176 then
