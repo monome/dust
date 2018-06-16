@@ -10,10 +10,10 @@ user data for the norns system
 
 ## contributions
 
-dust was created many people. contributions are welcome.
+dust was created by many people. contributions are welcome.
 
 - collaboration is encouraged. when modifying an existing script please consider contributing to the original rather than submitting a new version with minor differences.  
-- please include documentation for any scripts submitted (particularly the comment text at the top of the script). 
+- please include documentation for any scripts submitted (particularly the comment text at the top of the script).
 - do not submit semi-functioning works-in-progress.
 - make a concerted attempt at code legibility. (style guide forthcoming.)
 - feel free to create your own subfolder in `scripts`.
