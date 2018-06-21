@@ -1,14 +1,11 @@
 -- Graph
 -- Flexible graph drawing for envelopes, filter curves, sequencers, etc
 
-local util = require "util"
-local tabutil = require "tabutil"
+local util = require 'util'
+local tabutil = require 'tabutil'
 
 local Graph = {}
 Graph.__index = Graph
-
-local TL_MARGIN = 0
-local BR_MARGIN = 1
 
 function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis, x, y, w, h)
   local graph = {}
@@ -16,13 +13,13 @@ function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis, 
   graph.x_max = x_max or 1
   graph.y_min = y_min or 0
   graph.y_max = y_max or 1
-  graph.style = style or "point"
+  graph.style = style or 'point'
   graph.show_x_axis = show_x_axis == nil and false or show_x_axis
   graph.show_y_axis = show_y_axis == nil and false or show_y_axis
-  graph.x = ( x or 0 ) + TL_MARGIN
-  graph.y = ( y or 0 ) + TL_MARGIN
-  graph.w = ( w or 128 ) - BR_MARGIN
-  graph.h = ( h or 64 ) - BR_MARGIN
+  graph.x = x or 0
+  graph.y = y or 0
+  graph.w = w or 128
+  graph.h = h or 64
   graph.functions = {}
   graph.points = {}
   setmetatable(graph, Graph)
@@ -120,7 +117,7 @@ end
 -- Includes DADSR, ADSR, ASR, AR (Perc)
 
 function Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
-  return Graph.new(x_min, x_max, y_min, y_max, "line", false, false, x, y, w, h)
+  return Graph.new(x_min, x_max, y_min, y_max, 'line', false, false, x, y, w, h)
 end
 
 -- DADSR
@@ -263,45 +260,17 @@ end
 
 
 
--------- Filter methods --------
-
--- TODO
-
--- function Graph.new_filter(x_max, x, y, w, h)
---   return Graph.new(0, x_max or 24000, 0, 1, "line", false, false, x, y, w, h)
--- end
-
--- -- Low pass
--- function Graph.new_lp_filter(x_max, x, y, w, h, cutoff, resonance, poles)
---   local graph = Graph.new_filter(x_max, x, y, w, h)
---   graph.cutoff = util.clamp(cutoff, graph.x_min, graph.x_max) or graph.x_max
---   graph.resonance = resonance or 0
---   graph.poles = util.clamp(poles, 1, 8) or 2
---   graph:add_function(function(x)
---     return x
---   end)
---   return graph
--- end
-
--- function Graph:edit_lp_filter(cutoff, resonance, poles)
---   if cutoff then self.cutoff = util.clamp(cutoff, self.x_min, self.x_max) end
---   if resonance then self.resonance = resonance end
---   if poles then self.poles = util.clamp(poles, 1, 8) end
--- end
-
-
-
 -------- Drawing methods --------
 
 function Graph:redraw()
   
-  -- TODO some of this doesn't need to be calculated every redraw!
+  -- TODO some of this doesn't need to be calculated every frame!
   -- Utilize dirty flags for some sections?
   
   screen.line_width(1)
   
-  self.origin_sx = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w, 0))
-  self.origin_sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, 0))
+  self.origin_sx = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w, 0)) + 0.5
+  self.origin_sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, 0)) + 0.5
   
   self:draw_axes()
   screen.level(15)
@@ -313,14 +282,14 @@ end
 function Graph:draw_axes()
   if self.show_x_axis then
     screen.level(3)
-    screen.move(self.x - TL_MARGIN, self.origin_sy)
-    screen.line(self.x + self.w + BR_MARGIN - 1, self.origin_sy)
+    screen.move(self.x, self.origin_sy)
+    screen.line(self.x + self.w - 1, self.origin_sy)
     screen.stroke()
   end
   if self.show_y_axis then
     screen.level(1)
-    screen.move(self.origin_sx, self.y - TL_MARGIN - 1)
-    screen.line(self.origin_sx, self.y + self.h + BR_MARGIN)
+    screen.move(self.origin_sx, self.y - 1)
+    screen.line(self.origin_sx, self.y + self.h)
     screen.stroke()
   end
 end
@@ -340,11 +309,11 @@ function Graph:draw_points()
     sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, v.y))
     
     -- Line style
-    if self.style == "line" and k > 1 then
+    if self.style == 'line' and k > 1 then
       
       -- Exponential or curve value
       -- TODO reuse draw function code?
-      if v.curve == "exp" or ( type(v.curve) == "number" and math.abs(v.curve) > 0.01) then
+      if v.curve == 'exp' or ( type(v.curve) == 'number' and math.abs(v.curve) > 0.01) then
         
         screen.move(prev_sx, prev_sy)
         local sx_distance = sx - prev_sx
@@ -358,13 +327,13 @@ function Graph:draw_points()
             if sample_x_progress <= 0 then sample_x_progress = 1 end
             
             local y
-            if v.curve == "exp" then
+            if v.curve == 'exp' then
               y = util.linexp(0, 1, math.max(self.points[k-1].y, 0.0001), math.max(v.y, 0.0001), sample_x_progress)
             else
               y = util.linlin(0, 1, self.points[k-1].y, v.y, (math.exp(sample_x_progress * v.curve) - 1) / (math.pow(math.exp(1), v.curve) - 1))
             end
             
-            screen.line(sample_x, util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, y)))
+            screen.line(sample_x, util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, y))
           end
         end
         screen.stroke()
@@ -378,22 +347,22 @@ function Graph:draw_points()
       end
       
     -- Bar style
-    elseif self.style == "bar" then
+    elseif self.style == 'bar' then
       
       if v.highlight then
         if sy < self.origin_sy then
-          screen.rect(sx - 1.5, sy - 0.5, 3, math.max(1, self.origin_sy - sy + 1))
+          screen.rect(sx - 2, sy, 3, math.max(1, self.origin_sy - sy + 0.5))
         else
-          screen.rect(sx - 1.5, self.origin_sy - 0.5, 3, math.max(1, sy - self.origin_sy + 1))
+          screen.rect(sx - 2, self.origin_sy - 0.5, 3, math.max(1, sy - self.origin_sy + 0.5))
         end
         screen.level(15)
         screen.fill()
         
       else
         if sy < self.origin_sy then
-          screen.rect(sx - 1, sy, 2, math.max(0, self.origin_sy - sy))
+          screen.rect(sx - 1.5, sy - 0.5, 2, math.max(0, self.origin_sy - sy))
         else
-          screen.rect(sx - 1, self.origin_sy, 2, math.max(0, sy - self.origin_sy))
+          screen.rect(sx - 1.5, self.origin_sy - 0.5, 2, math.max(0, sy - self.origin_sy))
         end
         screen.level(3)
         screen.stroke()
@@ -401,18 +370,18 @@ function Graph:draw_points()
     end
     
     -- Draw points for all styles except bar
-    if self.style ~= "bar" then
-      screen.rect(sx - 1.5, sy - 1.5, 3, 3)
+    if self.style ~= 'bar' then
+      screen.rect(sx - 1, sy - 1, 3, 3)
       screen.fill()
       
       if v.highlight then
-        screen.rect(sx - 3, sy - 3, 6, 6)
+        screen.rect(sx - 2.5, sy - 2.5, 6, 6)
         screen.stroke()
         if math.abs(sy - self.origin_sy) > 3 then 
           local y_offset = 3
           if sy > self.origin_sy then y_offset = y_offset * -1 end
-          screen.move(sx, sy + y_offset)
-          screen.line(sx, self.origin_sy)
+          screen.move(sx + 0.5, sy + y_offset)
+          screen.line(sx + 0.5, self.origin_sy)
           screen.stroke()
         end
       end
@@ -427,7 +396,7 @@ function Graph:draw_functions()
     screen.move(self.x, util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, func(self.x_min))))
     for sx = self.x, self.x + self.w, 1 do
       local y = func(util.linlin(self.x, self.x + self.w, self.x_min, self.x_max, sx))
-      screen.line(sx, util.round(util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, y)))
+      screen.line(sx, util.linlin(self.y_min, self.y_max, self.y + self.h, self.y, y))
     end
     screen.stroke()
   end

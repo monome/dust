@@ -21,6 +21,8 @@ unrequire("mark_eats/graph")
 -- Include the Graph class
 local Graph = require "mark_eats/graph"
 
+local MusicUtil = require "musicutil"
+
 -- This is where we will store the graph
 local demo_graph = nil
 local graph_id = 1
@@ -71,7 +73,7 @@ end
 
 
 -- This is where we create the graphs
-local function init_graph(id)
+function init_graph(id)
   
   -- Wave shape graph
   if graph_id == 1 then
@@ -119,7 +121,7 @@ local function init_graph(id)
     
     -- This is a bar graph. It's similar to the selectable points graph but with a different visual style.
     -- The y axis is based on MIDI note numbers
-    demo_graph = Graph.new(1, 16, 48, 72, "bar", false, false, 9, 4, 110, 46)
+    demo_graph = Graph.new(1, 16, -48, 72, "bar", false, false, 9, 4, 110, 46)
     for k, v in pairs(seq_vals) do
       demo_graph:add_point(k, v)
     end
@@ -197,7 +199,7 @@ function enc(n, delta)
       
     -- ENC3 sets the MIDI note value.
     elseif n == 3 then
-      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), 48, 72)
+      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), -48, 72)
       demo_graph:edit_point(highlight_id, nil, seq_vals[highlight_id])
     end
     
@@ -234,12 +236,12 @@ function redraw()
   -- Draw wave shape text
   if graph_id == 1 then
     screen.level(15)
-    screen.move(0, 60)
+    screen.move(1, 60)
     screen.text("Sine")
     screen.move(34, 60)
     screen.text_center("Saw")
     screen.level(5)
-    screen.rect(27 * wave_shape - 0.5, 62.5, 17 + 1 * (1 - wave_shape), 1)
+    screen.rect(26 * wave_shape - 0, 63, 17 + 1 * (1 - wave_shape), 1)
     screen.fill()
   
   -- Draw ADSR text
@@ -266,10 +268,10 @@ function redraw()
   -- Draw sequencer position and note name
   elseif graph_id == 4 then
     screen.level(15)
-    screen.rect(util.round(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, step)) - 2.5, 51.5, 5, 2)
+    screen.rect(util.round(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, step)) - 3, 53, 5, 2)
     screen.fill()
-    screen.move(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, highlight_id), 60)
-    screen.text_center(util.midi_note_to_name(seq_vals[highlight_id], true))
+    screen.move(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, highlight_id), 62)
+    screen.text_center(MusicUtil.note_nums_to_names(seq_vals[highlight_id], true))
   end
   
   -- Draw the actual graph!
