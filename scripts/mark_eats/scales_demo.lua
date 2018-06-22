@@ -16,6 +16,8 @@ local root_note = 48
 local scale_type = 1
 local scale_notes = {}
 local scale_note_names = {}
+local scale_len = 0
+local SCALES_LEN = #MusicUtil.SCALES
 
 local tempo = 90
 local step = 1
@@ -28,15 +30,16 @@ engine.name = "PolyPerc"
 local function init_scale()
   scale_notes = MusicUtil.generate_scale(root_note, scale_type, 1)
   scale_note_names = MusicUtil.note_nums_to_names(scale_notes)
+  scale_len = #scale_notes
 end
 
 local function advance_step()
-  if step > #scale_notes then
-    step = #scale_notes
+  if step > scale_len then
+    step = scale_len
     step_increment = -1
   else
     step = step + step_increment
-    if step == 1 or step == #scale_notes then
+    if step == 1 or step == scale_len then
       step_increment = step_increment * -1
     end
   end
@@ -82,7 +85,7 @@ function enc(n, delta)
     
   -- ENC3 scale
   elseif n == 3 then
-    scale_type = util.clamp(scale_type + delta, 1, #MusicUtil.SCALES)
+    scale_type = util.clamp(scale_type + delta, 1, SCALES_LEN)
     init_scale()
     
   end
@@ -141,11 +144,11 @@ function redraw()
   -- Notes
   local x, y = 5, 52
   local cols = 8
-  if #scale_note_names > cols then
-    cols =  util.round_up(#scale_note_names * 0.5)
+  if scale_len > cols then
+    cols =  util.round_up(scale_len * 0.5)
     y = y - 6
   end
-  for i = 1, #scale_note_names do
+  for i = 1, scale_len do
     if i == cols + 1 then x, y = 5, y + 12 end
     screen.move(x, y)
     if i == step then screen.level(15) else screen.level(3) end
