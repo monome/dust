@@ -3,9 +3,9 @@
 -- Four types of graphs you
 -- can use in your own scripts.
 -- 
+-- ENC2/3 : Adjust graph
 -- KEY2 : Next demo
 -- KEY3 : Shift
--- ENC2/3 : Adjust graph
 -- 
 --
 -- No sounds, just graphs!
