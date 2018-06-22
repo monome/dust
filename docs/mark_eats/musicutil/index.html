@@ -55,20 +55,36 @@
 	<td class="summary">Generate scale from a root note.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#snap_notes_to_array">snap_notes_to_array (note_nums, snap_array)</a></td>
-	<td class="summary">Snap MIDI note numbers to an array of note numbers.</td>
+	<td class="name" nowrap><a href="#snap_note_to_array">snap_note_to_array (note_num, snap_array)</a></td>
+	<td class="summary">Snap a MIDI note number to the nearest note number in an array.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#note_nums_to_names">note_nums_to_names (note_nums[, include_octave])</a></td>
-	<td class="summary">Convert MIDI note numbers to names.</td>
+	<td class="name" nowrap><a href="#snap_notes_to_array">snap_notes_to_array (note_nums_array, snap_array)</a></td>
+	<td class="summary">Snap an array of MIDI note numbers to an array of note numbers.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#note_nums_to_freqs">note_nums_to_freqs (note_nums)</a></td>
-	<td class="summary">Convert MIDI note numbers to frequencies.</td>
+	<td class="name" nowrap><a href="#note_num_to_name">note_num_to_name (note_num[, include_octave])</a></td>
+	<td class="summary">Return a MIDI note number's note name.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_nums_to_names">note_nums_to_names (note_nums_array[, include_octave])</a></td>
+	<td class="summary">Return an array of MIDI note numbers' names.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_num_to_freq">note_num_to_freq (note_num)</a></td>
+	<td class="summary">Return a MIDI note number's frequency.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_nums_to_freqs">note_nums_to_freqs (note_nums_array)</a></td>
+	<td class="summary">Return an array of MIDI note numbers' frequencies.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#freq_to_note_num">freq_to_note_num (freq)</a></td>
+	<td class="summary">Return a frequency's nearest MIDI note number.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#freqs_to_note_nums">freqs_to_note_nums (freqs)</a></td>
-	<td class="summary">Convert frequencies to nearest MIDI note numbers.</td>
+	<td class="summary">Return an array of frequencies' nearest MIDI note numbers.</td>
 	</tr>
 </table>
 
@@ -112,27 +128,27 @@
 
 </dd>
     <dt>
-    <a name = "snap_notes_to_array"></a>
-    <strong>snap_notes_to_array (note_nums, snap_array)</strong>
+    <a name = "snap_note_to_array"></a>
+    <strong>snap_note_to_array (note_num, snap_array)</strong>
     </dt>
     <dd>
-    Snap MIDI note numbers to an array of note numbers.
+    Snap a MIDI note number to the nearest note number in an array.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">note_nums</span>
-         MIDI note number (0-127) or array of note numbers.
+        <li><span class="parameter">note_num</span>
+         MIDI note number input (0-127).
         </li>
         <li><span class="parameter">snap_array</span>
-         Array of note numbers to snap to, must be in low to high order.
+         Array of MIDI note numbers to snap to, must be in low to high order.
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        Array of adjusted note numbers or a single note number.
+        Adjusted note number.
     </ol>
 
 
@@ -140,17 +156,45 @@
 
 </dd>
     <dt>
-    <a name = "note_nums_to_names"></a>
-    <strong>note_nums_to_names (note_nums[, include_octave])</strong>
+    <a name = "snap_notes_to_array"></a>
+    <strong>snap_notes_to_array (note_nums_array, snap_array)</strong>
     </dt>
     <dd>
-    Convert MIDI note numbers to names.
+    Snap an array of MIDI note numbers to an array of note numbers.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">note_nums</span>
-         MIDI note number (0-127) or array of note numbers.
+        <li><span class="parameter">note_nums_array</span>
+         Array of input MIDI note numbers.
+        </li>
+        <li><span class="parameter">snap_array</span>
+         Array of MIDI note numbers to snap to, must be in low to high order.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of adjusted note numbers.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_num_to_name"></a>
+    <strong>note_num_to_name (note_num[, include_octave])</strong>
+    </dt>
+    <dd>
+    Return a MIDI note number's note name.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_num</span>
+         MIDI note number (0-127).
         </li>
         <li><span class="parameter">include_octave</span>
          Include octave number in return string if set to true.
@@ -161,7 +205,61 @@
     <h3>Returns:</h3>
     <ol>
 
-        Name string (eg, "C#3") or array of strings.
+        Name string (eg, "C#3").
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_nums_to_names"></a>
+    <strong>note_nums_to_names (note_nums_array[, include_octave])</strong>
+    </dt>
+    <dd>
+    Return an array of MIDI note numbers' names.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_nums_array</span>
+         Array of MIDI note numbers.
+        </li>
+        <li><span class="parameter">include_octave</span>
+         Include octave number in return strings if set to true.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of name strings.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_num_to_freq"></a>
+    <strong>note_num_to_freq (note_num)</strong>
+    </dt>
+    <dd>
+    Return a MIDI note number's frequency.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_num</span>
+         MIDI note number (0-127).
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Frequency number in Hz.
     </ol>
 
 
@@ -170,23 +268,48 @@
 </dd>
     <dt>
     <a name = "note_nums_to_freqs"></a>
-    <strong>note_nums_to_freqs (note_nums)</strong>
+    <strong>note_nums_to_freqs (note_nums_array)</strong>
     </dt>
     <dd>
-    Convert MIDI note numbers to frequencies.
+    Return an array of MIDI note numbers' frequencies.
 
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">note_nums</span>
-         MIDI note number (0-127) or array of note numbers.
+        <li><span class="parameter">note_nums_array</span>
+         Array of MIDI note numbers.
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        Frequency number in Hz or array of frequencies.
+        Array of frequency numbers in Hz.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "freq_to_note_num"></a>
+    <strong>freq_to_note_num (freq)</strong>
+    </dt>
+    <dd>
+    Return a frequency's nearest MIDI note number.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">freq</span>
+         Frequency number in Hz.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        MIDI note number (0-127).
     </ol>
 
 
@@ -198,20 +321,20 @@
     <strong>freqs_to_note_nums (freqs)</strong>
     </dt>
     <dd>
-    Convert frequencies to nearest MIDI note numbers.
+    Return an array of frequencies' nearest MIDI note numbers.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">freqs</span>
-         Frequency number in Hz or array of frequencies.
+         Array of frequency numbers in Hz.
         </li>
     </ul>
 
     <h3>Returns:</h3>
     <ol>
 
-        MIDI note number (0-127) or array of note numbers.
+        Array of MIDI note numbers.
     </ol>
 
 
@@ -225,7 +348,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2018-06-21 21:19:09 </i>
+<i style="float:right;">Last updated 2018-06-22 09:53:17 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>

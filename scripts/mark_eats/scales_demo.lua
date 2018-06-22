@@ -43,7 +43,7 @@ local function advance_step()
       step_increment = step_increment * -1
     end
   end
-  engine.hz(MusicUtil.note_nums_to_freqs(scale_notes[step]))
+  engine.hz(MusicUtil.note_num_to_freq(scale_notes[step]))
   redraw()
 end
 
@@ -51,7 +51,7 @@ local function start_stop_metro()
   if step_metro.is_running then
     step_metro:stop()
   else
-    engine.hz(MusicUtil.note_nums_to_freqs(scale_notes[step]))
+    engine.hz(MusicUtil.note_num_to_freq(scale_notes[step]))
     step_metro:start(60 / tempo / 4) --  16ths
   end
 end
@@ -139,7 +139,7 @@ function redraw()
 
   -- Scale name
   screen.move(5, 27)
-  screen.text(MusicUtil.note_nums_to_names(root_note, true) .. " " .. MusicUtil.SCALES[scale_type].name)
+  screen.text(MusicUtil.note_num_to_name(root_note, true) .. " " .. MusicUtil.SCALES[scale_type].name)
 
   -- Notes
   local x, y = 5, 52

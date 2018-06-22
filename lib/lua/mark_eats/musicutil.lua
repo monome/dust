@@ -107,91 +107,110 @@ function MusicUtil.generate_scale(root_num, scale_type, octaves)
   return output
 end
 
---- Snap MIDI note numbers to an array of note numbers.
--- @param note_nums MIDI note number (0-127) or array of note numbers.
--- @param snap_array Array of note numbers to snap to, must be in low to high order.
--- @return Array of adjusted note numbers or a single note number.
-function MusicUtil.snap_notes_to_array(note_nums, snap_array)
-  if not note_nums or not snap_array then return nil end
-  if type(note_nums) == "number" then note_nums = {note_nums} end
-  
-  local delta
-  local prev_delta
-  local note_nums_len = #note_nums
+
+--- Snap a MIDI note number to the nearest note number in an array.
+-- @param note_num MIDI note number input (0-127).
+-- @param snap_array Array of MIDI note numbers to snap to, must be in low to high order.
+-- @return Adjusted note number.
+function MusicUtil.snap_note_to_array(note_num, snap_array)
   local snap_array_len = #snap_array
-  for n = 1, note_nums_len do
-    if snap_array_len == 1 then
-      note_nums[n] = snap_array[1]
-    elseif note_nums[n] >= snap_array[snap_array_len] then
-      note_nums[n] = snap_array[snap_array_len]
-    else
-      prev_delta = math.huge
-      for s = 1, snap_array_len + 1 do
-        if s > snap_array_len then
-          note_nums[n] = note_nums[n] + prev_delta
-          break
-        end
-        delta = snap_array[s] - note_nums[n]
-        if delta == 0 then
-          break
-        elseif math.abs(delta) >= math.abs(prev_delta) then
-          note_nums[n] = note_nums[n] + prev_delta
-          break
-        end
-        prev_delta = delta
-      end
-    end
-  end
-  if note_nums_len == 1 then return note_nums[1]
-  else return note_nums end
+	if snap_array_len == 1 then
+	  note_num = snap_array[1]
+	elseif note_num >= snap_array[snap_array_len] then
+	  note_num = snap_array[snap_array_len]
+	else
+    local delta
+    local prev_delta = math.huge
+	  for s = 1, snap_array_len + 1 do
+	    if s > snap_array_len then
+	      note_num = note_num + prev_delta
+	      break
+	    end
+	    delta = snap_array[s] - note_num
+	    if delta == 0 then
+	      break
+	    elseif math.abs(delta) >= math.abs(prev_delta) then
+	      note_num = note_num + prev_delta
+	      break
+	    end
+	    prev_delta = delta
+	  end
+	end
+
+  return note_num
 end
 
---- Convert MIDI note numbers to names.
--- @param note_nums MIDI note number (0-127) or array of note numbers.
+--- Snap an array of MIDI note numbers to an array of note numbers.
+-- @param note_nums_array Array of input MIDI note numbers.
+-- @param snap_array Array of MIDI note numbers to snap to, must be in low to high order.
+-- @return Array of adjusted note numbers.
+function MusicUtil.snap_notes_to_array(note_nums_array, snap_array)
+	for i = 1, #note_nums_array do
+		note_nums_array[i] = MusicUtil.snap_note_to_array(note_nums_array[i], snap_array)
+	end
+	return note_nums_array
+end
+
+
+--- Return a MIDI note number's note name.
+-- @param note_num MIDI note number (0-127).
 -- @param[opt] include_octave Include octave number in return string if set to true.
--- @return Name string (eg, "C#3") or array of strings.
-function MusicUtil.note_nums_to_names(note_nums, include_octave)
-  if not note_nums then return nil end
-  if type(note_nums) == "number" then note_nums = {note_nums} end
-  local note_nums_len = #note_nums
-  local output = {}
-  for i = 1, note_nums_len do
-    local name = MusicUtil.NOTE_NAMES[note_nums[i] % 12 + 1]
-    if include_octave then name = name .. math.floor(note_nums[i] / 12 - 1) end
-    output[i] = name
-  end
-  if note_nums_len == 1 then return output[1]
-  else return output end
+-- @return Name string (eg, "C#3").
+function MusicUtil.note_num_to_name(note_num, include_octave)
+  local name = MusicUtil.NOTE_NAMES[note_num % 12 + 1]
+  if include_octave then name = name .. math.floor(note_num / 12 - 1) end
+  return name
 end
 
---- Convert MIDI note numbers to frequencies.
--- @param note_nums MIDI note number (0-127) or array of note numbers.
--- @return Frequency number in Hz or array of frequencies.
-function MusicUtil.note_nums_to_freqs(note_nums)
-  if not note_nums then return nil end
-  if type(note_nums) == "number" then note_nums = {note_nums} end
-  local note_nums_len = #note_nums
+--- Return an array of MIDI note numbers' names.
+-- @param note_nums_array Array of MIDI note numbers.
+-- @param[opt] include_octave Include octave number in return strings if set to true.
+-- @return Array of name strings.
+function MusicUtil.note_nums_to_names(note_nums_array, include_octave)
   local output = {}
-  for i = 1, note_nums_len do
-    output[i] = (440 / 32) * (2 ^ ((note_nums[i] - 9) / 12))
+  for i = 1, #note_nums_array do
+    output[i] = MusicUtil.note_num_to_name(note_nums_array[i], include_octave)
   end
-  if note_nums_len == 1 then return output[1]
-  else return output end
+  return output
 end
 
---- Convert frequencies to nearest MIDI note numbers.
--- @param freqs Frequency number in Hz or array of frequencies.
--- @return MIDI note number (0-127) or array of note numbers.
-function MusicUtil.freqs_to_note_nums(freqs)
-  if not freqs then return nil end
-  if type(freqs) == "number" then freqs = {freqs} end
-  local freqs_len = #freqs
-  local output = {}
-  for i = 1, freqs_len do
-    output[i] = util.clamp(math.floor(12 * math.log(freqs[i] / 440.0) / math.log(2) + 69.5), 0, 127)
-  end
-  if freqs_len == 1 then return output[1]
-  else return output end
+
+--- Return a MIDI note number's frequency.
+-- @param note_num MIDI note number (0-127).
+-- @return Frequency number in Hz.
+function MusicUtil.note_num_to_freq(note_num)
+  return 13.75 * (2 ^ ((note_num - 9) / 12))
 end
+
+--- Return an array of MIDI note numbers' frequencies.
+-- @param note_nums_array Array of MIDI note numbers.
+-- @return Array of frequency numbers in Hz.
+function MusicUtil.note_nums_to_freqs(note_nums_array)
+  local output = {}
+  for i = 1, #note_nums_array do
+    output[i] = MusicUtil.note_num_to_freq(note_nums_array[i])
+  end
+  return output
+end
+
+
+--- Return a frequency's nearest MIDI note number.
+-- @param freq Frequency number in Hz.
+-- @return MIDI note number (0-127).
+function MusicUtil.freq_to_note_num(freq)
+  return util.clamp(math.floor(12 * math.log(freq / 440.0) / math.log(2) + 69.5), 0, 127)
+end
+
+--- Return an array of frequencies' nearest MIDI note numbers.
+-- @param freqs Array of frequency numbers in Hz.
+-- @return Array of MIDI note numbers.
+function MusicUtil.freqs_to_note_nums(freqs_array)
+  local output = {}
+  for i = 1, #freqs_array do
+    output[i] = MusicUtil.freq_to_note_num(freqs_array[i])
+  end
+  return output
+end
+
 
 return MusicUtil
