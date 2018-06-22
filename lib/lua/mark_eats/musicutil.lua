@@ -114,28 +114,28 @@ end
 -- @return Adjusted note number.
 function MusicUtil.snap_note_to_array(note_num, snap_array)
   local snap_array_len = #snap_array
-	if snap_array_len == 1 then
-	  note_num = snap_array[1]
-	elseif note_num >= snap_array[snap_array_len] then
-	  note_num = snap_array[snap_array_len]
-	else
+  if snap_array_len == 1 then
+    note_num = snap_array[1]
+  elseif note_num >= snap_array[snap_array_len] then
+    note_num = snap_array[snap_array_len]
+  else
     local delta
     local prev_delta = math.huge
-	  for s = 1, snap_array_len + 1 do
-	    if s > snap_array_len then
-	      note_num = note_num + prev_delta
-	      break
-	    end
-	    delta = snap_array[s] - note_num
-	    if delta == 0 then
-	      break
-	    elseif math.abs(delta) >= math.abs(prev_delta) then
-	      note_num = note_num + prev_delta
-	      break
-	    end
-	    prev_delta = delta
-	  end
-	end
+    for s = 1, snap_array_len + 1 do
+      if s > snap_array_len then
+        note_num = note_num + prev_delta
+        break
+      end
+      delta = snap_array[s] - note_num
+      if delta == 0 then
+        break
+      elseif math.abs(delta) >= math.abs(prev_delta) then
+        note_num = note_num + prev_delta
+        break
+      end
+      prev_delta = delta
+    end
+  end
 
   return note_num
 end
@@ -145,10 +145,10 @@ end
 -- @param snap_array Array of MIDI note numbers to snap to, must be in low to high order.
 -- @return Array of adjusted note numbers.
 function MusicUtil.snap_notes_to_array(note_nums_array, snap_array)
-	for i = 1, #note_nums_array do
-		note_nums_array[i] = MusicUtil.snap_note_to_array(note_nums_array[i], snap_array)
-	end
-	return note_nums_array
+  for i = 1, #note_nums_array do
+    note_nums_array[i] = MusicUtil.snap_note_to_array(note_nums_array[i], snap_array)
+  end
+  return note_nums_array
 end
 
 
