@@ -21,7 +21,7 @@ unrequire("mark_eats/graph")
 -- Include the Graph class
 local Graph = require "mark_eats/graph"
 
-local MusicUtil = require "musicutil"
+local MusicUtil = require "mark_eats/musicutil"
 
 -- This is where we will store the graph
 local demo_graph = nil
@@ -121,7 +121,7 @@ function init_graph(id)
     
     -- This is a bar graph. It's similar to the selectable points graph but with a different visual style.
     -- The y axis is based on MIDI note numbers
-    demo_graph = Graph.new(1, 16, -48, 72, "bar", false, false, 9, 4, 110, 46)
+    demo_graph = Graph.new(1, 16, 48, 72, "bar", false, false, 9, 4, 110, 46)
     for k, v in pairs(seq_vals) do
       demo_graph:add_point(k, v)
     end
@@ -199,7 +199,7 @@ function enc(n, delta)
       
     -- ENC3 sets the MIDI note value.
     elseif n == 3 then
-      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), -48, 72)
+      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), 48, 72)
       demo_graph:edit_point(highlight_id, nil, seq_vals[highlight_id])
     end
     
@@ -240,22 +240,22 @@ function redraw()
     screen.text("Sine")
     screen.move(34, 60)
     screen.text_center("Saw")
-    screen.level(5)
+    screen.level(3)
     screen.rect(26 * wave_shape - 0, 63, 17 + 1 * (1 - wave_shape), 1)
     screen.fill()
   
   -- Draw ADSR text
   elseif graph_id == 2 then
     if shift_key then screen.level(3) else screen.level(15) end
-    screen.move(0, 14)
-    screen.text("Attack " .. util.round(env_vals.a, 0.01) .."s")
-    screen.move(0, 27)
-    screen.text("Decay " .. util.round(env_vals.d, 0.01) .."s")
+    screen.move(4, 14)
+    screen.text("A  " .. util.round(env_vals.a, 0.01) .."s")
+    screen.move(4, 27)
+    screen.text("D  " .. util.round(env_vals.d, 0.01) .."s")
     if shift_key then screen.level(15) else screen.level(3) end
-    screen.move(0, 40)
-    screen.text("Sustain " .. util.round(env_vals.s, 0.01))
-    screen.move(0, 53)
-    screen.text("Release " .. util.round(env_vals.r, 0.01) .."s")
+    screen.move(4, 40)
+    screen.text("S  " .. util.round(env_vals.s, 0.01))
+    screen.move(4, 53)
+    screen.text("R  " .. util.round(env_vals.r, 0.01) .."s")
     
   -- Modify points graph to show lines when shift key is held
   elseif graph_id == 3 then
@@ -268,10 +268,10 @@ function redraw()
   -- Draw sequencer position and note name
   elseif graph_id == 4 then
     screen.level(15)
-    screen.rect(util.round(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, step)) - 3, 53, 5, 2)
+    screen.rect(util.round(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w - 1, step)) - 2, 52, 5, 2)
     screen.fill()
-    screen.move(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w, highlight_id), 62)
-    screen.text_center(MusicUtil.note_nums_to_names(seq_vals[highlight_id], true))
+    screen.move(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w - 1, highlight_id), 62)
+    screen.text_center(MusicUtil.note_num_to_name(seq_vals[highlight_id], true))
   end
   
   -- Draw the actual graph!
