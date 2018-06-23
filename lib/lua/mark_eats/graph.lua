@@ -5,7 +5,7 @@
 local Graph = {}
 Graph.__index = Graph
 
-function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis, x, y, w, h)
+function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis)
   local graph = {}
   graph.x_min = x_min or 0
   graph.x_max = x_max or 1
@@ -14,14 +14,33 @@ function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis, 
   graph.style = style or "line"
   graph.show_x_axis = show_x_axis == nil and false or show_x_axis
   graph.show_y_axis = show_y_axis == nil and false or show_y_axis
-  graph.x = x or 0
-  graph.y = y or 0
-  graph.w = w or 128
-  graph.h = h or 64
   graph.functions = {}
   graph.points = {}
+  graph.active = true
   setmetatable(graph, Graph)
+  graph:set_position_and_size(10, 10, 108, 44)
   return graph
+end
+
+
+function Graph:set_position_and_size(x, y, w, h)
+  if x then self.x = x end
+  if y then self.y = y end
+  if w then self.w = w end
+  if h then self.h = h end
+  
+  -- Recalculate screen co-ords
+  self.origin_sx = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, 0))
+  self.origin_sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, 0))
+  for i = 1, #self.points do
+    self.points[i].sx, self.points[i].sy = self:graph_to_screen(self.points[i].x, self.points[i].y)
+  end
+end
+
+function Graph:graph_to_screen(x, y)
+  x = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, x))
+  y = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y))
+  return x, y
 end
 
 
@@ -35,6 +54,7 @@ end
 -- curve defaults to 0, points will be added to the end if index is omitted
 function Graph:add_point(px, py, curve, highlight, index)
   local point = {x = util.clamp(px or 0, self.x_min, self.x_max), y = util.clamp(py or 0, self.y_min, self.y_max), curve = curve or 0, highlight = highlight or false}
+  point.sx, point.sy = self:graph_to_screen(point.x, point.y)
   if index then table.insert(self.points, index, point)
   else table.insert(self.points, point) end
 end
@@ -43,6 +63,7 @@ function Graph:edit_point(index, px, py, curve, highlight)
   if not self.points[index] then return end
   if px then self.points[index].x = util.clamp(px, self.x_min, self.x_max) end
   if py then self.points[index].y = util.clamp(py, self.y_min, self.y_max) end
+  if px or py then self.points[index].sx, self.points[index].sy = self:graph_to_screen(self.points[index].x, self.points[index].y) end
   if curve then self.points[index].curve = curve end
   if highlight ~= nil then self.points[index].highlight = highlight end
 end
@@ -115,13 +136,13 @@ end
 
 -- Includes DADSR, ADSR, ASR, AR (Perc)
 
-function Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
-  return Graph.new(x_min, x_max, y_min, y_max, "line", false, false, x, y, w, h)
+function Graph.new_env(x_min, x_max, y_min, y_max)
+  return Graph.new(x_min, x_max, y_min, y_max, "line", false, false)
 end
 
 -- DADSR
-function Graph.new_dadsr(x_min, x_max, y_min, y_max, x, y, w, h, delay, attack, decay, sustain, release, level, curve)
-  local graph = Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
+function Graph.new_dadsr(x_min, x_max, y_min, y_max, delay, attack, decay, sustain, release, level, curve)
+  local graph = Graph.new_env(x_min, x_max, y_min, y_max)
   local dl = math.max(0, delay or 0.1)
   local a = math.max(0, attack or 0.01)
   local d = math.max(0, decay or 0.3)
@@ -146,23 +167,20 @@ function Graph:edit_dadsr(delay, attack, decay, sustain, release, level, curve)
   if sustain then self.env_sustain = util.clamp(sustain, 0, 1) end
   local r = math.max(0, release or self.x_max - self.points[5].x)
   local l = util.clamp(level or self.points[3].y, self.y_min, self.y_max)
-  self.points[2].x = dl;
-  self.points[3].x = dl + a;
-  self.points[3].y = l;
-  self.points[4].x = dl + a + d;
-  self.points[4].y = l * self.env_sustain;
-  self.points[5].x = self.x_max - r;
-  self.points[5].y = l * self.env_sustain;
+  self:edit_point(2, dl)
+  self:edit_point(3, dl + a, l)
+  self:edit_point(4, dl + a + d, l * self.env_sustain)
+  self:edit_point(5, self.x_max - r, l * self.env_sustain)
   if curve ~= nil then
     for i = 3, 6 do
-      self.points[i].curve = curve
+      self:edit_point(i, nil, nil, curve)
     end
   end
 end
 
 -- ADSR
-function Graph.new_adsr(x_min, x_max, y_min, y_max, x, y, w, h, attack, decay, sustain, release, level, curve)
-  local graph = Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
+function Graph.new_adsr(x_min, x_max, y_min, y_max, attack, decay, sustain, release, level, curve)
+  local graph = Graph.new_env(x_min, x_max, y_min, y_max)
   local a = math.max(0, attack or 0.01)
   local d = math.max(0, decay or 0.3)
   graph.env_sustain = util.clamp(sustain or 0.5, 0, 1)
@@ -184,23 +202,20 @@ function Graph:edit_adsr(attack, decay, sustain, release, level, curve)
   if sustain then self.env_sustain = util.clamp(sustain, 0, 1) end
   local r = math.max(0, release or self.x_max - self.points[5].x)
   local l = util.clamp(level or self.points[2].y, self.y_min, self.y_max)
-  self.points[2].x = a;
-  self.points[2].y = l;
-  self.points[3].x = a + d;
-  self.points[3].y = l * self.env_sustain;
-  self.points[4].x = self.x_max - r;
-  self.points[4].y = l * self.env_sustain;
+  self:edit_point(2, a, l)
+  self:edit_point(3, a + d, l * self.env_sustain)
+  self:edit_point(4, self.x_max - r, l * self.env_sustain)
   if curve ~= nil then
     for i = 2, 5 do
-      self.points[i].curve = curve
+      self:edit_point(i, nil, nil, curve)
     end
   end
 end
 
 
 -- ASR
-function Graph.new_asr(x_min, x_max, y_min, y_max, x, y, w, h, attack, release, level, curve)
-  local graph = Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
+function Graph.new_asr(x_min, x_max, y_min, y_max, attack, release, level, curve)
+  local graph = Graph.new_env(x_min, x_max, y_min, y_max)
   local a = math.max(0, attack or 0.01)
   local r = math.max(0, release or 1)
   local l = util.clamp(level or 1, graph.y_min, graph.y_max)
@@ -217,20 +232,18 @@ function Graph:edit_asr(attack, release, level, curve)
   local a = math.max(0, attack or self.points[2].x)
   local r = math.max(0, release or self.x_max - self.points[3].x)
   local l = util.clamp(level or self.points[2].y, self.y_min, self.y_max)
-  self.points[2].x = a;
-  self.points[2].y = l;
-  self.points[3].x = self.x_max - r;
-  self.points[3].y = l;
+  self:edit_point(2, a, l)
+  self:edit_point(3, self.x_max - r, l)
   if curve ~= nil then
     for i = 2, 4 do
-      self.points[i].curve = curve
+      self:edit_point(i, nil, nil, curve)
     end
   end
 end
 
 -- AR (Perc)
-function Graph.new_ar(x_min, x_max, y_min, y_max, x, y, w, h, attack, release, level, curve)
-  local graph = Graph.new_env(x_min, x_max, y_min, y_max, x, y, w, h)
+function Graph.new_ar(x_min, x_max, y_min, y_max, attack, release, level, curve)
+  local graph = Graph.new_env(x_min, x_max, y_min, y_max)
   local a = math.max(0, attack or 0.01)
   local r = math.max(0, release or 1)
   local l = util.clamp(level or 1, graph.y_min, graph.y_max)
@@ -246,13 +259,11 @@ function Graph:edit_ar(attack, release, level, curve)
   local a = math.max(0, attack or self.points[2].x)
   local r = math.max(0, release or self.points[3].x - self.points[2].x)
   local l = util.clamp(level or self.points[2].y, self.y_min, self.y_max)
-  self.points[2].x = a;
-  self.points[2].y = l;
-  self.points[3].x = a + r;
-  self.points[3].y = 0;
+  self:edit_point(2, a, l)
+  self:edit_point(3, a + r)
   if curve ~= nil then
     for i = 2, 3 do
-      self.points[i].curve = curve
+      self:edit_point(i, nil, nil, curve)
     end
   end
 end
@@ -263,16 +274,9 @@ end
 
 function Graph:redraw()
   
-  -- TODO some of this doesn't need to be calculated every frame!
-  -- Utilize dirty flags for some sections?
-  
   screen.line_width(1)
   
-  self.origin_sx = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, 0))
-  self.origin_sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, 0))
-  
   self:draw_axes()
-  screen.level(15)
   self:draw_points()
   self:draw_functions()
 
@@ -304,14 +308,15 @@ function Graph:draw_points()
     
     prev_sx = sx
     prev_sy = sy
-    sx = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, self.points[i].x))
-    sy = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, self.points[i].y))
+    sx = self.points[i].sx
+    sy = self.points[i].sy
     
     -- Line style
     if self.style == "line" and i > 1 then
       
+      if self.active then screen.level(15) else screen.level(5) end
+      
       -- Exponential or curve value
-      -- TODO reuse draw function code?
       local curve = self.points[i].curve
       if curve == "exp" or ( type(curve) == "number" and math.abs(curve) > 0.01) then
         
@@ -322,18 +327,32 @@ function Graph:draw_points()
           screen.line(sx + 0.5, sy + 0.5)
           
         else
-          for sample_x = prev_sx + 1, sx, 1 do
+          
+          local grow, a
+          if type(curve) == "number" then
+            grow = math.exp(curve)
+            a = 1 / (1.0 - grow)
+          end
+          
+          for sample_x = prev_sx + 1, sx do
             local sample_x_progress = (sample_x - prev_sx) / sx_distance
             if sample_x_progress <= 0 then sample_x_progress = 1 end
-            
             local sy_section
+            
             if curve == "exp" then
-              -- Has to use real values
-              sy_section = util.linexp(0, 1, math.max(self.points[i-1].y, 0.0001), math.max(self.points[i].y, 0.0001), sample_x_progress)
+              -- Has to use real values, avoiding zero
+              local prev_adj_y, cur_adj_y
+              if self.points[i-1].y < 0 then prev_adj_y = math.min(self.points[i-1].y, -0.0001)
+              else prev_adj_y = math.max(self.points[i-1].y, 0.0001) end
+              if self.points[i].y < 0 then cur_adj_y = math.min(self.points[i].y, -0.0001)
+              else cur_adj_y = math.max(self.points[i].y, 0.0001) end
+              
+              sy_section = util.linexp(0, 1, prev_adj_y, cur_adj_y, sample_x_progress)
               sy_section = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
+              
             else
-              -- Can do this one in screen space
-              sy_section = util.linlin(0, 1, prev_sy, sy, (math.exp(sample_x_progress * curve) - 1) / (math.pow(math.exp(1), curve) - 1))
+              -- Can do curve one in screen space (formula from SuperCollider)
+              sy_section = util.linlin(0, 1, prev_sy, sy, a - (a * math.pow(grow, sample_x_progress)))
             end
             
             screen.line(sample_x + 0.5, sy_section + 0.5)
@@ -358,7 +377,7 @@ function Graph:draw_points()
         else
           screen.rect(sx - 1, self.origin_sy, 3, math.max(1, sy - self.origin_sy + 1))
         end
-        screen.level(15)
+        if self.active then screen.level(15) else screen.level(3) end
         screen.fill()
         
       else
@@ -377,9 +396,10 @@ function Graph:draw_points()
       end
     end
     
-    -- Draw points for all styles except bar
+    -- Points
     if self.style ~= "bar" then
       screen.rect(sx - 1, sy - 1, 3, 3)
+      if self.active then screen.level(15) else screen.level(5) end
       screen.fill()
       
       if self.points[i].highlight then
@@ -399,6 +419,7 @@ function Graph:draw_functions()
       local y = self.functions[i](util.linlin(self.x, self.x + self.w - 1, self.x_min, self.x_max, sx))
       screen.line(sx + 0.5, util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y) + 0.5)
     end
+    if self.active then screen.level(15) else screen.level(5) end
     screen.stroke()
   end
 end
