@@ -56,6 +56,7 @@ function init()
   for channel=1,4 do
     ack.add_channel_params(channel)
   end
+  ack.add_effects_params()
 
   t = metro.alloc()
   t.count = -1
