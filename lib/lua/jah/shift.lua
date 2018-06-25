@@ -6,7 +6,7 @@ local Shift = {}
 
 local specs = {}
 
-specs.pitch_ratio = ControlSpec.new(0, 4, "linear", 0, 0, "")
+specs.pitch_ratio = ControlSpec.new(0, 4, "linear", 0, 1, "")
 specs.pitch_dispersion = ControlSpec.new(0, 4, "linear", 0, 0, "")
 specs.time_dispersion = ControlSpec.new(0, 1, "linear", 0, 0, "")
 specs.freqshift_freq = ControlSpec.new(-2000, 2000, "linear", 0, 0, "")

@@ -34,7 +34,7 @@ Engine_Shift : CroneGenEngine {
 
     *specs {
 		^(
-			pitch_ratio: ControlSpec(0, 4),
+			pitch_ratio: ControlSpec(0, 4, default: 1),
 			pitch_dispersion: ControlSpec(0, 4),
 			time_dispersion: ControlSpec(0, 1),
 			freqshift_freq: ControlSpec(-2000, 2000, default: 0),

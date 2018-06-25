@@ -1,7 +1,8 @@
 -- shifty.
--- pitch / freq shifts
--- audio inputs
+-- pitch / freq shifts audio
+-- inputs
 --
+-- additional parameters in
 -- menu > parameters
 --
 
@@ -22,6 +23,10 @@ function redraw()
   screen.font_size(8)
   screen.level(15)
   screen.text("shifty")
+  screen.move(0, 24)
+  screen.text("pitch ratio: "..params:string("pitch_ratio"))
+  screen.move(0, 32)
+  screen.text("freq shift: "..params:string("freqshift_freq"))
   screen.update()
 end
 
@@ -30,8 +35,10 @@ function enc(n, delta)
     mix:delta("output", delta)
   elseif n == 2 then
     params:delta("pitch_ratio", delta)
+    redraw()
   elseif n == 3 then
     params:delta("freqshift_freq", delta)
+    redraw()
   end
 end
 
