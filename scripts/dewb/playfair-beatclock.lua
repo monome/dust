@@ -16,9 +16,9 @@ require 'er'
 engine.name = 'Ack'
 
 local ack = require 'jah/ack'
-local beat_clock = require 'beat_clock'
+local BeatClock = require 'beatclock'
 
-local clk = beat_clock.new()
+local clk = BeatClock.new()
 
 local reset = false
 local alt = false
@@ -83,7 +83,7 @@ function key(n,z)
     alt = z
   elseif n==2 and z==1 then 
     reset = true
-    clk.reset()
+    clk:reset()
   elseif n==3 and z==1 then 
     track_edit = (track_edit % 4) + 1 
   end
