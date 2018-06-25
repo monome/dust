@@ -1,6 +1,8 @@
 -- shifty.
--- pitch / freq shifter
+-- pitch / freq shifts
+-- audio inputs
 --
+-- menu > parameters
 --
 
 local ControlSpec = require 'controlspec'
@@ -27,9 +29,9 @@ function enc(n, delta)
   if n == 1 then
     mix:delta("output", delta)
   elseif n == 2 then
-    -- params:delta("timbre", delta)
+    params:delta("pitch_ratio", delta)
   elseif n == 3 then
-    -- params:delta("timemod", delta)
+    params:delta("freqshift_freq", delta)
   end
 end
 
