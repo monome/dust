@@ -11,8 +11,8 @@ function BeatClock.new(name)
   i.external_current_ticks = i.external_ticks_per_step - 1
   i.steps_per_beat = 4
   i.beats_per_bar = 4
-  i.step = 0
-  i.beat = 0
+  i.step = i.steps_per_beat - 1
+  i.beat = i.beats_per_bar - 1
   i.bpm = 110
   i.external = false
   
@@ -21,7 +21,9 @@ function BeatClock.new(name)
   i.metro.time = 15/i.bpm
   i.metro.callback = function() i:tick_internal() end
 
-  i.process_step = function(e) print("beat_clock step") end
+  i.on_step = function(e) print("BeatClock executing step") end
+  i.on_select_internal = function(e) print("BeatClock using internal clock") end
+  i.on_select_external = function(e) print("BeatClock using external clock") end
 
   return i
 end
@@ -31,6 +33,7 @@ function BeatClock:start()
   if not self.external then
     self.metro:start()
   end
+  self.external_current_ticks = self.external_ticks_per_step - 1
 end
 
 function BeatClock:stop()
@@ -43,7 +46,7 @@ function BeatClock:advance_step()
   if self.step == 0 then
     self.beat = (self.beat + 1) % self.beats_per_bar
   end
-  self.process_step()
+  self.on_step()
 end
 
 function BeatClock:tick_internal()
@@ -62,28 +65,23 @@ function BeatClock:tick_external()
 end
 
 function BeatClock:reset()
-  self.step = 0
-  self.beat = 0
-  self:reset_external_clock()
-end
-
-function BeatClock:reset_external_clock()
-  -- set to pick up on next external clock event
+  self.step = self.steps_per_beat - 1
+  self.beat = self.beats_per_bar - 1
   self.external_current_ticks = self.external_ticks_per_step - 1
 end
 
 function BeatClock:clock_source_change(source)
   if source == 1 then
-    print("Using internal clock")
     self.external = false
-    self:reset_external_clock()
+    self.external_current_ticks = self.external_ticks_per_step - 1
     if self.playing then
       self.metro:start()
     end
+    self.on_select_internal()
   else
-    print("Using external clock")
     self.external = true
     self.metro:stop()
+    self.on_select_external()
   end
 end
 

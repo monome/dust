@@ -53,8 +53,11 @@ function init()
   for i=1,4 do reer(i) end
 
   screen.line_width(1)
+  
   clk:add_clock_params()
-  clk.process_step = step
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external =  reset_pattern
 
   for channel=1,4 do
     ack.add_channel_params(channel)
@@ -65,6 +68,11 @@ function init()
   
   clk:start()
   
+end
+
+local function reset_pattern()
+  reset = true
+  clk:reset()
 end
 
 function step()
@@ -79,13 +87,9 @@ function step()
 end
 
 function key(n,z)
-  if n==1 then 
-    alt = z
-  elseif n==2 and z==1 then 
-    reset = true
-    clk:reset()
-  elseif n==3 and z==1 then 
-    track_edit = (track_edit % 4) + 1 
+  if n==1 then alt = z
+  elseif n==2 and z==1 then reset_pattern() 
+  elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 
   end
   redraw() 
 end
@@ -111,7 +115,10 @@ function redraw()
   if params:get("clock") == 1 then
     screen.text(params:get("bpm"))
   else
-    screen.text(clk.beat+1)
+    for i=1,clk.beat+1 do
+       screen.rect(i*2,1,1,2)  
+    end
+    screen.fill()
   end
   for i=1,4 do
     screen.level((i == track_edit) and 15 or 4)
@@ -121,7 +128,7 @@ function redraw()
     screen.text_center(track[i].n)
 
     for x=1,track[i].n do
-      screen.level(track[i].pos==x and 15 or 2)
+      screen.level((track[i].pos==x and not reset) and 15 or 2)
       screen.move(x*3 + 30, i*10 + 10)
       if track[i].s[x] then
         screen.line_rel(0,-8)
@@ -139,10 +146,19 @@ function norns.midi.event(id, data)
   data1 = data[2]
   data2 = data[3]
   
-  if status == 248 then -- midi clock
-    clk:tick_external()
-  elseif status == 247 then -- mmc message to simulate clock
-    clk:tick_external()
+  
+  if clk.external then 
+    if status == 248 then -- midi clock
+      clk:tick_external()
+    elseif status == 250 then -- midi clock start
+      clk:reset()
+      clk:start()
+    elseif status == 251 then -- midi clock continue
+      clk:start()
+    elseif status == 252 then -- midi clock stop
+      print("stop")
+      clk:stop()
+    end
   end
 end
 
