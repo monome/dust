@@ -1,6 +1,6 @@
 -- hello ack.
 -- sample player
--- controlled by midi
+-- controlled by midi or grid
 --
 -- enc2: select sample
 -- enc3: change pitch*

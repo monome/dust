@@ -1,12 +1,11 @@
 -- shifty.
 -- pitch / freq shifts audio
--- inputs
+-- from inputs
 --
 -- additional parameters in
 -- menu > parameters
 --
 
-local ControlSpec = require 'controlspec'
 local Shift = require 'jah/shift'
 
 engine.name = 'Shift'

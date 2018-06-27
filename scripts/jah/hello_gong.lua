@@ -1,12 +1,12 @@
 -- hello gong.
 -- 6 voice polyphonic fm synth
--- controlled by midi
+-- controlled by midi or grid
 --
 -- enc2: timbre macro control
 -- enc3: time macro control
 -- key2: trig random note
 --
--- midi: play notes
+-- midi/grid: play notes
 --
 -- synth parameters in
 -- menu > parameters
