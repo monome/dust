@@ -303,22 +303,6 @@ function Grid.add(dev)
   end
 end
 
-local function add_midi_cc_params()
-  local midi_cc_note_list = {}
-  for i=0,127 do
-    midi_cc_note_list[i] = i
-  end
-  cc_type = {"abs", "rel"}
-  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
-  params:add_option("filter cutoff cc type", cc_type)
-  params:add_option("filter res cc", midi_cc_note_list, 2)
-  params:add_option("filter res cc type", cc_type)
-  params:add_option("delay send cc", midi_cc_note_list, 3)
-  params:add_option("delay send cc type", cc_type)
-  params:add_option("reverb send cc", midi_cc_note_list, 4)
-  params:add_option("reverb send cc type", cc_type)
-end
-
 function init()
   screen.aa(1)
   screen.line_width(1.0)
@@ -329,7 +313,19 @@ function init()
   params:add_option("midi in", {"disabled", "enabled"}, 2)
   params:add_option("midi selects channel", bool, 2)
 
-  add_midi_cc_params()
+  local midi_cc_note_list = {}
+  for i=0,127 do
+    midi_cc_note_list[i] = i
+  end
+  local cc_type = {"abs", "rel"}
+  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
+  params:add_option("filter cutoff cc type", cc_type)
+  params:add_option("filter res cc", midi_cc_note_list, 2)
+  params:add_option("filter res cc type", cc_type)
+  params:add_option("delay send cc", midi_cc_note_list, 3)
+  params:add_option("delay send cc type", cc_type)
+  params:add_option("reverb send cc", midi_cc_note_list, 4)
+  params:add_option("reverb send cc type", cc_type)
 
   params:add_separator()
 
