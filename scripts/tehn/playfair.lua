@@ -150,3 +150,8 @@ midi.remove = function(dev)
   print('playfair: midi device removed', dev.id, dev.name)
   midi_device = nil
 end
+function cleanup()
+  midi_device = nil
+  midi.add = nil
+  midi.remove = nil
+end
