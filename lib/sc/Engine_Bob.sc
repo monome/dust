@@ -1,11 +1,11 @@
-Engine_Shift : CroneGenEngine {
+Engine_Bob : CroneGenEngine {
 	*ugenGraphFunc {
 		^{
 			arg
 				in,
 				out,
 				cutoff,
-				resonance,
+				resonance
 /*
 	TODO
 				amp_env0,
