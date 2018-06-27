@@ -55,7 +55,7 @@ function init()
   screen.line_width(1)
   params:add_number("bpm",1,480,160)
   params:set_action("bpm", function(x)
-    t.time = 60/(24/3)/x
+    t.time = 60/24/x
   end)
 
   for channel=1,4 do
@@ -66,13 +66,11 @@ function init()
 
   t = metro.alloc()
   t.count = -1
-  t.time = 60/(24/3)/params:get("bpm")
+  t.time = 60/24/params:get("bpm")
   t.callback = function()
     if midi_device then midi.send(midi_device, {248}) end
-    if midi_device then midi.send(midi_device, {248}) end
-    if midi_device then midi.send(midi_device, {248}) end
 
-    if midiclocktimerticks % 2 == 0 then
+    if midiclocktimerticks == 0 then
       if reset then
         for i=1,4 do track[i].pos = 1 end
         reset = false
@@ -83,7 +81,7 @@ function init()
       redraw()
     end
 
-    if midiclocktimerticks > 2 then
+    if midiclocktimerticks == 5 then
       midiclocktimerticks = 0
     else
       midiclocktimerticks = midiclocktimerticks + 1
