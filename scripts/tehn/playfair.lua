@@ -151,7 +151,6 @@ midi.remove = function(dev)
   midi_device = nil
 end
 function cleanup()
-  midi_device = nil
   midi.add = nil
   midi.remove = nil
 end
