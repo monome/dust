@@ -4,10 +4,8 @@ Engine_Shift : CroneGenEngine {
 			arg
 				in,
 				out,
-				pitch_ratio,
-				pitch_dispersion,
-				time_dispersion,
-				freqshift_freq
+				cutoff,
+				resonance,
 /*
 	TODO
 				amp_env0,
@@ -23,20 +21,14 @@ Engine_Shift : CroneGenEngine {
 */
 			;
 
-			var sig;
-			sig = In.ar(in, 2);
-			sig = PitchShift.ar(sig, 0.2, pitch_ratio, pitch_dispersion, time_dispersion);
-			sig = FreqShift.ar(sig, freqshift_freq);
-			Out.ar(out, sig); // TODO: stereo output?
+			Out.ar(out, MoogLadder.ar(In.ar(in, 2), cutoff, resonance));
 		}
 	}
 
     *specs {
 		^(
-			pitch_ratio: ControlSpec(0, 4, default: 1),
-			pitch_dispersion: ControlSpec(0, 4),
-			time_dispersion: ControlSpec(0, 1),
-			freqshift_freq: ControlSpec(-2000, 2000, default: 0, units: "Hz"),
+			cutoff: \freq.asSpec,
+			resonance: \unipolar.asSpec
 		)
     }
 

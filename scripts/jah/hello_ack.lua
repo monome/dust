@@ -303,16 +303,7 @@ function Grid.add(dev)
   end
 end
 
-function init()
-  screen.aa(1)
-  screen.line_width(1.0)
-
-  local bool = {"false", "true"}
-  params:add_option("grid selects channel", bool, 2)
-  params:add_separator()
-  params:add_option("midi in", {"disabled", "enabled"}, 2)
-  params:add_option("midi selects channel", bool, 2)
-
+local function add_midi_cc_params()
   local midi_cc_note_list = {}
   for i=0,127 do
     midi_cc_note_list[i] = i
@@ -326,6 +317,19 @@ function init()
   params:add_option("delay send cc type", cc_type)
   params:add_option("reverb send cc", midi_cc_note_list, 4)
   params:add_option("reverb send cc type", cc_type)
+end
+
+function init()
+  screen.aa(1)
+  screen.line_width(1.0)
+
+  local bool = {"false", "true"}
+  params:add_option("grid selects channel", bool, 2)
+  params:add_separator()
+  params:add_option("midi in", {"disabled", "enabled"}, 2)
+  params:add_option("midi selects channel", bool, 2)
+
+  add_midi_cc_params()
 
   params:add_separator()
 
@@ -355,7 +359,7 @@ function init()
         indicate_gridkey_event = false
       end
     end,
-    1 / 10
+    1 / 20
   )
   refresh_screen_metro:start()
 

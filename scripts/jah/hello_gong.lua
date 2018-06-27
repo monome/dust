@@ -232,7 +232,7 @@ function Grid.add(dev)
   end
 end
 
-function init()
+local function add_midi_cc_params()
   local midi_cc_note_list = {}
   for i=0,127 do
     midi_cc_note_list[i] = i
@@ -246,9 +246,11 @@ function init()
   params:add_option("timbre cc type", cc_type)
   params:add_option("timemod cc", midi_cc_note_list, 4)
   params:add_option("timemod cc type", cc_type)
+end
 
+function init()
+  add_midi_cc_params()
   params:add_separator()
-
   Gong.add_params()
 
   voice = Voice.new(POLYPHONY)
@@ -264,7 +266,7 @@ function init()
         indicate_gridkey_event = false
       end
     end,
-    1 / 10
+    1 / 20
   )
   refresh_screen_metro:start()
 
@@ -287,6 +289,13 @@ function redraw()
   screen.level(15)
   screen.text("hello gong")
   update_voice_indicators()
+
+  screen.level(15)
+  screen.move(0, 32)
+  screen.text("timbre: "..params:string("timbre"))
+  screen.move(0, 40)
+  screen.text("timemod: "..params:string("timemod"))
+
   update_device_indicators()
   screen.update()
 end
@@ -296,8 +305,10 @@ function enc(n, delta)
     mix:delta("output", delta)
   elseif n == 2 then
     params:delta("timbre", delta)
+    redraw()
   elseif n == 3 then
     params:delta("timemod", delta)
+    redraw()
   end
 end
 
