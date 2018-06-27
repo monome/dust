@@ -21,6 +21,9 @@ local reset = false
 local alt = false
 local track_edit = 1
 
+local midiclocktimerticks = 0
+local midi_device
+
 local track = {}
 for i=1,4 do
   track[i] = {}
@@ -51,28 +54,43 @@ function init()
 
   screen.line_width(1)
   params:add_number("bpm",1,480,160)
-  params:set_action("bpm",function(x) t.time = 15/x end)
+  params:set_action("bpm", function(x)
+    t.time = 60/(24/3)/x
+  end)
 
   for channel=1,4 do
     ack.add_channel_params(channel)
   end
-  ack.add_effects_params()
+
+  midiclocktimerticks = 0
 
   t = metro.alloc()
   t.count = -1
-  t.time = 15/params:get("bpm")
+  t.time = 60/(24/3)/params:get("bpm")
   t.callback = function()
-    if reset then
-      for i=1,4 do track[i].pos = 1 end
-      reset = false
-    else
-      for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
+    if midi_device then midi.send(midi_device, {248}) end
+    if midi_device then midi.send(midi_device, {248}) end
+    if midi_device then midi.send(midi_device, {248}) end
+
+    if midiclocktimerticks % 2 == 0 then
+      if reset then
+        for i=1,4 do track[i].pos = 1 end
+        reset = false
+      else
+        for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end
+      end
+      trig()
+      redraw()
     end
-    trig()
-    redraw()
+
+    if midiclocktimerticks > 2 then
+      midiclocktimerticks = 0
+    else
+      midiclocktimerticks = midiclocktimerticks + 1
+    end
   end
   t:start()
-  
+
   params:read("tehn/playfair.pset")
   params:bang()
 end
@@ -122,4 +140,13 @@ function redraw()
     end
   end
   screen.update()
+end
+
+midi.add = function(dev)
+  print('playfair: midi device added', dev.id, dev.name)
+  midi_device = dev
+end
+midi.remove = function(dev)
+  print('playfair: midi device removed', dev.id, dev.name)
+  midi_device = nil
 end
