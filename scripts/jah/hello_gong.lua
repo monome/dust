@@ -6,7 +6,7 @@
 -- enc3: time macro control
 -- key2: trig random note
 --
--- midi/grid: play notes
+-- midi notes/grid: play notes
 --
 -- synth parameters in
 -- menu > parameters

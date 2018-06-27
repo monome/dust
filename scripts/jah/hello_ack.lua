@@ -10,7 +10,7 @@
 -- * more parameters in
 -- menu > parameters
 --
--- midi notes:
+-- midi notes/grid:
 -- trigger samples
 --
 -- midi cc:
