@@ -7,8 +7,7 @@ Engine_Shift : CroneGenEngine {
 				pitch_ratio,
 				pitch_dispersion,
 				time_dispersion,
-				freqshift_freq,
-				freqshift_phase
+				freqshift_freq
 /*
 	TODO
 				amp_env0,
@@ -27,7 +26,7 @@ Engine_Shift : CroneGenEngine {
 			var sig;
 			sig = In.ar(in, 2);
 			sig = PitchShift.ar(sig, 0.2, pitch_ratio, pitch_dispersion, time_dispersion);
-			sig = FreqShift.ar(sig, freqshift_freq, freqshift_phase);
+			sig = FreqShift.ar(sig, freqshift_freq);
 			Out.ar(out, sig); // TODO: stereo output?
 		}
 	}
@@ -37,8 +36,7 @@ Engine_Shift : CroneGenEngine {
 			pitch_ratio: ControlSpec(0, 4, default: 1),
 			pitch_dispersion: ControlSpec(0, 4),
 			time_dispersion: ControlSpec(0, 1),
-			freqshift_freq: ControlSpec(-2000, 2000, default: 0),
-			freqshift_phase: \phase.asSpec
+			freqshift_freq: ControlSpec(-2000, 2000, default: 0, units: "Hz"),
 		)
     }
 

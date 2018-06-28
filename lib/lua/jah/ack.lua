@@ -8,19 +8,19 @@ specs.send = ControlSpec.DB:copy()
 specs.send.default = -60
 
 specs.sample_start = ControlSpec.UNIPOLAR
-specs.sample_end = ControlSpec.new(0, 1, 'lin', 0, 1, "")
+specs.sample_end = ControlSpec.new(0, 1, 'lin', 0, 1, '')
 specs.loop_point = ControlSpec.UNIPOLAR
 
-specs.speed = ControlSpec.new(0.05, 5, 'lin', 0, 1, "")
--- specs.slew = ControlSpec.new(0, 5, 'lin', 0, 0, "") -- TODO: slews
+specs.speed = ControlSpec.new(0.05, 5, 'lin', 0, 1, '')
+-- specs.slew = ControlSpec.new(0, 5, 'lin', 0, 0, '') -- TODO: slews
 
 specs.volume = ControlSpec.DB:copy()
 specs.volume.default = -10
 
-specs.volume_env_attack = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
-specs.volume_env_release = ControlSpec.new(0, 3, 'lin', 0, 3, "secs")
-specs.filter_env_attack = ControlSpec.new(0, 1, 'lin', 0, 0.001, "secs")
-specs_filter_env_release = ControlSpec.new(0, 3, 'lin', 0, 0.25, "secs")
+specs.volume_env_attack = ControlSpec.new(0, 1, 'lin', 0, 0.001, 'secs')
+specs.volume_env_release = ControlSpec.new(0, 3, 'lin', 0, 3, 'secs')
+specs.filter_env_attack = ControlSpec.new(0, 1, 'lin', 0, 0.001, 'secs')
+specs_filter_env_release = ControlSpec.new(0, 3, 'lin', 0, 0.25, 'secs')
 
 specs.filter_cutoff = ControlSpec.FREQ:copy()
 specs.filter_cutoff.default = 20000
@@ -28,13 +28,13 @@ specs.filter_cutoff.default = 20000
 specs.filter_res = ControlSpec.UNIPOLAR
 specs.filter_env_mod = ControlSpec.BIPOLAR
 
-specs.delay_time = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, "secs")
-specs.delay_feedback = ControlSpec.new(0, 1.25, 'lin', 0, 0.5, "")
+specs.delay_time = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, 'secs')
+specs.delay_feedback = ControlSpec.new(0, 1.25, 'lin', 0, 0.5, '')
 specs.delay_level = ControlSpec.DB:copy()
 specs.delay_level.default = -10
 
-specs.reverb_room = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
-specs.reverb_damp = ControlSpec.new(0, 1, 'lin', 0, 0.5, "")
+specs.reverb_room = ControlSpec.new(0, 1, 'lin', 0, 0.5, '')
+specs.reverb_damp = ControlSpec.new(0, 1, 'lin', 0, 0.5, '')
 specs.reverb_level = ControlSpec.DB:copy()
 specs.reverb_level.default = -10
 
