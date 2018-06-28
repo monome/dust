@@ -41,6 +41,10 @@ local eREV = 6
 
 local quantize = 0
 
+local midiclocktimerticks = 0
+local midi_device
+local midiclocktimer
+
 local function update_tempo()
   local t = params:get("tempo")
   local d = params:get("quant_div")
@@ -52,6 +56,7 @@ local function update_tempo()
       update_rate(i)
     end
   end
+  midiclocktimer.time = 60/24/t
 end
 
 
@@ -345,12 +350,21 @@ init = function()
   quantizer:start() 
   --pattern_init()
   set_view(vREC)
+
+  midiclocktimer = metro.alloc()
+  midiclocktimer.count = -1
+  midiclocktimer.callback = function()
+    if midi_device then midi.send(midi_device, {248}) end
+  end
   update_tempo()
+  midiclocktimer:start()
 
   gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
   gridredrawtimer:start()
 
   dirtygrid = true
+
+  midiclocktimerticks = 0
 end
 
 -- poll callback
@@ -804,6 +818,12 @@ end
 midi.add = function(dev)
   print('mlr: midi device added', dev.id, dev.name)
   dev.event = midi_event
+  midi_device = dev
+end
+
+midi.remove = function(dev)
+  print('mlr: midi device removed', dev.id, dev.name)
+  midi_device = nil
 end
 
 function cleanup()
@@ -814,4 +834,7 @@ function cleanup()
   for id,dev in pairs(midi.devices) do
     dev.event = nil
   end
+
+  midi.add = nil
+  midi.remove = nil
 end
