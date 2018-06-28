@@ -41,7 +41,6 @@ local eREV = 6
 
 local quantize = 0
 
-local midiclocktimerticks = 0
 local midi_device
 local midiclocktimer
 
@@ -363,8 +362,6 @@ init = function()
   gridredrawtimer:start()
 
   dirtygrid = true
-
-  midiclocktimerticks = 0
 end
 
 -- poll callback
