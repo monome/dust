@@ -85,19 +85,18 @@ function init_graph(id)
   if graph_id == 1 then
     
     -- Graphs are created with Graph.new and take the following arguments (all optional):
-    -- Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis)
-    demo_graph = Graph.new(0, 2, -1, 1, nil, true, false)
+    -- Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
+    demo_graph = Graph.new(0, 2, "lin", -1, 1, "lin", nil, true, false)
     -- We must then set its position and size (always use this method to adjust a graph's x, y, w, h).
     demo_graph:set_position_and_size(5, 7, 118, 40)
     
     -- Add a function to the graph instance that takes an x value and outputs the y value.
     local wave_func = function(x)
         local sine = math.sin(x * wave_freq * math.pi)
-        local saw = ((x * wave_freq * 0.5 - 0.5) % 1) * 2 - 1
+        local saw = (1 - (x * wave_freq * 0.5 - 0.5) % 1) * 2 - 1
         return sine * (1 - wave_shape) + saw * wave_shape
     end
     demo_graph:add_function(wave_func)
-    
   
   
   -- ADSR graph
@@ -114,7 +113,7 @@ function init_graph(id)
     
     -- This graph is a 'points' graph (as opposed to a 'function' graph).
     -- It is set up to contain 12 equally spaced points from a table generated in init
-    demo_graph = Graph.new(1, 12, -1, 1, "point", true, false)
+    demo_graph = Graph.new(1, 12, "lin", -1, 1, "lin", "point", true, false)
     demo_graph:set_position_and_size(3, 3, 122, 58)
     for i = 1, #point_vals do
       demo_graph:add_point(i, point_vals[i])
@@ -131,7 +130,7 @@ function init_graph(id)
     
     -- This is a bar graph. It's similar to the selectable points graph but with a different visual style.
     -- The y axis is based on MIDI note numbers
-    demo_graph = Graph.new(1, 16, 48, 72, "bar", false, false)
+    demo_graph = Graph.new(1, 16, "lin", 48, 72, "lin", "bar", false, false)
     demo_graph:set_position_and_size(9, 4, 110, 46)
     for i = 1, #seq_vals do
       demo_graph:add_point(i, seq_vals[i])
@@ -196,7 +195,7 @@ function enc(n, delta)
     -- ENC3 grabs the highlighted point value and increments it.
     elseif n == 3 then
       -- We could just store the values in the graph but here we store the data model in this class and update the graph view from it.
-      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, -1, 1)
+      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, demo_graph.y_min, demo_graph.y_max)
       demo_graph:edit_point(highlight_id, nil, point_vals[highlight_id])
     end
     
@@ -211,7 +210,7 @@ function enc(n, delta)
       
     -- ENC3 sets the MIDI note value.
     elseif n == 3 then
-      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), 48, 72)
+      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), demo_graph.y_min, demo_graph.y_max)
       demo_graph:edit_point(highlight_id, nil, seq_vals[highlight_id])
     end
     

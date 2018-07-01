@@ -5,12 +5,14 @@
 local Graph = {}
 Graph.__index = Graph
 
-function Graph.new(x_min, x_max, y_min, y_max, style, show_x_axis, show_y_axis)
+function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
   local graph = {}
   graph.x_min = x_min or 0
   graph.x_max = x_max or 1
+  graph.x_warp = x_warp or "lin"
   graph.y_min = y_min or 0
   graph.y_max = y_max or 1
+  graph.y_warp = y_warp or "lin"
   graph.style = style or "line"
   graph.show_x_axis = show_x_axis == nil and false or show_x_axis
   graph.show_y_axis = show_y_axis == nil and false or show_y_axis
@@ -38,8 +40,16 @@ function Graph:set_position_and_size(x, y, w, h)
 end
 
 function Graph:graph_to_screen(x, y)
-  x = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, x))
-  y = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y))
+  if self.x_warp == "exp" then
+    x = util.round(util.explin(self.x_min, self.x_max, self.x, self.x + self.w - 1, x))
+  else
+    x = util.round(util.linlin(self.x_min, self.x_max, self.x, self.x + self.w - 1, x))
+  end
+  if self.y_warp == "exp" then
+    y = util.round(util.explin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y))
+  else
+    y = util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y))
+  end
   return x, y
 end
 
@@ -53,7 +63,7 @@ end
 
 -- curve defaults to 0, points will be added to the end if index is omitted
 function Graph:add_point(px, py, curve, highlight, index)
-  local point = {x = util.clamp(px or 0, self.x_min, self.x_max), y = util.clamp(py or 0, self.y_min, self.y_max), curve = curve or 0, highlight = highlight or false}
+  local point = {x = util.clamp(px or 0, self.x_min, self.x_max), y = util.clamp(py or 0, self.y_min, self.y_max), curve = curve or "lin", highlight = highlight or false}
   point.sx, point.sy = self:graph_to_screen(point.x, point.y)
   if index then table.insert(self.points, index, point)
   else table.insert(self.points, point) end
@@ -137,7 +147,7 @@ end
 -- Includes DADSR, ADSR, ASR, AR (Perc)
 
 function Graph.new_env(x_min, x_max, y_min, y_max)
-  return Graph.new(x_min, x_max, y_min, y_max, "line", false, false)
+  return Graph.new(x_min, x_max, "lin", y_min, y_max, "lin", "line", false, false)
 end
 
 -- DADSR
@@ -299,17 +309,14 @@ end
 
 function Graph:draw_points()
   
-  local sx
-  local sy
-  local prev_sx
-  local prev_sy
+  local px, py, prev_px, prev_py, sx, sy, prev_sx, prev_sy
   
   for i = 1, #self.points do
     
-    prev_sx = sx
-    prev_sy = sy
-    sx = self.points[i].sx
-    sy = self.points[i].sy
+    prev_px, prev_py = px, py
+    px, py = self.points[i].x, self.points[i].y
+    prev_sx, prev_sy = sx, sy
+    sx, sy = self.points[i].sx, self.points[i].sy
     
     -- Line style
     if self.style == "line" and i > 1 then
@@ -336,23 +343,35 @@ function Graph:draw_points()
           
           for sample_x = prev_sx + 1, sx do
             local sample_x_progress = (sample_x - prev_sx) / sx_distance
+            if self.x_warp == "exp" then
+              local sample_graph_x = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px + (px - prev_px) * sample_x_progress)
+              local prev_px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px)
+              local px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, px)
+              sample_x_progress = (sample_graph_x - prev_px_exp) / (px_exp - prev_px_exp)
+            end
             if sample_x_progress <= 0 then sample_x_progress = 1 end
             local sy_section
             
             if curve == "exp" then
-              -- Has to use real values, avoiding zero
+              -- Avoiding zero
               local prev_adj_y, cur_adj_y
-              if self.points[i-1].y < 0 then prev_adj_y = math.min(self.points[i-1].y, -0.0001)
-              else prev_adj_y = math.max(self.points[i-1].y, 0.0001) end
-              if self.points[i].y < 0 then cur_adj_y = math.min(self.points[i].y, -0.0001)
-              else cur_adj_y = math.max(self.points[i].y, 0.0001) end
+              if prev_py < 0 then prev_adj_y = math.min(prev_py, -0.0001)
+              else prev_adj_y = math.max(prev_py, 0.0001) end
+              if py < 0 then cur_adj_y = math.min(py, -0.0001)
+              else cur_adj_y = math.max(py, 0.0001) end
               
               sy_section = util.linexp(0, 1, prev_adj_y, cur_adj_y, sample_x_progress)
-              sy_section = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
               
             else
-              -- Can do curve one in screen space (formula from SuperCollider)
-              sy_section = util.linlin(0, 1, prev_sy, sy, a - (a * math.pow(grow, sample_x_progress)))
+              -- Curve formula from SuperCollider
+              sy_section = util.linlin(0, 1, prev_py, py, a - (a * math.pow(grow, sample_x_progress)))
+              
+            end
+            
+            if self.y_warp == "exp" then
+              sy_section = util.explin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
+            else
+              sy_section = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
             end
             
             screen.line(sample_x + 0.5, sy_section + 0.5)
