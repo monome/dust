@@ -7,38 +7,55 @@ function BeatClock.new(name)
   
   i.name = name or ""
   i.playing = false
-  i.external_ticks_per_step = 6
-  i.external_current_ticks = i.external_ticks_per_step - 1
+  i.ticks_per_step = 6
+  i.current_ticks = i.ticks_per_step - 1
   i.steps_per_beat = 4
   i.beats_per_bar = 4
   i.step = i.steps_per_beat - 1
   i.beat = i.beats_per_bar - 1
-  i.bpm = 110
   i.external = false
+  i.send = false
+  i.midi = false
   
   i.metro = metro.alloc()
   i.metro.count = -1
-  i.metro.time = 15/i.bpm
-  i.metro.callback = function() i:tick_internal() end
+  i.metro.callback = function() i:tick() end
+  i:bpm_change(110)
 
   i.on_step = function(e) print("BeatClock executing step") end
   i.on_select_internal = function(e) print("BeatClock using internal clock") end
   i.on_select_external = function(e) print("BeatClock using external clock") end
+  
+  i:enable_midi()
 
   return i
 end
 
-function BeatClock:start()
+function BeatClock:start(dev_id)
   self.playing = true
   if not self.external then
     self.metro:start()
   end
-  self.external_current_ticks = self.external_ticks_per_step - 1
+  self.current_ticks = self.ticks_per_step - 1
+  if self.midi and self.send then
+    for id, device in pairs(midi.devices) do
+      if id ~= dev_id then
+        device:send({251})
+      end
+    end
+  end
 end
 
-function BeatClock:stop()
+function BeatClock:stop(dev_id)
   self.playing = false
   self.metro:stop()
+  if self.midi and self.send then
+    for id, device in pairs(midi.devices) do
+      if id ~= dev_id then
+        device:send({252})
+      end
+    end
+  end
 end
 
 function BeatClock:advance_step()
@@ -49,31 +66,41 @@ function BeatClock:advance_step()
   self.on_step()
 end
 
-function BeatClock:tick_internal()
-  if self.playing and not self.external then
+function BeatClock:tick(dev_id)
+  self.current_ticks = (self.current_ticks + 1) % self.ticks_per_step
+  if self.playing and self.current_ticks == 0 then
     self:advance_step()
-  end 
-end
-
-function BeatClock:tick_external()
-  if self.external then
-    self.external_current_ticks = (self.external_current_ticks + 1) % self.external_ticks_per_step
-    if self.playing and self.external_current_ticks == 0 then
-      self:advance_step()
+  end
+  
+  if self.midi and self.send then
+    for id, device in pairs(midi.devices) do
+      if id ~= dev_id then
+        device:send({248})
+      end
     end
   end
 end
 
-function BeatClock:reset()
+function BeatClock:reset(dev_id)
   self.step = self.steps_per_beat - 1
   self.beat = self.beats_per_bar - 1
-  self.external_current_ticks = self.external_ticks_per_step - 1
+  self.current_ticks = self.ticks_per_step - 1
+  if self.midi and self.send then
+    for id, device in pairs(midi.devices) do
+      if id ~= dev_id then
+        device:send({250})
+        if not self.playing then -- force reseting while stopped requires a start/stop (??)
+          device:send({252})
+        end
+      end
+    end
+  end
 end
 
 function BeatClock:clock_source_change(source)
+  self.current_ticks = self.ticks_per_step - 1
   if source == 1 then
     self.external = false
-    self.external_current_ticks = self.external_ticks_per_step - 1
     if self.playing then
       self.metro:start()
     end
@@ -87,7 +114,7 @@ end
 
 function BeatClock:bpm_change(bpm)
   self.bpm = bpm
-  self.metro.time = (60/self.beats_per_bar) / bpm
+  self.metro.time = 60/(self.ticks_per_step * self.steps_per_beat * self.bpm)
 end
 
 function BeatClock:add_clock_params()
@@ -95,6 +122,32 @@ function BeatClock:add_clock_params()
   params:set_action("clock", function(x) self:clock_source_change(x) end)
   params:add_number("bpm", 1, 480, self.bpm)
   params:set_action("bpm", function(x) self:bpm_change(x) end)
+  params:add_option("clock out", { "no", "yes" }, self.send or 2 and 1)
+  params:set_action("clock out", function(x) if x == 1 then self.send = false else self.send = true end end)
 end
+
+function BeatClock:enable_midi()
+  self.midi = true  
+ 
+  norns.midi.event = function (id, data)
+    status = data[1]
+    data1 = data[2]
+    data2 = data[3]
+  
+    if self.external then 
+      if status == 248 then -- midi clock
+        self:tick(id)
+      elseif status == 250 then -- midi clock start
+        self:reset(id)
+        self:start(id)
+      elseif status == 251 then -- midi clock continue
+        self:start(id)
+      elseif status == 252 then -- midi clock stop
+        self:stop(id)
+      end
+    end
+  end
+end
+
   
 return BeatClock

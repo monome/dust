@@ -54,10 +54,11 @@ function init()
 
   screen.line_width(1)
   
-  clk:add_clock_params()
   clk.on_step = step
   clk.on_select_internal = function() clk:start() end
-  clk.on_select_external =  reset_pattern
+  clk.on_select_external = reset_pattern
+
+  clk:add_clock_params()
 
   for channel=1,4 do
     ack.add_channel_params(channel)
@@ -70,7 +71,7 @@ function init()
   
 end
 
-local function reset_pattern()
+function reset_pattern()
   reset = true
   clk:reset()
 end
@@ -141,24 +142,4 @@ function redraw()
   screen.update()
 end
 
-function norns.midi.event(id, data)
-  status = data[1]
-  data1 = data[2]
-  data2 = data[3]
-  
-  
-  if clk.external then 
-    if status == 248 then -- midi clock
-      clk:tick_external()
-    elseif status == 250 then -- midi clock start
-      clk:reset()
-      clk:start()
-    elseif status == 251 then -- midi clock continue
-      clk:start()
-    elseif status == 252 then -- midi clock stop
-      print("stop")
-      clk:stop()
-    end
-  end
-end
 
