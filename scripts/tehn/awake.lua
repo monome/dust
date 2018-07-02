@@ -48,8 +48,8 @@ local freqs = {}
 local edit_mode = 1
 local edit_pos = 1
 
-local midiclocktimerticks = 0
-local midi_device
+local BeatClock = require 'beatclock'
+local clk = BeatClock.new()
 
 
 function build_scale()
@@ -66,10 +66,6 @@ end
 function init()
   print("grid/seek")
 
-  params:add_number("tempo",20,240,48)
-  params:set_action("tempo", function(n) 
-    t.time = 60/24/n
-  end) 
   params:add_number("scale mode",1,7,3)
   params:set_action("scale mode", function(n) 
     build_scale()
@@ -105,39 +101,36 @@ function init()
   params:set_action("gain",
   function(x) engine.gain(x) end) 
 
-  midiclocktimerticks = 0
-
-  t = metro.alloc()
-  t.count = -1
-  t.time = 60/24/params:get("tempo")
-
-  t.callback = function(stage)
-    if midi_device then midi.send(midi_device, {248}) end
-
-    if midiclocktimerticks == 0 then
-      one.pos = one.pos + 1
-      if one.pos > one.length then one.pos = 1 end
-      two.pos = two.pos + 1
-      if two.pos > two.length then two.pos = 1 end
-
-      if one.data[one.pos] > 0 then engine.hz(freqs[one.data[one.pos]+two.data[two.pos]]) end
-      if g then
-        gridredraw()
-      end
-      redraw()
-    end
-
-    if midiclocktimerticks == 5 then
-      midiclocktimerticks = 0
-    else
-      midiclocktimerticks = midiclocktimerticks + 1
-    end
-  end
-
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external = reset_pattern
+  clk:add_clock_params()
+  
   params:read("tehn/awake.pset")
   params:bang()
+  
+  clk:start()
+  
+end
+ 
+function step()
+    
+  one.pos = one.pos + 1
+  if one.pos > one.length then one.pos = 1 end
+  two.pos = two.pos + 1
+  if two.pos > two.length then two.pos = 1 end
 
-  t:start()
+  if one.data[one.pos] > 0 then engine.hz(freqs[one.data[one.pos]+two.data[two.pos]]) end
+  if g then
+    gridredraw()
+  end
+  redraw()
+end
+
+function reset_pattern()
+  one.pos = 0
+  two.pos = 0
+  clk:reset()
 end
 
 function gridkey(x, y, z)
@@ -190,7 +183,7 @@ function enc(n, delta)
   elseif KEY3 and n==1 then
     params:delta("trans",delta)
   elseif n == 1 then
-    params:delta("tempo",delta)
+    params:delta("bpm",delta)
   elseif alt and n == 2 then
     params:delta("cutoff",delta)
   elseif alt and n == 3 then
@@ -228,8 +221,7 @@ function key(n,z)
     KEY3 = false
   elseif n == 2 and z == 1 then
     if KEY3 then
-      one.pos = 0
-      two.pos = 0
+      reset_pattern()
     else
       if edit_mode == 1 then
         for i=1,one.length do
@@ -282,7 +274,7 @@ function redraw()
   end
   screen.level((not alt and not KEY3) and 15 or 4)
   screen.move(0,10)
-  screen.text("TM:"..params:get("tempo"))
+  screen.text("TM:"..params:get("bpm"))
   screen.level(alt and 15 or 4)
   screen.move(0,20)
   screen.text("SM:"..params:get("scale mode"))
