@@ -154,10 +154,12 @@ function enc(n, delta)
     if n == 2 then
       -- Because wave_shape was passed in to the graph as a function it will maintain it's reference and update automatically.
       wave_shape = util.clamp(wave_shape + delta * 0.01, 0, 1)
+      demo_graph:update_functions()
       
     -- ENC3 set the wave frequency, 1-10.
     elseif n == 3 then
       wave_freq = util.clamp(wave_freq + delta * 0.03, 1, 10)
+      demo_graph:update_functions()
     end
     
   -- ADSR interaction
@@ -235,6 +237,11 @@ function key(n, z)
   -- KEY3 is a shift key used for additional functionality in some of the graphs.
   elseif n == 3 then
     shift_key =  z > 0 and true or false
+    
+    if graph_id == 3 then
+      if shift_key then demo_graph:set_style("line")
+      else demo_graph:set_style("point") end
+    end
   end
   
   screen_dirty = true
@@ -271,14 +278,6 @@ function redraw()
     screen.text("S  " .. util.round(env_vals.s, 0.01))
     screen.move(4, 53)
     screen.text("R  " .. util.round(env_vals.r, 0.01) .."s")
-    
-  -- Modify points graph to show lines when shift key is held
-  elseif graph_id == 3 then
-    if shift_key then
-      demo_graph.style = "line"
-    else
-      demo_graph.style = "point"
-    end
     
   -- Draw sequencer position and note name
   elseif graph_id == 4 then

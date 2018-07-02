@@ -1,5 +1,6 @@
 -- Graph
--- Flexible graph drawing for envelopes, filter curves, sequencers, etc
+-- Flexible graph drawing for waves, envelopes, sequencers, etc
+-- v1.0.0
 
 
 local Graph = {}
@@ -18,6 +19,8 @@ function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axi
   graph.show_y_axis = show_y_axis == nil and false or show_y_axis
   graph.functions = {}
   graph.points = {}
+  graph.lines = {}
+  graph.lines_dirty = false
   graph.active = true
   setmetatable(graph, Graph)
   graph:set_position_and_size(10, 10, 108, 44)
@@ -37,6 +40,11 @@ function Graph:set_position_and_size(x, y, w, h)
   for i = 1, #self.points do
     self.points[i].sx, self.points[i].sy = self:graph_to_screen(self.points[i].x, self.points[i].y)
   end
+end
+
+function Graph:set_style(style)
+  self.style = style or "line"
+  self.lines_dirty = true
 end
 
 function Graph:graph_to_screen(x, y)
@@ -67,6 +75,7 @@ function Graph:add_point(px, py, curve, highlight, index)
   point.sx, point.sy = self:graph_to_screen(point.x, point.y)
   if index then table.insert(self.points, index, point)
   else table.insert(self.points, point) end
+  self.lines_dirty = true
 end
 
 function Graph:edit_point(index, px, py, curve, highlight)
@@ -76,14 +85,17 @@ function Graph:edit_point(index, px, py, curve, highlight)
   if px or py then self.points[index].sx, self.points[index].sy = self:graph_to_screen(self.points[index].x, self.points[index].y) end
   if curve then self.points[index].curve = curve end
   if highlight ~= nil then self.points[index].highlight = highlight end
+  if px or py or curve then self.lines_dirty = true end
 end
 
 function Graph:remove_point(index)
   table.remove(self.points, index)
+  self.lines_dirty = true
 end
 
 function Graph:remove_all_points()
   self.points = {}
+  self.lines_dirty = true
 end
 
 function Graph:highlight_point(index)
@@ -115,29 +127,139 @@ end
 -------- Function methods --------
 
 function Graph:get_function(index)
-  return self.functions[index]
+  return self.functions[index].func
 end
 
-function Graph:add_function(func, index)
+function Graph:add_function(func, sample_quality, index)
   if func(1) == nil then return end
+  local quality = sample_quality or 1
   if index then
-    table.insert(self.functions, index, func)
+    table.insert(self.functions, index, {func = func, sample_quality = quality})
   else
-    table.insert(self.functions, func)
+    table.insert(self.functions, {func = func, sample_quality = quality})
   end
+  self.lines_dirty = true
 end
 
 function Graph:edit_function(index, func)
   if not self.functions[index] then return end
-  if func(1) ~= nil then self.functions[index] = func end
+  if func(1) ~= nil then self.functions[index].func = func end
+  self.lines_dirty = true
+end
+
+function Graph:update_functions()
+  self.lines_dirty = true
 end
 
 function Graph:remove_function(index)
   table.remove(self.functions, index)
+  self.lines_dirty = true
 end
 
 function Graph:remove_all_functions()
   self.functions = {}
+  self.lines_dirty = true
+end
+
+
+
+-------- Line methods --------
+
+function Graph:generate_line_from_points()
+  
+  if #self.points < 2 or self.style ~= "line" then return end
+  
+  local line_path = {}
+  local px, py, prev_px, prev_py, sx, sy, prev_sx, prev_sy
+  
+  px, py = self.points[1].x, self.points[1].y
+  sx, sy = self.points[1].sx, self.points[1].sy
+  
+  table.insert(line_path, {x = sx, y = sy})
+  
+  for i = 2, #self.points do
+    
+    prev_px, prev_py = px, py
+    prev_sx, prev_sy = sx, sy
+    px, py = self.points[i].x, self.points[i].y
+    sx, sy = self.points[i].sx, self.points[i].sy
+    
+    -- Exponential or curve value
+    local curve = self.points[i].curve
+    if curve == "exp" or ( type(curve) == "number" and math.abs(curve) > 0.01) then
+      
+      local sx_distance = sx - prev_sx
+      
+      if sx_distance <= 1 or prev_sy == sy then
+        -- Draw a straight line
+        table.insert(line_path, {x = sx, y = sy})
+        
+      else
+        
+        local grow, a
+        if type(curve) == "number" then
+          grow = math.exp(curve)
+          a = 1 / (1.0 - grow)
+        end
+        
+        for sample_x = prev_sx + 1, sx - 1 do
+          local sample_x_progress = (sample_x - prev_sx) / sx_distance
+          if self.x_warp == "exp" then
+            local sample_graph_x = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px + (px - prev_px) * sample_x_progress)
+            local prev_px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px)
+            local px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, px)
+            sample_x_progress = (sample_graph_x - prev_px_exp) / (px_exp - prev_px_exp)
+          end
+          if sample_x_progress <= 0 then sample_x_progress = 1 end
+          
+          local sy_section
+          
+          if curve == "exp" then
+            -- Avoiding zero
+            local prev_adj_y, cur_adj_y
+            if prev_py < 0 then prev_adj_y = math.min(prev_py, -0.0001)
+            else prev_adj_y = math.max(prev_py, 0.0001) end
+            if py < 0 then cur_adj_y = math.min(py, -0.0001)
+            else cur_adj_y = math.max(py, 0.0001) end
+            
+            sy_section = util.linexp(0, 1, prev_adj_y, cur_adj_y, sample_x_progress)
+            
+          else
+            -- Curve formula from SuperCollider
+            sy_section = util.linlin(0, 1, prev_py, py, a - (a * math.pow(grow, sample_x_progress)))
+            
+          end
+          
+          if self.y_warp == "exp" then
+            sy_section = util.explin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
+          else
+            sy_section = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
+          end
+          
+          table.insert(line_path, {x = sample_x, y = sy_section})
+        end
+        table.insert(line_path, {x = sx, y = sy})
+      end
+      
+    -- Linear
+    else
+      table.insert(line_path, {x = sx, y = sy})
+      
+    end
+  end
+  table.insert(self.lines, line_path)
+end
+
+function Graph:generate_lines_from_functions()
+  for i = 1, #self.functions do
+    local line_path = {}
+    table.insert(line_path, {x = self.x, y = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, self.functions[i].func(self.x_min))})
+    for sx = self.x, self.x + self.w - 1, 1 / self.functions[i].sample_quality do
+      local y = self.functions[i].func(util.linlin(self.x, self.x + self.w - 1, self.x_min, self.x_max, sx))
+      table.insert(line_path, {x = sx, y = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y)})
+    end
+    table.insert(self.lines, line_path)
+  end
 end
 
 
@@ -287,9 +409,8 @@ function Graph:redraw()
   screen.line_width(1)
   
   self:draw_axes()
+  self:draw_lines()
   self:draw_points()
-  self:draw_functions()
-
 end
 
 function Graph:draw_axes()
@@ -318,77 +439,8 @@ function Graph:draw_points()
     prev_sx, prev_sy = sx, sy
     sx, sy = self.points[i].sx, self.points[i].sy
     
-    -- Line style
-    if self.style == "line" and i > 1 then
-      
-      if self.active then screen.level(15) else screen.level(5) end
-      
-      -- Exponential or curve value
-      local curve = self.points[i].curve
-      if curve == "exp" or ( type(curve) == "number" and math.abs(curve) > 0.01) then
-        
-        screen.move(prev_sx + 0.5, prev_sy + 0.5)
-        local sx_distance = sx - prev_sx
-        
-        if sx_distance <= 1 or prev_sy == sy then
-          screen.line(sx + 0.5, sy + 0.5)
-          
-        else
-          
-          local grow, a
-          if type(curve) == "number" then
-            grow = math.exp(curve)
-            a = 1 / (1.0 - grow)
-          end
-          
-          for sample_x = prev_sx + 1, sx do
-            local sample_x_progress = (sample_x - prev_sx) / sx_distance
-            if self.x_warp == "exp" then
-              local sample_graph_x = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px + (px - prev_px) * sample_x_progress)
-              local prev_px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, prev_px)
-              local px_exp = util.linexp(self.x_min, self.x_max, self.x_min, self.x_max, px)
-              sample_x_progress = (sample_graph_x - prev_px_exp) / (px_exp - prev_px_exp)
-            end
-            if sample_x_progress <= 0 then sample_x_progress = 1 end
-            local sy_section
-            
-            if curve == "exp" then
-              -- Avoiding zero
-              local prev_adj_y, cur_adj_y
-              if prev_py < 0 then prev_adj_y = math.min(prev_py, -0.0001)
-              else prev_adj_y = math.max(prev_py, 0.0001) end
-              if py < 0 then cur_adj_y = math.min(py, -0.0001)
-              else cur_adj_y = math.max(py, 0.0001) end
-              
-              sy_section = util.linexp(0, 1, prev_adj_y, cur_adj_y, sample_x_progress)
-              
-            else
-              -- Curve formula from SuperCollider
-              sy_section = util.linlin(0, 1, prev_py, py, a - (a * math.pow(grow, sample_x_progress)))
-              
-            end
-            
-            if self.y_warp == "exp" then
-              sy_section = util.explin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
-            else
-              sy_section = util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, sy_section)
-            end
-            
-            screen.line(sample_x + 0.5, sy_section + 0.5)
-          end
-        end
-        screen.stroke()
-        
-      -- Linear
-      else
-        screen.move(prev_sx + 0.5, prev_sy + 0.5)
-        screen.line(sx + 0.5, sy + 0.5)
-        screen.stroke()
-        
-      end
-      
     -- Bar style
-    elseif self.style == "bar" then
+    if self.style == "bar" then
       
       if self.points[i].highlight then
         if sy < self.origin_sy then
@@ -413,10 +465,9 @@ function Graph:draw_points()
         end
         
       end
-    end
     
     -- Points
-    if self.style ~= "bar" then
+    else
       screen.rect(sx - 1, sy - 1, 3, 3)
       if self.active then screen.level(15) else screen.level(5) end
       screen.fill()
@@ -430,17 +481,27 @@ function Graph:draw_points()
   end
 end
 
-function Graph:draw_functions()
+function Graph:draw_lines()
   
-  for i = 1, #self.functions do
-    screen.move(self.x + 0.5, util.round(util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, self.functions[i](self.x_min))) + 0.5)
-    for sx = self.x, self.x + self.w - 1 do
-      local y = self.functions[i](util.linlin(self.x, self.x + self.w - 1, self.x_min, self.x_max, sx))
-      screen.line(sx + 0.5, util.linlin(self.y_min, self.y_max, self.y + self.h - 1, self.y, y) + 0.5)
+  if self.style ~= "line" and #self.functions == 0 then return end
+  
+  if self.lines_dirty then
+    self.lines = {}
+    self:generate_line_from_points()
+    self:generate_lines_from_functions()
+    self.lines_dirty = false
+  end
+  
+  screen.line_join("round")
+  if self.active then screen.level(15) else screen.level(5) end
+  for l = 1, #self.lines do
+    screen.move(self.lines[l][1].x + 0.5, self.lines[l][1].y + 0.5)
+    for i = 2, #self.lines[l] do
+      screen.line(self.lines[l][i].x + 0.5, self.lines[l][i].y + 0.5)
     end
-    if self.active then screen.level(15) else screen.level(5) end
     screen.stroke()
   end
+  screen.line_join("miter")
 end
 
 return Graph
