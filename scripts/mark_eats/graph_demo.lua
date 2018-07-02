@@ -96,7 +96,8 @@ function init_graph(id)
         local saw = (1 - (x * wave_freq * 0.5 - 0.5) % 1) * 2 - 1
         return sine * (1 - wave_shape) + saw * wave_shape
     end
-    demo_graph:add_function(wave_func)
+    -- Set sample_quality to 3 (high)
+    demo_graph:add_function(wave_func, 3)
   
   
   -- ADSR graph
