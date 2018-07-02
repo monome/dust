@@ -16,13 +16,13 @@ require 'er'
 engine.name = 'Ack'
 
 local ack = require 'jah/ack'
+local BeatClock = require 'beatclock'
+
+local clk = BeatClock.new()
 
 local reset = false
 local alt = false
 local track_edit = 1
-
-local midiclocktimerticks = 0
-local midi_device
 
 local track = {}
 for i=1,4 do
@@ -53,49 +53,43 @@ function init()
   for i=1,4 do reer(i) end
 
   screen.line_width(1)
-  params:add_number("bpm",1,480,160)
-  params:set_action("bpm", function(x)
-    t.time = 60/24/x
-  end)
+  
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external = reset_pattern
+
+  clk:add_clock_params()
 
   for channel=1,4 do
     ack.add_channel_params(channel)
   end
 
-  midiclocktimerticks = 0
-
-  t = metro.alloc()
-  t.count = -1
-  t.time = 60/24/params:get("bpm")
-  t.callback = function()
-    if midi_device then midi.send(midi_device, {248}) end
-
-    if midiclocktimerticks == 0 then
-      if reset then
-        for i=1,4 do track[i].pos = 1 end
-        reset = false
-      else
-        for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end
-      end
-      trig()
-      redraw()
-    end
-
-    if midiclocktimerticks == 5 then
-      midiclocktimerticks = 0
-    else
-      midiclocktimerticks = midiclocktimerticks + 1
-    end
-  end
-  t:start()
-
   params:read("tehn/playfair.pset")
   params:bang()
+  
+  clk:start()
+  
+end
+
+function reset_pattern()
+  reset = true
+  clk:reset()
+end
+
+function step()
+  if reset then
+    for i=1,4 do track[i].pos = 1 end
+    reset = false
+  else
+    for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
+  end
+  trig()
+  redraw()
 end
 
 function key(n,z)
   if n==1 then alt = z
-  elseif n==2 and z==1 then reset = true
+  elseif n==2 and z==1 then reset_pattern() 
   elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 end
   redraw() 
 end
@@ -118,7 +112,14 @@ function redraw()
   screen.clear()
   screen.move(0,10)
   screen.level(4)
-  screen.text(params:get("bpm"))
+  if params:get("clock") == 1 then
+    screen.text(params:get("bpm"))
+  else
+    for i=1,clk.beat+1 do
+       screen.rect(i*2,1,1,2)  
+    end
+    screen.fill()
+  end
   for i=1,4 do
     screen.level((i == track_edit) and 15 or 4)
     screen.move(5, i*10 + 10)
@@ -127,7 +128,7 @@ function redraw()
     screen.text_center(track[i].n)
 
     for x=1,track[i].n do
-      screen.level(track[i].pos==x and 15 or 2)
+      screen.level((track[i].pos==x and not reset) and 15 or 2)
       screen.move(x*3 + 30, i*10 + 10)
       if track[i].s[x] then
         screen.line_rel(0,-8)
@@ -140,15 +141,4 @@ function redraw()
   screen.update()
 end
 
-midi.add = function(dev)
-  print('playfair: midi device added', dev.id, dev.name)
-  midi_device = dev
-end
-midi.remove = function(dev)
-  print('playfair: midi device removed', dev.id, dev.name)
-  midi_device = nil
-end
-function cleanup()
-  midi.add = nil
-  midi.remove = nil
-end
+
