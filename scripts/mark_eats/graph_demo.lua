@@ -17,9 +17,11 @@ function unrequire(name)
    _G[name] = nil
 end
 unrequire("mark_eats/graph")
+unrequire("mark_eats/envgraph")
 
 -- Include the Graph class
 local Graph = require "mark_eats/graph"
+local EnvGraph = require "mark_eats/envgraph"
 
 local MusicUtil = require "mark_eats/musicutil"
 
@@ -105,7 +107,7 @@ function init_graph(id)
     
     -- There are convenience methods for creating common envelope graphs. Passing nil means it will use a default value.
     -- Graph.new_adsr(x_min, x_max, y_min, y_max, attack, decay, sustain, release, level, curve)
-    demo_graph = Graph.new_adsr(0, 8, nil, nil, env_vals.a, env_vals.d, env_vals.s, env_vals.r, 1, env_vals.c)
+    demo_graph = EnvGraph.new_adsr(0, 8, nil, nil, env_vals.a, env_vals.d, env_vals.s, env_vals.r, 1, env_vals.c)
     demo_graph:set_position_and_size(66, 11, 58, 42)
     
     
@@ -198,7 +200,7 @@ function enc(n, delta)
     -- ENC3 grabs the highlighted point value and increments it.
     elseif n == 3 then
       -- We could just store the values in the graph but here we store the data model in this class and update the graph view from it.
-      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, demo_graph.y_min, demo_graph.y_max)
+      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, demo_graph:get_y_min(), demo_graph:get_y_max())
       demo_graph:edit_point(highlight_id, nil, point_vals[highlight_id])
     end
     
@@ -213,7 +215,7 @@ function enc(n, delta)
       
     -- ENC3 sets the MIDI note value.
     elseif n == 3 then
-      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), demo_graph.y_min, demo_graph.y_max)
+      seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), demo_graph:get_y_min(), demo_graph:get_y_max())
       demo_graph:edit_point(highlight_id, nil, seq_vals[highlight_id])
     end
     
@@ -283,9 +285,9 @@ function redraw()
   -- Draw sequencer position and note name
   elseif graph_id == 4 then
     screen.level(15)
-    screen.rect(util.round(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w - 1, step)) - 2, 52, 5, 2)
+    screen.rect(util.round(util.linlin(demo_graph:get_x_min(), demo_graph:get_x_max(), demo_graph:get_x(), demo_graph:get_x() + demo_graph:get_width() - 1, step)) - 2, 52, 5, 2)
     screen.fill()
-    screen.move(util.linlin(demo_graph.x_min, demo_graph.x_max, demo_graph.x, demo_graph.x + demo_graph.w - 1, highlight_id), 62)
+    screen.move(util.linlin(demo_graph:get_x_min(), demo_graph:get_x_max(), demo_graph:get_x(), demo_graph:get_x() + demo_graph:get_width() - 1, highlight_id), 62)
     screen.text_center(MusicUtil.note_num_to_name(seq_vals[highlight_id], true))
   end
   
