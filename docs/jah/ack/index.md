@@ -7,11 +7,11 @@ Simple sample player
 
 ## Features
 
-- 8 voice sample playback of mono or stereo samples
-- Sample start / end and loop positions
-- Resonant multimode filter
-- Envelopes for volume and filter cutoff
-- Master delay and reverb
+- 8 voice sample playback of mono or stereo samples.
+- Sample start / end and loop positions.
+- Resonant multimode filter.
+- AR envelopes for volume and filter cutoff.
+- Master delay and reverb.
 
 ## Commands
 
@@ -34,15 +34,15 @@ First argument is always channel.
 - `disableLoop i` - disables loop, sample is played as a oneshot.
 - `speed if` - playback speed. 0-5 where 1 is normal playback.
 - `volume if` - playback volume expressed in dB.
-- `volumeEnvAttack if` - volume envelope attack time.
-- `volumeEnvRelease if` - volume envelope release time.
+- `volumeEnvAttack if` - volume AR envelope attack time.
+- `volumeEnvRelease if` - volume AR envelope release time.
 - `pan if` - pan -1...1.
 - `filterCutoff if` - filter cutoff expressed in Hz.
 - `filterRes if` - filter resonance 0-1.
 - `filterMode ii` - 0=lowpass, 1=bandpass, 2=highpass, 3=notch, 4=peak.
-- `filterEnvAttack if` - filter envelope attack time.
-- `filterEnvRelease if` - filter envelope release time.
-- `filterEnvMod if` - filter cutoff envelope modulation -1...1.
+- `filterEnvAttack if` - filter AR envelope attack time.
+- `filterEnvRelease if` - filter AR envelope release time.
+- `filterEnvMod if` - filter AR envelope cutoff modulation -1...1.
 - `delaySend if` - delay send expressed in dB.
 - `reverbSend if` - reverb send expressed in dB.
 
