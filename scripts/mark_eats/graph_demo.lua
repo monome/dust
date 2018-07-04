@@ -7,8 +7,9 @@
 -- KEY2 : Next demo
 -- KEY3 : Shift
 -- 
---
 -- No sounds, just graphs!
+--
+-- v1.0.0 Mark Eats
 --
 
 -- Hack to force require to reload
@@ -89,7 +90,7 @@ function init_graph(id)
     -- Graphs are created with Graph.new and take the following arguments (all optional):
     -- Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
     demo_graph = Graph.new(0, 2, "lin", -1, 1, "lin", nil, true, false)
-    -- We must then set its position and size (always use this method to adjust a graph's x, y, w, h).
+    -- We must then set its position and size.
     demo_graph:set_position_and_size(5, 7, 118, 40)
     
     -- Add a function to the graph instance that takes an x value and outputs the y value.
@@ -105,8 +106,8 @@ function init_graph(id)
   -- ADSR graph
   elseif graph_id == 2 then
     
-    -- There are convenience methods for creating common envelope graphs. Passing nil means it will use a default value.
-    -- Graph.new_adsr(x_min, x_max, y_min, y_max, attack, decay, sustain, release, level, curve)
+    -- The EnvGraph class is used for creating common envelope graphs. Passing nil means it will use a default value.
+    -- EnvGraph.new_adsr(x_min, x_max, y_min, y_max, attack, decay, sustain, release, level, curve)
     demo_graph = EnvGraph.new_adsr(0, 8, nil, nil, env_vals.a, env_vals.d, env_vals.s, env_vals.r, 1, env_vals.c)
     demo_graph:set_position_and_size(66, 11, 58, 42)
     

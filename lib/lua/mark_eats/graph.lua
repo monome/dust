@@ -1,6 +1,7 @@
--- Graph
+--- Graph drawing module.
 -- Flexible graph drawing for waves, points, bars, etc.
 -- v1.0.0 Mark Eats
+-- @module Graph
 
 local Graph = {}
 Graph.__index = Graph
@@ -147,6 +148,17 @@ end
 
 -------- Setup methods --------
 
+--- Create a new Graph object.
+-- @param[opt] x_min Minimum value for x axis, defaults to 0.
+-- @param[opt] x_max Maximum value for x axis, defaults to 1.
+-- @param[opt] x_warp String defines warping for x axis, accepts "lin" or "exp", defaults to "lin".
+-- @param[opt] y_min Minimum value for y axis, defaults to 0.
+-- @param[opt] y_max Maximum value for y axis, defaults to 1.
+-- @param[opt] y_warp String defines warping for y axis, accepts "lin" or "exp", defaults to "lin".
+-- @param[opt] style String defines visual style, accepts "line", "point" or "bar", defaults to "line".
+-- @param[opt] show_x_axis Display the x axis if set to true, defaults to false.
+-- @param[opt] show_y_axis Display the y axis if set to true, defaults to false.
+-- @return Instance of Graph.
 function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
   local graph = {}
   graph._x_min = x_min or 0
@@ -168,30 +180,51 @@ function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axi
   return graph
 end
 
+--- Get x position.
+-- @return y position.
 function Graph:get_x() return self._x end
+--- Set x position.
+-- @param x y position in pixels.
 function Graph:set_x(x)
   if x then self._x = x end
   recalculate_screen_coords(self)
 end
 
+--- Get y position.
+-- @return y position.
 function Graph:get_y() return self._y end
+--- Set y position.
+-- @param y y position in pixels.
 function Graph:set_y(y)
   if y then self._y = y end
   recalculate_screen_coords(self)
 end
 
+--- Get width.
+-- @return Width.
 function Graph:get_width() return self._w end
+--- Set width.
+-- @param w Width in pixels.
 function Graph:set_width(w)
   if w then self._w = w end
   recalculate_screen_coords(self)
 end
 
+--- Get height.
+-- @return Height.
 function Graph:get_height() return self._h end
+--- Set height.
+-- @param h Height in pixels.
 function Graph:set_height(h)
   if h then self._h = h end
   recalculate_screen_coords(self)
 end
 
+--- Set position and size.
+-- @param[opt] x x position in pixels.
+-- @param[opt] y y position in pixels.
+-- @param[opt] w Width in pixels.
+-- @param[opt] h Height in pixels.
 function Graph:set_position_and_size(x, y, w, h)
   if x then self._x = x end
   if y then self._y = y end
@@ -200,61 +233,101 @@ function Graph:set_position_and_size(x, y, w, h)
   recalculate_screen_coords(self)
 end
 
+--- Get minimum value of x axis.
+-- @return Minimum value of x axis.
 function Graph:get_x_min() return self._x_min end
+--- Set minimum value of x axis.
+-- @param x_min Minimum value of x axis.
 function Graph:set_x_min(x_min)
   if x_min then self._x_min = x_min end
   recalculate_screen_coords(self)
 end
 
+--- Get maximum value of x axis.
+-- @return Maximum value of x axis.
 function Graph:get_x_max() return self._x_max end
+--- Set maximum value of x axis.
+-- @param x_max Maximum value of x axis.
 function Graph:set_x_max(x_max)
   if x_max then self._x_max = x_max end
   recalculate_screen_coords(self)
 end
 
+--- Get x warp.
+-- @return x warp string.
 function Graph:get_x_warp() return self._x_warp end
+--- Set x warp.
+-- @param warp Warp string, accepts "lin" or "exp".
 function Graph:set_x_warp(warp)
   if warp == "exp" then self._x_warp = warp
   else self._x_warp = "lin" end
   recalculate_screen_coords(self)
 end
 
+--- Get minimum value of y axis.
+-- @return Minimum value of y axis.
 function Graph:get_y_min() return self._y_min end
+--- Set minimum value of y axis.
+-- @param y_min Minimum value of y axis.
 function Graph:set_y_min(y_min)
   if y_min then self._y_min = y_min end
   recalculate_screen_coords(self)
 end
 
+--- Get maximum value of y axis.
+-- @return Maximum value of y axis.
 function Graph:get_y_max() return self._y_max end
+--- Set maximum value of y axis.
+-- @param y_max Maximum value of y axis.
 function Graph:set_y_max(y_max)
   if y_max then self._y_max = y_max end
   recalculate_screen_coords(self)
 end
 
+--- Get y warp.
+-- @return y warp string.
 function Graph:get_y_warp() return self._y_warp end
+--- Set y warp.
+-- @param warp Warp string, accepts "lin" or "exp".
 function Graph:set_y_warp(warp)
   if warp == "exp" then self._y_warp = warp
   else self._y_warp = "lin" end
   recalculate_screen_coords(self)
 end
 
+--- Get style.
+-- @return Style string.
 function Graph:get_style() return self._style end
+--- Set style.
+-- @param style Style string, accepts "line", "point" or "bar".
 function Graph:set_style(style)
   self._style = style or "line"
   self._lines_dirty = true
 end
 
+--- Get show x axis.
+-- @return Show x axis boolean.
 function Graph:get_show_x_axis() return self._show_x_axis end
+--- Set show x axis.
+-- @param bool Boolean, display the x axis if set to true.
 function Graph:set_show_x_axis(bool)
   self._show_x_axis = bool == nil and false or bool
 end
 
+--- Get show y axis.
+-- @return Show y axis boolean.
 function Graph:get_show_y_axis() return self._show_y_axis end
+--- Set show y axis.
+-- @param bool Boolean, display the y axis if set to true.
 function Graph:set_show_y_axis(bool)
   self._show_y_axis = bool == nil and false or bool
 end
 
+--- Get active.
+-- @return Active boolean.
 function Graph:get_active() return self._active end
+--- Set active.
+-- @param bool Boolean, darkens the graph appearance when set to false.
 function Graph:set_active(bool)
   self._active = bool == nil and false or bool
 end
@@ -263,11 +336,19 @@ end
 
 -------- Point methods --------
 
+--- Get point.
+-- @param index Index of point.
+-- @return Point table.
 function Graph:get_point(index)
   return self._points[index]
 end
 
--- curve defaults to 0, points will be added to the end if index is omitted
+--- Add point.
+-- @param px Point's x position.
+-- @param py Point's y position.
+-- @param[opt] curve Curve of previous line segment, accepts "lin", "exp" or a number that matches the curve implementation in SuperCollider, defaults to "lin".
+-- @param[opt] highlight Highlights the point if set to true, defaults to false.
+-- @param[opt] index Index to add point at, defaults to the end of the list.
 function Graph:add_point(px, py, curve, highlight, index)
   local point = {x = util.clamp(px or 0, self._x_min, self._x_max), y = util.clamp(py or 0, self._y_min, self._y_max), curve = curve or "lin", highlight = highlight or false}
   point.sx, point.sy = graph_to_screen(self, point.x, point.y)
