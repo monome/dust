@@ -14,16 +14,16 @@ Graph.__index = Graph
 
 local function graph_to_screen(self, x, y)
   if self._x_warp == "exp" then
-    x = util.round(util.explin(self._x_min, self._x_max, self._x, self._x + self._w - 1, x))
+    x = util.explin(self._x_min, self._x_max, self._x, self._x + self._w - 1, x)
   else
-    x = util.round(util.linlin(self._x_min, self._x_max, self._x, self._x + self._w - 1, x))
+    x = util.linlin(self._x_min, self._x_max, self._x, self._x + self._w - 1, x)
   end
   if self._y_warp == "exp" then
-    y = util.round(util.explin(self._y_min, self._y_max, self._y + self._h - 1, self._y, y))
+    y = util.explin(self._y_min, self._y_max, self._y + self._h - 1, self._y, y)
   else
-    y = util.round(util.linlin(self._y_min, self._y_max, self._y + self._h - 1, self._y, y))
+    y = util.linlin(self._y_min, self._y_max, self._y + self._h - 1, self._y, y)
   end
-  return x, y
+  return util.round(x), util.round(y)
 end
 
 local function recalculate_screen_coords(self)
@@ -122,19 +122,22 @@ end
 
 local function generate_lines_from_functions(self)
   local width = self._w - 1
+  
   for i = 1, #self._functions do
     local line_path = {}
     local step = 1 / self._functions[i].sample_quality
     if width % step ~= 0 then
       step = (width - 0.000001) / math.modf(width / step)
     end
+    
     for sx = self._x, self._x + width, step do
-      local y
+      local x, y
       if self._x_warp == "exp" then
-        y = self._functions[i].func(util.explin(self._x, self._x + width, self._x_min, self._x_max, sx))
+        x = util.explin(self._x, self._x + width, self._x_min, self._x_max, sx)
       else
-        y = self._functions[i].func(util.linlin(self._x, self._x + width, self._x_min, self._x_max, sx))
+        x = util.linlin(self._x, self._x + width, self._x_min, self._x_max, sx)
       end
+      y = self._functions[i].func(x)
       if self._y_warp == "exp" then
         y = util.explin(self._y_min, self._y_max, self._y + self._h - 1, self._y, y)
       else
@@ -142,6 +145,7 @@ local function generate_lines_from_functions(self)
       end
       table.insert(line_path, {x = sx, y = y})
     end
+    
     table.insert(self._lines, line_path)
   end
 end
@@ -200,6 +204,7 @@ end
 --- Get graph's x position.
 -- @return y position.
 function Graph:get_x() return self._x end
+
 --- Set graph's x position.
 -- @param x y position in pixels.
 function Graph:set_x(x)
@@ -210,6 +215,7 @@ end
 --- Get graph's y position.
 -- @return y position.
 function Graph:get_y() return self._y end
+
 --- Set graph's y position.
 -- @param y y position in pixels.
 function Graph:set_y(y)
@@ -220,6 +226,7 @@ end
 --- Get graph's width.
 -- @return Width.
 function Graph:get_width() return self._w end
+
 --- Set graph's width.
 -- @param w Width in pixels.
 function Graph:set_width(w)
@@ -230,6 +237,7 @@ end
 --- Get graph's height.
 -- @return Height.
 function Graph:get_height() return self._h end
+
 --- Set graph's height.
 -- @param h Height in pixels.
 function Graph:set_height(h)
@@ -240,6 +248,7 @@ end
 --- Get minimum value of x axis.
 -- @return Minimum value of x axis.
 function Graph:get_x_min() return self._x_min end
+
 --- Set minimum value of x axis.
 -- @param x_min Minimum value of x axis.
 function Graph:set_x_min(x_min)
@@ -250,6 +259,7 @@ end
 --- Get maximum value of x axis.
 -- @return Maximum value of x axis.
 function Graph:get_x_max() return self._x_max end
+
 --- Set maximum value of x axis.
 -- @param x_max Maximum value of x axis.
 function Graph:set_x_max(x_max)
@@ -260,6 +270,7 @@ end
 --- Get x warp.
 -- @return x warp string.
 function Graph:get_x_warp() return self._x_warp end
+
 --- Set x warp.
 -- @param warp Warp string, accepts "lin" or "exp".
 function Graph:set_x_warp(warp)
@@ -271,6 +282,7 @@ end
 --- Get minimum value of y axis.
 -- @return Minimum value of y axis.
 function Graph:get_y_min() return self._y_min end
+
 --- Set minimum value of y axis.
 -- @param y_min Minimum value of y axis.
 function Graph:set_y_min(y_min)
@@ -291,6 +303,7 @@ end
 --- Get y warp.
 -- @return y warp string.
 function Graph:get_y_warp() return self._y_warp end
+
 --- Set y warp.
 -- @param warp Warp string, accepts "lin" or "exp".
 function Graph:set_y_warp(warp)
@@ -302,6 +315,7 @@ end
 --- Get style.
 -- @return Style string.
 function Graph:get_style() return self._style end
+
 --- Set style.
 -- @param style Style string, accepts "line", "point" or "bar".
 function Graph:set_style(style)
@@ -312,6 +326,7 @@ end
 --- Get show x axis.
 -- @return Show x axis boolean.
 function Graph:get_show_x_axis() return self._show_x_axis end
+
 --- Set show x axis.
 -- @param bool Boolean, display the x axis if set to true.
 function Graph:set_show_x_axis(bool)
@@ -321,6 +336,7 @@ end
 --- Get show y axis.
 -- @return Show y axis boolean.
 function Graph:get_show_y_axis() return self._show_y_axis end
+
 --- Set show y axis.
 -- @param bool Boolean, display the y axis if set to true.
 function Graph:set_show_y_axis(bool)
@@ -330,6 +346,7 @@ end
 --- Get active.
 -- @return Active boolean.
 function Graph:get_active() return self._active end
+
 --- Set active.
 -- @param bool Boolean, darkens the graph appearance when set to false.
 function Graph:set_active(bool)
