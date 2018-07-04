@@ -8,13 +8,6 @@
 local EnvGraph = {}
 EnvGraph.__index = EnvGraph
 
--- Hack to force require to reload
-function unrequire(name) 
-   package.loaded[name] = nil
-   _G[name] = nil
-end
-unrequire("mark_eats/graph")
-
 local Graph = require "mark_eats/graph"
 
 

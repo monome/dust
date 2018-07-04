@@ -12,15 +12,8 @@
 -- v1.0.0 Mark Eats
 --
 
--- Hack to force require to reload
-function unrequire(name) 
-   package.loaded[name] = nil
-   _G[name] = nil
-end
-unrequire("mark_eats/graph")
-unrequire("mark_eats/envgraph")
 
--- Include the Graph class
+-- Include the Graph classes
 local Graph = require "mark_eats/graph"
 local EnvGraph = require "mark_eats/envgraph"
 
@@ -90,7 +83,7 @@ function init_graph(id)
     -- Graphs are created with Graph.new and take the following arguments (all optional):
     -- Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
     demo_graph = Graph.new(0, 2, "lin", -1, 1, "lin", nil, true, false)
-    -- We must then set its position and size.
+    -- We then set its position and size.
     demo_graph:set_position_and_size(5, 7, 118, 40)
     
     -- Add a function to the graph instance that takes an x value and outputs the y value.
@@ -116,7 +109,7 @@ function init_graph(id)
   elseif graph_id == 3 then
     
     -- This graph is a 'points' graph (as opposed to a 'function' graph).
-    -- It is set up to contain 12 equally spaced points from a table generated in init
+    -- It is set to contain 12 equally spaced points from a table generated in init
     demo_graph = Graph.new(1, 12, "lin", -1, 1, "lin", "point", true, false)
     demo_graph:set_position_and_size(3, 3, 122, 58)
     for i = 1, #point_vals do
@@ -128,7 +121,7 @@ function init_graph(id)
     highlight_id = 1
     demo_graph:highlight_exclusive_point(highlight_id)
     
-  
+    
   -- Simple sequencer graph
   elseif graph_id == 4 then
     
@@ -154,9 +147,9 @@ function enc(n, delta)
   -- Wave shape interaction
   if graph_id == 1 then
     
-    -- ENC2 blends between the two wave shapes using this 0-1 value.
+    -- ENC2 blends between the two wave shapes using a 0-1 value.
     if n == 2 then
-      -- Because wave_shape was passed in to the graph as a function it will maintain it's reference and update automatically.
+      -- We call update_functions() whenever the wave function gets new data (here, wave_shape is changed)
       wave_shape = util.clamp(wave_shape + delta * 0.01, 0, 1)
       demo_graph:update_functions()
       
@@ -198,9 +191,9 @@ function enc(n, delta)
       highlight_id = util.round(highlight_progress)
       demo_graph:highlight_exclusive_point(highlight_id)
       
-    -- ENC3 grabs the highlighted point value and increments it.
+    -- ENC3 changes the highlighted point value.
     elseif n == 3 then
-      -- We could just store the values in the graph but here we store the data model in this class and update the graph view from it.
+      -- We could store the values in the graph but here we store the data model in this class and update the graph view from it.
       point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, demo_graph:get_y_min(), demo_graph:get_y_max())
       demo_graph:edit_point(highlight_id, nil, point_vals[highlight_id])
     end
@@ -257,7 +250,7 @@ function redraw()
   screen.clear()
   screen.aa(1)
   
-  -- Don't panic! Only one line of this redraw method is used to draw the graph, everything else relates to the supporting text and graphics.
+  -- Don't panic! Only one line of this redraw function is used to draw the graph, everything else relates to the supporting text and graphics.
   
   -- Draw wave shape text
   if graph_id == 1 then
