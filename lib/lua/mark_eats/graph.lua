@@ -1,7 +1,9 @@
 --- Graph drawing module.
 -- Flexible graph drawing for waves, points, bars, etc.
--- v1.0.0 Mark Eats
+--
 -- @module Graph
+-- @release v1.0.0
+-- @author Mark Eats
 
 local Graph = {}
 Graph.__index = Graph
@@ -148,16 +150,17 @@ end
 
 -------- Setup methods --------
 
---- Create a new Graph object.
--- @param[opt] x_min Minimum value for x axis, defaults to 0.
--- @param[opt] x_max Maximum value for x axis, defaults to 1.
--- @param[opt] x_warp String defines warping for x axis, accepts "lin" or "exp", defaults to "lin".
--- @param[opt] y_min Minimum value for y axis, defaults to 0.
--- @param[opt] y_max Maximum value for y axis, defaults to 1.
--- @param[opt] y_warp String defines warping for y axis, accepts "lin" or "exp", defaults to "lin".
--- @param[opt] style String defines visual style, accepts "line", "point" or "bar", defaults to "line".
--- @param[opt] show_x_axis Display the x axis if set to true, defaults to false.
--- @param[opt] show_y_axis Display the y axis if set to true, defaults to false.
+--- Create a new Graph object. 
+-- All arguments optional.
+-- @param x_min Minimum value for x axis, defaults to 0.
+-- @param x_max Maximum value for x axis, defaults to 1.
+-- @param x_warp String defines warping for x axis, accepts "lin" or "exp", defaults to "lin".
+-- @param y_min Minimum value for y axis, defaults to 0.
+-- @param y_max Maximum value for y axis, defaults to 1.
+-- @param y_warp String defines warping for y axis, accepts "lin" or "exp", defaults to "lin".
+-- @param style String defines visual style, accepts "line", "point" or "bar", defaults to "line".
+-- @param show_x_axis Display the x axis if set to true, defaults to false.
+-- @param show_y_axis Display the y axis if set to true, defaults to false.
 -- @return Instance of Graph.
 function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axis, show_y_axis)
   local graph = {}
@@ -180,55 +183,56 @@ function Graph.new(x_min, x_max, x_warp, y_min, y_max, y_warp, style, show_x_axi
   return graph
 end
 
---- Get x position.
+--- Set graph's position and size.
+-- All arguments optional.
+-- @param x x position in pixels.
+-- @param y y position in pixels.
+-- @param w Width in pixels.
+-- @param h Height in pixels.
+function Graph:set_position_and_size(x, y, w, h)
+  if x then self._x = x end
+  if y then self._y = y end
+  if w then self._w = w end
+  if h then self._h = h end
+  recalculate_screen_coords(self)
+end
+
+--- Get graph's x position.
 -- @return y position.
 function Graph:get_x() return self._x end
---- Set x position.
+--- Set graph's x position.
 -- @param x y position in pixels.
 function Graph:set_x(x)
   if x then self._x = x end
   recalculate_screen_coords(self)
 end
 
---- Get y position.
+--- Get graph's y position.
 -- @return y position.
 function Graph:get_y() return self._y end
---- Set y position.
+--- Set graph's y position.
 -- @param y y position in pixels.
 function Graph:set_y(y)
   if y then self._y = y end
   recalculate_screen_coords(self)
 end
 
---- Get width.
+--- Get graph's width.
 -- @return Width.
 function Graph:get_width() return self._w end
---- Set width.
+--- Set graph's width.
 -- @param w Width in pixels.
 function Graph:set_width(w)
   if w then self._w = w end
   recalculate_screen_coords(self)
 end
 
---- Get height.
+--- Get graph's height.
 -- @return Height.
 function Graph:get_height() return self._h end
---- Set height.
+--- Set graph's height.
 -- @param h Height in pixels.
 function Graph:set_height(h)
-  if h then self._h = h end
-  recalculate_screen_coords(self)
-end
-
---- Set position and size.
--- @param[opt] x x position in pixels.
--- @param[opt] y y position in pixels.
--- @param[opt] w Width in pixels.
--- @param[opt] h Height in pixels.
-function Graph:set_position_and_size(x, y, w, h)
-  if x then self._x = x end
-  if y then self._y = y end
-  if w then self._w = w end
   if h then self._h = h end
   recalculate_screen_coords(self)
 end
@@ -336,17 +340,17 @@ end
 
 -------- Point methods --------
 
---- Get point.
+--- Get point at index.
 -- @param index Index of point.
 -- @return Point table.
 function Graph:get_point(index)
   return self._points[index]
 end
 
---- Add point.
+--- Add a point to the graph.
 -- @param px Point's x position.
 -- @param py Point's y position.
--- @param[opt] curve Curve of previous line segment, accepts "lin", "exp" or a number that matches the curve implementation in SuperCollider, defaults to "lin".
+-- @param[opt] curve Curve of previous line segment, accepts "lin", "exp" or a number where 0 is linear and positive and negative numbers curve the envelope up and down, defaults to "lin".
 -- @param[opt] highlight Highlights the point if set to true, defaults to false.
 -- @param[opt] index Index to add point at, defaults to the end of the list.
 function Graph:add_point(px, py, curve, highlight, index)
@@ -357,6 +361,12 @@ function Graph:add_point(px, py, curve, highlight, index)
   self._lines_dirty = true
 end
 
+--- Edit point at index.
+-- @param index Index of point to edit.
+-- @param[opt] px Point's x position.
+-- @param[opt] py Point's y position.
+-- @param[opt] curve Curve of previous line segment, accepts "lin", "exp" or a number where 0 is linear and positive and negative numbers curve the envelope up and down.
+-- @param[opt] highlight Highlights the point if set to true.
 function Graph:edit_point(index, px, py, curve, highlight)
   if not self._points[index] then return end
   if px then self._points[index].x = util.clamp(px, self._x_min, self._x_max) end
@@ -367,20 +377,29 @@ function Graph:edit_point(index, px, py, curve, highlight)
   if px or py or curve then self._lines_dirty = true end
 end
 
+--- Remove point at index.
+-- Following indexes will change after removing a point.
+-- @param index Index of point to remove.
 function Graph:remove_point(index)
   table.remove(self._points, index)
   self._lines_dirty = true
 end
 
+--- Remove all points.
 function Graph:remove_all_points()
   self._points = {}
   self._lines_dirty = true
 end
 
+--- Highlight point at index.
+-- @param index Index of point to highlight.
 function Graph:highlight_point(index)
   self._points[index].highlight = true
 end
 
+--- Highlight point at index exclusively.
+-- Other points will have highlight set to false.
+-- @param index Index of point to highlight.
 function Graph:highlight_exclusive_point(index)
   for i = 1, #self._points do
     if i == index then
@@ -391,10 +410,13 @@ function Graph:highlight_exclusive_point(index)
   end
 end
 
+--- Clear highlight from point at index.
+-- @param index Index of point to clear highlight from.
 function Graph:clear_highlight(index)
   self._points[index].highlight = false
 end
 
+--- Clear highlights from all points.
 function Graph:clear_all_highlights()
   for i = 1, #self._points do
     self._points[i].highlight = false
@@ -405,10 +427,18 @@ end
 
 -------- Function methods --------
 
+--- Get function at index.
+-- @param index Index of function.
+-- @return Function.
 function Graph:get_function(index)
   return self._functions[index].func
 end
 
+--- Add a new y function to the graph.
+-- Add a function that will be used to generate a line.
+-- @param func A function that should return the value of y for any given value of x. For example, 'function(x) return math.sin(x) end'
+-- @param[opt] sample_quality Quality to sample the graph function at. Values less than 1 will sample less than once per pixel, values higher than 1 can help reduce jitter of graphs with high frequency changes at the cost of performance. Recommended range 0.25 to 4, defaults to 1.
+-- @param[opt] index Index to add function at, defaults to the end of the list.
 function Graph:add_function(func, sample_quality, index)
   if func(1) == nil then return end
   local quality = sample_quality or 1
@@ -420,21 +450,32 @@ function Graph:add_function(func, sample_quality, index)
   self._lines_dirty = true
 end
 
-function Graph:edit_function(index, func)
+--- Edit function at index.
+-- @param index Index of function to edit.
+-- @param func A function that should return the value of y for any given value of x.
+-- @param[opt] sample_quality Quality to sample the graph function at, defaults to 1.
+function Graph:edit_function(index, func, sample_quality)
   if not self._functions[index] then return end
   if func(1) ~= nil then self._functions[index].func = func end
+  if sample_quality then self._functions[index].sample_quality = sample_quality end
   self._lines_dirty = true
 end
 
+--- Update all functions.
+-- Call when a function's output has changed to redraw its line.
 function Graph:update_functions()
   self._lines_dirty = true
 end
 
+--- Remove function at index.
+-- Following indexes will change after removing a function.
+-- @param index Index of function to remove.
 function Graph:remove_function(index)
   table.remove(self._functions, index)
   self._lines_dirty = true
 end
 
+--- Remove all functions.
 function Graph:remove_all_functions()
   self._functions = {}
   self._lines_dirty = true
@@ -537,6 +578,8 @@ end
 
 -------- Redraw --------
 
+--- Redraw the graph.
+-- Call whenever graph data or settings have been changed.
 function Graph:redraw()
   
   screen.line_width(1)
