@@ -87,6 +87,7 @@ function init()
   for i=1, 8 do reer(i) end
 
   screen.line_width(1)
+  params:add_option("midi_sync",{"off","on"})
   params:add_number("bpm",1,480,160)
   params:set_action("bpm",function(x) t.time = 60/24/x end)
 
@@ -98,7 +99,7 @@ function init()
   t.count = -1
   t.time = 60/24/params:get("bpm")
   t.callback = function()
-    if midi_device then midi.send(midi_device, {248}) end
+    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
     
     if midi_clock_ticks==0 then
       if reset then
