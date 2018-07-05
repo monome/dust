@@ -1,4 +1,4 @@
--- euclidean drummer with
+-- euclidean instrument with
 -- probability.
 -- ----------
 -- based on playfair
