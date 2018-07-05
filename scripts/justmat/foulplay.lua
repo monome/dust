@@ -118,7 +118,7 @@ function init()
     end
   end  
   t:start()
---params:read("")
+--params:read("justmat/foulplay.pset")
 --params:bang()
 end
 
@@ -311,4 +311,5 @@ end
 function cleanup()
   midi.add = nil
   midi.remove = nil
+  params:write("justmat/foulplay.pset")
 end
