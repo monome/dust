@@ -313,4 +313,5 @@ function cleanup()
     g:all(0)
     g:refresh()
   end
+  params:write("jah/step.pset")
 end

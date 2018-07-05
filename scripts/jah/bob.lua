@@ -8,6 +8,7 @@ engine.name = 'Bob'
 
 function init()
   Bob.add_params()
+  params:read("jah/bob.pset")
   screen.line_width(1.0)
 end
 
@@ -35,4 +36,8 @@ function enc(n, delta)
     params:delta("resonance", delta)
     redraw()
   end
+end
+
+function cleanup()
+  params:write("jah/bob.pset")
 end
