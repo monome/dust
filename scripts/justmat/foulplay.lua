@@ -118,8 +118,8 @@ function init()
     end
   end  
   t:start()
---params:read("justmat/foulplay.pset")
---params:bang()
+params:read("justmat/foulplay.pset")
+params:bang()
 end
 
 function key(n,z)
