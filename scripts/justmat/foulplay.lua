@@ -1,34 +1,43 @@
--- euclidean drummer
--- with probability
+-- euclidean drummer with
+-- probability.
 -- ----------
---
 -- based on playfair
+-- ----------
+-- 
+-- enc1 = cycle through 
+--         the tracks.
+-- enc2 = set the number
+--         of trigs.
+-- enc3 = set the number 
+--         of steps.
+-- key2 = start and stop the
+--         clock.  
 --
 -- ----------
--- regular mode
---
--- enc1 = track select
--- enc2 = density
--- enc3 = length
--- key2 = stop/start  
---
--- (hold)key1 = track edit
--- (hold)key3 = global edit
+-- holding key1 will bring up the 
+-- track edit screen.
 -- ----------
 -- track edit 
 --
--- enc1 = option 1
--- enc2 = option 2
--- enc3 = option 3
--- key2 = next track
--- key3 = next page
+-- encoders 1-3 map to 
+-- parameters 1-3. 
+-- 
+-- key2 = advance to the 
+--         next track.
+-- key3 = advance to the
+--         next page.
+--
 -- ----------
+-- holding key3 will bring up the
+-- global edit screen.
+-- -----------
 -- global edit
 --
--- enc1 = mix volume
--- enc3 = bpm
--- key2 = phase reset
--- 
+-- enc1 = set the mix volume
+-- enc3 = set bpm
+-- key2 = reset the phase of 
+--         all tracks.
+--
 
 require 'er'
 
@@ -234,11 +243,11 @@ function redraw()
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
-    screen.text_center("vol : " .. params:get(track_edit .. ": vol"))
+    screen.text_center("1. vol : " .. params:get(track_edit .. ": vol"))
     screen.move(64, 35)
-    screen.text_center("vol envelope release : " .. params:get(track_edit .. ": vol env rel"))
+    screen.text_center("2. vol envelope release : " .. params:get(track_edit .. ": vol env rel"))
     screen.move(64, 45)
-    screen.text_center("trig probability : " .. track[track_edit].prob .. "%")
+    screen.text_center("3. trig probability : " .. track[track_edit].prob .. "%")
     
   elseif mode==1 and page==1 then
     screen.move(5, 10)
@@ -250,11 +259,11 @@ function redraw()
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
-    screen.text_center("speed : " .. params:get(track_edit .. ": speed"))
+    screen.text_center("1. speed : " .. params:get(track_edit .. ": speed"))
     screen.move(64, 35)
-    screen.text_center("start pos : " .. params:get(track_edit .. ": start pos"))
+    screen.text_center("2. start pos : " .. params:get(track_edit .. ": start pos"))
     screen.move(64, 45)
-    screen.text_center("end pos : " .. params:get(track_edit .. ": end pos"))
+    screen.text_center("3. end pos : " .. params:get(track_edit .. ": end pos"))
   
   elseif mode==1 and page==2 then
     screen.move(5, 10)
@@ -266,11 +275,11 @@ function redraw()
     screen.line(121, 15)
     screen.level(4)
     screen.move(64, 25)
-    screen.text_center("filter cutoff : " .. math.floor(params:get(track_edit .. ": filter cutoff") + 0.5))
+    screen.text_center("1. filter cutoff : " .. math.floor(params:get(track_edit .. ": filter cutoff") + 0.5))
     screen.move(64, 35)
-    screen.text_center("delay send : " .. params:get(track_edit .. ": delay send"))
+    screen.text_center("2. delay send : " .. params:get(track_edit .. ": delay send"))
     screen.move(64, 45)
-    screen.text_center("reverb send : " .. params:get(track_edit .. ": reverb send"))
+    screen.text_center("3. reverb send : " .. params:get(track_edit .. ": reverb send"))
     
   elseif mode==2 then
     screen.move(64, 10)
@@ -280,9 +289,9 @@ function redraw()
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
-    screen.text_center("mix volume : " .. mix:get("output"))
+    screen.text_center("1. mix volume : " .. mix:get("output"))
     screen.move(64, 35)
-    screen.text_center("bpm : " .. params:get("bpm"))
+    screen.text_center("3. bpm : " .. params:get("bpm"))
     
   end
   screen.stroke() 
