@@ -254,7 +254,8 @@ function init()
   Gong.add_params()
 
   voice = Voice.new(POLYPHONY)
-  -- params:read("hello_gong.pset")
+
+  params:read("jah/hello_gong.pset")
 
   refresh_screen_metro = Metro.alloc(
     function(stage)
@@ -275,10 +276,10 @@ function init()
 end
 
 function cleanup()
+  params:write("jah/hello_gong.pset")
   for id,dev in pairs(Midi.devices) do -- TODO: imo this kind of cleanup is better handled in norns core
     dev.event = nil
   end
-  -- params:write("hello_gong.pset")
 end
 
 function redraw()
