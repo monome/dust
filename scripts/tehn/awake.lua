@@ -66,6 +66,7 @@ end
 function init()
   print("grid/seek")
 
+  params:add_option("midi_sync",{"off","on"})
   params:add_number("tempo",20,240,48)
   params:set_action("tempo", function(n) 
     t.time = 60/24/n
@@ -112,7 +113,7 @@ function init()
   t.time = 60/24/params:get("tempo")
 
   t.callback = function(stage)
-    if midi_device then midi.send(midi_device, {248}) end
+    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
 
     if midiclocktimerticks == 0 then
       one.pos = one.pos + 1

@@ -128,8 +128,10 @@ end
 
 function BeatClock:enable_midi()
   self.midi = true  
- 
-  norns.midi.event = function (id, data)
+end
+
+function BeatClock:process_midi(data)
+  if self.midi then
     status = data[1]
     data1 = data[2]
     data2 = data[3]
@@ -145,7 +147,7 @@ function BeatClock:enable_midi()
       elseif status == 252 then -- midi clock stop
         self:stop(id)
       end
-    end
+    end 
   end
 end
 

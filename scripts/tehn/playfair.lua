@@ -69,7 +69,6 @@ function init()
   params:bang()
   
   clk:start()
-  
 end
 
 function reset_pattern()
@@ -140,6 +139,10 @@ function redraw()
     end
   end
   screen.update()
+end
+
+midi.add = function(dev)
+  dev.event = clk.process_midi
 end
 
 
