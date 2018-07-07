@@ -222,6 +222,8 @@ end
 
 function redraw()
   screen.clear()
+  screen.aa(0)
+  screen.line_width(1)
 
   screen.level(1)
   screen.move(0, 32)
@@ -249,8 +251,4 @@ function redraw()
   end
 
   screen.update()
-end
-
-function cleanup()
-  metro.free_all()
 end

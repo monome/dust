@@ -13,6 +13,7 @@ Engine_PolySub : CroneEngine {
 
 	*initClass {
 		maxNumVoices = 16;
+
 		StartUp.add {
 			// a decently versatile subtractive synth voice
 			polyDef = SynthDef.new(\polySub, {

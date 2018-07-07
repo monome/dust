@@ -1,6 +1,6 @@
 -- hello ack.
 -- sample player
--- controlled by midi
+-- controlled by midi or grid
 --
 -- enc2: select sample
 -- enc3: change pitch*
@@ -10,7 +10,7 @@
 -- * more parameters in
 -- menu > parameters
 --
--- midi notes:
+-- midi notes/grid:
 -- trigger samples
 --
 -- midi cc:
@@ -25,10 +25,18 @@
 
 local ControlSpec = require 'controlspec'
 local Ack = require 'jah/ack'
+local Midi = require 'midi'
+local Grid = require 'grid'
+local Metro = require 'metro'
 
 engine.name = 'Ack'
 
-local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, "")
+local midi_device
+local grid_device
+local indicate_midi_event
+local indicate_gridkey_event
+
+local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, '')
 local default_channel_midi_notes = { 60, 62, 64, 65, 67, 69, 71, 72 }
 local selected_channels = {1}
 local all_modifier_is_held = false
@@ -43,7 +51,7 @@ local function contains(table, value)
   return false
 end
 
-local function screen_update_channels()
+local function update_channel_indicators()
   screen.move(0,16)
   screen.font_size(8)
   for channel=1,8 do
@@ -65,15 +73,32 @@ local function screen_update_channels()
   screen.update()
 end
 
-local function screen_update_midi_indicators()
+local function update_device_indicators()
   screen.move(0,60)
   screen.font_size(8)
-  if midi_available then
-    screen.level(15)
+  if midi_device then
+    if indicate_midi_event then
+      screen.level(8)
+    else
+      screen.level(15)
+    end
     screen.text("midi")
-  else
+  end
+  screen.level(15)
+  if midi_device and grid_device then
+    screen.text("+")
+  end
+  if grid_device then
+    if indicate_gridkey_event then
+      screen.level(8)
+    else
+      screen.level(15)
+    end
+    screen.text("grid")
+  end
+  if midi_device == nil and grid_device == nil then
     screen.level(3)
-    screen.text("no midi")
+    screen.text("no midi / grid")
   end
 end
 
@@ -206,7 +231,7 @@ local function cc(ctl, value)
 end
 
 local function grid_refresh()
-  if g then
+  if grid_device then
     for channel=1,8 do
       local brightness
       if contains(selected_channels, channel) or all_modifier_is_held then
@@ -215,9 +240,66 @@ local function grid_refresh()
         brightness = 5
       end
 
-      g:led(channel, 8, brightness)
+      grid_device:led(channel, 8, brightness)
     end
-    g:refresh()
+    grid_device:refresh()
+  end
+end
+
+local function gridkey_event(x, y, s)
+  indicate_gridkey_event = true
+  if y == 8 and x < 9 then
+    if s == 1 then
+      trig_channel(x)
+      if params:get("grid selects channel") == 2 then
+        selected_channels = {x}
+        redraw()
+      end
+    else
+      reset_channel(x)
+      redraw()
+    end
+  end
+end
+
+local function midi_event(data)
+  indicate_midi_event = true
+  local status = data[1]
+  local data1 = data[2]
+  local data2 = data[3]
+  if params:get("midi in") == 2 then
+    if status == 144 then
+      if data2 ~= 0 then
+        note_on(data1, data2)
+      else
+        note_off(data1)
+      end
+      redraw()
+    elseif status == 128 then
+      note_off(data1)
+    elseif status == 176 then
+      cc(data1, data2)
+    end
+  end
+end
+
+function Midi.add(dev)
+  if not midi_device then
+    dev.event = midi_event
+    dev.remove = function()
+      midi_device = nil
+    end
+    midi_device = dev
+  end
+end
+
+function Grid.add(dev)
+  if not grid_device then
+    dev.key = gridkey_event
+    dev.remove = function()
+      grid_device = nil
+    end
+    grid_device = dev
   end
 end
 
@@ -235,7 +317,7 @@ function init()
   for i=0,127 do
     midi_cc_note_list[i] = i
   end
-  cc_type = {"abs", "rel"}
+  local cc_type = {"abs", "rel"}
   params:add_option("filter cutoff cc", midi_cc_note_list, 1)
   params:add_option("filter cutoff cc type", cc_type)
   params:add_option("filter res cc", midi_cc_note_list, 2)
@@ -255,7 +337,7 @@ function init()
   params:add_separator()
   Ack.add_effects_params()
 
-  refresh_metro = metro.alloc(
+  refresh_metro = Metro.alloc(
     function(stage)
       grid_refresh()
     end,
@@ -263,8 +345,29 @@ function init()
   )
   refresh_metro:start()
 
-  params:read("hello_ack.pset")
+  refresh_screen_metro = Metro.alloc(
+    function(stage)
+      redraw()
+      if indicate_midi_event then
+        indicate_midi_event = false
+      end
+      if indicate_gridkey_event then
+        indicate_gridkey_event = false
+      end
+    end,
+    1 / 20
+  )
+  refresh_screen_metro:start()
+
+  params:read("jah/hello_ack.pset")
   params:bang()
+end
+
+function cleanup()
+  for id,dev in pairs(Midi.devices) do -- TODO: this kind of cleanup is probably better handled in norns core?
+    dev.event = nil
+  end
+  params:write("jah/hello_ack.pset")
 end
 
 function redraw()
@@ -274,8 +377,8 @@ function redraw()
   screen.font_size(8)
   screen.level(15)
   screen.text("hello ack")
-  screen_update_channels()
-  screen_update_midi_indicators()
+  update_channel_indicators()
+  update_device_indicators()
   screen.update()
 end
 
@@ -329,7 +432,7 @@ function key(n, z)
       else
         trig_channels(selected_channels)
       end
-      screen_update_channels()
+      update_channel_indicators()
     else
       if all_modifier_is_held then
         for channel=1,8 do reset_channel(channel) end
@@ -338,7 +441,7 @@ function key(n, z)
           reset_channel(channel)
         end
       end
-      screen_update_channels()
+      update_channel_indicators()
     end
   elseif n == 3 then
     all_modifier_is_held = z == 1
@@ -346,48 +449,3 @@ function key(n, z)
   end
 end
 
-function gridkey(x, y, s)
-  if y == 8 and x < 9 then
-    if s == 1 then
-      trig_channel(x)
-      if params:get("grid selects channel") == 2 then
-        selected_channels = {x}
-        redraw()
-      end
-    else
-      reset_channel(x)
-      redraw()
-    end
-  end
-end
-
-function cleanup()
-  norns.midi.event = nil
-  params:write("hello_ack.pset")
-end
-
-function norns.midi.add(id, name, dev)
-  midi_available = true
-  redraw()
-end
-
-function norns.midi.remove(id)
-  midi_available = false
-  redraw()
-end
-
-function norns.midi.event(id, data)
-  status = data[1]
-  data1 = data[2]
-  data2 = data[3]
-  if params:get("midi in") == 2 then
-    if status == 144 then
-      note_on(data1, data2)
-      redraw()
-    elseif status == 128 then
-      note_off(data1)
-    elseif status == 176 then
-      cc(data1, data2)
-    end
-  end
-end

@@ -41,6 +41,9 @@ local eREV = 6
 
 local quantize = 0
 
+local midi_device
+local midiclocktimer
+
 local function update_tempo()
   local t = params:get("tempo")
   local d = params:get("quant_div")
@@ -52,6 +55,7 @@ local function update_tempo()
       update_rate(i)
     end
   end
+  midiclocktimer.time = 60/24/t
 end
 
 
@@ -292,6 +296,7 @@ UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
 
 -------------------- init
 init = function() 
+  params:add_option("midi_sync",{"off","on"})
   params:add_number("tempo",40,240,92)
   params:set_action("tempo", function() update_tempo() end)
   params:add_number("quant_div",1,32,4)
@@ -328,14 +333,14 @@ init = function()
     p[i] = poll.set("phase_quant_"..i, function(x) phase(i,x) end)
     p[i]:start()
 
-    params:add_control("vol"..i,UP1)
-    params:set_action("vol"..i, function(x) engine.amp(i,x) end)
-    params:add_control("rec"..i,UP1)
-    params:set_action("rec"..i, function(x) engine.rec(i,x) end)
-    params:add_control("pre"..i,controlspec.UNIPOLAR)
-    params:set_action("pre"..i, function(x) engine.pre(i,x) end)
-    params:add_control("speed_mod"..i, controlspec.BIPOLAR)
-    params:set_action("speed_mod"..i, function() update_rate(i) end)
+    params:add_control(i.."vol",UP1)
+    params:set_action(i.."vol", function(x) engine.amp(i,x) end)
+    params:add_control(i.."rec",UP1)
+    params:set_action(i.."rec", function(x) engine.rec(i,x) end)
+    params:add_control(i.."pre",controlspec.UNIPOLAR)
+    params:set_action(i.."pre", function(x) engine.pre(i,x) end)
+    params:add_control(i.."speed_mod", controlspec.BIPOLAR)
+    params:set_action(i.."speed_mod", function() update_rate(i) end)
   end 
 
   quantizer = metro.alloc()
@@ -345,7 +350,14 @@ init = function()
   quantizer:start() 
   --pattern_init()
   set_view(vREC)
+
+  midiclocktimer = metro.alloc()
+  midiclocktimer.count = -1
+  midiclocktimer.callback = function()
+    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
+  end
   update_tempo()
+  midiclocktimer:start()
 
   gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
   gridredrawtimer:start()
@@ -369,7 +381,7 @@ end
 
 
 update_rate = function(i)
-  local n = math.pow(2,track[i].speed + params:get("speed_mod"..i))
+  local n = math.pow(2,track[i].speed + params:get(i.."speed_mod"))
   if track[i].rev == 1 then n = -n end
   if track[i].tempo_map == 1 then
     local bpmmod = params:get("tempo") / clip[track[i].clip].bpm
@@ -442,15 +454,15 @@ end
 v.enc[vREC] = function(n,d)
   if viewinfo[vREC] == 0 then
     if n==2 then
-      params:delta("vol"..focus,d)
+      params:delta(focus.."vol",d)
     elseif n==3 then
-      params:delta("speed_mod"..focus,d)
+      params:delta(focus.."speed_mod",d)
     end 
   else 
     if n==2 then
-      params:delta("rec"..focus,d)
+      params:delta(focus.."rec",d)
     elseif n==3 then
-      params:delta("pre"..focus,d)
+      params:delta(focus.."pre",d)
     end 
   end
   redraw()
@@ -463,9 +475,9 @@ v.redraw[vREC] = function()
   screen.text("REC > "..focus)
   if viewinfo[vREC] == 0 then
     screen.move(10,50)
-    screen.text(params:string("vol"..focus))
+    screen.text(params:string(focus.."vol"))
     screen.move(70,50)
-    screen.text(params:string("speed_mod"..focus))
+    screen.text(params:string(focus.."speed_mod"))
     screen.level(3)
     screen.move(10,60)
     screen.text("volume")
@@ -473,9 +485,9 @@ v.redraw[vREC] = function()
     screen.text("speed mod")
   else
     screen.move(10,50)
-    screen.text(params:string("rec"..focus))
+    screen.text(params:string(focus.."rec"))
     screen.move(70,50)
-    screen.text(params:string("pre"..focus))
+    screen.text(params:string(focus.."pre"))
     screen.level(3)
     screen.move(10,60)
     screen.text("rec level")
@@ -580,7 +592,7 @@ v.redraw[vCUT] = function()
   screen.text("CUT > "..focus)
   if viewinfo[vCUT] == 0 then
     screen.move(10,50)
-    screen.text(params:get("vol"..focus))
+    screen.text(params:get(focus.."vol"))
     --screen.move(70,50)
     --screen.text(params:get("loop_mod"..focus))
     screen.level(3)
@@ -590,9 +602,9 @@ v.redraw[vCUT] = function()
     --screen.text("speed mod")
   else
     screen.move(10,50)
-    screen.text(params:get("rec"..focus))
+    screen.text(params:get(focus.."rec"))
     screen.move(70,50)
-    screen.text(params:get("pre"..focus))
+    screen.text(params:get(focus.."pre"))
     screen.level(3)
     screen.move(10,60)
     screen.text("rec level")
@@ -794,20 +806,21 @@ end
 
 -- map cc's to track volumes
 local function midi_event(data)
-  if data[1] == 176 then
-    if(data[2] < 4) then
-      params:set("vol"..(data[2]+1),data[3]/127)
-    end
-	end
+  -- nothing to do, use PARAMETER mapping instead
 end
 
 midi.add = function(dev)
   print('mlr: midi device added', dev.id, dev.name)
   dev.event = midi_event
+  midi_device = dev
+end
+
+midi.remove = function(dev)
+  print('mlr: midi device removed', dev.id, dev.name)
+  midi_device = nil
 end
 
 function cleanup()
-  engine.stopAll()
   for i=1,4 do
     pattern[i]:stop()
     pattern[i] = nil
@@ -815,4 +828,7 @@ function cleanup()
   for id,dev in pairs(midi.devices) do
     dev.event = nil
   end
+
+  midi.add = nil
+  midi.remove = nil
 end

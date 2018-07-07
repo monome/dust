@@ -180,7 +180,7 @@ function init()
     end
   end
 
-  timer = metro[1] -- TODO: this is probably no longer the way to spawn metros(?)
+  timer = metro.alloc()
   timer.callback = tick
 
   params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata(?)
@@ -200,10 +200,11 @@ function init()
   params:add_control("swing amount", swing_amount_spec)
   params:set_action("swing amount", update_swing)
 
+  params:add_separator()
   Ack.add_params()
   params:bang()
 
-  params:read("step.pset")
+  params:read("jah/step.pset")
 
   playing = true
   timer:start()
@@ -312,4 +313,5 @@ function cleanup()
     g:all(0)
     g:refresh()
   end
+  params:write("jah/step.pset")
 end
