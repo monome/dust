@@ -2,7 +2,7 @@
 -- Flexible graph drawing for waves, points, bars, etc.
 --
 -- @module Graph
--- @release v1.0.0
+-- @release v1.0.1
 -- @author Mark Eats
 
 local Graph = {}
@@ -457,7 +457,6 @@ end
 -- @param[opt] sample_quality Quality to sample the graph function at. Values less than 1 will sample less than once per pixel, values higher than 1 can help reduce jitter of graphs with high frequency changes at the cost of performance. Recommended range 0.25 to 4, defaults to 1.
 -- @param[opt] index Index to add function at, defaults to the end of the list.
 function Graph:add_function(func, sample_quality, index)
-  if func(1) == nil then return end
   local quality = sample_quality or 1
   if index then
     table.insert(self._functions, index, {func = func, sample_quality = quality})
@@ -473,7 +472,7 @@ end
 -- @param[opt] sample_quality Quality to sample the graph function at, defaults to 1.
 function Graph:edit_function(index, func, sample_quality)
   if not self._functions[index] then return end
-  if func(1) ~= nil then self._functions[index].func = func end
+  if func then self._functions[index].func = func end
   if sample_quality then self._functions[index].sample_quality = sample_quality end
   self._lines_dirty = true
 end
