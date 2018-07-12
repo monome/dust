@@ -1,9 +1,12 @@
--- euclidean instrument with
--- probability.
+-- euclidean sample instrument 
+-- with probability.
 -- ----------
 -- based on playfair
 -- ----------
 -- 
+-- samples can be loaded 
+-- via the parameter menu.
+--
 -- enc1 = cycle through 
 --         the tracks.
 -- enc2 = set the number
@@ -44,18 +47,18 @@ require 'er'
 engine.name = 'Ack'
 
 local ack = require 'jah/ack'
+local BeatClock = require 'beatclock'
+
+local clk = BeatClock.new()
 
 local reset = false
 local mode = 0                                                                -- 0 == regular, 1 == track edit, 2 == global edit 
 local page = 0
 local track_edit = 1
-local stopped = 0
+local stopped = 1
 
-local midi_clock_ticks = 0                                                   
-local midi_device
 
 local track = {}
-
 for i=1, 8 do
   track[i] = {}
   track[i].k = 0
@@ -87,40 +90,42 @@ function init()
   for i=1, 8 do reer(i) end
 
   screen.line_width(1)
-  params:add_option("midi_sync",{"off","on"})
-  params:add_number("bpm",1,480,160)
-  params:set_action("bpm",function(x) t.time = 60/24/x end)
+  
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external = reset_pattern
 
-  ack.add_params()
+  clk:add_clock_params()
+
+  for channel=1,8 do
+    ack.add_channel_params(channel)
+  end
+  ack.add_effects_params()
+
+  params:read("justmat/foulplay.pset")
+  params:bang()
   
-  midi_clock_ticks = 0
-  
-  t = metro.alloc()
-  t.count = -1
-  t.time = 60/24/params:get("bpm")
-  t.callback = function()
-    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
-    
-    if midi_clock_ticks==0 then
-      if reset then
-        for i=1, 8 do track[i].pos = 1 end
-        reset = false
-      else
-        for i=1, 8 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
-      end
-    trig()
-    redraw()
-    end
-    
-    if midi_clock_ticks==5 then
-      midi_clock_ticks = 0
-    else
-      midi_clock_ticks = midi_clock_ticks + 1
-    end
+  if stopped==1 then
+    clk:stop()
+  else
+    clk:start()
   end  
-  t:start()
-params:read("justmat/foulplay.pset")
-params:bang()
+end
+
+function reset_pattern()
+  reset = true
+  clk:reset()
+end
+
+function step()
+  if reset then
+    for i=1,8 do track[i].pos = 1 end
+    reset = false
+  else
+    for i=1,8 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
+  end
+  trig()
+  redraw()
 end
 
 function key(n,z)
@@ -135,7 +140,10 @@ function key(n,z)
   
   if mode==2 then                                                             -- GLOBAL EDIT
     if n==2 and z==1 then                                                     -- phase reset
-      reset = true
+      reset_pattern()
+      if stopped == 1 then                                                    -- set tracks back to step 1
+          step()
+      end
     end
   end 
   
@@ -148,10 +156,10 @@ function key(n,z)
   if mode==0 then                                                             -- REGULAR
     if n==2 and z==1 then                                                     -- stop/start
       if stopped==0 then
-        t:stop()
+        clk:stop()
         stopped = 1
       elseif stopped==1 then
-        t:start()
+        clk:start()
         stopped = 0
       end
     end
@@ -214,7 +222,6 @@ end
 function redraw()
   screen.aa(0)
   screen.clear()
-  
   if mode==0 then
     for i=1, 8 do
       screen.level((i == track_edit) and 15 or 4)
@@ -236,11 +243,11 @@ function redraw()
     
   elseif mode==1 and page==0 then
     screen.move(5, 10)
+    screen.level(15)
     screen.text("track : " .. track_edit)
     screen.move(120, 10)
     screen.text_right("page " .. page + 1)
     screen.move(5, 15)
-    screen.level(15)
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
@@ -252,11 +259,11 @@ function redraw()
     
   elseif mode==1 and page==1 then
     screen.move(5, 10)
+    screen.level(15)
     screen.text("track : " .. track_edit)
     screen.move(120, 10)
     screen.text_right("page " .. page + 1)
     screen.move(5, 15)
-    screen.level(15)
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
@@ -268,11 +275,11 @@ function redraw()
   
   elseif mode==1 and page==2 then
     screen.move(5, 10)
+    screen.level(15)
     screen.text("track : " .. track_edit)
     screen.move(120, 10)
     screen.text_right("page " .. page + 1)
     screen.move(5, 15)
-    screen.level(15)
     screen.line(121, 15)
     screen.level(4)
     screen.move(64, 25)
@@ -284,9 +291,9 @@ function redraw()
     
   elseif mode==2 then
     screen.move(64, 10)
+    screen.level(15)
     screen.text_center("global")
     screen.move(5, 15)
-    screen.level(15)
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
@@ -297,20 +304,10 @@ function redraw()
   end
   screen.stroke() 
   screen.update()
+
 end
 
 midi.add = function(dev)
-  print("foulplay: midi device added", dev.id, dev.name)
-  midi_device = dev
-end
-
-midi.remove = function(dev)
-  print("foulplay: midi device removed", dev.id, dev.name)
-  midi_device = nil
-end
-
-function cleanup()
-  midi.add = nil
-  midi.remove = nil
-  params:write("justmat/foulplay.pset")
+  dev.event = clk.process_midi
+  print("fairplay: midi device added", dev.id, dev.name)
 end
