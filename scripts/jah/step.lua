@@ -177,7 +177,7 @@ local function update_swing(swing_amount)
   odd_ppqn = util.round(ppqn-swing_ppqn)
 end
 
-local function gridkey_event(x, y, s)
+local function gridkey_event(x, y, state)
   if state == 1 then
     if params:get("last row cuts") == 2 and y == 8 then
       queued_playpos = x-1
