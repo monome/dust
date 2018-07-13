@@ -364,9 +364,6 @@ function init()
 end
 
 function cleanup()
-  for id,dev in pairs(Midi.devices) do -- TODO: this kind of cleanup is probably better handled in norns core?
-    dev.event = nil
-  end
   params:write("jah/hello_ack.pset")
 end
 

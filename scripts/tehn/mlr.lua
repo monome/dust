@@ -825,7 +825,4 @@ function cleanup()
     pattern[i]:stop()
     pattern[i] = nil
   end
-  for id,dev in pairs(midi.devices) do
-    dev.event = nil
-  end
 end

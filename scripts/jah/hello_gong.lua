@@ -277,9 +277,6 @@ end
 
 function cleanup()
   params:write("jah/hello_gong.pset")
-  for id,dev in pairs(Midi.devices) do -- TODO: imo this kind of cleanup is better handled in norns core
-    dev.event = nil
-  end
 end
 
 function redraw()
