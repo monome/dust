@@ -306,7 +306,3 @@ midi.remove = function(dev)
   print('awake: midi device removed', dev.id, dev.name)
   midi_device = nil
 end
-function cleanup()
-  midi.add = nil
-  midi.remove = nil
-end
