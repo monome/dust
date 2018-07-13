@@ -12,11 +12,15 @@
 engine.name = 'Ack'
 
 local ControlSpec = require 'controlspec'
+local Grid = require 'grid'
+local Metro = require 'metro'
 local Ack = require 'jah/ack'
 
 local TRIG_LEVEL = 15
 local PLAYPOS_LEVEL = 7
 local CLEAR_LEVEL = 0
+
+local grid_device
 
 local tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 local swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
@@ -66,24 +70,24 @@ local function trig_is_set(x, y)
 end
 
 local function refresh_grid_button(x, y, refresh)
-  if g then
+  if grid_device then
     if params:get("last row cuts") == 2 and y == 8 then
       if x-1 == playpos then
-        g:led(x, y, PLAYPOS_LEVEL)
+        grid_device:led(x, y, PLAYPOS_LEVEL)
       else
-        g:led(x, y, CLEAR_LEVEL)
+        grid_device:led(x, y, CLEAR_LEVEL)
       end
     else
       if trig_is_set(x, y) then
-        g:led(x, y, TRIG_LEVEL)
+        grid_device:led(x, y, TRIG_LEVEL)
       elseif x-1 == playpos then
-        g:led(x, y, PLAYPOS_LEVEL)
+        grid_device:led(x, y, PLAYPOS_LEVEL)
       else
-        g:led(x, y, CLEAR_LEVEL)
+        grid_device:led(x, y, CLEAR_LEVEL)
       end
     end
     if refresh then
-      g:refresh()
+      grid_device:refresh()
     end
   end
 end
@@ -93,7 +97,7 @@ local function refresh_grid_column(x, refresh)
     refresh_grid_button(x, y, false)
   end
   if refresh then
-    g:refresh()
+    grid_device:refresh()
   end
 end
 
@@ -101,7 +105,7 @@ local function refresh_grid()
   for x=1,maxwidth do
     refresh_grid_column(x, false)
   end
-  if g then g:refresh() end
+  if grid_device then grid_device:refresh() end
 end
 
 local function is_even(number)
@@ -149,8 +153,8 @@ local function tick()
     if playpos ~= -1 then
       refresh_grid_column(playpos+1)
     end
-    if g then
-      g:refresh()
+    if grid_device then
+      grid_device:refresh()
     end
     if is_even(playpos) then
       ticks_to_next = even_ppqn
@@ -173,6 +177,36 @@ local function update_swing(swing_amount)
   odd_ppqn = util.round(ppqn-swing_ppqn)
 end
 
+local function gridkey_event(x, y, state)
+  if state == 1 then
+    if params:get("last row cuts") == 2 and y == 8 then
+      queued_playpos = x-1
+    else
+      if trig_is_set(x, y) then
+        set_trig(x, y, false)
+        refresh_grid_button(x, y, true)
+      else
+        set_trig(x, y, true)
+        refresh_grid_button(x, y, true)
+      end
+    end
+    if grid_device then
+      grid_device:refresh()
+    end
+  end
+  redraw()
+end
+
+function Grid.add(dev)
+  if not grid_device then
+    dev.key = gridkey_event
+    dev.remove = function()
+      grid_device = nil
+    end
+    grid_device = dev
+  end
+end
+
 function init()
   for x=1,maxwidth do
     for y=1,height do
@@ -180,7 +214,7 @@ function init()
     end
   end
 
-  timer = metro.alloc()
+  timer = Metro.alloc()
   timer.callback = tick
 
   params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata(?)
@@ -208,6 +242,14 @@ function init()
 
   playing = true
   timer:start()
+end
+
+function cleanup()
+  if grid_device then
+    grid_device:all(0)
+    grid_device:refresh()
+  end
+  params:write("jah/step.pset")
 end
 
 function enc(n, delta)
@@ -286,32 +328,4 @@ function redraw()
   screen.move(70,60)
   screen.text("swing")
   screen.update()
-end
-
-function gridkey(x, y, state)
-  if state == 1 then
-    if params:get("last row cuts") == 2 and y == 8 then
-      queued_playpos = x-1
-    else
-      if trig_is_set(x, y) then
-        set_trig(x, y, false)
-        refresh_grid_button(x, y, true)
-      else
-        set_trig(x, y, true)
-        refresh_grid_button(x, y, true)
-      end
-    end
-    if g then
-      g:refresh()
-    end
-  end
-  redraw()
-end
-
-function cleanup()
-  if g then
-    g:all(0)
-    g:refresh()
-  end
-  params:write("jah/step.pset")
 end
