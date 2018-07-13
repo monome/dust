@@ -828,7 +828,4 @@ function cleanup()
   for id,dev in pairs(midi.devices) do
     dev.event = nil
   end
-
-  midi.add = nil
-  midi.remove = nil
 end
