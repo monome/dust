@@ -348,7 +348,6 @@ CroneGenEngine : CroneEngine {
 		synths do: _.free;
 		controlBusses do: _.free;
 		buffers do: _.free;
-		super.free;
 		(thisMethod.ownerClass.asString ++ "." ++ thisMethod.name.asString).debug(\post);
 	}
 

@@ -63,12 +63,12 @@ function init()
   for channel=1,4 do
     ack.add_channel_params(channel)
   end
+  ack.add_effects_params()
 
   params:read("tehn/playfair.pset")
   params:bang()
   
   clk:start()
-  
 end
 
 function reset_pattern()
@@ -139,6 +139,10 @@ function redraw()
     end
   end
   screen.update()
+end
+
+midi.add = function(dev)
+  dev.event = clk.process_midi
 end
 
 

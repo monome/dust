@@ -106,7 +106,7 @@ function init()
   params:add_control("gain",cs.GAIN)
   params:set_action("gain",
   function(x) engine.gain(x) end) 
-  
+
   params:read("tehn/awake.pset")
   params:bang()
   
@@ -297,8 +297,4 @@ end
 midi.remove = function(dev)
   print('awake: midi device removed', dev.id, dev.name)
   midi_device = nil
-end
-function cleanup()
-  midi.add = nil
-  midi.remove = nil
 end

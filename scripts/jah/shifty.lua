@@ -12,6 +12,7 @@ engine.name = 'Shift'
 
 function init()
   Shift.add_params()
+  params:read("jah/shifty.pset")
   screen.line_width(1.0)
 end
 
@@ -45,4 +46,8 @@ function key(n, z)
   if n == 2 and z == 1 then
   elseif n == 2 and z == 0 then
   end
+end
+
+function cleanup()
+  params:write("jah/shifty.pset")
 end

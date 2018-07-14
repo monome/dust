@@ -380,7 +380,4 @@ function cleanup()
   stop_all_screen_notes()
   pat:stop()
   pat = nil
-  for id,dev in pairs(midi.devices) do
-    dev.event = nil
-  end
 end
