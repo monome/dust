@@ -48,6 +48,9 @@ local freqs = {}
 local edit_mode = 1
 local edit_pos = 1
 
+local midiclocktimerticks = 0
+local midi_device
+
 
 function build_scale()
   local n = 0
@@ -63,9 +66,10 @@ end
 function init()
   print("grid/seek")
 
+  params:add_option("midi_sync",{"off","on"})
   params:add_number("tempo",20,240,48)
   params:set_action("tempo", function(n) 
-    t.time = 15/n
+    t.time = 60/24/n
   end) 
   params:add_number("scale mode",1,7,3)
   params:set_action("scale mode", function(n) 
@@ -102,21 +106,33 @@ function init()
   params:set_action("gain",
   function(x) engine.gain(x) end) 
 
+  midiclocktimerticks = 0
+
   t = metro.alloc()
   t.count = -1
-  t.time = 15/params:get("tempo") 
+  t.time = 60/24/params:get("tempo")
 
   t.callback = function(stage)
-    one.pos = one.pos + 1
-    if one.pos > one.length then one.pos = 1 end
-    two.pos = two.pos + 1
-    if two.pos > two.length then two.pos = 1 end
+    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
 
-    if one.data[one.pos] > 0 then engine.hz(freqs[one.data[one.pos]+two.data[two.pos]]) end
-    if g then
-      gridredraw()
+    if midiclocktimerticks == 0 then
+      one.pos = one.pos + 1
+      if one.pos > one.length then one.pos = 1 end
+      two.pos = two.pos + 1
+      if two.pos > two.length then two.pos = 1 end
+
+      if one.data[one.pos] > 0 then engine.hz(freqs[one.data[one.pos]+two.data[two.pos]]) end
+      if g then
+        gridredraw()
+      end
+      redraw()
     end
-    redraw()
+
+    if midiclocktimerticks == 5 then
+      midiclocktimerticks = 0
+    else
+      midiclocktimerticks = midiclocktimerticks + 1
+    end
   end
 
   params:read("tehn/awake.pset")
@@ -280,4 +296,13 @@ function redraw()
   if alt then screen.text("SND")
   elseif KEY3 then screen.text("LOOP") end 
   screen.update()
+end
+
+midi.add = function(dev)
+  print('awake: midi device added', dev.id, dev.name)
+  midi_device = dev
+end
+midi.remove = function(dev)
+  print('awake: midi device removed', dev.id, dev.name)
+  midi_device = nil
 end

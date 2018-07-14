@@ -16,6 +16,9 @@ require 'er'
 engine.name = 'Ack'
 
 local ack = require 'jah/ack'
+local BeatClock = require 'beatclock'
+
+local clk = BeatClock.new()
 
 local reset = false
 local alt = false
@@ -50,35 +53,43 @@ function init()
   for i=1,4 do reer(i) end
 
   screen.line_width(1)
-  params:add_number("bpm",1,480,160)
-  params:set_action("bpm",function(x) t.time = 15/x end)
+  
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external = reset_pattern
+
+  clk:add_clock_params()
 
   for channel=1,4 do
     ack.add_channel_params(channel)
   end
+  ack.add_effects_params()
 
-  t = metro.alloc()
-  t.count = -1
-  t.time = 15/params:get("bpm")
-  t.callback = function()
-    if reset then
-      for i=1,4 do track[i].pos = 1 end
-      reset = false
-    else
-      for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
-    end
-    trig()
-    redraw()
-  end
-  t:start()
-  
   params:read("tehn/playfair.pset")
   params:bang()
+  
+  clk:start()
+end
+
+function reset_pattern()
+  reset = true
+  clk:reset()
+end
+
+function step()
+  if reset then
+    for i=1,4 do track[i].pos = 1 end
+    reset = false
+  else
+    for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
+  end
+  trig()
+  redraw()
 end
 
 function key(n,z)
   if n==1 then alt = z
-  elseif n==2 and z==1 then reset = true
+  elseif n==2 and z==1 then reset_pattern() 
   elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 end
   redraw() 
 end
@@ -101,7 +112,14 @@ function redraw()
   screen.clear()
   screen.move(0,10)
   screen.level(4)
-  screen.text(params:get("bpm"))
+  if params:get("clock") == 1 then
+    screen.text(params:get("bpm"))
+  else
+    for i=1,clk.beat+1 do
+       screen.rect(i*2,1,1,2)  
+    end
+    screen.fill()
+  end
   for i=1,4 do
     screen.level((i == track_edit) and 15 or 4)
     screen.move(5, i*10 + 10)
@@ -110,7 +128,7 @@ function redraw()
     screen.text_center(track[i].n)
 
     for x=1,track[i].n do
-      screen.level(track[i].pos==x and 15 or 2)
+      screen.level((track[i].pos==x and not reset) and 15 or 2)
       screen.move(x*3 + 30, i*10 + 10)
       if track[i].s[x] then
         screen.line_rel(0,-8)
@@ -122,3 +140,9 @@ function redraw()
   end
   screen.update()
 end
+
+midi.add = function(dev)
+  dev.event = clk.process_midi
+end
+
+

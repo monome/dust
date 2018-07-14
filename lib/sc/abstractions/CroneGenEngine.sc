@@ -348,7 +348,6 @@ CroneGenEngine : CroneEngine {
 		synths do: _.free;
 		controlBusses do: _.free;
 		buffers do: _.free;
-		super.free;
 		(thisMethod.ownerClass.asString ++ "." ++ thisMethod.name.asString).debug(\post);
 	}
 
@@ -457,7 +456,7 @@ CroneGenEngine : CroneEngine {
 
 	*generateLuaEngineModuleSpecsSection {
 		var specs = this.synthDesc.metadata !? { |metadata| metadata.specs } ? ();
-		^"specs = {}\n\n" ++ this.parseMetadata[\controlsToExposeAsCommands].collect { |control|
+		^"local specs = {}\n\n" ++ this.parseMetadata[\controlsToExposeAsCommands].collect { |control|
 			var controlName = control.name;
 			var spec;
 			spec = if (specs[controlName].notNil) { specs[controlName] } { controlName };
@@ -466,7 +465,7 @@ CroneGenEngine : CroneEngine {
 				if (spec.class == Symbol) {
 					"\\" ++ spec.asString
 				} {
-					spec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[spec.minval, spec.maxval, spec.warp.asSpecifier.quote, spec.step, spec.default, spec.units.quote].join(", ")++")")
+					spec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[spec.minval, spec.maxval, spec.warp.asSpecifier.asString.quote, spec.step, spec.default, spec.units.quote].join(", ")++")")
 				}
 			} {
 				"nil";

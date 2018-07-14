@@ -1,12 +1,12 @@
 -- hello gong.
 -- 6 voice polyphonic fm synth
--- controlled by midi
+-- controlled by midi or grid
 --
 -- enc2: timbre macro control
 -- enc3: time macro control
 -- key2: trig random note
 --
--- midi: play notes
+-- midi notes/grid: play notes
 --
 -- synth parameters in
 -- menu > parameters
@@ -15,15 +15,22 @@
 local ControlSpec = require 'controlspec'
 local Voice = require 'exp/voice'
 local Gong = require 'jah/gong'
+local Midi = require 'midi'
+local Grid = require 'grid'
+local Metro = require 'metro'
 
 engine.name = 'Gong'
 
+local midi_device
+local grid_device
+local indicate_midi_event
+local indicate_gridkey_event
+
+local midi_cc_spec = ControlSpec.new(0, 127, 'lin', 1, 0, '')
 local POLYPHONY = 6
-local midinote_indicator_level = 0
-local midicc_indicator_level = 0
 local note_downs = {}
 
-local function screen_update_voice_indicators()
+local function update_voice_indicators()
   screen.move(0,16)
   screen.font_size(8)
   for voicenum=1,POLYPHONY do
@@ -36,22 +43,30 @@ local function screen_update_voice_indicators()
   end
 end
 
-local function screen_update_midi_indicators()
+local function update_device_indicators()
   screen.move(0,60)
   screen.font_size(8)
-  if midi_available then
-    screen.level(15)
-    screen.text("midi:")
-    screen.text(" ")
-    screen.level(midinote_indicator_level)
-    screen.text("note ")
-    screen.level(midicc_indicator_level)
-    screen.text("cc  ")
+  if midi_device then
+    if indicate_midi_event then
+      screen.level(8)
+    else
+      screen.level(15)
+    end
+    screen.text("midi")
   end
-  if g then
-    screen.text("grid") 
+  screen.level(15)
+  if midi_device and grid_device then
+    screen.text("+")
   end
-  if not midi_available and not g then
+  if grid_device then
+    if indicate_gridkey_event then
+      screen.level(8)
+    else
+      screen.level(15)
+    end
+    screen.text("grid")
+  end
+  if midi_device == nil and grid_device == nil then
     screen.level(3)
     screen.text("no midi / grid")
   end
@@ -82,6 +97,52 @@ local function note_on(note, velocity)
   end
 end
 
+local function cc_set_control(name, controlspec, value)
+  params:set(name, controlspec:map(midi_cc_spec:unmap(value)))
+end
+
+local function cc_delta_control(name, controlspec, value)
+  local delta
+  if value > 0 and value < 64 then
+    delta = value
+  else
+    delta = value - 128
+  end
+  local value = params:get(name)
+  local value_unmapped = controlspec:unmap(value)
+  local new_unmapped_value = value_unmapped + delta/100
+  params:set(name, controlspec:map(new_unmapped_value))
+end
+
+local function cc(ctl, value)
+  local param_name
+  local spec
+  if ctl == params:get("filter cutoff cc") then
+    param_name = "filter cutoff"
+    spec = Gong.specs.filtercutoff
+    abs = params:get("filter cutoff cc type") == 1
+  elseif ctl == params:get("filter resonance cc") then
+    param_name = "filter resonance"
+    spec = Gong.specs.filterres
+    abs = params:get("filter resonance cc type") == 1
+  elseif ctl == params:get("timbre cc") then
+    param_name = "timbre"
+    spec = Gong.specs.timbre
+    abs = params:get("timbre cc type") == 1
+  elseif ctl == params:get("timemod cc") then
+    param_name = "timemod"
+    spec = Gong.specs.timemod
+    abs = params:get("timemod cc type") == 1
+  end
+  if param_name then
+    if abs then
+      cc_set_control(param_name, spec, value)
+    else
+      cc_delta_control(param_name, spec, value)
+    end
+  end
+end
+
 local function note_off(note)
   slot = noteslots[note]
   if slot then
@@ -93,7 +154,7 @@ end
 
 local function default_patch()
   params:set("osc1 > osc3 freq", 1)
-  params:set("osc1 partial no", 2) -- TODO: something's not right here
+  params:set("osc1 partial no", 2)
   -- params:set_raw("osc1 partial no", 0.13043) -- = 2 mapped
   params:set("osc3 gain", 1)
   params:set("osc3 index", 5)
@@ -108,14 +169,114 @@ local function default_patch()
   ]]
 end
 
+local function gridkey_event(x, y, s)
+  indicate_gridkey_event = true
+  local note = x * 8 + y
+  if s == 1 then
+    note_on(note, 5)
+    grid_device:led(x, y, 15)
+  else
+    note_off(note)
+    grid_device:led(x, y, 0)
+  end
+  grid_device:refresh()
+end
+
+local function midi_event(data)
+  indicate_midi_event = true
+  local status = data[1]
+  local data1 = data[2]
+  local data2 = data[3]
+  if status == 144 then
+    --[[
+    if data1 == 0 then
+      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
+    end
+    ]]
+    if data2 ~= 0 then
+      note_on(data1, data2)
+    else
+      note_off(data1)
+    end
+    redraw()
+  elseif status == 128 then
+    --[[
+    if data1 == 0 then
+      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
+    end
+    ]]
+    note_off(data1)
+  elseif status == 176 then
+    cc(data1, data2)
+    redraw()
+  end
+end
+
+function Midi.add(dev)
+  if not midi_device then
+    dev.event = midi_event
+    dev.remove = function()
+      midi_device = nil
+    end
+    midi_device = dev
+  end
+end
+
+function Grid.add(dev)
+  if not grid_device then
+    dev.key = gridkey_event
+    dev.remove = function()
+      grid_device = nil
+    end
+    grid_device = dev
+  end
+end
+
+local function add_midi_cc_params()
+  local midi_cc_note_list = {}
+  for i=0,127 do
+    midi_cc_note_list[i] = i
+  end
+  cc_type = {"abs", "rel"}
+  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
+  params:add_option("filter cutoff cc type", cc_type)
+  params:add_option("filter resonance cc", midi_cc_note_list, 2)
+  params:add_option("filter resonance cc type", cc_type)
+  params:add_option("timbre cc", midi_cc_note_list, 3)
+  params:add_option("timbre cc type", cc_type)
+  params:add_option("timemod cc", midi_cc_note_list, 4)
+  params:add_option("timemod cc type", cc_type)
+end
+
 function init()
+  add_midi_cc_params()
+  params:add_separator()
   Gong.add_params()
 
   voice = Voice.new(POLYPHONY)
-  -- params:read("gong.pset")
+
+  params:read("jah/hello_gong.pset")
+
+  refresh_screen_metro = Metro.alloc(
+    function(stage)
+      redraw()
+      if indicate_midi_event then
+        indicate_midi_event = false
+      end
+      if indicate_gridkey_event then
+        indicate_gridkey_event = false
+      end
+    end,
+    1 / 20
+  )
+  refresh_screen_metro:start()
 
   default_patch()
   screen.line_width(1.0)
+end
+
+function cleanup()
+  params:write("jah/hello_gong.pset")
 end
 
 function redraw()
@@ -125,8 +286,15 @@ function redraw()
   screen.font_size(8)
   screen.level(15)
   screen.text("hello gong")
-  screen_update_voice_indicators()
-  screen_update_midi_indicators()
+  update_voice_indicators()
+
+  screen.level(15)
+  screen.move(0, 32)
+  screen.text("timbre: "..params:string("timbre"))
+  screen.move(0, 40)
+  screen.text("timemod: "..params:string("timemod"))
+
+  update_device_indicators()
   screen.update()
 end
 
@@ -135,8 +303,10 @@ function enc(n, delta)
     mix:delta("output", delta)
   elseif n == 2 then
     params:delta("timbre", delta)
+    redraw()
   elseif n == 3 then
     params:delta("timemod", delta)
+    redraw()
   end
 end
 
@@ -151,62 +321,3 @@ function key(n, z)
   end
 end
 
-function gridkey(x, y, z)
-  local note = x * 8 + y
-  if z == 1 then
-    note_on(note, 5)
-    g:led(x, y, 15)
-  else
-    note_off(note)
-    g:led(x, y, 0)
-  end
-  g:refresh()
-end
-
-cleanup = function()
-  norns.midi.event = nil
-  -- params:write("gong.pset")
-end
-
-norns.midi.add = function(id, name, dev)
-  midi_available = true
-  midinote_indicator_level = 3
-  midicc_indicator_level = 3
-  redraw()
-end
-
-norns.midi.remove = function(id)
-  midi_available = false
-  redraw()
-end
-
-norns.midi.event = function(id, data)
-  status = data[1]
-  data1 = data[2]
-  data2 = data[3]
-  if status == 144 then
-    midinote_indicator_level = math.random(15)
-    --[[
-    if data1 == 0 then
-      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-    end
-    ]]
-    note_on(data1, data2)
-    redraw()
-  elseif status == 128 then
-    --[[
-    if data1 == 0 then
-      return -- TODO: filter OP-1 bpm link oddity, is this an op-1 or norns issue?
-    end
-    ]]
-    note_off(data1)
-    --[[
-  elseif status == 176 then
-    midicc_indicator_level = math.random(15)
-    cc(data1, data2)
-    redraw()
-  elseif status == 224 then
-    bend(data1, data2)
-    ]]
-  end
-end

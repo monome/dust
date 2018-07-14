@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Reference</title>
+    <link rel="stylesheet" href="../ldoc.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>ldoc</h1>
+
+<ul>
+  <li><a href="../index.html">Index</a></li>
+</ul>
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Functions">Functions</a></li>
+</ul>
+
+
+<h2>Modules</h2>
+<ul class="nowrap">
+  <li><a href="../modules/EnvGraph.html">EnvGraph</a></li>
+  <li><a href="../modules/Graph.html">Graph</a></li>
+  <li><strong>MusicUtil</strong></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>MusicUtil</code></h1>
+<p>Music utility module.</p>
+<p>
+ Utility methods for working with notes and scales.</p>
+
+
+<h2><a href="#Functions">Functions</a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#generate_scale">generate_scale (root_num, scale_type[, octaves])</a></td>
+	<td class="summary">Generate scale from a root note.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#snap_note_to_array">snap_note_to_array (note_num, snap_array)</a></td>
+	<td class="summary">Snap a MIDI note number to the nearest note number in an array.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#snap_notes_to_array">snap_notes_to_array (note_nums_array, snap_array)</a></td>
+	<td class="summary">Snap an array of MIDI note numbers to an array of note numbers.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_num_to_name">note_num_to_name (note_num[, include_octave])</a></td>
+	<td class="summary">Return a MIDI note number's note name.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_nums_to_names">note_nums_to_names (note_nums_array[, include_octave])</a></td>
+	<td class="summary">Return an array of MIDI note numbers' names.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_num_to_freq">note_num_to_freq (note_num)</a></td>
+	<td class="summary">Return a MIDI note number's frequency.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#note_nums_to_freqs">note_nums_to_freqs (note_nums_array)</a></td>
+	<td class="summary">Return an array of MIDI note numbers' frequencies.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#freq_to_note_num">freq_to_note_num (freq)</a></td>
+	<td class="summary">Return a frequency's nearest MIDI note number.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#freqs_to_note_nums">freqs_to_note_nums (freqs)</a></td>
+	<td class="summary">Return an array of frequencies' nearest MIDI note numbers.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "generate_scale"></a>
+    <strong>generate_scale (root_num, scale_type[, octaves])</strong>
+    </dt>
+    <dd>
+    Generate scale from a root note.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">root_num</span>
+         MIDI note number (0-127) where scale will begin.
+        </li>
+        <li><span class="parameter">scale_type</span>
+         String defining scale type (eg, "major", "aeolian" or "neapolitan major"), see class for full list.
+        </li>
+        <li><span class="parameter">octaves</span>
+         Number of octaves to return, defaults to 1.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of MIDI note numbers.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "snap_note_to_array"></a>
+    <strong>snap_note_to_array (note_num, snap_array)</strong>
+    </dt>
+    <dd>
+    Snap a MIDI note number to the nearest note number in an array.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_num</span>
+         MIDI note number input (0-127).
+        </li>
+        <li><span class="parameter">snap_array</span>
+         Array of MIDI note numbers to snap to, must be in low to high order.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Adjusted note number.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "snap_notes_to_array"></a>
+    <strong>snap_notes_to_array (note_nums_array, snap_array)</strong>
+    </dt>
+    <dd>
+    Snap an array of MIDI note numbers to an array of note numbers.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_nums_array</span>
+         Array of input MIDI note numbers.
+        </li>
+        <li><span class="parameter">snap_array</span>
+         Array of MIDI note numbers to snap to, must be in low to high order.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of adjusted note numbers.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_num_to_name"></a>
+    <strong>note_num_to_name (note_num[, include_octave])</strong>
+    </dt>
+    <dd>
+    Return a MIDI note number's note name.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_num</span>
+         MIDI note number (0-127).
+        </li>
+        <li><span class="parameter">include_octave</span>
+         Include octave number in return string if set to true.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Name string (eg, "C#3").
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_nums_to_names"></a>
+    <strong>note_nums_to_names (note_nums_array[, include_octave])</strong>
+    </dt>
+    <dd>
+    Return an array of MIDI note numbers' names.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_nums_array</span>
+         Array of MIDI note numbers.
+        </li>
+        <li><span class="parameter">include_octave</span>
+         Include octave number in return strings if set to true.
+         (<em>optional</em>)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of name strings.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_num_to_freq"></a>
+    <strong>note_num_to_freq (note_num)</strong>
+    </dt>
+    <dd>
+    Return a MIDI note number's frequency.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_num</span>
+         MIDI note number (0-127).
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Frequency number in Hz.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "note_nums_to_freqs"></a>
+    <strong>note_nums_to_freqs (note_nums_array)</strong>
+    </dt>
+    <dd>
+    Return an array of MIDI note numbers' frequencies.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">note_nums_array</span>
+         Array of MIDI note numbers.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of frequency numbers in Hz.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "freq_to_note_num"></a>
+    <strong>freq_to_note_num (freq)</strong>
+    </dt>
+    <dd>
+    Return a frequency's nearest MIDI note number.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">freq</span>
+         Frequency number in Hz.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        MIDI note number (0-127).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "freqs_to_note_nums"></a>
+    <strong>freqs_to_note_nums (freqs)</strong>
+    </dt>
+    <dd>
+    Return an array of frequencies' nearest MIDI note numbers.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">freqs</span>
+         Array of frequency numbers in Hz.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+        Array of MIDI note numbers.
+    </ol>
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
+<i style="float:right;">Last updated 2018-07-04 11:20:45 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>
