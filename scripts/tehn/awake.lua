@@ -65,6 +65,12 @@ end
 
 function init()
   print("grid/seek")
+  
+  clk.on_step = step
+  clk.on_select_internal = function() clk:start() end
+  clk.on_select_external = reset_pattern
+  clk:add_clock_params()
+  params:add_separator()
 
   params:add_number("scale mode",1,7,3)
   params:set_action("scale mode", function(n) 
@@ -100,11 +106,6 @@ function init()
   params:add_control("gain",cs.GAIN)
   params:set_action("gain",
   function(x) engine.gain(x) end) 
-
-  clk.on_step = step
-  clk.on_select_internal = function() clk:start() end
-  clk.on_select_external = reset_pattern
-  clk:add_clock_params()
   
   params:read("tehn/awake.pset")
   params:bang()
