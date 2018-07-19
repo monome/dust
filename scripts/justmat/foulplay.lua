@@ -7,6 +7,9 @@
 -- samples can be loaded 
 -- via the parameter menu.
 --
+-- ----------
+-- home
+--
 -- enc1 = cycle through 
 --         the tracks.
 -- enc2 = set the number
@@ -18,7 +21,8 @@
 --
 -- ----------
 -- holding key1 will bring up the 
--- track edit screen.
+-- track edit screen. release to 
+-- return home.
 -- ----------
 -- track edit 
 --
@@ -32,7 +36,8 @@
 --
 -- ----------
 -- holding key3 will bring up the
--- global edit screen.
+-- global edit screen. release to 
+-- return home.
 -- -----------
 -- global edit
 --
@@ -40,7 +45,9 @@
 -- enc3 = set bpm
 -- key2 = reset the phase of 
 --         all tracks.
---
+
+
+
 
 require 'er'
 
@@ -52,10 +59,10 @@ local BeatClock = require 'beatclock'
 local clk = BeatClock.new()
 
 local reset = false
-local mode = 0                                                                -- 0 == regular, 1 == track edit, 2 == global edit 
+local view = 0     -- 0 == home, 1 == track edit, 2 == global edit 
 local page = 0
 local track_edit = 1
-local stopped = 1
+local stopped = 1 -- change this to 0 if you would like to start running
 
 
 local track = {}
@@ -65,7 +72,9 @@ for i=1, 8 do
   track[i].n = 16
   track[i].pos = 1
   track[i].s = {}
-  track[i].prob = 100                                                         
+  track[i].prob = 100 
+  track[i].trig_logic = 0              -- 0 == none, 1 == and, 2 == or
+  track[i].logic_target = track_edit   -- trig logic track target
 end
 
 local function reer(i)
@@ -78,13 +87,28 @@ end
 
 local function trig()
   for i=1,8 do
-    if track[i].s[track[i].pos] then
-      if math.random(100) <= track[i].prob then                               -- for per track probability
+    if track[i].trig_logic==0 and track[i].s[track[i].pos] then
+      if math.random(100) <= track[i].prob then     -- for per track probability
         engine.trig(i-1)
+      end
+      
+    elseif track[i].trig_logic==1 then -- trig condition and
+      if track[i].s[track[i].pos] and track[track[i].logic_target].s[track[track[i].logic_target].pos] then
+        if math.random(100) <= track[i].prob then
+          engine.trig(i-1)
+        end  
+      end  
+      
+    elseif track[i].trig_logic==2 then  -- trig condition or
+      if track[i].s[track[i].pos] or track[track[i].logic_target].s[track[track[i].logic_target].pos] then
+        if math.random(100) <= track[i].prob then
+          engine.trig(i-1)
+        end
       end
     end
   end
 end
+
 
 function init()
   for i=1, 8 do reer(i) end
@@ -129,16 +153,16 @@ function step()
 end
 
 function key(n,z)
-  if n==1 then mode = z end                                                   -- modes all day
-  if n==3 and z==1 and mode==1 then
-    page = (page + 1) % 3
-  elseif n==3 and z==1 and mode==0 then
-    mode = 2
-  elseif n==3 and mode==2 then
-    mode = 0
+  if n==1 then view = z end                                                   -- views all day
+  if n==3 and z==1 and view==1 then
+    page = (page + 1) % 4
+  elseif n==3 and z==1 and view==0 then
+    view = 2
+  elseif n==3 and view==2 then
+    view = 0
   end
   
-  if mode==2 then                                                             -- GLOBAL EDIT
+  if view==2 then                                                             -- GLOBAL EDIT
     if n==2 and z==1 then                                                     -- phase reset
       reset_pattern()
       if stopped == 1 then                                                    -- set tracks back to step 1
@@ -147,13 +171,13 @@ function key(n,z)
     end
   end 
   
-  if mode==1 then                                                             -- TRACK EDIT
+  if view==1 then                                                             -- TRACK EDIT
     if n==2 and z==1 then                                                     -- track selection in edit mode
       track_edit = (track_edit % 8) + 1
     end  
   end 
   
-  if mode==0 then                                                             -- REGULAR
+  if view==0 then                                                             -- HOME
     if n==2 and z==1 then                                                     -- stop/start
       if stopped==0 then
         clk:stop()
@@ -168,16 +192,25 @@ function key(n,z)
 end
 
 function enc(n,d) 
-  if mode==1  and page==0 then                                                -- TRACK EDIT 
+  if view==1  and page==0 then                                                -- TRACK EDIT 
     if n==1 then                                                              -- track volume
       params:delta(track_edit .. ": vol", d)
     elseif n==2 then                                                          -- volume envelope release time
-      params:delta(track_edit .. ": vol env rel", d)        
-    elseif n==3 then                                                          -- trig prob 
-      track[track_edit].prob = util.clamp(d + track[track_edit].prob, 1, 100)
+      params:delta(track_edit .. ": vol env atk", d)        
+    elseif n==3 then
+      params:delta(track_edit .. ": vol env rel", d)
     end
   
-  elseif mode==1 and page==1 then
+  elseif view==1 and page==1 then
+    if n==1 then
+      track[track_edit].trig_logic = util.clamp(d + track[track_edit].trig_logic, 0, 2)
+    elseif n==2 then
+      track[track_edit].logic_target = util.clamp(d+ track[track_edit].logic_target, 1, 8)
+    elseif n==3 then
+      track[track_edit].prob = util.clamp(d + track[track_edit].prob, 1, 100)
+    end  
+      
+  elseif view==1 and page==2 then
     if n==1 then                                                              -- sample playback speed
       params:delta(track_edit .. ": speed", d)
     elseif n==2 then                                                          -- sample start position
@@ -186,7 +219,7 @@ function enc(n,d)
       params:delta(track_edit .. ": end pos", d)
     end 
   
-  elseif mode==1 and page==2 then
+  elseif veiw==1 and page==3 then
     if n==1 then                                                              -- filter cutoff
       params:delta(track_edit .. ": filter cutoff", d)
     elseif n==2 then                                                          -- delay send
@@ -195,13 +228,13 @@ function enc(n,d)
       params:delta(track_edit .. ": reverb send", d)
     end  
     
-  elseif mode==2 then                                                         -- GLOBAL EDIT 
+  elseif view==2 then                                                         -- GLOBAL EDIT 
     if n==1 then                                                              -- mix volume
       mix:delta("output", d)
     elseif n==3 then                                                          -- bpm control
       params:delta("bpm", d)                
     end
-                                                                              -- REGULAR MODE
+                                                                              -- HOME
     
   elseif n==1 and d==1 then                                                   -- choose focused track 
     track_edit = (track_edit % 8) + d 
@@ -222,7 +255,7 @@ end
 function redraw()
   screen.aa(0)
   screen.clear()
-  if mode==0 then
+  if view==0 then
     for i=1, 8 do
       screen.level((i == track_edit) and 15 or 4)
       screen.move(5, i*7.70)
@@ -241,7 +274,7 @@ function redraw()
       end
     end
     
-  elseif mode==1 and page==0 then
+  elseif view==1 and page==0 then
     screen.move(5, 10)
     screen.level(15)
     screen.text("track : " .. track_edit)
@@ -251,13 +284,43 @@ function redraw()
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
-    screen.text_center("1. vol : " .. params:get(track_edit .. ": vol"))
+    screen.text_center("1. vol : " .. math.floor(params:get(track_edit .. ": vol") + .5))
     screen.move(64, 35)
-    screen.text_center("2. vol envelope release : " .. params:get(track_edit .. ": vol env rel"))
+    screen.text_center("2. envelope attack : " .. params:get(track_edit .. ": vol env atk"))
+    screen.move(64, 45)
+    screen.text_center("3. envelope release : " .. params:get(track_edit .. ": vol env rel"))
+    
+    
+  elseif view==1 and page==1 then
+    screen.move(5, 10)
+    screen.level(15)
+    screen.text("track : " .. track_edit)
+    screen.move(120, 10)
+    screen.text_right("page " .. page + 1)
+    screen.move(5, 15)
+    screen.line(121, 15)
+    screen.move(64, 25)
+    screen.level(4)
+    if track[track_edit].trig_logic == 0 then
+      screen.text_center("1. trig logic : -")
+      screen.move(64, 35)
+      screen.level(1)
+      screen.text_center("2. logic target : -")
+      screen.level(4)
+    elseif track[track_edit].trig_logic == 1 then
+      screen.text_center("1. trig logic : and")
+      screen.move(64, 35)
+      screen.text_center("2. logic target : " .. track[track_edit].logic_target)
+    elseif track[track_edit].trig_logic == 2 then
+      screen.text_center("1. trig logic : or")
+      screen.move(64, 35)
+      screen.text_center("2. logic target : " .. track[track_edit].logic_target)
+    end
     screen.move(64, 45)
     screen.text_center("3. trig probability : " .. track[track_edit].prob .. "%")
     
-  elseif mode==1 and page==1 then
+    
+  elseif view==1 and page==2 then
     screen.move(5, 10)
     screen.level(15)
     screen.text("track : " .. track_edit)
@@ -273,7 +336,7 @@ function redraw()
     screen.move(64, 45)
     screen.text_center("3. end pos : " .. params:get(track_edit .. ": end pos"))
   
-  elseif mode==1 and page==2 then
+  elseif view==1 and page==3 then
     screen.move(5, 10)
     screen.level(15)
     screen.text("track : " .. track_edit)
@@ -289,7 +352,7 @@ function redraw()
     screen.move(64, 45)
     screen.text_center("3. reverb send : " .. params:get(track_edit .. ": reverb send"))
     
-  elseif mode==2 then
+  elseif view==2 then
     screen.move(64, 10)
     screen.level(15)
     screen.text_center("global")
@@ -309,5 +372,5 @@ end
 
 midi.add = function(dev)
   dev.event = clk.process_midi
-  print("fairplay: midi device added", dev.id, dev.name)
+  print("foulplay: midi device added", dev.id, dev.name)
 end
