@@ -6,7 +6,7 @@
 a euclidean sample instrument with trigger conditions.
 based on tehn/playfair.
 
-samples can be loaded via PARAMATERS in the main menu.
+samples can be loaded via PARAMETERS in the main menu.
 
 ---
 ---
@@ -46,7 +46,7 @@ holding KEY3 will bring up the **global edit** screen, releasing KEY3 will retur
 ---
 ---
 
-# exctended explanations
+# extended explanations
 
 ### trig logic & probability
 
