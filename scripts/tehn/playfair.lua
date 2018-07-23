@@ -1,15 +1,13 @@
 -- euclidean drummer
 --
+-- enc1 = select
 -- enc2 = density
 -- enc3 = length
 -- key2 = reset phase
--- key3 = select
+-- key3 = start/stop
 --
 -- key1 = ALT
--- ----------
--- enc2 = select pattern
--- key2 = store pattern
--- key3 = load pattern
+-- ALT-enc1 = bpm
 
 require 'er'
 
@@ -22,15 +20,32 @@ local clk = BeatClock.new()
 
 local reset = false
 local alt = false
+local running = true
 local track_edit = 1
+local current_pattern = 0
+local current_pset = 0
 
 local track = {}
 for i=1,4 do
-  track[i] = {}
-  track[i].k = 0
-  track[i].n = 9 - i
-  track[i].pos = 1
-  track[i].s = {}
+  track[i] = {
+    k = 0,
+    n = 9 - i,
+    pos = 1,
+    s = {}
+  }
+end
+
+local pattern = {}
+for i=1,112 do
+  pattern[i] = {
+    data = 0,
+    k = {},
+    n = {}
+  }
+  for x=1,4 do
+    pattern[i].k[x] = 0
+    pattern[i].n[x] = 0
+  end
 end
 
 local function reer(i)
@@ -68,6 +83,8 @@ function init()
   params:read("tehn/playfair.pset")
   params:bang()
   
+  playfair_load()
+  
   clk:start()
 end
 
@@ -89,14 +106,26 @@ end
 
 function key(n,z)
   if n==1 then alt = z
-  elseif n==2 and z==1 then reset_pattern() 
-  elseif n==3 and z==1 then track_edit = (track_edit % 4) + 1 end
+  elseif n==2 and z==1 then reset_pattern()
+  elseif n==3 and z==1 then
+    if running then
+      clk:stop()
+      running = false
+    else
+      clk:start()
+      running = true
+    end
+  end
   redraw() 
 end
 
 function enc(n,d) 
   if n==1 then
-    params:delta("bpm",d)
+    if alt==1 then
+      params:delta("bpm",d)
+    else
+      track_edit = util.clamp(track_edit+d,1,4)
+    end
   elseif n == 2 then
     track[track_edit].k = util.clamp(track[track_edit].k+d,0,track[track_edit].n)
   elseif n==3 then 
@@ -146,3 +175,91 @@ midi.add = function(dev)
 end
 
 
+local keytimer = 0
+
+function gridkey(x,y,z)
+  local id = x + (y-1)*16
+  if z==1 then
+    if id > 16 then
+      keytimer = util.time()
+    elseif id < 17 then 
+      params:read("tehn/playfair-" .. string.format("%02d",id) .. ".pset")
+      params:bang()
+      current_pset = id
+    end
+  else
+    if id > 16 then
+      id = id - 16
+      local elapsed = util.time() - keytimer
+      if elapsed < 0.5 and pattern[id].data == 1 then
+        -- recall pattern
+        current_pattern = id
+        for i=1,4 do
+          track[i].n = pattern[id].n[i]
+          track[i].k = pattern[id].k[i]
+          reer(i)
+        end
+        --reset_pattern()
+      elseif elapsed > 0.5 then
+        -- store pattern
+        current_pattern = id
+        for i=1,4 do
+          pattern[id].n[i] = track[i].n
+          pattern[id].k[i] = track[i].k
+          pattern[id].data = 1
+        end
+      end 
+    end
+    gridredraw()
+  end
+end
+
+function gridredraw()
+  g:all(0)
+  if current_pset > 0 and current_pset < 17 then
+    g:led(current_pset,1,9)
+  end
+  for x=1,16 do
+    for y=2,8 do
+      local id = x + (y-2)*16 
+      if pattern[id].data == 1 then
+        g:led(x,y,id == current_pattern and 15 or 4)
+      end
+    end
+  end
+  g:refresh()
+end
+
+
+function playfair_save()
+  local fd=io.open(data_dir .. "tehn/playfair.data","w+")
+  io.output(fd)
+  for i=1,112 do
+    io.write(pattern[i].data .. "\n")
+    for x=1,4 do
+      io.write(pattern[i].k[x] .. "\n")
+      io.write(pattern[i].n[x] .. "\n")
+    end
+  end
+  io.close(fd)
+end
+
+function playfair_load()
+  local fd=io.open(data_dir .. "tehn/playfair.data","r")
+  if fd then
+    print("found datafile")
+    io.input(fd)
+    for i=1,112 do
+      pattern[i].data = tonumber(io.read())
+      for x=1,4 do
+        pattern[i].k[x] = tonumber(io.read())
+        pattern[i].n[x] = tonumber(io.read())
+      end
+    end   
+    io.close(fd)
+  end
+end  
+
+cleanup = function()
+  playfair_save()
+end
