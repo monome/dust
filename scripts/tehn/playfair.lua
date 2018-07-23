@@ -16,7 +16,7 @@ engine.name = 'Ack'
 local ack = require 'jah/ack'
 local BeatClock = require 'beatclock'
 
-clk = BeatClock.new()
+local clk = BeatClock.new()
 
 local reset = false
 local alt = false
@@ -27,19 +27,21 @@ local current_pset = 0
 
 local track = {}
 for i=1,4 do
-  track[i] = {}
-  track[i].k = 0
-  track[i].n = 9 - i
-  track[i].pos = 1
-  track[i].s = {}
+  track[i] = {
+    k = 0,
+    n = 9 - i,
+    pos = 1,
+    s = {}
+  }
 end
 
 local pattern = {}
 for i=1,112 do
-  pattern[i] = {}
-  pattern[i].data = 0
-  pattern[i].k = {}
-  pattern[i].n = {}
+  pattern[i] = {
+    data = 0,
+    k = {},
+    n = {}
+  }
   for x=1,4 do
     pattern[i].k[x] = 0
     pattern[i].n[x] = 0
