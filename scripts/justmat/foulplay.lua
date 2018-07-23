@@ -50,31 +50,19 @@
 ---
 --   grid support added by junklight 
 --- 
+--  column 1  track edit directly 
+--  column 2 provides mute toggles 
 --
---   tracks 
---
---  grid column 1 switches the track edit directly 
---  grid column 2 provides a mute toggle for each track 
--- this is global separate from memory cells
--- not accessible via buttons and encoders 
---  (it's a performance feature doesn't make sense to hide it behind key presses)
---
---  track edit pages  can be brought up with grid buttons 4-8 
--- on bottom row also 
--- bring these pages up 
---
--- memory cells
+--  track edit pages with grid buttons 4-8 
 -- 
--- press in grid 5x5 dim lit area for different 
--- memory cells 
--- memory switches instantly when you release grid button 
+-- press in grid 5x5 dim lit area 
+-- for different memory cells 
 -- 
 -- copy cells by pressing copy (8,8)
 -- press 'source' cell (will start flashing)
 -- press one or more target cells to copy source to them 
 -- end copy mode by releasing copy button
 -- 
--- ---------------
 
 
 
@@ -318,7 +306,7 @@ function enc(n,d)
       params:delta(track_edit .. ": end pos", d)
     end 
   
-  elseif veiw==1 and page==3 then
+  elseif view==1 and page==3 then
     if n==1 then                                                              -- filter cutoff
       params:delta(track_edit .. ": filter cutoff", d)
     elseif n==2 then                                                          -- delay send
@@ -563,7 +551,7 @@ function grid_redraw()
   -- low light for off - I kept forgetting which keys they were 
   -- highlight for on 
   for page = 0,3 do
-      g:led(page + 4,8,1)
+      g:led(page + 4,8,3)
   end
   -- highlight page if open 
   -- if you open it via keys/enc still highlights
@@ -582,7 +570,7 @@ function grid_redraw()
   -- but not sure if that might just add clutter 
   for x = 4,8 do
     for y = 1,5 do
-      g:led(x,y,1)
+      g:led(x,y,3)
     end
   end
   -- highlight active memory 
@@ -601,7 +589,7 @@ function grid_redraw()
   if copymode  then 
     g:led(8,8,14)
   else
-    g:led(8,8,1)
+    g:led(8,8,3)
   end
   --- and display! 
   g:refresh()
