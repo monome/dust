@@ -63,11 +63,13 @@
 --
 -- the dimly lit 5x5 grid is 
 -- made up of memory cells.
--- simply press a cell to select it.
+-- simply press a cell to select 
+-- it.
 --
--- to copy a pattern to a new cell
--- hold the copy button, and press
--- the cell you'd like to copy.
+-- to copy a pattern to a new 
+-- cell hold the copy button, 
+-- and press the cell you'd 
+-- like to copy.
 -- the cell will blink. while
 -- still holding copy, press the
 -- destination cell.
