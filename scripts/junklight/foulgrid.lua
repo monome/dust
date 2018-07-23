@@ -56,6 +56,19 @@
 -- key2 = reset the phase of 
 --         all tracks.
 --
+-- ---------------
+-- memory cells
+-- 
+-- press in grid 5x5 dim lit area for different 
+-- memory cells 
+-- memory switches instantly when you release grid button 
+-- 
+-- copy cells by pressing copy (8,8)
+-- press 'source' cell (will start flashing)
+-- press one or more target cells to copy source to them 
+-- end copy mode by releasing copy button
+-- 
+-- ---------------
 
 require 'er'
 
@@ -74,6 +87,10 @@ local stopped = 1
 local currentmemcell = 1
 local currentmemcell_x = 4
 local currentmemcell_y = 1
+local copymode = false
+local blink = false
+local copysource_x = -1
+local copysource_y = -1
 
 -- mutes are global 
 -- grid column 2 and tracks 1-8
@@ -109,15 +126,15 @@ function cellfromgrid( x , y )
 end
 
 -- depracate this in a bit
-local track = {}
-for i=1, 8 do
-  track[i] = {}
-  track[i].k = 0
-  track[i].n = 16
-  track[i].pos = 1
-  track[i].s = {}
-  track[i].prob = 100                                                         
-end
+-- local track = {}
+-- for i=1, 8 do
+--  track[i] = {}
+--  track[i].k = 0
+--  track[i].n = 16
+--  track[i].pos = 1
+--  track[i].s = {}
+--  track[i].prob = 100                                                         
+-- end
 
 local function reer(i)
   
@@ -171,6 +188,9 @@ function init()
   -- also g: isn't set yet during init 
   metro_grid_redraw = metro.alloc(function(stage) grid_redraw() end, 1 / 40)
   metro_grid_redraw:start()
+  -- blink for copy mode 
+  metro_blink = metro.alloc(function(stage) blink = not blink end, 1 / 4)
+  metro_blink:start()
   
   
 end
@@ -384,7 +404,7 @@ end
 
 -- grid key function
 function gridkey(x, y, state)
-  print("x:",x," y:",y," state:",state)
+  -- print("x:",x," y:",y," state:",state)
   -- use first column to switch track edit
   if x == 1 then
     track_edit = y
@@ -392,50 +412,125 @@ function gridkey(x, y, state)
   end
   -- second column provides mutes 
   -- key presses just toggle
+  -- switches on grid up - so you can hold down
+  -- and lift to get timing right 
   if x == 2 and state == 1 then
     mutes[y] = not mutes[y]
   end
-  -- 4-6,8 are used to open track parameters
-  if y == 8 and x >= 4 and x <= 8 and state == 1 then
-    print("mode is 1")
+  -- 4-6,8 are used to open track parameters pages
+  if y == 8 and x >= 4 and x <= 6 and state == 1 then
     mode = 1
     page = x - 4
   else 
     mode = 0
   end
+  -- copy button 
+  if x == 8 and y==8 and state == 1 then 
+    copymode = true
+    copysource_x = -1
+    copysource_y = -1
+  elseif x == 8 and y==8 and state == 0 then
+    copymode = false
+    copysource_x = -1
+    copysource_y = -1
+  end  
   -- memory cells 
-  -- switches on grid up 
-  if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
-    currentmemcell = cellfromgrid(x,y)
-    currentmemcell_x = x
-    currentmemcell_y = y
+  -- if we aren't in copymode 
+  -- press to switch memory 
+  -- switches on grid up not grid down
+  if not copymode then
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
+      currentmemcell = cellfromgrid(x,y)
+      currentmemcell_x = x
+      currentmemcell_y = y
+    end
+  else
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then 
+      -- copy functionality 
+      -- if we are in copy mode then don't switch 
+      -- memories - copy about instead 
+      if copysource_x == -1 then 
+        -- first button sets the source
+        copysource_x = x
+        copysource_y = y
+      else 
+        -- copy source into target 
+        if copy_source_x ~= -1 and not ( copysource_x == x and copysource_y == y) then
+          sourcecell = cellfromgrid( copysource_x , copysource_y )
+          targetcell = cellfromgrid( x , y )
+          for i=1,8 do
+            gettracK( targetcell , i ).k = gettracK( sourcecell , i ).k
+            gettracK( targetcell , i ).n = gettracK( sourcecell , i ).n
+            gettracK( targetcell , i ).pos = gettracK( sourcecell , i ).pos
+            gettracK( targetcell , i ).s = gettracK( sourcecell , i ).s
+            gettracK( targetcell , i ).prob = gettracK( sourcecell , i ).prob
+          end
+        end
+      end
+    end
   end
+  
   redraw()
 end
 
-function grid_redraw() 
+function grid_redraw()
+  -- note slight level variations are because push2 
+  -- displays these as different colours 
+  -- attempted to do something that should work for both
+  -- real grid and push2 version 
   if g == nil then
+    -- bail if we are too early 
     return
   end
+  -- clear it all 
   g:all(0)
+  -- highlight current track
   g:led(1, track_edit, 15)
-  -- track pages 
+  -- track page buttons 
+  -- low light for off - I kept forgetting which keys they were 
+  -- highlight for on 
+  for page = 0,2 do
+      g:led(page + 4,8,1)
+  end
+  -- highlight page if open 
+  -- if you open it via keys/enc still highlights
+  -- which I'm actually ok with 
   if mode == 1 then
     g:led(page + 4,8,14)
   end
-  -- mutes 
+  -- mutes are on or off 
   for i = 1,8 do 
     if mutes[i]  then
       g:led(2,i,7)
     end
   end
-  -- memory 
+  -- memory cells 
+  -- wondered if I should have a mid level meaning 'have edited'
+  -- but not sure if that might just add clutter 
   for x = 4,8 do
     for y = 1,5 do
       g:led(x,y,1)
     end
   end
+  -- highlight active memory 
   g:led(currentmemcell_x,currentmemcell_y,15)
+  -- copy mode - blink the source if set 
+  if copymode then
+    if copysource_x ~= -1 then
+      if blink then 
+        g:led(copysource_x,copysource_y,4)
+      else
+        g:led(copysource_x,copysource_y,12)
+      end
+    end
+  end
+  -- copy button - dim if unpressed, highlight if pressed 
+  if copymode  then 
+    g:led(8,8,14)
+  else
+    g:led(8,8,1)
+  end
+  --- and display! 
   g:refresh()
 end
 
