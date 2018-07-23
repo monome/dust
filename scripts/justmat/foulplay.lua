@@ -228,7 +228,7 @@ function enc(n,d)
       params:delta(track_edit .. ": end pos", d)
     end 
   
-  elseif veiw==1 and page==3 then
+  elseif view==1 and page==3 then
     if n==1 then                                                              -- filter cutoff
       params:delta(track_edit .. ": filter cutoff", d)
     elseif n==2 then                                                          -- delay send
