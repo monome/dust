@@ -52,6 +52,6 @@ holding KEY3 will bring up the **global edit** screen, releasing KEY3 will retur
 
 on page 2 of **track edit** you will find the trig logic and probability settings.
 
-- ENC1 selects which logic to use. either **none**, **and**, or **or**.
+- ENC1 selects which logic to use. either **none**, **and**, **or**, **nand**, **nor**, or **xor**.
 - ENC2 selects which track to apply the logic to. you must have trig logic turned on to access this one.
 - ENC3 sets the trig probability. this is also applied to logic derived trigs.
