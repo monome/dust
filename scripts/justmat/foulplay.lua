@@ -54,19 +54,25 @@
 -- column 1 select track edit
 -- column 2 provides mute toggles 
 --
--- track edit pages 
--- with grid buttons 4-7 
+-- change track edit pages 
+-- with grid buttons 4-7 on
+-- the bottom row.
 -- 
--- press in grid 5x5 dim lit area 
--- for different memory cells. 
+-- button 8 on the bottom row
+-- is the copy button.
+--
+-- the dimly lit 5x5 grid is 
+-- made up of memory cells.
+-- simply press a cell to select it.
+--
+-- to copy a pattern to a new cell
+-- hold the copy button, and press
+-- the cell you'd like to copy.
+-- the cell will blink. while
+-- still holding copy, press the
+-- destination cell.
+-- release the copy button.
 -- 
--- copy cells by pressing copy (8,8).
--- press 'source' cell (will start flashing)
--- press one or more target
--- cells to copy source to them. 
--- end copy mode by releasing copy button.
--- 
-
 
 
 require 'er'
