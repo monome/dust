@@ -46,22 +46,25 @@
 -- key2 = reset the phase of 
 --         all tracks.
 --
+-- ----------
+-- grid support added 
+-- by junklight 
+-- ----------
 --
----
---   grid support added by junklight 
---- 
---  column 1  track edit directly 
---  column 2 provides mute toggles 
+-- column 1 select track edit
+-- column 2 provides mute toggles 
 --
---  track edit pages with grid buttons 4-8 
+-- track edit pages 
+-- with grid buttons 4-7 
 -- 
 -- press in grid 5x5 dim lit area 
--- for different memory cells 
+-- for different memory cells. 
 -- 
--- copy cells by pressing copy (8,8)
+-- copy cells by pressing copy (8,8).
 -- press 'source' cell (will start flashing)
--- press one or more target cells to copy source to them 
--- end copy mode by releasing copy button
+-- press one or more target
+-- cells to copy source to them. 
+-- end copy mode by releasing copy button.
 -- 
 
 
@@ -79,7 +82,7 @@ local reset = false
 local view = 0     -- 0 == home, 1 == track edit, 2 == global edit 
 local page = 0
 local track_edit = 1
-local stopped = 1 -- change this to 0 if you would like to start running
+local stopped = 1 
 -- added for grid support - junklight 
 local currentmemcell = 1
 local currentmemcell_x = 4
