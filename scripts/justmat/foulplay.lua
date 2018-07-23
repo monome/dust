@@ -1,5 +1,5 @@
 -- euclidean sample instrument 
--- with probability.
+-- with trigger conditions.
 -- ----------
 -- based on playfair
 -- ----------
@@ -46,9 +46,6 @@
 -- key2 = reset the phase of 
 --         all tracks.
 
-
-
-
 require 'er'
 
 engine.name = 'Ack'
@@ -64,17 +61,17 @@ local page = 0
 local track_edit = 1
 local stopped = 1 -- change this to 0 if you would like to start running
 
-
 local track = {}
 for i=1, 8 do
-  track[i] = {}
-  track[i].k = 0
-  track[i].n = 16
-  track[i].pos = 1
-  track[i].s = {}
-  track[i].prob = 100 
-  track[i].trig_logic = 0              -- 0 == none, 1 == and, 2 == or
-  track[i].logic_target = track_edit   -- trig logic track target
+  track[i] = {
+    k = 0,
+    n = 16,
+    pos = 1,
+    s = {},
+    prob = 100,
+    trig_logic = 0,
+    logic_target = track_edit
+  }
 end
 
 local function reer(i)
@@ -86,30 +83,42 @@ local function reer(i)
 end
 
 local function trig()
-  for i=1,8 do
-    if track[i].trig_logic==0 and track[i].s[track[i].pos] then
-      if math.random(100) <= track[i].prob then     -- for per track probability
+  for i, t in ipairs(track) do
+    if t.trig_logic==0 and t.s[t.pos] then
+      if math.random(100) <= t.prob then
         engine.trig(i-1)
       end
-      
-    elseif track[i].trig_logic==1 then -- trig condition and
-      if track[i].s[track[i].pos] and track[track[i].logic_target].s[track[track[i].logic_target].pos] then
-        if math.random(100) <= track[i].prob then
+    elseif t.trig_logic == 1 then  -- and
+      if t.s[t.pos] and track[t.logic_target].s[track[t.logic_target].pos] then
+        if math.random(100) <= t.prob then
           engine.trig(i-1)
         end  
-      end  
-      
-    elseif track[i].trig_logic==2 then  -- trig condition or
-      if track[i].s[track[i].pos] or track[track[i].logic_target].s[track[track[i].logic_target].pos] then
-        if math.random(100) <= track[i].prob then
+      end
+    elseif t.trig_logic == 2 then  -- or
+      if t.s[t.pos] or track[t.logic_target].s[track[t.logic_target].pos] then
+        if math.random(100) <= t.prob then
           engine.trig(i-1)
         end
       end
+    elseif t.trig_logic == 3 then  -- nand
+      if t.s[t.pos] and track[t.logic_target].s[track[t.logic_target].pos] then
+      elseif t.s[t.pos] then
+        if math.random(100) <= t.prob then
+          engine.trig(i-1)
+        end
+      end  
+    elseif t.trig_logic == 4 then  -- nor
+      if not t.s[t.pos] and not track[t.logic_target].s[track[t.logic_target].pos] then
+        engine.trig(i-1)
+      end 
+    elseif t.trig_logic == 5 then  -- xor
+      if not t.s[t.pos] and not track[t.logic_target].s[track[t.logic_target].pos] then
+      elseif t.s[t.pos] and track[t.logic_target].s[track[t.logic_target].pos] then
+      else engine.trig(i-1) end
     end
   end
-end
-
-
+end  
+      
 function init()
   for i=1, 8 do reer(i) end
 
@@ -124,8 +133,8 @@ function init()
   for channel=1,8 do
     ack.add_channel_params(channel)
   end
+  
   ack.add_effects_params()
-
   params:read("justmat/foulplay.pset")
   params:bang()
   
@@ -203,7 +212,7 @@ function enc(n,d)
   
   elseif view==1 and page==1 then
     if n==1 then
-      track[track_edit].trig_logic = util.clamp(d + track[track_edit].trig_logic, 0, 2)
+      track[track_edit].trig_logic = util.clamp(d + track[track_edit].trig_logic, 0, 5)
     elseif n==2 then
       track[track_edit].logic_target = util.clamp(d+ track[track_edit].logic_target, 1, 8)
     elseif n==3 then
@@ -226,7 +235,7 @@ function enc(n,d)
       params:delta(track_edit .. ": delay send", d)
     elseif n==3 then                                                          -- reverb send
       params:delta(track_edit .. ": reverb send", d)
-    end  
+    end
     
   elseif view==2 then                                                         -- GLOBAL EDIT 
     if n==1 then                                                              -- mix volume
@@ -235,15 +244,12 @@ function enc(n,d)
       params:delta("bpm", d)                
     end
                                                                               -- HOME
-    
   elseif n==1 and d==1 then                                                   -- choose focused track 
     track_edit = (track_edit % 8) + d 
   elseif n==1 and d==-1 then
     track_edit = (track_edit + 6) % 8 + 1
-    
   elseif n == 2 then                                                          -- track fill
     track[track_edit].k = util.clamp(track[track_edit].k+d,0,track[track_edit].n)
-  
   elseif n==3 then                                                            -- track length
     track[track_edit].n = util.clamp(track[track_edit].n+d,1,32)
     track[track_edit].k = util.clamp(track[track_edit].k,0,track[track_edit].n)
@@ -290,7 +296,6 @@ function redraw()
     screen.move(64, 45)
     screen.text_center("3. envelope release : " .. params:get(track_edit .. ": vol env rel"))
     
-    
   elseif view==1 and page==1 then
     screen.move(5, 10)
     screen.level(15)
@@ -315,10 +320,21 @@ function redraw()
       screen.text_center("1. trig logic : or")
       screen.move(64, 35)
       screen.text_center("2. logic target : " .. track[track_edit].logic_target)
+    elseif track[track_edit].trig_logic == 3 then
+      screen.text_center("1. trig logic : nand")
+      screen.move(64, 35)
+      screen.text_center("2. logic target : " .. track[track_edit].logic_target)
+    elseif track[track_edit].trig_logic == 4 then
+      screen.text_center("1. trig logic : nor")
+      screen.move(64, 35)
+      screen.text_center("2. logic target : " .. track[track_edit].logic_target)
+    elseif track[track_edit].trig_logic == 5 then
+      screen.text_center("1. trig logic : xor")
+      screen.move(64, 35)
+      screen.text_center("2. logic target : " .. track[track_edit].logic_target)  
     end
     screen.move(64, 45)
     screen.text_center("3. trig probability : " .. track[track_edit].prob .. "%")
-    
     
   elseif view==1 and page==2 then
     screen.move(5, 10)
@@ -363,11 +379,9 @@ function redraw()
     screen.text_center("1. mix volume : " .. mix:get("output"))
     screen.move(64, 35)
     screen.text_center("3. bpm : " .. params:get("bpm"))
-    
   end
   screen.stroke() 
   screen.update()
-
 end
 
 midi.add = function(dev)
