@@ -92,13 +92,13 @@ local page = 0
 local track_edit = 1
 local stopped = 1 
 -- added for grid support - junklight 
-local currentmemcell = 1
-local currentmemcell_x = 4
-local currentmemcell_y = 1
-local copymode = false
+local current_mem_cell = 1
+local current_mem_cell_x = 4
+local current_mem_cell_y = 1
+local copy_mode = false
 local blink = false
-local copysource_x = -1
-local copysource_y = -1
+local copy_source_x = -1
+local copy_source_y = -1
 -- mutes are global 
 -- grid column 2 and tracks 1-8
 local mutes = {} 
@@ -117,11 +117,11 @@ function simplecopy(obj)
 end
 ---------------
 
-local memorycell = {}
+local memory_cell = {}
 for j = 1,25 do 
-  memorycell[j] = {}
+  memory_cell[j] = {}
   for i=1, 8 do
-    memorycell[j][i] = {
+    memory_cell[j][i] = {
       k = 0,
       n = 16,
       pos = 1,
@@ -133,21 +133,21 @@ for j = 1,25 do
   end
 end
 
-function gettrack( cell , tracknum ) 
-  return memorycell[cell][tracknum]
+local function gettrack( cell , tracknum ) 
+  return memory_cell[cell][tracknum]
 end
 
-function cellfromgrid( x , y )
+local function cellfromgrid( x , y )
   return (((y - 1) * 5) + (x -4)) + 1
 end
 
-gettrack(currentmemcell,i)
+gettrack(current_mem_cell,i)
 
 local function reer(i)
-  if gettrack(currentmemcell,i).k == 0 then
-    for n=1,32 do gettrack(currentmemcell,i).s[n] = false end
+  if gettrack(current_mem_cell,i).k == 0 then
+    for n=1,32 do gettrack(current_mem_cell,i).s[n] = false end
   else
-    gettrack(currentmemcell,i).s = er(gettrack(currentmemcell,i).k,gettrack(currentmemcell,i).n)
+    gettrack(current_mem_cell,i).s = er(gettrack(current_mem_cell,i).k,gettrack(current_mem_cell,i).n)
   end
 end
 
@@ -156,38 +156,38 @@ end
 -- that uses it as a target 
 
 local function trig()
-  for i, t in ipairs(memorycell[currentmemcell]) do
+  for i, t in ipairs(memory_cell[current_mem_cell]) do
     if t.trig_logic==0 and t.s[t.pos]  then
       if math.random(100) <= t.prob and mutes[i] == false then
         engine.trig(i-1)
       end
     elseif t.trig_logic == 1 then  -- and
-      if t.s[t.pos] and gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos]  then
+      if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
         if math.random(100) <= t.prob and mutes[i] == false then
           engine.trig(i-1)
         end  
       end
     elseif t.trig_logic == 2 then  -- or
-      if t.s[t.pos] or gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos] then
+      if t.s[t.pos] or gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         if math.random(100) <= t.prob and mutes[i] == false then
           engine.trig(i-1)
         end
       end
     elseif t.trig_logic == 3 then  -- nand
-      if t.s[t.pos] and gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos]  then
+      if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
       elseif t.s[t.pos] then
         if math.random(100) <= t.prob and mutes[i] == false then
           engine.trig(i-1)
         end
       end  
     elseif t.trig_logic == 4 then  -- nor
-      if not t.s[t.pos] and not gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos] and mutes[i] == false then
+      if not t.s[t.pos] and not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] and mutes[i] == false then
         engine.trig(i-1)
       end 
     elseif t.trig_logic == 5 then  -- xor
       if mutes[i] == false then 
-        if not t.s[t.pos] and not gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos] then
-        elseif t.s[t.pos] and gettrack(currentmemcell,t.logic_target).s[gettrack(currentmemcell,t.logic_target).pos] then
+        if not t.s[t.pos] and not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
+        elseif t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         else engine.trig(i-1) end
       end
     end
@@ -241,10 +241,10 @@ end
 
 function step()
   if reset then
-    for i=1,8 do gettrack(currentmemcell,i).pos = 1 end
+    for i=1,8 do gettrack(current_mem_cell,i).pos = 1 end
     reset = false
   else
-    for i=1,8 do gettrack(currentmemcell,i).pos = (gettrack(currentmemcell,i).pos % gettrack(currentmemcell,i).n) + 1 end 
+    for i=1,8 do gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1 end 
   end
   trig()
   redraw()
@@ -301,11 +301,11 @@ function enc(n,d)
   
   elseif view==1 and page==1 then
     if n==1 then
-      gettrack(currentmemcell,track_edit).trig_logic = util.clamp(d + gettrack(currentmemcell,track_edit).trig_logic, 0, 5)
+      gettrack(current_mem_cell,track_edit).trig_logic = util.clamp(d + gettrack(current_mem_cell,track_edit).trig_logic, 0, 5)
     elseif n==2 then
-      gettrack(currentmemcell,track_edit).logic_target = util.clamp(d+ gettrack(currentmemcell,track_edit).logic_target, 1, 8)
+      gettrack(current_mem_cell,track_edit).logic_target = util.clamp(d+ gettrack(current_mem_cell,track_edit).logic_target, 1, 8)
     elseif n==3 then
-      gettrack(currentmemcell,track_edit).prob = util.clamp(d + gettrack(currentmemcell,track_edit).prob, 1, 100)
+      gettrack(current_mem_cell,track_edit).prob = util.clamp(d + gettrack(current_mem_cell,track_edit).prob, 1, 100)
     end  
       
   elseif view==1 and page==2 then
@@ -338,10 +338,10 @@ function enc(n,d)
   elseif n==1 and d==-1 then
     track_edit = (track_edit + 6) % 8 + 1
   elseif n == 2 then                                                          -- track fill
-    gettrack(currentmemcell,track_edit).k = util.clamp(gettrack(currentmemcell,track_edit).k+d,0,gettrack(currentmemcell,track_edit).n)
+    gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k+d,0,gettrack(current_mem_cell,track_edit).n)
   elseif n==3 then                                                            -- track length
-    gettrack(currentmemcell,track_edit).n = util.clamp(gettrack(currentmemcell,track_edit).n+d,1,32)
-    gettrack(currentmemcell,track_edit).k = util.clamp(gettrack(currentmemcell,track_edit).k,0,gettrack(currentmemcell,track_edit).n)
+    gettrack(current_mem_cell,track_edit).n = util.clamp(gettrack(current_mem_cell,track_edit).n+d,1,32)
+    gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k,0,gettrack(current_mem_cell,track_edit).n)
   end
   reer(track_edit)
   redraw()
@@ -354,13 +354,13 @@ function redraw()
     for i=1, 8 do
       screen.level((i == track_edit) and 15 or 4)
       screen.move(5, i*7.70)
-      screen.text_center(gettrack(currentmemcell,i).k)
+      screen.text_center(gettrack(current_mem_cell,i).k)
       screen.move(20,i*7.70)
-      screen.text_center(gettrack(currentmemcell,i).n)
-      for x=1,gettrack(currentmemcell,i).n do
-        screen.level(gettrack(currentmemcell,i).pos==x and 15 or 2)
+      screen.text_center(gettrack(current_mem_cell,i).n)
+      for x=1,gettrack(current_mem_cell,i).n do
+        screen.level(gettrack(current_mem_cell,i).pos==x and 15 or 2)
         screen.move(x*3 + 30, i*7.70)
-        if gettrack(currentmemcell,i).s[x] then
+        if gettrack(current_mem_cell,i).s[x] then
           screen.line_rel(0,-6)
         else
           screen.line_rel(0,-2)
@@ -395,35 +395,35 @@ function redraw()
     screen.line(121, 15)
     screen.move(64, 25)
     screen.level(4)
-    if gettrack(currentmemcell,track_edit).trig_logic == 0 then
+    if gettrack(current_mem_cell,track_edit).trig_logic == 0 then
       screen.text_center("1. trig logic : -")
       screen.move(64, 35)
       screen.level(1)
       screen.text_center("2. logic target : -")
       screen.level(4)
-    elseif gettrack(currentmemcell,track_edit).trig_logic == 1 then
+    elseif gettrack(current_mem_cell,track_edit).trig_logic == 1 then
       screen.text_center("1. trig logic : and")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(currentmemcell,track_edit).logic_target)
-    elseif gettrack(currentmemcell,track_edit).trig_logic == 2 then
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)
+    elseif gettrack(current_mem_cell,track_edit).trig_logic == 2 then
       screen.text_center("1. trig logic : or")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(currentmemcell,track_edit).logic_target)
-    elseif gettrack(currentmemcell,track_edit).trig_logic == 3 then
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)
+    elseif gettrack(current_mem_cell,track_edit).trig_logic == 3 then
       screen.text_center("1. trig logic : nand")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(currentmemcell,track_edit).logic_target)
-    elseif gettrack(currentmemcell,track_edit).trig_logic == 4 then
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)
+    elseif gettrack(current_mem_cell,track_edit).trig_logic == 4 then
       screen.text_center("1. trig logic : nor")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(currentmemcell,track_edit).logic_target)
-    elseif gettrack(currentmemcell,track_edit).trig_logic == 5 then
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)
+    elseif gettrack(current_mem_cell,track_edit).trig_logic == 5 then
       screen.text_center("1. trig logic : xor")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(currentmemcell,track_edit).logic_target)  
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)  
     end
     screen.move(64, 45)
-    screen.text_center("3. trig probability : " .. gettrack(currentmemcell,track_edit).prob .. "%")
+    screen.text_center("3. trig probability : " .. gettrack(current_mem_cell,track_edit).prob .. "%")
     
   elseif view==1 and page==2 then
     screen.move(5, 10)
@@ -504,39 +504,39 @@ function gridkey(x, y, state)
   end
   -- copy button 
   if x == 8 and y==8 and state == 1 then 
-    copymode = true
-    copysource_x = -1
-    copysource_y = -1
+    copy_mode = true
+    copy_source_x = -1
+    copy_source_y = -1
   elseif x == 8 and y==8 and state == 0 then
-    copymode = false
-    copysource_x = -1
-    copysource_y = -1
+    copy_mode = false
+    copy_source_x = -1
+    copy_source_y = -1
   end  
   -- memory cells 
-  -- if we aren't in copymode 
+  -- if we aren't in copy_mode 
   -- press to switch memory 
   -- switches on grid up not grid down
-  if not copymode then
+  if not copy_mode then
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
-      currentmemcell = cellfromgrid(x,y)
-      currentmemcell_x = x
-      currentmemcell_y = y
+      current_mem_cell = cellfromgrid(x,y)
+      current_mem_cell_x = x
+      current_mem_cell_y = y
     end
   else
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then 
       -- copy functionality 
       -- if we are in copy mode then don't switch 
       -- memories - copy about instead 
-      if copysource_x == -1 then 
+      if copy_source_x == -1 then 
         -- first button sets the source
-        copysource_x = x
-        copysource_y = y
+        copy_source_x = x
+        copy_source_y = y
       else 
         -- copy source into target 
-        if copy_source_x ~= -1 and not ( copysource_x == x and copysource_y == y) then
-          sourcecell = cellfromgrid( copysource_x , copysource_y )
+        if copy_source_x ~= -1 and not ( copy_source_x == x and copy_source_y == y) then
+          sourcecell = cellfromgrid( copy_source_x , copy_source_y )
           targetcell = cellfromgrid( x , y )
-          memorycell[targetcell] = simplecopy(memorycell[sourcecell])
+          memory_cell[targetcell] = simplecopy(memory_cell[sourcecell])
         end
       end
     end
@@ -545,7 +545,7 @@ function gridkey(x, y, state)
   redraw()
 end
 
-function grid_redraw()
+local function grid_redraw()
   -- note slight level variations are because push2 
   -- displays these as different colours 
   -- attempted to do something that should work for both
@@ -562,18 +562,18 @@ function grid_redraw()
   -- low light for off - I kept forgetting which keys they were 
   -- highlight for on 
   for page = 0,3 do
-      g:led(page + 4,8,3)
+      g:led(page + 4, 8, 3)
   end
   -- highlight page if open 
   -- if you open it via keys/enc still highlights
   -- which I'm actually ok with 
   if view == 1 then
-    g:led(page + 4,8,14)
+    g:led(page + 4, 8, 14)
   end
   -- mutes are on or off 
   for i = 1,8 do 
     if mutes[i]  then
-      g:led(2,i,7)
+      g:led(2, i, 7)
     end
   end
   -- memory cells 
@@ -581,26 +581,26 @@ function grid_redraw()
   -- but not sure if that might just add clutter 
   for x = 4,8 do
     for y = 1,5 do
-      g:led(x,y,3)
+      g:led(x, y, 3)
     end
   end
   -- highlight active memory 
-  g:led(currentmemcell_x,currentmemcell_y,15)
+  g:led(current_mem_cell_x, current_mem_cell_y, 15)
   -- copy mode - blink the source if set 
-  if copymode then
-    if copysource_x ~= -1 then
+  if copy_mode then
+    if copy_source_x ~= -1 then
       if blink then 
-        g:led(copysource_x,copysource_y,4)
+        g:led(copy_source_x, copy_source_y, 4)
       else
-        g:led(copysource_x,copysource_y,12)
+        g:led(copy_source_x, copy_source_y, 12)
       end
     end
   end
   -- copy button - dim if unpressed, highlight if pressed 
-  if copymode  then 
-    g:led(8,8,14)
+  if copy_mode  then 
+    g:led(8, 8, 14)
   else
-    g:led(8,8,3)
+    g:led(8, 8, 3)
   end
   --- and display! 
   g:refresh()
