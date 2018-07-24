@@ -545,7 +545,7 @@ function gridkey(x, y, state)
   redraw()
 end
 
-local function grid_redraw()
+function grid_redraw()
   -- note slight level variations are because push2 
   -- displays these as different colours 
   -- attempted to do something that should work for both
