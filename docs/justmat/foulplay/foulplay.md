@@ -58,7 +58,8 @@ button 8 on the bottom row is copy.
 
 the pattern area is a 5x5 grid of memory cells, allowing for storing/ recalling patterns.
 to copy a pattern to a new cell hold the copy button and press the cell you wish to copy. 
-the cell will blink. while still holding copy, press the desired destination cell. release copy.
+the cell will blink. while still holding copy, press the desired destination cell. release
+copy to return to normal use.
 
 ---
 
