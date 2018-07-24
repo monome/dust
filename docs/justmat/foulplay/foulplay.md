@@ -44,6 +44,23 @@ holding KEY3 will bring up the **global edit** screen, releasing KEY3 will retur
 - KEY2 resets the phase of all tracks.
 
 ---
+
+# grid 
+added by junklight
+
+![](grid.png)
+
+column 1 selects which track to edit.
+column 2 provides track mute toggles. 
+
+buttons 4-7 on the bottom row bring up track edit pages 1-4.
+button 8 on the bottom row is copy.
+
+the pattern area is a 5x5 grid of memory cells, allowing for storing/ recalling patterns.
+to copy a pattern to a new cell hold the copy button and press the cell you wish to copy. 
+the cell will blink. while still holding copy, press the desired destination cell. release
+copy to return to normal use.
+
 ---
 
 # extended explanations
