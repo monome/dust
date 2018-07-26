@@ -1,6 +1,9 @@
 --- Music utility module.
 -- Utility methods for working with notes and scales.
+--
 -- @module MusicUtil
+-- @release v1.0.1
+-- @author Mark Eats
 
 local MusicUtil = {}
 
@@ -202,12 +205,50 @@ function MusicUtil.freq_to_note_num(freq)
 end
 
 --- Return an array of frequencies' nearest MIDI note numbers.
--- @param freqs Array of frequency numbers in Hz.
+-- @param freqs_array Array of frequency numbers in Hz.
 -- @return Array of MIDI note numbers.
 function MusicUtil.freqs_to_note_nums(freqs_array)
   local output = {}
   for i = 1, #freqs_array do
     output[i] = MusicUtil.freq_to_note_num(freqs_array[i])
+  end
+  return output
+end
+
+
+--- Return the ratio of an interval.
+-- @param interval Interval in semitones.
+-- @return Ratio number.
+function MusicUtil.interval_to_ratio(interval)
+  return math.pow(2, interval / 12)
+end
+
+--- Return an array of ratios of intervals.
+-- @param intervals_array Array of intervals in semitones.
+-- @return Array of ratio numbers.
+function MusicUtil.intervals_to_ratios(intervals_array)
+  local output = {}
+  for i = 1, #intervals_array do
+    output[i] = MusicUtil.interval_to_ratio(intervals_array[i])
+  end
+  return output
+end
+
+
+--- Return the interval of a ratio.
+-- @param ratio Ratio number.
+-- @return Interval in semitones.
+function MusicUtil.ratio_to_interval(ratio)
+  return 12 * math.log(ratio) / math.log(2)
+end
+
+--- Return an array of intervals of ratios.
+-- @param ratios_array Array of ratio numbers.
+-- @return Array of intervals in semitones.
+function MusicUtil.ratios_to_intervals(ratios_array)
+  local output = {}
+  for i = 1, #ratios_array do
+    output[i] = MusicUtil.ratio_to_interval(ratios_array[i])
   end
   return output
 end
