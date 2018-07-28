@@ -71,7 +71,6 @@
 -- release the copy button.
 -- 
 
-
 require 'er'
 
 engine.name = 'Ack'
@@ -396,7 +395,8 @@ function redraw()
       end
     end
   elseif view==0 and ALT==1 then
-    screen.level(48 + 11)
+    screen.level(4)
+    screen.move(0, 8 + 11)
     screen.text("vol")
     screen.move(0, 16 + 11)
     screen.text(mix:get("output"))
