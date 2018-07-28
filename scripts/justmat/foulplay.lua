@@ -19,6 +19,13 @@
 -- key2 = start and stop the
 --         clock.  
 --
+-- on the home screen,
+-- key3 is ALT.
+--
+-- ALT + enc1 = mix volume
+-- ALT + enc2 = rotation
+-- ALT + enc3 = bpm
+--
 -- ----------
 -- holding key1 will bring up the 
 -- track edit screen. release to 
@@ -35,24 +42,12 @@
 --         next page.
 --
 -- ----------
--- holding key3 will bring up the
--- global edit screen. release to 
--- return home.
--- -----------
--- global edit
---
--- enc1 = set the mix volume
--- enc3 = set bpm
--- key2 = reset the phase of 
---         all tracks.
---
--- ----------
 -- grid support added 
 -- by junklight 
 -- ----------
 --
--- column 1 select track edit
--- column 2 provides mute toggles 
+-- col 1 select track edit
+-- col 2 provides mute toggles 
 --
 -- change track edit pages 
 -- with grid buttons 4-7 on
@@ -86,8 +81,10 @@ local BeatClock = require 'beatclock'
 
 local clk = BeatClock.new()
 
+local ALT = 0
 local reset = false
-local view = 0     -- 0 == home, 1 == track edit, 2 == global edit 
+-- 0 == home, 1 == track edit
+local view = 0      
 local page = 0
 local track_edit = 1
 local stopped = 1 
@@ -128,7 +125,8 @@ for j = 1,25 do
       s = {},
       prob = 100,
       trig_logic = 0,
-      logic_target = track_edit
+      logic_target = track_edit,
+      rotation = 0
   }                                                       
   end
 end
@@ -143,11 +141,24 @@ end
 
 gettrack(current_mem_cell,i)
 
+-- rotate_pattern comes to us via stackexchange
+local function rotate_pattern(t, rot, n, r)
+  n, r = n or #t, {}
+  rot = rot % n
+  for i = 1, rot do
+    r[i] = t[n - rot + i]
+  end
+  for i = rot + 1, n do
+    r[i] = t[i - rot]
+  end
+  return r
+end
+
 local function reer(i)
   if gettrack(current_mem_cell,i).k == 0 then
     for n=1,32 do gettrack(current_mem_cell,i).s[n] = false end
   else
-    gettrack(current_mem_cell,i).s = er(gettrack(current_mem_cell,i).k,gettrack(current_mem_cell,i).n)
+    gettrack(current_mem_cell,i).s = rotate_pattern(er(gettrack(current_mem_cell,i).k, gettrack(current_mem_cell,i).n), gettrack(current_mem_cell, i).rotation)
   end
 end
 
@@ -196,7 +207,7 @@ end
       
 function init()
   for i=1, 8 do reer(i) end
-
+  
   screen.line_width(1)
   
   clk.on_step = step
@@ -212,6 +223,8 @@ function init()
   ack.add_effects_params()
   params:read("justmat/foulplay.pset")
   params:bang()
+  
+  loadstate()
   
   if stopped==1 then
     clk:stop()
@@ -231,7 +244,6 @@ function init()
   -- blink for copy mode 
   metro_blink = metro.alloc(function(stage) blink = not blink end, 1 / 4)
   metro_blink:start()
-  
 end
 
 function reset_pattern()
@@ -241,42 +253,45 @@ end
 
 function step()
   if reset then
-    for i=1,8 do gettrack(current_mem_cell,i).pos = 1 end
+    for i=1,8 do 
+      gettrack(current_mem_cell,i).pos = 1 
+    end
     reset = false
   else
-    for i=1,8 do gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1 end 
+    for i=1,8 do 
+      gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1 
+    end 
   end
   trig()
   redraw()
 end
 
 function key(n,z)
-  if n==1 then view = z end                                                   -- views all day
+  -- normal and track edit views
+  if n==1 then view = z end 
   if n==3 and z==1 and view==1 then
     page = (page + 1) % 4
-  elseif n==3 and z==1 and view==0 then
-    view = 2
-  elseif n==3 and view==2 then
-    view = 0
   end
-  
-  if view==2 then                                                             -- GLOBAL EDIT
-    if n==2 and z==1 then                                                     -- phase reset
-      reset_pattern()
-      if stopped == 1 then                                                    -- set tracks back to step 1
-          step()
-      end
-    end
-  end 
-  
-  if view==1 then                                                             -- TRACK EDIT
-    if n==2 and z==1 then                                                     -- track selection in edit mode
+  if n==3 then ALT = z end  
+  -- track selection in track edit view
+  if view==1 then                                                            
+    if n==2 and z==1 then                                                     
       track_edit = (track_edit % 8) + 1
     end  
   end 
   
-  if view==0 then                                                             -- HOME
-    if n==2 and z==1 then                                                     -- stop/start
+  if ALT==1 then   
+    -- track phase reset
+    if n==2 and z==1 then                                                    
+      reset_pattern()
+      if stopped == 1 then                                                    
+          step()
+      end
+    end
+  end 
+  -- home view. start/stop
+  if ALT==0 and view==0 then
+    if n==2 and z==1 then                                                
       if stopped==0 then
         clk:stop()
         stopped = 1
@@ -290,16 +305,32 @@ function key(n,z)
 end
 
 function enc(n,d) 
-  if view==1  and page==0 then                                                -- TRACK EDIT 
-    if n==1 then                                                              -- track volume
+  if ALT==1 then
+    -- mix volume control
+    if n==1 then
+      mix:delta("output", d)
+    -- track rotation control  
+    elseif n==2 then
+      gettrack(current_mem_cell, track_edit).rotation = util.clamp(gettrack(current_mem_cell, track_edit).rotation + d, 0, 32)
+      gettrack(current_mem_cell,track_edit).s = rotate_pattern( gettrack(current_mem_cell,track_edit).s, gettrack(current_mem_cell, track_edit).rotation )
+      redraw()
+    -- bpm control  
+    elseif n==3 then
+      params:delta("bpm", d)                
+    end
+  -- track edit view  
+  elseif view==1  and page==0 then 
+    -- per track volume control
+    if n==1 then
       params:delta(track_edit .. ": vol", d)
-    elseif n==2 then                                                          -- volume envelope release time
+    elseif n==2 then
       params:delta(track_edit .. ": vol env atk", d)        
     elseif n==3 then
       params:delta(track_edit .. ": vol env rel", d)
     end
   
   elseif view==1 and page==1 then
+    -- trigger logic and probability settings
     if n==1 then
       gettrack(current_mem_cell,track_edit).trig_logic = util.clamp(d + gettrack(current_mem_cell,track_edit).trig_logic, 0, 5)
     elseif n==2 then
@@ -309,37 +340,33 @@ function enc(n,d)
     end  
       
   elseif view==1 and page==2 then
-    if n==1 then                                                              -- sample playback speed
+    -- sample playback settings
+    if n==1 then
       params:delta(track_edit .. ": speed", d)
-    elseif n==2 then                                                          -- sample start position
+    elseif n==2 then
       params:delta(track_edit .. ": start pos", d)             
-    elseif n==3 then                                                          -- sample end position
+    elseif n==3 then 
       params:delta(track_edit .. ": end pos", d)
     end 
   
   elseif view==1 and page==3 then
-    if n==1 then                                                              -- filter cutoff
+    -- filter and fx sends
+    if n==1 then
       params:delta(track_edit .. ": filter cutoff", d)
-    elseif n==2 then                                                          -- delay send
+    elseif n==2 then
       params:delta(track_edit .. ": delay send", d)
-    elseif n==3 then                                                          -- reverb send
+    elseif n==3 then
       params:delta(track_edit .. ": reverb send", d)
     end
-    
-  elseif view==2 then                                                         -- GLOBAL EDIT 
-    if n==1 then                                                              -- mix volume
-      mix:delta("output", d)
-    elseif n==3 then                                                          -- bpm control
-      params:delta("bpm", d)                
-    end
-                                                                              -- HOME
-  elseif n==1 and d==1 then                                                   -- choose focused track 
+  -- HOME
+  -- choose focused track, track fill, and track length
+  elseif n==1 and d==1 then 
     track_edit = (track_edit % 8) + d 
   elseif n==1 and d==-1 then
     track_edit = (track_edit + 6) % 8 + 1
-  elseif n == 2 then                                                          -- track fill
+  elseif n == 2 then  
     gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k+d,0,gettrack(current_mem_cell,track_edit).n)
-  elseif n==3 then                                                            -- track length
+  elseif n==3 then 
     gettrack(current_mem_cell,track_edit).n = util.clamp(gettrack(current_mem_cell,track_edit).n+d,1,32)
     gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k,0,gettrack(current_mem_cell,track_edit).n)
   end
@@ -350,16 +377,16 @@ end
 function redraw()
   screen.aa(0)
   screen.clear()
-  if view==0 then
+  if view==0 and ALT==0 then
     for i=1, 8 do
       screen.level((i == track_edit) and 15 or 4)
-      screen.move(5, i*7.70)
+      screen.move(8, i*7.70)
       screen.text_center(gettrack(current_mem_cell,i).k)
-      screen.move(20,i*7.70)
+      screen.move(25,i*7.70)
       screen.text_center(gettrack(current_mem_cell,i).n)
       for x=1,gettrack(current_mem_cell,i).n do
         screen.level(gettrack(current_mem_cell,i).pos==x and 15 or 2)
-        screen.move(x*3 + 30, i*7.70)
+        screen.move(x*3 + 35, i*7.70)
         if gettrack(current_mem_cell,i).s[x] then
           screen.line_rel(0,-6)
         else
@@ -368,7 +395,37 @@ function redraw()
         screen.stroke()
       end
     end
+  elseif view==0 and ALT==1 then
+    screen.level(4)
+    screen.move(0,7.70 + 11)
+    screen.text("vol")
+    screen.move(0, 15.5 + 11)
+    screen.text(mix:get("output"))
+    screen.move(0, 21 + 11)
+    screen.line(20, 21 + 11)
+    screen.move(0, 30 + 11)
+    screen.text("bpm")
+    screen.move(-1, 40 + 11)
+    if params:get("clock") == 1 then
+      screen.text(params:get("bpm"))
+    end
     
+    for i=1,8 do
+      screen.level((i == track_edit) and 15 or 4)
+      screen.move(25, i*7.70)
+      screen.text_center(gettrack(current_mem_cell, i).rotation)
+      for x=1,gettrack(current_mem_cell,i).n do
+        screen.level(gettrack(current_mem_cell,i).pos==x and 15 or 2)
+        screen.move(x*3 + 35, i*7.70)
+        if gettrack(current_mem_cell,i).s[x] then
+          screen.line_rel(0,-6)
+        else
+          screen.line_rel(0,-2)
+        end 
+        screen.stroke()
+      end
+    end
+  
   elseif view==1 and page==0 then
     screen.move(5, 10)
     screen.level(15)
@@ -456,18 +513,6 @@ function redraw()
     screen.text_center("2. delay send : " .. params:get(track_edit .. ": delay send"))
     screen.move(64, 45)
     screen.text_center("3. reverb send : " .. params:get(track_edit .. ": reverb send"))
-    
-  elseif view==2 then
-    screen.move(64, 10)
-    screen.level(15)
-    screen.text_center("global")
-    screen.move(5, 15)
-    screen.line(121, 15)
-    screen.move(64, 25)
-    screen.level(4)
-    screen.text_center("1. mix volume : " .. mix:get("output"))
-    screen.move(64, 35)
-    screen.text_center("3. bpm : " .. params:get("bpm"))
   end
   screen.stroke() 
   screen.update()
@@ -482,20 +527,17 @@ end
 
 -- grid key function
 function gridkey(x, y, state)
-  -- print("x:",x," y:",y," state:",state)
   -- use first column to switch track edit
   if x == 1 then
     track_edit = y
-    reer(track_edit)
   end
   -- second column provides mutes 
   -- key presses just toggle
-  -- switches on grid up - so you can hold down
-  -- and lift to get timing right 
+  -- switches on grid up
   if x == 2 and state == 1 then
     mutes[y] = not mutes[y]
   end
-  -- 4-6,8 are used to open track parameters pages
+  -- 4-6, are used to open track parameters pages
   if y == 8 and x >= 4 and x <= 7 and state == 1 then
     view = 1
     page = x - 4
@@ -515,12 +557,13 @@ function gridkey(x, y, state)
   -- memory cells 
   -- if we aren't in copy_mode 
   -- press to switch memory 
-  -- switches on grid up not grid down
+  -- switches on grid down
   if not copy_mode then
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
       current_mem_cell = cellfromgrid(x,y)
       current_mem_cell_x = x
       current_mem_cell_y = y
+      for i = 1, 8 do reer(i) end
     end
   else
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then 
@@ -541,7 +584,6 @@ function gridkey(x, y, state)
       end
     end
   end
-  
   redraw()
 end
 
@@ -559,8 +601,8 @@ function grid_redraw()
   -- highlight current track
   g:led(1, track_edit, 15)
   -- track page buttons 
-  -- low light for off - I kept forgetting which keys they were 
-  -- highlight for on 
+  -- dim for off 
+  -- bright for on 
   for page = 0,3 do
       g:led(page + 4, 8, 3)
   end
@@ -604,4 +646,44 @@ function grid_redraw()
   end
   --- and display! 
   g:refresh()
+end
+
+function savestate()
+  local file = io.open(data_dir .. "justmat/foulplay.data", "w+")
+  io.output(file)
+  for j = 1, 25 do
+    for i = 1, 8 do
+      io.write(memory_cell[j][i].k .. "\n")
+      io.write(memory_cell[j][i].n .. "\n")
+      io.write(memory_cell[j][i].prob .. "\n")
+      io.write(memory_cell[j][i].trig_logic .. "\n")
+      io.write(memory_cell[j][i].logic_target .. "\n")
+      io.write(memory_cell[j][i].rotation .. "\n")
+    end
+  end
+  io.close(file)
+end
+
+function loadstate()
+  local file = io.open(data_dir .. "justmat/foulplay.data", "r")
+  if file then
+    print("datafile found")
+    io.input(file)
+    for j = 1, 25 do
+      for i = 1, 8 do
+        memory_cell[j][i].k = tonumber(io.read())
+        memory_cell[j][i].n = tonumber(io.read())
+        memory_cell[j][i].prob = tonumber(io.read())
+        memory_cell[j][i].trig_logic = tonumber(io.read())
+        memory_cell[j][i].logic_target = tonumber(io.read())
+        memory_cell[j][i].rotation = tonumber(io.read())
+      end
+    end
+    io.close(file) 
+  end
+  for i = 1, 8 do reer(i) end
+end
+  
+cleanup = function()
+  savestate()
 end
