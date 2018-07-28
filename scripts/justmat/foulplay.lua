@@ -20,12 +20,11 @@
 --         clock.  
 --
 -- on the home screen,
--- holding key3 will engage
--- alternate controls.
+-- key3 is ALT.
 --
--- key3 + enc1 = mix volume
--- key3 + enc2 = rotation
--- key3 + enc3 = bpm
+-- ALT + enc1 = mix volume
+-- ALT + enc2 = rotation
+-- ALT + enc3 = bpm
 --
 -- ----------
 -- holding key1 will bring up the 
@@ -142,6 +141,7 @@ end
 
 gettrack(current_mem_cell,i)
 
+-- rotate_pattern comes to us via stackexchange
 local function rotate_pattern(t, rot, n, r)
   n, r = n or #t, {}
   rot = rot % n
@@ -244,8 +244,6 @@ function init()
   -- blink for copy mode 
   metro_blink = metro.alloc(function(stage) blink = not blink end, 1 / 4)
   metro_blink:start()
-  
-  --for i=1, 8 do reer(i) end
 end
 
 function reset_pattern()
@@ -274,8 +272,7 @@ function key(n,z)
   if n==3 and z==1 and view==1 then
     page = (page + 1) % 4
   end
-  if n==3 then ALT = z end
-  
+  if n==3 then ALT = z end  
   -- track selection in track edit view
   if view==1 then                                                            
     if n==2 and z==1 then                                                     
@@ -399,8 +396,7 @@ function redraw()
       end
     end
   elseif view==0 and ALT==1 then
-    screen.level(4)
-    screen.move(0,8 + 11)
+    screen.level(48 + 11)
     screen.text("vol")
     screen.move(0, 16 + 11)
     screen.text(mix:get("output"))
