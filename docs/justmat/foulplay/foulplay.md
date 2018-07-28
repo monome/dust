@@ -15,11 +15,17 @@ samples can be loaded via PARAMETERS in the main menu.
 
 when first starting foulplay you will be greeted with 8 tracks for euclidean rhythms. this is **home**. 
 
+while **home**, KEY3 is ALT.
+
 - ENC1 selects which track to focus.
 - ENC2 sets the number of hits.
 - ENC3 sets the track length.
 - KEY2 starts and stops the clock.
 
+- ALT + ENC1 sets the mix volume level.
+- ALT + ENC2 sets the track rotation value.
+- ALT + ENC3 sets the track bpm.
+- ALT + KEY2 is track reset.
 ---
 
 ## track edit
@@ -35,18 +41,8 @@ in **track edit** parameters 1-3 are tied to their respective encoders.
 
 ---
 
-## global edit
-
-holding KEY3 will bring up the **global edit** screen, releasing KEY3 will return **home**.
-
-- ENC1 sets the mix volume level.
-- ENC3 sets the bpm.
-- KEY2 resets the phase of all tracks.
-
----
-
 # grid 
-added by junklight
+(coded by @junklight)
 
 ![](grid.png)
 
@@ -64,6 +60,13 @@ copy to return to normal use.
 ---
 
 # extended explanations
+
+### saving/ loading your work
+
+foulplay will automatically save its _current state*_ whenever (a) you switch scripts, or (b) when norns _sleeps_. 
+loading is also automatic, and will happen anytime that you load foulplay.
+
+* foulplays current state includes the 25 memory cells, and their data.
 
 ### trig logic & probability
 
