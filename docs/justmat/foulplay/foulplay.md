@@ -66,7 +66,9 @@ copy to return to normal use.
 foulplay will automatically save its _current state*_ whenever (a) you switch scripts, or (b) when norns _sleeps_. 
 loading is also automatic, and will happen anytime that you load foulplay.
 
-* foulplays current state includes the 25 memory cells, and their data.
+* foulplays current state includes the 25 memory cells, accessible via grid, and their data.
+
+---
 
 ### trig logic & probability
 
