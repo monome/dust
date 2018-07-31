@@ -20,11 +20,11 @@
 --         clock.  
 --
 -- on the home screen,
--- key3 is ALT.
+-- key3 is alt.
 --
--- ALT + enc1 = mix volume
--- ALT + enc2 = rotation
--- ALT + enc3 = bpm
+-- alt + enc1 = mix volume
+-- alt + enc2 = rotation
+-- alt + enc3 = bpm
 --
 -- ----------
 -- holding key1 will bring up the 
@@ -80,7 +80,7 @@ local BeatClock = require 'beatclock'
 
 local clk = BeatClock.new()
 
-local ALT = 0
+local alt = 0
 local reset = false
 -- 0 == home, 1 == track edit
 local view = 0      
@@ -271,7 +271,7 @@ function key(n,z)
   if n==3 and z==1 and view==1 then
     page = (page + 1) % 4
   end
-  if n==3 then ALT = z end  
+  if n==3 then alt = z end  
   -- track selection in track edit view
   if view==1 then                                                            
     if n==2 and z==1 then                                                     
@@ -279,7 +279,7 @@ function key(n,z)
     end  
   end 
   
-  if ALT==1 then   
+  if alt==1 then   
     -- track phase reset
     if n==2 and z==1 then                                                    
       reset_pattern()
@@ -289,7 +289,7 @@ function key(n,z)
     end
   end 
   -- home view. start/stop
-  if ALT==0 and view==0 then
+  if alt==0 and view==0 then
     if n==2 and z==1 then                                                
       if stopped==0 then
         clk:stop()
@@ -304,7 +304,7 @@ function key(n,z)
 end
 
 function enc(n,d) 
-  if ALT==1 then
+  if alt==1 then
     -- mix volume control
     if n==1 then
       mix:delta("output", d)
@@ -376,7 +376,7 @@ end
 function redraw()
   screen.aa(0)
   screen.clear()
-  if view==0 and ALT==0 then
+  if view==0 and alt==0 then
     for i=1, 8 do
       screen.level((i == track_edit) and 15 or 4)
       screen.move(8, i*7.70)
@@ -394,7 +394,7 @@ function redraw()
         screen.stroke()
       end
     end
-  elseif view==0 and ALT==1 then
+  elseif view==0 and alt==1 then
     screen.level(4)
     screen.move(0, 8 + 11)
     screen.text("vol")
