@@ -1,4 +1,4 @@
--- euclidean sample instrument 
+--- euclidean sample instrument 
 -- with trigger conditions.
 -- ----------
 -- based on playfair
@@ -49,17 +49,36 @@
 -- col 1 select track edit
 -- col 2 provides mute toggles 
 --
--- change track edit pages 
+-- the dimly lit 5x5 grid is 
+-- made up of memory cells. 
+-- memory cells hold both
+-- pattern and pset data.
+-- simply pressing a cell 
+-- will load the pattern 
+-- data. 
+--
+-- button 4 on row 7 starts
+-- and stops the clock. 
+-- while the clock is stopped
+-- the button will blink.
+--
+-- button 5 on row 7 is
+-- the phase reset button.
+--
+-- button 8 on row 7 is
+-- the pset load button.
+--
+-- to load a pset, press
+-- and hold the pset load
+-- button while touching 
+-- the desired memory cell.
+-- 
+-- open track edit pages 
 -- with grid buttons 4-7 on
 -- the bottom row.
 -- 
 -- button 8 on the bottom row
 -- is the copy button.
---
--- the dimly lit 5x5 grid is 
--- made up of memory cells.
--- simply press a cell to select 
--- it.
 --
 -- to copy a pattern to a new 
 -- cell hold the copy button, 
@@ -87,6 +106,8 @@ local view = 0
 local page = 0
 local track_edit = 1
 local stopped = 1 
+local pset_load_mode = false
+local current_pset = 0
 -- added for grid support - junklight 
 local current_mem_cell = 1
 local current_mem_cell_x = 4
@@ -95,13 +116,11 @@ local copy_mode = false
 local blink = false
 local copy_source_x = -1
 local copy_source_y = -1
--- mutes are global 
 -- grid column 2 and tracks 1-8
 local mutes = {} 
 for i=1,8 do
   mutes[i] = false
 end
-
 
 function simplecopy(obj)
   if type(obj) ~= 'table' then return obj end
@@ -378,6 +397,10 @@ function redraw()
   screen.clear()
   if view==0 and alt==0 then
     for i=1, 8 do
+      if (mutes[i]) then 
+       screen.move(17,i*7.70)
+       screen.text_center("m")
+      end
       screen.level((i == track_edit) and 15 or 4)
       screen.move(8, i*7.70)
       screen.text_center(gettrack(current_mem_cell,i).k)
@@ -543,6 +566,34 @@ function gridkey(x, y, state)
   else 
     view = 0
   end
+  -- start and stop button.
+  if x == 4 and y == 7 and state == 1 then
+    if stopped == 1 then
+      clk:start()
+      stopped = 0
+    else 
+      clk:stop()
+      stopped = 1
+    end
+  end  
+  -- reset button
+  if x == 5 and y == 7 and state == 1 then 
+    reset_pattern()
+  end
+  -- set pset load mode
+  if x == 8 and y == 7 and state == 1 then
+    pset_load_mode = true
+  elseif x == 8 and y == 7 and state == 0 then
+    pset_load_mode = false
+  end
+  -- load pset 1-25
+  if pset_load_mode then
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
+      params:read("justmat/foulplay-" .. string.format("%02d", cellfromgrid(x, y)) .. ".pset")
+      params:bang()
+      current_pset = cellfromgrid(x, y)
+    end
+  end  
   -- copy button 
   if x == 8 and y==8 and state == 1 then 
     copy_mode = true
@@ -557,7 +608,7 @@ function gridkey(x, y, state)
   -- if we aren't in copy_mode 
   -- press to switch memory 
   -- switches on grid down
-  if not copy_mode then
+  if not copy_mode and not pset_load_mode then
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
       current_mem_cell = cellfromgrid(x,y)
       current_mem_cell_x = x
@@ -566,20 +617,22 @@ function gridkey(x, y, state)
     end
   else
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then 
+      if not pset_load_mode then
       -- copy functionality 
       -- if we are in copy mode then don't switch 
       -- memories - copy about instead 
-      if copy_source_x == -1 then 
+        if copy_source_x == -1 then 
         -- first button sets the source
-        copy_source_x = x
-        copy_source_y = y
-      else 
+          copy_source_x = x
+          copy_source_y = y
+        else 
         -- copy source into target 
-        if copy_source_x ~= -1 and not ( copy_source_x == x and copy_source_y == y) then
-          sourcecell = cellfromgrid( copy_source_x , copy_source_y )
-          targetcell = cellfromgrid( x , y )
-          memory_cell[targetcell] = simplecopy(memory_cell[sourcecell])
-        end
+          if copy_source_x ~= -1 and not ( copy_source_x == x and copy_source_y == y) then
+            sourcecell = cellfromgrid( copy_source_x , copy_source_y )
+            targetcell = cellfromgrid( x , y )
+            memory_cell[targetcell] = simplecopy(memory_cell[sourcecell])
+          end
+        end  
       end
     end
   end
@@ -602,7 +655,7 @@ function grid_redraw()
   -- track page buttons 
   -- dim for off 
   -- bright for on 
-  for page = 0,3 do
+  for page = 0, 3 do
       g:led(page + 4, 8, 3)
   end
   -- highlight page if open 
@@ -637,6 +690,22 @@ function grid_redraw()
       end
     end
   end
+  -- start/stop
+  if stopped == 0 then 
+    g:led(4, 7, 7)
+  elseif stopped == 1 then
+    if blink then
+      g:led(4, 7, 4)
+    else
+      g:led(4, 7, 12)
+    end
+  end
+  -- reset button
+  g:led(5, 7, 3)
+  -- load pset button
+  if pset_load_mode then
+    g:led(8, 7, 12)
+  else g:led(8, 7, 3) end 
   -- copy button - dim if unpressed, highlight if pressed 
   if copy_mode  then 
     g:led(8, 8, 14)
