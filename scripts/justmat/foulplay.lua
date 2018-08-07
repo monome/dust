@@ -579,6 +579,9 @@ function gridkey(x, y, state)
   -- reset button
   if x == 5 and y == 7 and state == 1 then 
     reset_pattern()
+    if stopped == 1 then                                                    
+      step()
+    end
   end
   -- set pset load mode
   if x == 8 and y == 7 and state == 1 then
@@ -592,6 +595,10 @@ function gridkey(x, y, state)
       params:read("justmat/foulplay-" .. string.format("%02d", cellfromgrid(x, y)) .. ".pset")
       params:bang()
       current_pset = cellfromgrid(x, y)
+      -- if you were stopped before loading, stay stopped after loading
+      if stopped == 1 then
+        clk:stop()
+      end
     end
   end  
   -- copy button 
