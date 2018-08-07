@@ -14,10 +14,11 @@
 
 engine.name = 'Glut'
 local VOICES = 1
-voiceGate = 0
-shiftMode = 0
-grainPosition = 0
+local shiftMode = 0
 local channel = 0
+local SCREEN_FRAMERATE = 15
+local screen_refresh_metro
+local screen_dirty = true
 
 local function randomsample()
   local i, t, popen = 0, {}, io.popen
@@ -44,10 +45,15 @@ local function randomparams()
 end
 
 function init()
-
-  local phase_poll = poll.set('phase_' .. 1, function(pos) grainPosition = pos end)
-  phase_poll.time = 0.05
-  phase_poll:start()
+  -- Metro to call redraw()
+  screen_refresh_metro = metro.alloc()
+  screen_refresh_metro.callback = function(stage)
+    if screen_dirty then
+      screen_dirty = false
+      redraw()
+    end
+  end
+  screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
   
   local sep = ": "
 
@@ -101,24 +107,19 @@ end
 local function start_voice()
   reset_voice()
   engine.gate(1, 1)
-  voiceGate = 1
 end
 
 local function stop_voice()
-  voiceGate = 0
   engine.gate(1, 0)
 end
 
 function enc(n, d)
   if n == 1 then
     params:delta("1: volume", d)
-    redraw()
   elseif n == 2 then
     params:delta("1: speed", d)
-    redraw()
   elseif n == 3 then
     params:delta("1: pitch", d)
-    redraw()
   end
 end
 
@@ -137,6 +138,7 @@ function key(n, z)
       redraw()
     end
   end
+  screen_dirty = true
 end
 
 local function printRound(num, numDecimalPlaces)
@@ -176,7 +178,6 @@ function redraw()
         screen.fill()
       end
     end
-    
   else 
     -- tv guide
     screen.level(2)
@@ -241,7 +242,7 @@ function redraw()
     screen.move(2,56)
     screen.text("spread: " .. printRound(params:get("1: spread"), 1) .. "%")
   end
-  
+
   -- channel number
   screen.level(0)
   screen.rect(109,6,18,16)
