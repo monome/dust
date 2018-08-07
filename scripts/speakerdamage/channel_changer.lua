@@ -16,9 +16,6 @@ engine.name = 'Glut'
 local VOICES = 1
 local shiftMode = 0
 local channel = 0
-local SCREEN_FRAMERATE = 15
-local screen_refresh_metro
-local screen_dirty = true
 
 local function randomsample()
   local i, t, popen = 0, {}, io.popen
@@ -45,15 +42,6 @@ local function randomparams()
 end
 
 function init()
-  -- Metro to call redraw()
-  screen_refresh_metro = metro.alloc()
-  screen_refresh_metro.callback = function(stage)
-    if screen_dirty then
-      screen_dirty = false
-      redraw()
-    end
-  end
-  screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
   
   local sep = ": "
 
@@ -138,7 +126,6 @@ function key(n, z)
       redraw()
     end
   end
-  screen_dirty = true
 end
 
 local function printRound(num, numDecimalPlaces)
@@ -261,3 +248,4 @@ function redraw()
   
   screen.update()
 end
+ 
