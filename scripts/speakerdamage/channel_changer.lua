@@ -1,21 +1,22 @@
 -- channel changer
 --
--- your own ghosts thru 
+-- your tape transmitted thru 
 -- late-night static and
 -- broken antenna frequencies
 --
--- KEY 3: change channel  
--- KEY 1 (HOLD): tv guide
--- ENC 1: volume
--- ENC 2: speed
--- ENC 3: pitch
+-- KEY3: change channel  
+-- KEY1 hold: tv guide
+-- ENC1: volume
+-- ENC2: speed
+-- ENC3: pitch
 --
--- your display is not broken
+-- change the channel to begin
 
 engine.name = 'Glut'
 local VOICES = 1
-local shiftMode = 0
+local shift = 0
 local channel = 0
+local screen_dirty = true
 
 local function randomsample()
   local i, t, popen = 0, {}, io.popen
@@ -42,6 +43,15 @@ local function randomparams()
 end
 
 function init()
+  local SCREEN_FRAMERATE = 15
+  local screen_refresh_metro = metro.alloc()
+  screen_refresh_metro.callback = function()
+    if screen_dirty then
+      screen_dirty = false
+      redraw()
+    end
+  end
+  screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
   
   local sep = ": "
 
@@ -97,10 +107,6 @@ local function start_voice()
   engine.gate(1, 1)
 end
 
-local function stop_voice()
-  engine.gate(1, 0)
-end
-
 function enc(n, d)
   if n == 1 then
     params:delta("1: volume", d)
@@ -109,32 +115,63 @@ function enc(n, d)
   elseif n == 3 then
     params:delta("1: pitch", d)
   end
+  screen_dirty = true
 end
 
 function key(n, z)
   if n == 1 then
-    shiftMode = z
-    redraw()
+    shift = z
   elseif n == 3 then
     if z == 1 then
-      -- do nothing for now
+      -- nothing for now
     else
       channel = channel + 1
       params:set("1: sample", randomsample())
       randomparams()
       start_voice()
-      redraw()
     end
   end
+  screen_dirty = true
 end
 
-local function printRound(num, numDecimalPlaces)
+local function printround(num, numDecimalPlaces)
   local mult = 10^(numDecimalPlaces or 0)
   return math.floor(num * mult + 0.5) / mult
 end
 
-local function cleanFilename()
+local function drawtv()
+  --random screen pixels
+  local heighta = math.random(1,30)
+  local heightb = math.random(31,64)
+  for x=1,heighta do
+    for i=1,128 do
+      screen.level(math.random(0, 4))
+      screen.rect(i,x,1,1)
+      screen.fill()
+    end
+  end
+  for x=heighta+1,heightb-1 do
+    for i=1,128 do
+      screen.level(math.random(0, 6))
+      screen.rect(i,x,1,1)
+      screen.fill()
+    end
+  end
+  for x=heightb,64 do
+    for i=1,128 do
+      screen.level(math.random(0, 10))
+      screen.rect(i,x,1,1)
+      screen.fill()
+    end
+  end
+end
+
+local function cleanfilename()
   return(string.gsub(params:get("1: sample"), "/home/we/dust/audio/tape/", ""))
+end
+
+local function guidetext(parameter, measure)
+  return(parameter .. ": " .. printround(params:get("1: " .. parameter), 1) .. measure)
 end
 
 function redraw()
@@ -142,29 +179,8 @@ function redraw()
   screen.aa(1)
   screen.line_width(1.0)
   
-  if shiftMode == 0 then
-    --random screen pixels
-    for x=1,30 do
-      for i=1,128 do
-        screen.level(math.random(0, 4))
-        screen.rect(i,x,1,1)
-        screen.fill()
-      end
-    end
-    for x=31,42 do
-      for i=1,128 do
-        screen.level(math.random(0, 6))
-        screen.rect(i,x,1,1)
-        screen.fill()
-      end
-    end
-    for x=43,64 do
-      for i=1,128 do
-        screen.level(math.random(0, 10))
-        screen.rect(i,x,1,1)
-        screen.fill()
-      end
-    end
+  if shift == 0 then
+    drawtv()
   else 
     -- tv guide
     screen.level(2)
@@ -180,54 +196,54 @@ function redraw()
     screen.font_size(8)
     screen.move(3, 10)
     screen.level(0)
-    screen.text(cleanFilename())
+    screen.text(cleanfilename())
     screen.move(2, 8)
     screen.level(13)
-    screen.text(cleanFilename())
+    screen.text(cleanfilename())
     -- glitch title
     screen.move(35, 28)
     screen.level(1)
-    screen.text(cleanFilename())
+    screen.text(cleanfilename())
     screen.move(55, 52)
     screen.level(3)
-    screen.text(cleanFilename())
+    screen.text(cleanfilename())
     
     screen.level(0)
     screen.move(3, 18)
-    screen.text("speed: " .. printRound(params:get("1: speed"), 1) .. "%")
+    screen.text(guidetext("speed", "%"))
     screen.level(13)
     screen.move(2, 16)
-    screen.text("speed: " .. printRound(params:get("1: speed"), 1) .. "%")
+    screen.text(guidetext("speed", "%"))
     screen.level(0)
     screen.move(3, 26)
-    screen.text("jitter: " .. printRound(params:get("1: jitter"), 1) .. "ms")
+    screen.text(guidetext("jitter", "ms"))
     screen.level(13)
     screen.move(2, 24)
-    screen.text("jitter: " .. printRound(params:get("1: jitter"), 1) .. "ms")
+    screen.text(guidetext("jitter", "ms"))
     screen.level(1)
     screen.move(3, 34)
-    screen.text("size: " .. printRound(params:get("1: size"), 1) .. "ms")
+    screen.text(guidetext("size", "ms"))
     screen.level(14)
     screen.move(2, 32)
-    screen.text("size: " .. printRound(params:get("1: size"), 1) .. "ms")
+    screen.text(guidetext("size", "ms"))
     screen.level(2)
     screen.move(3, 42)
-    screen.text("density: " .. printRound(params:get("1: density"), 1) .. "hz")
+    screen.text(guidetext("density", "hz"))
     screen.level(15)
     screen.move(2, 40)
-    screen.text("density: " .. printRound(params:get("1: density"), 1) .. "hz")
+    screen.text(guidetext("density", "hz"))
     screen.level(2)
     screen.move(3, 50)
-    screen.text("pitch: " .. printRound(params:get("1: pitch"), 1) .. "st")
+    screen.text(guidetext("pitch", "st"))
     screen.level(15)
     screen.move(2, 48)
-    screen.text("pitch: " .. printRound(params:get("1: pitch"), 1) .. "st")
+    screen.text(guidetext("pitch", "st"))
     screen.level(2)
     screen.move(3,58)
-    screen.text("spread: " .. printRound(params:get("1: spread"), 1) .. "%")
+    screen.text(guidetext("spread", "%"))
     screen.level(15)
     screen.move(2,56)
-    screen.text("spread: " .. printRound(params:get("1: spread"), 1) .. "%")
+    screen.text(guidetext("spread", "%"))
   end
 
   -- channel number
@@ -248,4 +264,3 @@ function redraw()
   
   screen.update()
 end
- 
