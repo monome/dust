@@ -31,7 +31,6 @@ local playing = false
 local queued_playpos
 local playpos = -1
 local timer
-local key3down
 
 local ppqn = 24 
 local ticks
@@ -39,35 +38,50 @@ local ticks_to_next
 local odd_ppqn
 local even_ppqn
 
-local trigger_indicators = {}
-local grid_available
-
-local locks = {}
-
-local function set_lock(x, y, value) -- TODO: param locks
-  locks[y*maxwidth+x] = value
-end
-
-local function trig_is_locked(x, y) -- TODO: param locks
-  return locks[y*maxwidth+x]
-end
-
-local function get_lock(x, y) -- TODO: param locks
-  return locks[y*maxwidth+x]
-end
-
-local trigs = {}
+local trigs = {} -- TODO: change to 99 patterns rather than one
 
 local function set_trig(x, y, value)
   trigs[y*maxwidth+x] = value
-  if not value then
-    set_lock(x, y, nil)
-  end
 end
 
 local function trig_is_set(x, y)
   return trigs[y*maxwidth+x]
 end
+
+local function save_pattern_data()
+  --[[
+  local fd=io.open(data_dir .. "jah/step.data","w+")
+  TODO: 99 patterns
+  io.output(fd)
+  for i=1,112 do
+    io.write(pattern[i].data .. "\n")
+    for x=1,4 do
+      io.write(pattern[i].k[x] .. "\n")
+      io.write(pattern[i].n[x] .. "\n")
+    end
+  end
+  io.close(fd)
+  ]]
+end
+
+local function load_pattern_data()
+  --[[
+  TODO: 99 patterns
+  local fd=io.open(data_dir .. "jah/step.data","r")
+  if fd then
+    print("found datafile")
+    io.input(fd)
+    for i=1,112 do
+      pattern[i].data = tonumber(io.read())
+      for x=1,4 do
+        pattern[i].k[x] = tonumber(io.read())
+        pattern[i].n[x] = tonumber(io.read())
+      end
+    end   
+    io.close(fd)
+  end
+  ]]
+end  
 
 local function refresh_grid_button(x, y, refresh)
   if grid_device then
@@ -93,26 +107,28 @@ local function refresh_grid_button(x, y, refresh)
 end
 
 local function refresh_grid_column(x, refresh)
-  for y=1,height do
-    refresh_grid_button(x, y, false)
-  end
-  if refresh then
-    grid_device:refresh()
+  if grid_device then
+    for y=1,height do
+      refresh_grid_button(x, y, false)
+    end
+    if refresh then
+      grid_device:refresh()
+    end
   end
 end
 
 local function refresh_grid()
-  for x=1,maxwidth do
-    refresh_grid_column(x, false)
+  if grid_device then
+    for x=1,maxwidth do
+      refresh_grid_column(x, false)
+    end
+    grid_device:refresh()
   end
-  if grid_device then grid_device:refresh() end
 end
 
 local function is_even(number)
   return number % 2 == 0
 end
-
-local prev_locks
 
 local function tick()
   ticks = (ticks or -1) + 1
@@ -127,7 +143,6 @@ local function tick()
     else
       playpos = (playpos + 1) % 16
     end
-    local new_prev_locks = {}
     local ts = {}
     for y=1,8 do
       if trig_is_set(playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
@@ -135,16 +150,7 @@ local function tick()
       else
         ts[y] = 0
       end
-      if trig_is_locked(playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
-        engine.speed(speed_spec:map(get_lock(playpos+1, y)))
-        new_prev_locks[y] = true
-      else
-        if prev_locks and prev_locks[y] then
-          engine.speed(params:get(y.."speed"))
-        end
-      end
     end
-    prev_locks = new_prev_locks
     engine.multiTrig(ts[1], ts[2], ts[3], ts[4], ts[5], ts[6], ts[7], ts[8])
 
     if previous_playpos ~= -1 then
@@ -217,7 +223,7 @@ function init()
   timer = Metro.alloc()
   timer.callback = tick
 
-  params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata(?)
+  params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata
   params:set_action("grid width", function(value) update_metro_time() end)
   params:add_option("last row cuts", {"no", "yes"}, 1)
   params:set_action("last row cuts", function(value)
@@ -236,9 +242,11 @@ function init()
 
   params:add_separator()
   Ack.add_params()
-  params:bang()
 
   params:read("jah/step.pset")
+  params:bang()
+
+  load_pattern_data()
 
   playing = true
   timer:start()
@@ -249,6 +257,7 @@ function cleanup()
     grid_device:all(0)
     grid_device:refresh()
   end
+  save_pattern_data()
   params:write("jah/step.pset")
 end
 
@@ -278,9 +287,6 @@ function key(n, z)
     if z == 1 then
       playing = true
       timer:start()
-      key3down = true
-    else
-      key3down = false
     end
   end
   redraw()
@@ -298,15 +304,6 @@ function redraw()
     screen.level(15)
     screen.text("[] stopped")
   end
-  --[[
-  screen.level(3)
-  screen.move(50,30)
-  if playing then
-    screen.text(" > ")
-  else
-    screen.text(" < ")
-  end
-  ]]
   screen.font_size(8)
   screen.move(70,30)
   if playing then
