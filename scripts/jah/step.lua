@@ -26,6 +26,7 @@ local tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 local swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 
 local maxwidth = 16
+local gridwidth = maxwidth
 local height = 8
 local playing = false
 local queued_playpos
@@ -103,10 +104,8 @@ local function tick()
     if queued_playpos then
       playpos = queued_playpos
       queued_playpos = nil
-    elseif params:get("grid width") == 1 then
-      playpos = (playpos + 1) % 8
     else
-      playpos = (playpos + 1) % 16
+      playpos = (playpos + 1) % gridwidth
     end
     local ts = {}
     for y=1,8 do
@@ -171,6 +170,10 @@ end
 function Grid.add(dev)
   if not grid_device then
     dev.key = gridkey_event
+    if gridwidth ~= dev.rows then
+      print("new gridwidth:"..dev.rows)
+      gridwidth = dev.rows
+    end
     dev.remove = function()
       grid_device = nil
     end
@@ -189,8 +192,6 @@ function init()
   timer = Metro.alloc()
   timer.callback = tick
 
-  params:add_option("grid width", {"8", "16"}, 2) -- TODO: should now be possible to infer from grid metadata
-  params:set_action("grid width", function(value) update_metro_time() end)
   params:add_option("last row cuts", {"no", "yes"}, 1)
   params:set_action("last row cuts", function(value)
     last_row_cuts = (value == 2)
