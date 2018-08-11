@@ -38,7 +38,7 @@ local ticks_to_next
 local odd_ppqn
 local even_ppqn
 
-local trigs = {} -- TODO: change to 99 patterns rather than one
+local trigs = {}
 
 local function set_trig(x, y, value)
   trigs[y*maxwidth+x] = value
@@ -47,41 +47,6 @@ end
 local function trig_is_set(x, y)
   return trigs[y*maxwidth+x]
 end
-
-local function save_pattern_data()
-  --[[
-  local fd=io.open(data_dir .. "jah/step.data","w+")
-  TODO: 99 patterns
-  io.output(fd)
-  for i=1,112 do
-    io.write(pattern[i].data .. "\n")
-    for x=1,4 do
-      io.write(pattern[i].k[x] .. "\n")
-      io.write(pattern[i].n[x] .. "\n")
-    end
-  end
-  io.close(fd)
-  ]]
-end
-
-local function load_pattern_data()
-  --[[
-  TODO: 99 patterns
-  local fd=io.open(data_dir .. "jah/step.data","r")
-  if fd then
-    print("found datafile")
-    io.input(fd)
-    for i=1,112 do
-      pattern[i].data = tonumber(io.read())
-      for x=1,4 do
-        pattern[i].k[x] = tonumber(io.read())
-        pattern[i].n[x] = tonumber(io.read())
-      end
-    end   
-    io.close(fd)
-  end
-  ]]
-end  
 
 local function refresh_grid_button(x, y, refresh)
   if grid_device then
@@ -246,8 +211,6 @@ function init()
   params:read("jah/step.pset")
   params:bang()
 
-  load_pattern_data()
-
   playing = true
   timer:start()
 end
@@ -257,7 +220,6 @@ function cleanup()
     grid_device:all(0)
     grid_device:refresh()
   end
-  save_pattern_data()
   params:write("jah/step.pset")
 end
 
