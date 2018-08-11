@@ -112,15 +112,17 @@ function enc(n, d)
     params:delta("1: volume", d)
   elseif n == 2 then
     params:delta("1: speed", d)
+    screen_dirty = true
   elseif n == 3 then
     params:delta("1: pitch", d)
+    screen_dirty = true
   end
-  screen_dirty = true
 end
 
 function key(n, z)
   if n == 1 then
     shift = z
+    screen_dirty = true
   elseif n == 3 then
     if z == 1 then
       -- nothing for now
@@ -129,9 +131,9 @@ function key(n, z)
       params:set("1: sample", randomsample())
       randomparams()
       start_voice()
+      screen_dirty = true
     end
   end
-  screen_dirty = true
 end
 
 local function printround(num, numDecimalPlaces)
