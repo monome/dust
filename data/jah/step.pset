@@ -1,4 +1,5 @@
 "last row cuts": 2
+"cut quant": 1
 "beats per pattern": 4
 "tempo": 160.0
 "swing amount": 0
@@ -18,8 +19,8 @@
 "1: filter env atk": 0.001
 "1: filter env rel": 0.25
 "1: filter env mod": 0.0
-"1: delay send": -45.0
-"1: reverb send": -60.0
+"1: delay send": -43.876400520322
+"1: reverb send": -inf
 "2: sample": /home/we/dust/audio/common/606/606-SD.wav
 "2: start pos": 0
 "2: end pos": 1
@@ -36,7 +37,7 @@
 "2: filter env atk": 0.001
 "2: filter env rel": 0.25
 "2: filter env mod": 0.0
-"2: delay send": -60.0
+"2: delay send": -inf
 "2: reverb send": -6.0
 "3: sample": /home/we/dust/audio/common/606/606-CH.wav
 "3: start pos": 0
@@ -54,8 +55,8 @@
 "3: filter env atk": 0.001
 "3: filter env rel": 0.25
 "3: filter env mod": 0.0
-"3: delay send": -60.0
-"3: reverb send": -60.0
+"3: delay send": -inf
+"3: reverb send": -inf
 "4: sample": /home/we/dust/audio/common/606/606-OH.wav
 "4: start pos": 0
 "4: end pos": 1
@@ -72,8 +73,8 @@
 "4: filter env atk": 0.001
 "4: filter env rel": 0.25
 "4: filter env mod": 0.0
-"4: delay send": -60.0
-"4: reverb send": -60.0
+"4: delay send": -inf
+"4: reverb send": -inf
 "5: sample": /home/we/dust/audio/common/606/606-LT.wav
 "5: start pos": 0
 "5: end pos": 1
@@ -90,8 +91,8 @@
 "5: filter env atk": 0.001
 "5: filter env rel": 0.25
 "5: filter env mod": 0.0
-"5: delay send": -24.6
-"5: reverb send": -60.0
+"5: delay send": -28.608246736829
+"5: reverb send": -inf
 "6: sample": /home/we/dust/audio/common/606/606-HT.wav
 "6: start pos": 0
 "6: end pos": 1
@@ -109,7 +110,7 @@
 "6: filter env rel": 0.91
 "6: filter env mod": 0.0
 "6: delay send": -33.0
-"6: reverb send": -60.0
+"6: reverb send": -inf
 "7: sample": /home/we/dust/audio/common/606/606-CY.wav
 "7: start pos": 0
 "7: end pos": 1
@@ -126,8 +127,8 @@
 "7: filter env atk": 0.001
 "7: filter env rel": 0.25
 "7: filter env mod": 0.0
-"7: delay send": -60.0
-"7: reverb send": -60.0
+"7: delay send": -inf
+"7: reverb send": -inf
 "8: sample": -
 "8: start pos": 0
 "8: end pos": 1
@@ -144,8 +145,8 @@
 "8: filter env atk": 0.001
 "8: filter env rel": 0.25
 "8: filter env mod": 0.0
-"8: delay send": -60.0
-"8: reverb send": -60.0
+"8: delay send": -inf
+"8: reverb send": -inf
 "delay time": 0.37257799675309
 "delay feedback": 0.625
 "delay level": -10.0

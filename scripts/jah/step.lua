@@ -99,6 +99,10 @@ end
 local function tick()
   ticks = (ticks or -1) + 1
 
+  if queued_playpos and params:get("cut quant") == 1 then
+    ticks_to_next = 0
+  end
+
   if (not ticks_to_next) or ticks_to_next == 0 then
     local previous_playpos = playpos
     if queued_playpos then
@@ -171,7 +175,6 @@ function Grid.add(dev)
   if not grid_device then
     dev.key = gridkey_event
     if gridwidth ~= dev.cols then
-      print("new gridwidth:"..dev.cols)
       gridwidth = dev.cols
     end
     dev.remove = function()
@@ -197,6 +200,7 @@ function init()
     last_row_cuts = (value == 2)
     refresh_grid()
   end)
+  params:add_option("cut quant", {"no", "yes"}, 1)
   params:add_number("beats per pattern", 1, 8, 4)
   params:set_action("beats per pattern", function(value) update_metro_time() end)
   params:add_control("tempo", tempo_spec)
