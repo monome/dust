@@ -70,7 +70,7 @@ Engine_Ack : CroneEngine {
 
 		// TODO: there's too much code duplication between mono and stereo SynthDef, look into using SynthDef.wrap or splitting up SynthDef for DRY
 		SynthDef(
-			(this.monoSamplePlayerDefName.asString++"_Test").asSymbol,
+			(this.monoSamplePlayerDefName.asString).asSymbol,
 			{
 				|
 				gate,
@@ -212,7 +212,7 @@ Engine_Ack : CroneEngine {
 		).add;
 
 		SynthDef(
-			(this.stereoSamplePlayerDefName.asString++"_Test").asSymbol,
+			(this.stereoSamplePlayerDefName.asString).asSymbol,
 			{
 				|
 				gate,
@@ -358,7 +358,7 @@ Engine_Ack : CroneEngine {
 			{ |in, out, delayTime, feedback, level|
 				var sig = In.ar(in, 2);
 				var sigfeedback = LocalIn.ar(2);
-				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime);
+				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime); // TODO: - ControlDur.ir
 				LocalOut.ar(sig * feedback);
 				Out.ar(out, sig * level.dbamp);
 			},
@@ -520,7 +520,7 @@ Engine_Ack : CroneEngine {
 			// TODO: this combined group/synth method could facilitate self-freeing synths without unneccessary node does not exist error messages in a general SynthDef-generating engine too
 
 			samplePlayerSynths[channelnum] = Synth.new(
-				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++"_Test").asSymbol,
+				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString).asSymbol,
 				args: samplePlayerSynthArgs,
 				target: channelGroups[channelnum]
 			);
