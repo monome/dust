@@ -175,6 +175,7 @@ function Grid.add(dev)
       grid_device = nil
     end
     grid_device = dev
+    refresh_grid()
   end
 end
 
