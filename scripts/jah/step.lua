@@ -170,9 +170,9 @@ end
 function Grid.add(dev)
   if not grid_device then
     dev.key = gridkey_event
-    if gridwidth ~= dev.rows then
-      print("new gridwidth:"..dev.rows)
-      gridwidth = dev.rows
+    if gridwidth ~= dev.cols then
+      print("new gridwidth:"..dev.cols)
+      gridwidth = dev.cols
     end
     dev.remove = function()
       grid_device = nil
