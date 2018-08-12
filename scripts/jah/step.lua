@@ -25,9 +25,9 @@ local grid_device
 local tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 local swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 
-local maxwidth = 16
-local gridwidth = maxwidth
-local height = 8
+local MAXWIDTH = 16
+local HEIGHT = 8
+local gridwidth = MAXWIDTH
 local playing = false
 local queued_playpos
 local playpos = -1
@@ -42,12 +42,44 @@ local even_ppqn
 local trigs = {}
 
 local function set_trig(x, y, value)
-  trigs[y*maxwidth+x] = value
+  trigs[y*MAXWIDTH+x] = value
 end
 
 local function trig_is_set(x, y)
-  return trigs[y*maxwidth+x]
+  return trigs[y*MAXWIDTH+x]
 end
+
+local function save_pattern()
+  local fd=io.open(data_dir .. "jah/step.data","w+")
+  io.output(fd)
+  for y=1,HEIGHT do
+    for x=1,MAXWIDTH do
+      local int
+      if trig_is_set(x, y) then
+        int = 1
+      else
+        int = 0
+      end
+      io.write(int .. "\n")
+    end
+  end
+  io.close(fd)
+end
+
+local function load_pattern()
+  local fd=io.open(data_dir .. "jah/step.data","r")
+  if fd then
+    print("found datafile")
+    io.input(fd)
+    for y=1,HEIGHT do
+      for x=1,MAXWIDTH do
+        local int = tonumber(io.read())
+        set_trig(x, y, int == 1)
+      end
+    end   
+    io.close(fd)
+  end
+end  
 
 local function refresh_grid_button(x, y, refresh)
   if grid_device then
@@ -74,7 +106,7 @@ end
 
 local function refresh_grid_column(x, refresh)
   if grid_device then
-    for y=1,height do
+    for y=1,HEIGHT do
       refresh_grid_button(x, y, false)
     end
     if refresh then
@@ -85,7 +117,7 @@ end
 
 local function refresh_grid()
   if grid_device then
-    for x=1,maxwidth do
+    for x=1,MAXWIDTH do
       refresh_grid_column(x, false)
     end
     grid_device:refresh()
@@ -186,8 +218,8 @@ function Grid.add(dev)
 end
 
 function init()
-  for x=1,maxwidth do
-    for y=1,height do
+  for x=1,MAXWIDTH do
+    for y=1,HEIGHT do
       set_trig(x, y, false)
     end
   end
@@ -214,6 +246,7 @@ function init()
   params:add_separator()
   Ack.add_params()
 
+  load_pattern()
   params:read("jah/step.pset")
   params:bang()
 
@@ -227,6 +260,7 @@ function cleanup()
     grid_device:refresh()
   end
   params:write("jah/step.pset")
+  save_pattern()
 end
 
 function enc(n, delta)
