@@ -24,6 +24,8 @@ local ripple_decay_rate = 1 / 0.5 / screen_framerate
 local ripple_growth_rate = 1 / 0.02 / screen_framerate
 local screen_notes = {}
 
+local MAX_NUM_VOICES = 16
+
 engine.name = 'PolySub'
 
 -- pythagorean minor/major, kinda
@@ -175,7 +177,7 @@ end
 function grid_note(e)
   local note = ((7-e.y)*5) + e.x
   if e.state > 0 then
-    if nvoices < 6 then
+    if nvoices < MAX_NUM_VOICES then
       --engine.start(id, getHz(x, y-1))
       --print("grid > "..id.." "..note)
       engine.start(e.id, getHzET(note))
@@ -199,7 +201,7 @@ end
 function grid_note_trans(e)
   local note = ((7-e.y+(root.y-trans.y))*5) + e.x + (trans.x-root.x)
   if e.state > 0 then
-    if nvoices < 6 then
+    if nvoices < MAX_NUM_VOICES then
       --engine.start(id, getHz(x, y-1))
       --print("grid > "..id.." "..note)
       engine.start(e.id, getHzET(note))
@@ -341,7 +343,7 @@ function redraw()
 end
 
 local function note_on(note, vel)
-  if nvoices < 6 then
+  if nvoices < MAX_NUM_VOICES then
     --engine.start(id, getHz(x, y-1))
     engine.start(note, getHzET(note))
     start_screen_note(note)
