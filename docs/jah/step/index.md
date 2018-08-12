@@ -31,7 +31,7 @@ Options are available in the MENU > PARAMETERS list.
 Script options:
 
 - `last row cuts` - yes or no. If yes row 8 will cut playhead position.
-- `cut ` - yes or no. If yes playhead position cutting will be quantized to one step.
+- `cut quant` - yes or no. If yes playhead position cutting will be quantized to one step.
 - `tempo` - 20-300 BPM.
 - `swing amount` - amount to swing odd steps (0-100%).
 
