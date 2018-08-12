@@ -50,6 +50,7 @@ Engine_SoftCut : CroneEngine {
 		gr = Event.new;
 		gr.pb = Group.new(context.xg, addAction:\addToTail);
 		gr.rec = Group.after(context.ig);
+		gr.voices = ParGroup.new(context.xg, addAction:\addToHead);
 
 		s.sync;
 
@@ -73,7 +74,7 @@ Engine_SoftCut : CroneEngine {
 		//-- voices
 		postln("voices...");
 		voices = Array.fill(nvoices, { |i|
-			SoftCutVoice.new(s, context.xg, buf, bus.rec[i].index, bus.pb[i].index);
+			SoftCutVoice.new(s, gr.voices, buf, bus.rec[i].index, bus.pb[i].index);
 		});
 		s.sync;
 			// by default, place the first n-1 voices equally in the buffer, without overlap

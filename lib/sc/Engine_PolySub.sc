@@ -97,7 +97,7 @@ Engine_PolySub : CroneEngine {
 	}
 
 	alloc {
-		gr = Group.new(context.xg);
+		gr = ParGroup.new(context.xg);
 
 		voices = Dictionary.new;
 		ctlBus = Dictionary.new;
