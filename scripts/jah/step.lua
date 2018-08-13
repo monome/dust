@@ -94,7 +94,7 @@ local function refresh_grid_button(x, y, refresh)
         grid_device:led(x, y, CLEAR_LEVEL)
       end
     else
-      if trig_is_set(patternno, x, y) then
+      if trig_is_set(params:get("pattern"), x, y) then
         grid_device:led(x, y, TRIG_LEVEL)
       elseif x-1 == playpos then
         grid_device:led(x, y, PLAYPOS_LEVEL)
@@ -149,7 +149,7 @@ local function tick()
     end
     local ts = {}
     for y=1,8 do
-      if trig_is_set(patternno, playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
+      if trig_is_set(params:get("pattern"), playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
         ts[y] = 1
       else
         ts[y] = 0
@@ -192,7 +192,7 @@ local function gridkey_event(x, y, state)
     if params:get("last row cuts") == 2 and y == 8 then
       queued_playpos = x-1
     else
-      set_trig(params:get("pattern"), x, y, trig_is_set(patternno, x, y))
+      set_trig(params:get("pattern"), x, y, not trig_is_set(params:get("pattern"), x, y))
       refresh_grid_button(x, y, true)
     end
     if grid_device then
