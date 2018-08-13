@@ -25,6 +25,7 @@ local grid_device
 local tempo_spec = ControlSpec.new(20, 300, ControlSpec.WARP_LIN, 0, 120, "BPM")
 local swing_amount_spec = ControlSpec.new(0, 100, ControlSpec.WARP_LIN, 0, 0, "%")
 
+local NUMPATTERNS = 99
 local MAXWIDTH = 16
 local HEIGHT = 8
 local gridwidth = MAXWIDTH
@@ -41,42 +42,45 @@ local even_ppqn
 
 local trigs = {}
 
-local function set_trig(x, y, value)
-  trigs[y*MAXWIDTH+x] = value
+local function set_trig(patternno, x, y, value)
+  trigs[patternno*MAXWIDTH*HEIGHT + y*MAXWIDTH + x] = value
 end
 
-local function trig_is_set(x, y)
-  return trigs[y*MAXWIDTH+x]
+local function trig_is_set(patternno, x, y)
+  return trigs[patternno*MAXWIDTH*HEIGHT + y*MAXWIDTH + x]
 end
 
-local function save_pattern()
+local function save_patterns()
   local fd=io.open(data_dir .. "jah/step.data","w+")
   io.output(fd)
-  for y=1,HEIGHT do
-    for x=1,MAXWIDTH do
-      local int
-      if trig_is_set(x, y) then
-        int = 1
-      else
-        int = 0
+  for patternno=1,NUMPATTERNS do
+    for y=1,HEIGHT do
+      for x=1,MAXWIDTH do
+        local int
+        if trig_is_set(patternno, x, y) then
+          int = 1
+        else
+          int = 0
+        end
+        io.write(int .. "\n")
       end
-      io.write(int .. "\n")
     end
   end
   io.close(fd)
 end
 
-local function load_pattern()
+local function load_patterns()
   local fd=io.open(data_dir .. "jah/step.data","r")
   if fd then
     print("found datafile")
     io.input(fd)
-    for y=1,HEIGHT do
-      for x=1,MAXWIDTH do
-        local int = tonumber(io.read())
-        set_trig(x, y, int == 1)
-      end
-    end   
+    for patternno=1,NUMPATTERNS do
+      for y=1,HEIGHT do
+        for x=1,MAXWIDTH do
+          set_trig(patternno, x, y, tonumber(io.read()) == 1)
+        end
+      end   
+    end
     io.close(fd)
   end
 end  
@@ -90,7 +94,7 @@ local function refresh_grid_button(x, y, refresh)
         grid_device:led(x, y, CLEAR_LEVEL)
       end
     else
-      if trig_is_set(x, y) then
+      if trig_is_set(patternno, x, y) then
         grid_device:led(x, y, TRIG_LEVEL)
       elseif x-1 == playpos then
         grid_device:led(x, y, PLAYPOS_LEVEL)
@@ -145,7 +149,7 @@ local function tick()
     end
     local ts = {}
     for y=1,8 do
-      if trig_is_set(playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
+      if trig_is_set(patternno, playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
         ts[y] = 1
       else
         ts[y] = 0
@@ -188,13 +192,8 @@ local function gridkey_event(x, y, state)
     if params:get("last row cuts") == 2 and y == 8 then
       queued_playpos = x-1
     else
-      if trig_is_set(x, y) then
-        set_trig(x, y, false)
-        refresh_grid_button(x, y, true)
-      else
-        set_trig(x, y, true)
-        refresh_grid_button(x, y, true)
-      end
+      set_trig(params:get("pattern"), x, y, trig_is_set(patternno, x, y))
+      refresh_grid_button(x, y, true)
     end
     if grid_device then
       grid_device:refresh()
@@ -218,15 +217,19 @@ function Grid.add(dev)
 end
 
 function init()
-  for x=1,MAXWIDTH do
-    for y=1,HEIGHT do
-      set_trig(x, y, false)
+  for patternno=1,NUMPATTERNS do
+    for x=1,MAXWIDTH do
+      for y=1,HEIGHT do
+        set_trig(patternno, x, y, false)
+      end
     end
   end
 
   timer = Metro.alloc()
   timer.callback = tick
 
+  params:add_number("pattern", 1, NUMPATTERNS, 1)
+  params:set_action("pattern", function(value) refresh_grid() end)
   params:add_option("last row cuts", {"no", "yes"}, 1)
   params:set_action("last row cuts", function(value)
     last_row_cuts = (value == 2)
@@ -246,7 +249,7 @@ function init()
   params:add_separator()
   Ack.add_params()
 
-  load_pattern()
+  load_patterns()
   params:read("jah/step.pset")
   params:bang()
 
@@ -260,7 +263,7 @@ function cleanup()
     grid_device:refresh()
   end
   params:write("jah/step.pset")
-  save_pattern()
+  save_patterns()
 end
 
 function enc(n, delta)
