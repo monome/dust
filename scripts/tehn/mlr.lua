@@ -717,6 +717,22 @@ v.enc[vCLIP] = function(n,d)
   dirtygrid=true
 end
 
+local function truncateMiddle (str, maxLength, separator)
+  maxLength = maxLength or 30
+  separator = separator or "..."
+
+  if (maxLength < 1) then return str end
+  if (string.len(str) <= maxLength) then return str end
+  if (maxLength == 1) then return string.sub(str, 1, 1) .. separator end
+
+  midpoint = math.ceil(string.len(str) / 2)
+  toremove = string.len(str) - maxLength
+  lstrip = math.ceil(toremove / 2)
+  rstrip = toremove - lstrip
+
+  return string.sub(str, 1, midpoint - lstrip) .. separator .. string.sub(str, 1 + midpoint + rstrip)
+end
+
 v.redraw[vCLIP] = function()
   screen.clear()
   screen.level(15)
@@ -724,15 +740,15 @@ v.redraw[vCLIP] = function()
   screen.text("CLIP > "..clip_sel)
 
   screen.move(10,50)
-  screen.text(clip[track[clip_sel].clip].name)
+  screen.text(truncateMiddle(clip[track[clip_sel].clip].name, 18))
   screen.level(3)
   screen.move(10,60)
   screen.text("name "..track[clip_sel].clip)
 
-  screen.move(70,50)
+  screen.move(100,50)
   screen.text(2^(clip_clear_mult-2))
   screen.level(3)
-  screen.move(70,60)
+  screen.move(100,60)
   screen.text("resize")
 
   screen.update()
