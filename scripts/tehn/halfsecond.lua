@@ -18,12 +18,23 @@ function init()
   engine.rate(1,1)
   engine.reset(1)
   engine.start(1)
+
+  rec = 1
 end
 
 function redraw()
   screen.clear()
-  screen.level(4)
+  screen.level(rec == 1 and 15 or 2)
   screen.move(10,10)
   screen.text("softcut")
   screen.update()
 end
+
+function key(n,z)
+  if n==3 and z==1 then
+    rec = 1 - rec
+    engine.rec_on(1,rec)
+    redraw()
+  end
+end
+
