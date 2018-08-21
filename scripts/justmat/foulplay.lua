@@ -717,7 +717,7 @@ function grid_redraw()
 end
 
 function savestate()
-  local file = io.open(data_dir .. "justmat/foulplay.data", "w+")
+  local file = io.open(data_dir .. "justmat/foulplay-pattern.data", "w+")
   io.output(file)
   for j = 1, 25 do
     for i = 1, 8 do
@@ -734,7 +734,7 @@ function savestate()
 end
 
 function loadstate()
-  local file = io.open(data_dir .. "justmat/foulplay.data", "r")
+  local file = io.open(data_dir .. "justmat/foulplay-pattern.data", "r")
   if file then
     print("datafile found")
     io.input(file)
