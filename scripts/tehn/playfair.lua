@@ -13,6 +13,8 @@ require 'er'
 
 engine.name = 'Ack'
 
+local g = grid.connect(1)
+
 local ack = require 'jah/ack'
 local BeatClock = require 'beatclock'
 
@@ -68,7 +70,7 @@ function init()
   for i=1,4 do reer(i) end
 
   screen.line_width(1)
-  
+
   clk.on_step = step
   clk.on_select_internal = function() clk:start() end
   clk.on_select_external = reset_pattern
@@ -82,9 +84,9 @@ function init()
 
   params:read("tehn/playfair.pset")
   params:bang()
-  
+
   playfair_load()
-  
+
   clk:start()
 end
 
@@ -98,7 +100,7 @@ function step()
     for i=1,4 do track[i].pos = 1 end
     reset = false
   else
-    for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end 
+    for i=1,4 do track[i].pos = (track[i].pos % track[i].n) + 1 end
   end
   trig()
   redraw()
@@ -116,10 +118,10 @@ function key(n,z)
       running = true
     end
   end
-  redraw() 
+  redraw()
 end
 
-function enc(n,d) 
+function enc(n,d)
   if n==1 then
     if alt==1 then
       params:delta("bpm",d)
@@ -128,7 +130,7 @@ function enc(n,d)
     end
   elseif n == 2 then
     track[track_edit].k = util.clamp(track[track_edit].k+d,0,track[track_edit].n)
-  elseif n==3 then 
+  elseif n==3 then
     track[track_edit].n = util.clamp(track[track_edit].n+d,1,32)
     track[track_edit].k = util.clamp(track[track_edit].k,0,track[track_edit].n)
   end
@@ -145,7 +147,7 @@ function redraw()
     screen.text(params:get("bpm"))
   else
     for i=1,clk.beat+1 do
-       screen.rect(i*2,1,1,2)  
+       screen.rect(i*2,1,1,2)
     end
     screen.fill()
   end
@@ -163,8 +165,8 @@ function redraw()
         screen.line_rel(0,-8)
       else
         screen.line_rel(0,-2)
-      end 
-      screen.stroke() 
+      end
+      screen.stroke()
     end
   end
   screen.update()
@@ -177,12 +179,12 @@ end
 
 local keytimer = 0
 
-function gridkey(x,y,z)
+function g.handler(x,y,z)
   local id = x + (y-1)*16
   if z==1 then
     if id > 16 then
       keytimer = util.time()
-    elseif id < 17 then 
+    elseif id < 17 then
       params:read("tehn/playfair-" .. string.format("%02d",id) .. ".pset")
       params:bang()
       current_pset = id
@@ -208,22 +210,22 @@ function gridkey(x,y,z)
           pattern[id].k[i] = track[i].k
           pattern[id].data = 1
         end
-      end 
+      end
     end
     gridredraw()
   end
 end
 
 function gridredraw()
-  g:all(0)
+  g.all(0)
   if current_pset > 0 and current_pset < 17 then
-    g:led(current_pset,1,9)
+    g.led(current_pset,1,9)
   end
   for x=1,16 do
     for y=2,8 do
-      local id = x + (y-2)*16 
+      local id = x + (y-2)*16
       if pattern[id].data == 1 then
-        g:led(x,y,id == current_pattern and 15 or 4)
+        g.led(x,y,id == current_pattern and 15 or 4)
       end
     end
   end
@@ -255,10 +257,10 @@ function playfair_load()
         pattern[i].k[x] = tonumber(io.read())
         pattern[i].n[x] = tonumber(io.read())
       end
-    end   
+    end
     io.close(fd)
   end
-end  
+end
 
 cleanup = function()
   playfair_save()
