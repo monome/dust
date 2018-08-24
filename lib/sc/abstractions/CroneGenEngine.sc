@@ -1,6 +1,8 @@
 CroneGenEngine : CroneEngine {
 	classvar <>debug = true;
 	classvar defaultPolyphony = 6;
+	var mainGroup;
+	var voiceGroup;
 	var metadata;
 	var <controlBusses; // TODO: make private
 	var synths;
@@ -49,6 +51,8 @@ CroneGenEngine : CroneEngine {
 */
 		var controlsToExposeAsCommands = metadata[\controlsToExposeAsCommands];
 
+		mainGroup = Group.tail(context.xg);
+		voiceGroup = ParGroup.tail(mainGroup);
 		controlBusses = IdentityDictionary.new;
 
         args = this.autorouteInputs(inControlName, args);
@@ -166,7 +170,7 @@ CroneGenEngine : CroneEngine {
 							synths[midinote] = Synth(
 								this.class.synthDesc.name,
 								args: noteOnArgs,
-								target: context.xg
+								target: voiceGroup
 							);
 						});
 					}
@@ -252,7 +256,7 @@ CroneGenEngine : CroneEngine {
 		switch (type)
 		{\persistent} {
 			// 1:1 synth and engine, synth is spawned until engine is changed
-			synths = [ Synth(this.class.synthDesc.name, args: args, target: context.xg) ];
+			synths = [ Synth(this.class.synthDesc.name, args: args, target: mainGroup) ];
 		}
 /*
 		{\polyphonicFreeSelf} {
@@ -340,7 +344,7 @@ CroneGenEngine : CroneEngine {
 
 	polyphonicReuseSynthsRespawnSynths { |polyphony|
 		synths do: _.free;
-		synths = polyphony.collect { Synth.tail(context.xg, this.class.synthDesc.name, savedArgs) };
+		synths = polyphony.collect { Synth.tail(voiceGroup, this.class.synthDesc.name, savedArgs) };
 	}
 
 	free {

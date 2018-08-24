@@ -6,6 +6,7 @@ Engine_Ack : CroneEngine {
 	var <channelControlBusses;
 	var <samplePlayerSynths;
 
+	var sourceGroup;
 	var effectsGroup;
 	var delayBus;
 	var reverbBus;
@@ -390,7 +391,9 @@ Engine_Ack : CroneEngine {
 			)
 		).add;
 
-		channelGroups = numChannels collect: { Group.tail(context.xg) };
+		sourceGroup = ParGroup.tail(context.xg);
+		context.server.sync; // TODO: not sure this is needed?
+		channelGroups = numChannels collect: { Group.tail(sourceGroup) };
 		channelControlBusses = numChannels collect: {
 			#[
 				sampleStart,
@@ -432,7 +435,7 @@ Engine_Ack : CroneEngine {
 				sym -> bus
 			}.asDict
 		};
-		effectsGroup = Group.tail(context.xg);
+		effectsGroup = Group.tail(context.xg); // TODO: ParGroup applicable here too?
 
 		// TODO: weirdness buffers = numChannels collect: { Buffer.new };
 		buffers = numChannels collect: { Buffer.alloc(numFrames: 1) };
