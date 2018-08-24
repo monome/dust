@@ -267,7 +267,7 @@ enc = function(n,d)
   else _enc(n,d) end
 end
 redraw = function() _redraw() end
-g.handler = function(x,y,z) _gridkey(x,y,z) end
+g.event = function(x,y,z) _gridkey(x,y,z) end
 
 set_view = function(x)
   --print("set view: "..x)

@@ -137,7 +137,7 @@ function reset_pattern()
   clk:reset()
 end
 
-function g.handler(x, y, z)
+function g.event(x, y, z)
   if z > 0 then
     if edit_mode == 1 then
       if one.data[x] == 9-y then

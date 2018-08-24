@@ -122,7 +122,7 @@ function init()
 
 end
 
-function g.handler(x, y, z)
+function g.event(x, y, z)
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then

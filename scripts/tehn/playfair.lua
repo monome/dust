@@ -179,7 +179,7 @@ end
 
 local keytimer = 0
 
-function g.handler(x,y,z)
+function g.event(x,y,z)
   local id = x + (y-1)*16
   if z==1 then
     if id > 16 then
