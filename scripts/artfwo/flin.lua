@@ -10,7 +10,7 @@
 engine.name = 'PolySub'
 
 local g = grid.connect(1)
-function g.handler(x,y,z) gridkey(x,y,z) end
+function g.event(x,y,z) gridkey(x,y,z) end
 
 local GRID_HEIGHT = 8
 local DURATION_1 = 1 / 20
