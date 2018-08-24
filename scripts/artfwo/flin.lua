@@ -9,6 +9,9 @@
 
 engine.name = 'PolySub'
 
+local g = grid.connect(1)
+function g.handler(x,y,z) gridkey(x,y,z) end
+
 local GRID_HEIGHT = 8
 local DURATION_1 = 1 / 20
 local GRID_FRAMERATE = 1 / 60
@@ -32,13 +35,13 @@ local function draw_cycle(x, stage)
 
   if g then
     for y=1, GRID_HEIGHT do
-      g:led(x, y, cycles[x].running and 5 or 0)
+      g.led(x, y, cycles[x].running and 5 or 0)
     end
 
     if cycles[x].running then
       for y=1, GRID_HEIGHT do
         if leds[y] > 0 then
-          g:led(x, y, 15)
+          g.led(x, y, 15)
         end
       end
     end
@@ -153,7 +156,7 @@ function init()
   params:add_control("cutRel", controlspec.new(0.01,10,"lin",0,1,""))
   params:set_action("cutRel", function(x) engine.cutRel(x) end)
 
-  if g then g:all(0) end
+  if g then g.all(0) end
 
   grid_refresh_metro = metro.alloc()
   grid_refresh_metro.time = GRID_FRAMERATE

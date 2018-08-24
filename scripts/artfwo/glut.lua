@@ -12,6 +12,9 @@
 
 engine.name = 'Glut'
 
+local g = grid.connect(1)
+function g.handler(x,y,z) gridkey(x,y,z) end
+
 local VOICES = 7
 
 local positions = {}
