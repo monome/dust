@@ -27,7 +27,7 @@ local cs = require 'controlspec'
 
 engine.name = 'PolyPerc'
 
-local g = grid.connect(1)
+local g = grid.connect()
 
 local KEY3 = false
 local alt = false

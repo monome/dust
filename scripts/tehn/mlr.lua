@@ -24,7 +24,7 @@
 
 engine.name = "SoftCut"
 
-local g = grid.connect(1)
+local g = grid.connect()
 
 local pattern_time = require 'pattern_time'
 

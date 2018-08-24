@@ -13,12 +13,14 @@ require 'er'
 
 engine.name = 'Ack'
 
-local g = grid.connect(1)
+local g = grid.connect()
 
 local ack = require 'jah/ack'
 local BeatClock = require 'beatclock'
 
 local clk = BeatClock.new()
+local clk_midi = midi.connect()
+clk_midi.event = clk.process_midi
 
 local reset = false
 local alt = false
@@ -170,10 +172,6 @@ function redraw()
     end
   end
   screen.update()
-end
-
-midi.add = function(dev)
-  dev.event = clk.process_midi
 end
 
 

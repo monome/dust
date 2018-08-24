@@ -11,7 +11,7 @@
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
 
-local g = grid.connect(1)
+local g = grid.connect()
 
 local mode_transpose = 0
 local root = { x=5, y=5 }
