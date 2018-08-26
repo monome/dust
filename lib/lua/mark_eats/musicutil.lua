@@ -185,7 +185,7 @@ end
 -- @return Name string (eg, "C#3").
 function MusicUtil.note_num_to_name(note_num, include_octave)
   local name = MusicUtil.NOTE_NAMES[note_num % 12 + 1]
-  if include_octave then name = name .. math.floor(note_num / 12 - 1) end
+  if include_octave then name = name .. math.floor(note_num / 12 - 2) end
   return name
 end
 
