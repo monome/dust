@@ -52,6 +52,8 @@ local edit_pos = 1
 
 local BeatClock = require 'beatclock'
 local clk = BeatClock.new()
+local clk_midi = midi.connect()
+clk_midi.event = clk.process_midi
 
 
 function build_scale()
@@ -293,11 +295,3 @@ function redraw()
   screen.update()
 end
 
-midi.add = function(dev)
-  print('awake: midi device added', dev.id, dev.name)
-  midi_device = dev
-end
-midi.remove = function(dev)
-  print('awake: midi device removed', dev.id, dev.name)
-  midi_device = nil
-end
