@@ -27,6 +27,8 @@ local cs = require 'controlspec'
 
 engine.name = 'PolyPerc'
 
+local g = grid.connect()
+
 local KEY3 = false
 local alt = false
 
@@ -114,8 +116,7 @@ function init()
   
 end
  
-function step()
-    
+function step() 
   one.pos = one.pos + 1
   if one.pos > one.length then one.pos = 1 end
   two.pos = two.pos + 1
@@ -154,28 +155,31 @@ function gridkey(x, y, z)
   end 
 end
 
+g.handler = gridkey
+
+
 function gridredraw()
-  g:all(0) 
+  g.all(0) 
   if edit_mode == 1 then
     for x = 1, 16 do
-      if one.data[x] > 0 then g:led(x, 9-one.data[x], 5) end
+      if one.data[x] > 0 then g.led(x, 9-one.data[x], 5) end
     end
     if one.data[one.pos] > 0 then
-      g:led(one.pos, 9-one.data[one.pos], 15)
+      g.led(one.pos, 9-one.data[one.pos], 15)
     else
-      g:led(one.pos, 1, 3)
+      g.led(one.pos, 1, 3)
     end
   else 
     for x = 1, 16 do
-      if two.data[x] > 0 then g:led(x, 9-two.data[x], 5) end
+      if two.data[x] > 0 then g.led(x, 9-two.data[x], 5) end
     end
     if two.data[two.pos] > 0 then
-      g:led(two.pos, 9-two.data[two.pos], 15)
+      g.led(two.pos, 9-two.data[two.pos], 15)
     else
-      g:led(two.pos, 1, 3)
+      g.led(two.pos, 1, 3)
     end
   end 
-  g:refresh()
+  g.refresh()
 end
 
 function enc(n, delta)
