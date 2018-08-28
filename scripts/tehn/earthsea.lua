@@ -11,6 +11,8 @@
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
 
+local g = grid.connect()
+
 local mode_transpose = 0
 local root = { x=5, y=5 }
 local trans = { x=5, y=5 }
@@ -120,7 +122,7 @@ function init()
 
 end
 
-function gridkey(x, y, z)
+function g.event(x, y, z)
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then
@@ -221,14 +223,14 @@ function grid_note_trans(e)
 end
 
 function gridredraw()
-  g:all(0)
-  g:led(1,1,2 + pat.rec * 10)
-  g:led(1,2,2 + pat.play * 10)
-  g:led(1,8,2 + mode_transpose * 10)
+  g.all(0)
+  g.led(1,1,2 + pat.rec * 10)
+  g.led(1,2,2 + pat.play * 10)
+  g.led(1,8,2 + mode_transpose * 10)
 
-  if mode_transpose == 1 then g:led(trans.x, trans.y, 4) end
+  if mode_transpose == 1 then g.led(trans.x, trans.y, 4) end
   for i,e in pairs(lit) do
-    g:led(e.x, e.y,15)
+    g.led(e.x, e.y,15)
   end
 
   g:refresh()

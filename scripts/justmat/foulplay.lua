@@ -1,28 +1,28 @@
--- euclidean sample instrument 
+-- euclidean sample instrument
 -- with trigger conditions.
 --
 -- ----------
--- 
+--
 -- based on tehn/playfair,
 -- with generous contributions
 -- from junklight and okyeron.
 --
 -- ----------
--- 
--- samples can be loaded 
+--
+-- samples can be loaded
 -- via the parameter menu.
 --
 -- ----------
 -- home
 --
--- enc1 = cycle through 
+-- enc1 = cycle through
 --         the tracks.
 -- enc2 = set the number
 --         of trigs.
--- enc3 = set the number 
+-- enc3 = set the number
 --         of steps.
 -- key2 = start and stop the
---         clock.  
+--         clock.
 --
 -- on the home screen,
 -- key3 is alt.
@@ -32,16 +32,16 @@
 -- alt + enc3 = bpm
 --
 -- ----------
--- holding key1 will bring up the 
--- track edit screen. release to 
+-- holding key1 will bring up the
+-- track edit screen. release to
 -- return home.
 -- ----------
--- track edit 
+-- track edit
 --
--- encoders 1-3 map to 
--- parameters 1-3. 
--- 
--- key2 = advance to the 
+-- encoders 1-3 map to
+-- parameters 1-3.
+--
+-- key2 = advance to the
 --         next track.
 -- key3 = advance to the
 --         next page.
@@ -51,18 +51,18 @@
 -- ----------
 --
 -- col 1 select track edit
--- col 2 provides mute toggles 
+-- col 2 provides mute toggles
 --
--- the dimly lit 5x5 grid is 
--- made up of memory cells. 
+-- the dimly lit 5x5 grid is
+-- made up of memory cells.
 -- memory cells hold both
 -- pattern and pset data.
--- simply pressing a cell 
--- will load the pattern 
--- data. 
+-- simply pressing a cell
+-- will load the pattern
+-- data.
 --
 -- button 4 on row 7 starts
--- and stops the clock. 
+-- and stops the clock.
 -- while the clock is stopped
 -- the button will blink.
 --
@@ -74,29 +74,31 @@
 --
 -- to load a pset, press
 -- and hold the pset load
--- button while touching 
+-- button while touching
 -- the desired memory cell.
--- 
--- open track edit pages 
+--
+-- open track edit pages
 -- with grid buttons 4-7 on
 -- the bottom row.
--- 
+--
 -- button 8 on the bottom row
 -- is the copy button.
 --
--- to copy a pattern to a new 
--- cell hold the copy button, 
--- and press the cell you'd 
+-- to copy a pattern to a new
+-- cell hold the copy button,
+-- and press the cell you'd
 -- like to copy.
 -- the cell will blink. while
 -- still holding copy, press the
 -- destination cell.
 -- release the copy button.
--- 
+--
 
 require 'er'
 
 engine.name = 'Ack'
+
+local g = grid.connect()
 
 local ack = require 'jah/ack'
 local BeatClock = require 'beatclock'
@@ -106,13 +108,13 @@ local clk = BeatClock.new()
 local alt = 0
 local reset = false
 -- 0 == home, 1 == track edit
-local view = 0      
+local view = 0
 local page = 0
 local track_edit = 1
-local stopped = 1 
+local stopped = 1
 local pset_load_mode = false
 local current_pset = 0
--- added for grid support - junklight 
+-- added for grid support - junklight
 local current_mem_cell = 1
 local current_mem_cell_x = 4
 local current_mem_cell_y = 1
@@ -124,15 +126,15 @@ local copy_source_y = -1
 function simplecopy(obj)
   if type(obj) ~= 'table' then return obj end
   local res = {}
-  for k, v in pairs(obj) do 
-    res[simplecopy(k)] = simplecopy(v) 
+  for k, v in pairs(obj) do
+    res[simplecopy(k)] = simplecopy(v)
   end
   return res
 end
 ---------------
 
 local memory_cell = {}
-for j = 1,25 do 
+for j = 1,25 do
   memory_cell[j] = {}
   for i=1, 8 do
     memory_cell[j][i] = {
@@ -145,11 +147,11 @@ for j = 1,25 do
       logic_target = track_edit,
       rotation = 0,
       mute = 0
-  }                                                       
+  }
   end
 end
 
-local function gettrack( cell , tracknum ) 
+local function gettrack( cell , tracknum )
   return memory_cell[cell][tracknum]
 end
 
@@ -180,7 +182,7 @@ local function reer(i)
   end
 end
 
--- mutes are ignored for trigger logic target 
+-- mutes are ignored for trigger logic target
 
 local function trig()
   for i, t in ipairs(memory_cell[current_mem_cell]) do
@@ -192,7 +194,7 @@ local function trig()
       if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
         if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
           engine.trig(i-1)
-        end  
+        end
       end
     elseif t.trig_logic == 2 then  -- or
       if t.s[t.pos] or gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
@@ -206,28 +208,28 @@ local function trig()
         if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
           engine.trig(i-1)
         end
-      end  
+      end
     elseif t.trig_logic == 4 then  -- nor
       if not t.s[t.pos] then
         if not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] and gettrack(current_mem_cell, i).mute == 0 then
         engine.trig(i-1)
         end
-      end 
+      end
     elseif t.trig_logic == 5 then  -- xor
-      if gettrack(current_mem_cell, i).mute == 0 then 
+      if gettrack(current_mem_cell, i).mute == 0 then
         if not t.s[t.pos] and not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         elseif t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         else engine.trig(i-1) end
       end
     end
   end
-end  
-      
+end
+
 function init()
   for i=1, 8 do reer(i) end
-  
+
   screen.line_width(1)
-  
+
   clk.on_step = step
   clk.on_select_internal = function() clk:start() end
   clk.on_select_external = reset_pattern
@@ -237,29 +239,29 @@ function init()
   for channel=1,8 do
     ack.add_channel_params(channel)
   end
-  
+
   ack.add_effects_params()
   params:read("justmat/foulplay.pset")
   params:bang()
-  
+
   loadstate()
-  
+
   if stopped==1 then
     clk:stop()
   else
     clk:start()
-  end  
-  
+  end
+
   -- set up grid
   -- print("grid")
   -- grid refresh timer, 40 fps
-  -- this caught me out first time 
-  -- the template just updates the grid from keys 
+  -- this caught me out first time
+  -- the template just updates the grid from keys
   -- but it seems better to treat the grid like the screen
-  -- also g: isn't set yet during init 
+  -- also g: isn't set yet during init
   metro_grid_redraw = metro.alloc(function(stage) grid_redraw() end, 1 / 40)
   metro_grid_redraw:start()
-  -- blink for copy mode 
+  -- blink for copy mode
   metro_blink = metro.alloc(function(stage) blink = not blink end, 1 / 4)
   metro_blink:start()
 end
@@ -271,14 +273,14 @@ end
 
 function step()
   if reset then
-    for i=1,8 do 
-      gettrack(current_mem_cell,i).pos = 1 
+    for i=1,8 do
+      gettrack(current_mem_cell,i).pos = 1
     end
     reset = false
   else
-    for i=1,8 do 
-      gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1 
-    end 
+    for i=1,8 do
+      gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1
+    end
   end
   trig()
   redraw()
@@ -286,30 +288,30 @@ end
 
 function key(n,z)
   -- normal and track edit views
-  if n==1 then view = z end 
+  if n==1 then view = z end
   if n==3 and z==1 and view==1 then
     page = (page + 1) % 4
   end
-  if n==3 then alt = z end  
+  if n==3 then alt = z end
   -- track selection in track edit view
-  if view==1 then                                                            
-    if n==2 and z==1 then                                                     
+  if view==1 then
+    if n==2 and z==1 then
       track_edit = (track_edit % 8) + 1
-    end  
-  end 
-  
-  if alt==1 then   
+    end
+  end
+
+  if alt==1 then
     -- track phase reset
-    if n==2 and z==1 then                                                    
+    if n==2 and z==1 then
       reset_pattern()
-      if stopped == 1 then                                                    
+      if stopped == 1 then
           step()
       end
     end
-  end 
+  end
   -- home view. start/stop
   if alt==0 and view==0 then
-    if n==2 and z==1 then                                                
+    if n==2 and z==1 then
       if stopped==0 then
         clk:stop()
         stopped = 1
@@ -322,31 +324,31 @@ function key(n,z)
   redraw()
 end
 
-function enc(n,d) 
+function enc(n,d)
   if alt==1 then
     -- mix volume control
     if n==1 then
       mix:delta("output", d)
-    -- track rotation control  
+    -- track rotation control
     elseif n==2 then
       gettrack(current_mem_cell, track_edit).rotation = util.clamp(gettrack(current_mem_cell, track_edit).rotation + d, 0, 32)
       gettrack(current_mem_cell,track_edit).s = rotate_pattern( gettrack(current_mem_cell,track_edit).s, gettrack(current_mem_cell, track_edit).rotation )
       redraw()
-    -- bpm control  
+    -- bpm control
     elseif n==3 then
-      params:delta("bpm", d)                
+      params:delta("bpm", d)
     end
-  -- track edit view  
-  elseif view==1  and page==0 then 
+  -- track edit view
+  elseif view==1  and page==0 then
     -- per track volume control
     if n==1 then
       params:delta(track_edit .. ": vol", d)
     elseif n==2 then
-      params:delta(track_edit .. ": vol env atk", d)        
+      params:delta(track_edit .. ": vol env atk", d)
     elseif n==3 then
       params:delta(track_edit .. ": vol env rel", d)
     end
-  
+
   elseif view==1 and page==1 then
     -- trigger logic and probability settings
     if n==1 then
@@ -355,18 +357,18 @@ function enc(n,d)
       gettrack(current_mem_cell,track_edit).logic_target = util.clamp(d+ gettrack(current_mem_cell,track_edit).logic_target, 1, 8)
     elseif n==3 then
       gettrack(current_mem_cell,track_edit).prob = util.clamp(d + gettrack(current_mem_cell,track_edit).prob, 1, 100)
-    end  
-      
+    end
+
   elseif view==1 and page==2 then
     -- sample playback settings
     if n==1 then
       params:delta(track_edit .. ": speed", d)
     elseif n==2 then
-      params:delta(track_edit .. ": start pos", d)             
-    elseif n==3 then 
+      params:delta(track_edit .. ": start pos", d)
+    elseif n==3 then
       params:delta(track_edit .. ": end pos", d)
-    end 
-  
+    end
+
   elseif view==1 and page==3 then
     -- filter and fx sends
     if n==1 then
@@ -378,13 +380,13 @@ function enc(n,d)
     end
   -- HOME
   -- choose focused track, track fill, and track length
-  elseif n==1 and d==1 then 
-    track_edit = (track_edit % 8) + d 
+  elseif n==1 and d==1 then
+    track_edit = (track_edit % 8) + d
   elseif n==1 and d==-1 then
     track_edit = (track_edit + 6) % 8 + 1
-  elseif n == 2 then  
+  elseif n == 2 then
     gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k+d,0,gettrack(current_mem_cell,track_edit).n)
-  elseif n==3 then 
+  elseif n==3 then
     gettrack(current_mem_cell,track_edit).n = util.clamp(gettrack(current_mem_cell,track_edit).n+d,1,32)
     gettrack(current_mem_cell,track_edit).k = util.clamp(gettrack(current_mem_cell,track_edit).k,0,gettrack(current_mem_cell,track_edit).n)
   end
@@ -397,7 +399,7 @@ function redraw()
   screen.clear()
   if view==0 and alt==0 then
     for i=1, 8 do
-      if gettrack(current_mem_cell, i).mute == 1 then 
+      if gettrack(current_mem_cell, i).mute == 1 then
        screen.move(17,i*7.70)
        screen.text_center("m")
       end
@@ -413,7 +415,7 @@ function redraw()
           screen.line_rel(0,-6)
         else
           screen.line_rel(0,-2)
-        end 
+        end
         screen.stroke()
       end
     end
@@ -431,7 +433,7 @@ function redraw()
     if params:get("clock") == 1 then
       screen.text(params:get("bpm"))
     end
-    
+
     for i=1,8 do
       screen.level((i == track_edit) and 15 or 4)
       screen.move(25, i*7.70)
@@ -443,11 +445,11 @@ function redraw()
           screen.line_rel(0,-6)
         else
           screen.line_rel(0,-2)
-        end 
+        end
         screen.stroke()
       end
     end
-  
+
   elseif view==1 and page==0 then
     screen.move(5, 10)
     screen.level(15)
@@ -463,7 +465,7 @@ function redraw()
     screen.text_center("2. envelope attack : " .. params:get(track_edit .. ": vol env atk"))
     screen.move(64, 45)
     screen.text_center("3. envelope release : " .. params:get(track_edit .. ": vol env rel"))
-    
+
   elseif view==1 and page==1 then
     screen.move(5, 10)
     screen.level(15)
@@ -499,11 +501,11 @@ function redraw()
     elseif gettrack(current_mem_cell,track_edit).trig_logic == 5 then
       screen.text_center("1. trig logic : xor")
       screen.move(64, 35)
-      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)  
+      screen.text_center("2. logic target : " .. gettrack(current_mem_cell,track_edit).logic_target)
     end
     screen.move(64, 45)
     screen.text_center("3. trig probability : " .. gettrack(current_mem_cell,track_edit).prob .. "%")
-    
+
   elseif view==1 and page==2 then
     screen.move(5, 10)
     screen.level(15)
@@ -519,7 +521,7 @@ function redraw()
     screen.text_center("2. start pos : " .. params:get(track_edit .. ": start pos"))
     screen.move(64, 45)
     screen.text_center("3. end pos : " .. params:get(track_edit .. ": end pos"))
-  
+
   elseif view==1 and page==3 then
     screen.move(5, 10)
     screen.level(15)
@@ -536,7 +538,7 @@ function redraw()
     screen.move(64, 45)
     screen.text_center("3. reverb send : " .. params:get(track_edit .. ": reverb send"))
   end
-  screen.stroke() 
+  screen.stroke()
   screen.update()
 end
 
@@ -547,24 +549,24 @@ end
 
 -- grid stuff - junklight
 
-function gridkey(x, y, state)
+function g.event(x, y, state)
   -- use first column to switch track edit
   if x == 1 then
     track_edit = y
   end
-  -- second column provides mutes 
+  -- second column provides mutes
   if x == 2 and state == 1 then
     if gettrack(current_mem_cell, y).mute == 0 then
       gettrack(current_mem_cell, y).mute = 1
     elseif gettrack(current_mem_cell, y).mute == 1 then
       gettrack(current_mem_cell, y).mute = 0
-    end  
+    end
   end
   -- 4-6, are used to open track parameters pages
   if y == 8 and x >= 4 and x <= 7 and state == 1 then
     view = 1
     page = x - 4
-  else 
+  else
     view = 0
   end
   -- start and stop button.
@@ -572,15 +574,15 @@ function gridkey(x, y, state)
     if stopped == 1 then
       clk:start()
       stopped = 0
-    else 
+    else
       clk:stop()
       stopped = 1
     end
-  end  
+  end
   -- reset button
-  if x == 5 and y == 7 and state == 1 then 
+  if x == 5 and y == 7 and state == 1 then
     reset_pattern()
-    if stopped == 1 then                                                    
+    if stopped == 1 then
       step()
     end
   end
@@ -592,7 +594,7 @@ function gridkey(x, y, state)
   end
   -- load pset 1-25
   if pset_load_mode then
-    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then
       params:read("justmat/foulplay-" .. string.format("%02d", cellfromgrid(x, y)) .. ".pset")
       params:bang()
       print("loaded pset " .. cellfromgrid(x, y))
@@ -602,9 +604,9 @@ function gridkey(x, y, state)
         clk:stop()
       end
     end
-  end  
-  -- copy button 
-  if x == 8 and y==8 and state == 1 then 
+  end
+  -- copy button
+  if x == 8 and y==8 and state == 1 then
     copy_mode = true
     copy_source_x = -1
     copy_source_y = -1
@@ -612,35 +614,35 @@ function gridkey(x, y, state)
     copy_mode = false
     copy_source_x = -1
     copy_source_y = -1
-  end  
-  -- memory cells 
+  end
+  -- memory cells
   -- press to switch memory cell
   -- switches on grid down
   if not copy_mode and not pset_load_mode then
-    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then 
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then
       current_mem_cell = cellfromgrid(x,y)
       current_mem_cell_x = x
       current_mem_cell_y = y
       for i = 1, 8 do reer(i) end
     end
   else
-    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then 
+    if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then
       if not pset_load_mode then
-      -- copy functionality 
-      -- if we are in copy mode then don't switch 
-      -- cells - copy cell instead 
-        if copy_source_x == -1 then 
+      -- copy functionality
+      -- if we are in copy mode then don't switch
+      -- cells - copy cell instead
+        if copy_source_x == -1 then
         -- first button sets the source
           copy_source_x = x
           copy_source_y = y
-        else 
-        -- copy source into target 
+        else
+        -- copy source into target
           if copy_source_x ~= -1 and not ( copy_source_x == x and copy_source_y == y) then
             sourcecell = cellfromgrid( copy_source_x , copy_source_y )
             targetcell = cellfromgrid( x , y )
             memory_cell[targetcell] = simplecopy(memory_cell[sourcecell])
           end
-        end  
+        end
       end
     end
   end
@@ -649,71 +651,71 @@ end
 
 function grid_redraw()
   if g == nil then
-    -- bail if we are too early 
+    -- bail if we are too early
     return
   end
-  -- clear it all 
-  g:all(0)
+  -- clear it all
+  g.all(0)
   -- highlight current track
-  g:led(1, track_edit, 15)
-  -- track page buttons 
-  -- dim for off 
-  -- bright for on 
+  g.led(1, track_edit, 15)
+  -- track page buttons
+  -- dim for off
+  -- bright for on
   for page = 0, 3 do
-      g:led(page + 4, 8, 3)
+      g.led(page + 4, 8, 3)
   end
-  -- highlight page if open 
+  -- highlight page if open
   if view == 1 then
-    g:led(page + 4, 8, 14)
+    g.led(page + 4, 8, 14)
   end
-  -- mutes - bright for on, dim for off 
-  for i = 1,8 do 
+  -- mutes - bright for on, dim for off
+  for i = 1,8 do
     if gettrack(current_mem_cell, i).mute == 1 then
-      g:led(2, i, 15)
-    else g:led(2, i, 4) 
-    end 
-  end
-  -- memory cells 
-  for x = 4,8 do
-    for y = 1,5 do
-      g:led(x, y, 3)
+      g.led(2, i, 15)
+    else g.led(2, i, 4)
     end
   end
-  -- highlight active cell 
-  g:led(current_mem_cell_x, current_mem_cell_y, 15)
-  -- copy mode - blink the source if set 
+  -- memory cells
+  for x = 4,8 do
+    for y = 1,5 do
+      g.led(x, y, 3)
+    end
+  end
+  -- highlight active cell
+  g.led(current_mem_cell_x, current_mem_cell_y, 15)
+  -- copy mode - blink the source if set
   if copy_mode then
     if copy_source_x ~= -1 then
-      if blink then 
-        g:led(copy_source_x, copy_source_y, 4)
+      if blink then
+        g.led(copy_source_x, copy_source_y, 4)
       else
-        g:led(copy_source_x, copy_source_y, 12)
+        g.led(copy_source_x, copy_source_y, 12)
       end
     end
   end
   -- start/stop
-  if stopped == 0 then 
-    g:led(4, 7, 15)
+  if stopped == 0 then
+    g.led(4, 7, 15)
   elseif stopped == 1 then
     if blink then
-      g:led(4, 7, 4)
+      g.led(4, 7, 4)
     else
-      g:led(4, 7, 12)
+      g.led(4, 7, 12)
     end
   end
   -- reset button
-  g:led(5, 7, 3)
+  g.led(5, 7, 3)
   -- load pset button
   if pset_load_mode then
-    g:led(8, 7, 12)
-  else g:led(8, 7, 3) end 
-  -- copy button - bright for pressed, dim otherwise 
-  if copy_mode  then 
-    g:led(8, 8, 14)
+    g.led(8, 7, 12)
+  else g.led(8, 7, 3) end
+  -- copy button - bright for pressed, dim otherwise
+  if copy_mode  then
+    g.led(8, 8, 14)
   else
-    g:led(8, 8, 3)
+    g.led(8, 8, 3)
   end
-  g:refresh()
+  g.refresh()
 end
 
 function savestate()
@@ -749,11 +751,11 @@ function loadstate()
         memory_cell[j][i].mute = tonumber(io.read())
       end
     end
-    io.close(file) 
+    io.close(file)
   end
   for i = 1, 8 do reer(i) end
 end
-  
+
 cleanup = function()
   savestate()
 end

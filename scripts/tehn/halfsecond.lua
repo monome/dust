@@ -1,5 +1,7 @@
 -- softcut test
 -- half sec loop 75% decay
+--
+-- ENC1 to toggle HOLD
 
 engine.name = 'SoftCut'
 
@@ -19,21 +21,22 @@ function init()
   engine.reset(1)
   engine.start(1)
 
-  rec = 1
+  hold = 0
 end
 
 function redraw()
   screen.clear()
-  screen.level(rec == 1 and 15 or 2)
-  screen.move(10,10)
-  screen.text("softcut")
+  screen.level(hold == 1 and 15 or 2)
+  screen.move(10,50)
+  screen.text("halfsecond")
   screen.update()
 end
 
 function key(n,z)
   if n==3 and z==1 then
-    rec = 1 - rec
-    engine.rec_on(1,rec)
+    hold = 1 - hold
+    engine.pre(1,hold==1 and 1 or 0.75)
+    engine.rec(1,hold==1 and 0 or 1)
     redraw()
   end
 end

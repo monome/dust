@@ -11,6 +11,7 @@
 --
 
 engine.name = 'Glut'
+local g = grid.connect(1)
 
 local VOICES = 7
 
@@ -97,7 +98,7 @@ local function pattern_next(n)
   local event = bank[pos]
   local delta, x, y, z = table.unpack(event)
   pattern_leds[n] = z
-  gridkey(x, y, z, true)
+  grid_key(x, y, z, true)
 
   local next_pos = pos + 1
   if next_pos > #bank then
@@ -223,10 +224,46 @@ local function grid_refresh()
 
   local buf = grid_ctl | grid_voc
   buf:render(g)
-  g:refresh()
+  g.refresh()
+end
+
+function grid_key(x, y, z, skip_record)
+  if y > 1 or (y == 1 and x < 9) then
+    if not skip_record then
+      record_event(x, y, z)
+    end
+  end
+
+  if z > 0 then
+    -- set voice pos
+    if y > 1 then
+      local voice = y - 1
+      start_voice(voice, (x - 1) / 16)
+    else
+      if x == 16 then
+        -- alt
+        alt = true
+      elseif x > 8 then
+        record_handler(x - 8)
+      elseif x == 8 then
+        -- reserved
+      elseif x < 8 then
+        -- stop
+        local voice = x
+        stop_voice(voice)
+      end
+    end
+  else
+    -- alt
+    if x == 16 and y == 1 then alt = false end
+  end
 end
 
 function init()
+  g.event = function(x, y, z)
+    grid_key(x, y, z)
+  end
+
   -- polls
   for v = 1, VOICES do
     local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
@@ -301,38 +338,6 @@ end
 --[[
 exports
 ]]
-
-function gridkey(x, y, z, skip_record)
-  if y > 1 or (y == 1 and x < 9) then
-    if not skip_record then
-      record_event(x, y, z)
-    end
-  end
-
-  if z > 0 then
-    -- set voice pos
-    if y > 1 then
-      local voice = y - 1
-      start_voice(voice, (x - 1) / 16)
-    else
-      if x == 16 then
-        -- alt
-        alt = true
-      elseif x > 8 then
-        record_handler(x - 8)
-      elseif x == 8 then
-        -- reserved
-      elseif x < 8 then
-        -- stop
-        local voice = x
-        stop_voice(voice)
-      end
-    end
-  else
-    -- alt
-    if x == 16 and y == 1 then alt = false end
-  end
-end
 
 function enc(n, d)
 end
