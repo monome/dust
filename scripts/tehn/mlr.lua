@@ -3,6 +3,13 @@
 -- http://monome.org/
 --   docs/norns/dust/tehn/mlr
 --
+-- new/180828
+--
+-- - 6 channels
+-- - improved sound engine
+-- - alt+REC clears buffer
+-- - panning
+--
 -- /////////
 -- ////
 -- ////////////
@@ -46,7 +53,7 @@ local eREV = 6
 
 local quantize = 0
 
-local midi_device
+local midi_device = midi.connect()
 local midiclocktimer
 
 local function update_tempo()
@@ -55,7 +62,7 @@ local function update_tempo()
   local interval = (60/t) / d
   print("q > "..interval)
   quantizer.time = interval
-  for i=1,4 do
+  for i=1,TRACKS do
     if track[i].tempo_map == 1 then
       update_rate(i)
     end
@@ -211,7 +218,7 @@ end
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 2+ (i-1)*16
+  clip[i].s = 2 + (i-1)*30
   clip[i].name = "-"
   set_clip_length(i,4)
 end
@@ -245,6 +252,16 @@ set_clip = function(i, x)
   engine.quant(i,q)
   engine.quant_offset(i,off)
   track[i].loop = 0
+end
+
+set_rec = function(n)
+  if track[n].rec == 1 then
+    engine.pre(n,track[n].pre_level)
+    engine.rec(n,track[n].rec_level)
+  else
+    engine.pre(n,1)
+    engine.rec(n,0)
+  end
 end
 
 held = {}
@@ -294,6 +311,7 @@ end
 
 
 UP1 = controlspec.new(0, 1, 'lin', 0, 1, "")
+BI1 = controlspec.new(-1, 1, 'lin', 0, 0, "")
 
 -------------------- init
 init = function()
@@ -304,13 +322,13 @@ init = function()
   params:set_action("quant_div",function() update_tempo() end)
   p = {}
   for i=1,TRACKS do
-    engine.pre(i,track[i].pre_level)
-    engine.pre_lag(i,0.25)
+    engine.rec_on(i,1) -- always on!!
+    engine.pre(i,1)
+    engine.pre_lag(i,0.05)
     engine.fade_pre(i,FADE)
     engine.amp(i,1)
-    engine.rec_on(i,0)
-    engine.rec(i,track[i].rec_level)
-    engine.rec_lag(i,0.25)
+    engine.rec(i,0)
+    engine.rec_lag(i,0.05)
     engine.fade_rec(i,FADE)
 
     engine.adc_rec(1,i,0.8)
@@ -336,10 +354,24 @@ init = function()
 
     params:add_control(i.."vol",UP1)
     params:set_action(i.."vol", function(x) engine.amp(i,x) end)
+    --params:add_control(i.."pan",BI1)
+    --params:set_action(i.."pan",
+      --function(x)
+        --engine.play_dac(i,1,math.min(1,1+x))
+        --engine.play_dac(i,2,math.min(1,1-x))
+      --end)
     params:add_control(i.."rec",UP1)
-    params:set_action(i.."rec", function(x) engine.rec(i,x) end)
+    params:set_action(i.."rec",
+      function(x)
+        track[i].rec_level = x
+        set_rec(i)
+      end)
     params:add_control(i.."pre",controlspec.UNIPOLAR)
-    params:set_action(i.."pre", function(x) engine.pre(i,x) end)
+    params:set_action(i.."pre",
+      function(x)
+        track[i].pre_level = x
+        set_rec(i)
+      end)
     params:add_control(i.."speed_mod", controlspec.BIPOLAR)
     params:set_action(i.."speed_mod", function() update_rate(i) end)
   end
@@ -355,14 +387,13 @@ init = function()
   midiclocktimer = metro.alloc()
   midiclocktimer.count = -1
   midiclocktimer.callback = function()
-    if midi_device and params:get("midi_sync")==2 then midi.send(midi_device, {248}) end
+    if midi_device and params:get("midi_sync")==2 then midi_device.send({248}) end
   end
   update_tempo()
   midiclocktimer:start()
 
   gridredrawtimer = metro.alloc(function() gridredraw() end, 0.02, -1)
   gridredrawtimer:start()
-
   dirtygrid = true
 end
 
@@ -397,7 +428,9 @@ end
 
 gridkey_nav = function(x,z)
   if z==1 then
-    if x==1 then set_view(vREC)
+    if x==1 then
+      if alt == 1 then engine.clear() end
+      set_view(vREC)
     elseif x==2 then set_view(vCUT)
     elseif x==3 then set_view(vCLIP)
     elseif x>4 and x <9 then
@@ -506,31 +539,18 @@ v.gridkey[vREC] = function(x, y, z)
   else
     if z == 1 then
       i = y-1
-      if x>2 and x<TRACKS+2 then
+      if x>2 and x<8 then
         if alt == 1 then
           track[i].tempo_map = 1 - track[i].tempo_map
           update_rate(i)
-          dirtygrid=true
         elseif focus ~= i then
           focus = i
           redraw()
-          dirtygrid=true
         end
       elseif x==1 and y<TRACKS+2 then
         track[i].rec = 1 - track[i].rec
-        if track[i].rec == 1 then
-          for n=1,4 do
-            if n ~=i then
-              if track[n].rec == 1 then
-                track[n].rec = 0
-                engine.rec_on(n,track[n].rec)
-              end
-            end
-          end
-        end
         print("REC "..track[i].rec)
-        engine.rec_on(i,track[i].rec)
-        dirtygrid=true
+        set_rec(i)
       elseif x==16 and y<TRACKS+2 then
         if track[i].play == 1 then
           e = {}
@@ -543,16 +563,16 @@ v.gridkey[vREC] = function(x, y, z)
           e.i = i
           event(e)
         end
-        dirtygrid=true
       elseif x>8 and x<16 and y<TRACKS+2 then
-        n = x-12
+        local n = x-12
         e = {} e.t = eSPEED e.i = i e.speed = n
         event(e)
       elseif x==8 and y<TRACKS+2 then
-        n = 1 - track[i].rev
+        local n = 1 - track[i].rev
         e = {} e.t = eREV e.i = i e.rev = n
         event(e)
       end
+      dirtygrid=true
     end
   end
 end
@@ -574,7 +594,7 @@ v.gridredraw[vREC] = function()
     if track[i].play == 1 then g.led(16,y,15) end
   end
   gridredraw_nav()
-  g:refresh();
+  g.refresh();
 end
 
 --------------------CUT
@@ -717,7 +737,7 @@ end
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel-d,1,4)
+    clip_sel = util.clamp(clip_sel-d,1,TRACKS)
   elseif n==3 then
     clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end
@@ -764,7 +784,7 @@ end
 
 v.gridkey[vCLIP] = function(x, y, z)
   if y == 1 then gridkey_nav(x,z)
-  elseif z == 1 and y < 6 then
+  elseif z == 1 and y < TRACKS+2 then
     clip_sel = y-1
     set_clip(clip_sel,x)
     redraw()
@@ -776,7 +796,7 @@ v.gridredraw[vCLIP] = function()
   g.all(0)
   gridredraw_nav()
   for i=1,16 do g.led(i,clip_sel+1,4) end
-  for i=1,4 do g.led(track[i].clip,i+1,10) end
+  for i=1,TRACKS do g.led(track[i].clip,i+1,10) end
   g:refresh();
 end
 
@@ -827,22 +847,6 @@ v.gridredraw[vTIME] = function()
 end
 
 
-
--- map cc's to track volumes
-local function midi_event(data)
-  -- nothing to do, use PARAMETER mapping instead
-end
-
-midi.add = function(dev)
-  print('mlr: midi device added', dev.id, dev.name)
-  dev.event = midi_event
-  midi_device = dev
-end
-
-midi.remove = function(dev)
-  print('mlr: midi device removed', dev.id, dev.name)
-  midi_device = nil
-end
 
 function cleanup()
   for i=1,4 do
