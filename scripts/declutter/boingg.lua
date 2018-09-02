@@ -1,3 +1,14 @@
+--- Boingg - a bouncing ball app
+--- Heavily based on flin 
+--- by artfwo
+--- Press a grid key to 
+--- start a bouncing ball
+--- and the bottom key to stop
+
+--- enc2 and enc3 to adjust the scales
+--- key 2 to start / key 3 to stop a bounce on the currently selected note on the screen
+--- Todo - add alternative scales from mark_eats
+
 engine.name = 'PolySub'
 
 local g = grid.connect(1)
