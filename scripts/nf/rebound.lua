@@ -11,6 +11,7 @@
 -- params and scales taken from tehn/awake, thanks
 
 local cs = require 'controlspec'
+local Midi = require 'midi'
 local MusicUtil = require 'mark_eats/musicutil'
 
 engine.name = "PolyPerc"
@@ -23,6 +24,7 @@ local clk = BeatClock.new()
 
 local scale_notes = {}
 local note_queue = {}
+local note_off_queue = {}
 
 local shift = false
 
@@ -204,8 +206,15 @@ function enqueue_note(b, z)
 end
 
 function play_notes()
+  -- send note off for previously played notes
+  while #note_off_queue > 0 do
+    Midi.send_all({type='note_off', note=table.remove(note_off_queue)})
+  end
+  -- play queued notes
   while #note_queue > 0 do
     local n = table.remove(note_queue)
     engine.hz(MusicUtil.note_num_to_freq(n))
+    Midi.send_all({type='note_on', note=n})
+    table.insert(note_off_queue, n)
   end
 end
