@@ -11,7 +11,6 @@
 -- params and scales taken from tehn/awake, thanks
 
 -- TODO:
--- - display ball number and note name on screen
 -- - ack-based version
 
 local cs = require 'controlspec'
@@ -36,6 +35,18 @@ local min_rand_note = min_note+24
 local max_rand_note = max_note-24
 
 local shift = false
+
+local info_note_name = ""
+local info_visible = false
+local info_timer = metro.alloc()
+info_timer.callback = function() info_visible = false end
+function show_info()
+  info_visible = true
+  info_timer:start(1, 1)
+  local b = balls[cur_ball]
+  local n = MusicUtil.snap_note_to_array(b.n, scale_notes)
+  info_note_name = MusicUtil.note_num_to_name(n, true)
+end
 
 function init()
   screen.aa(1)
@@ -107,6 +118,15 @@ function redraw()
   for i=1,#balls do
     drawball(balls[i], i == cur_ball)
   end
+  if info_visible and cur_ball > 0 then
+    screen.level(15)
+    screen.font_face(3)
+    screen.font_size(16)
+    screen.move(8,52)
+    screen.text(cur_ball)
+    screen.move(32,52)
+    screen.text(info_note_name)
+  end
   screen.update()
 end
 
@@ -121,6 +141,7 @@ function enc(n, d)
   if n == 1 and not shift and cur_ball > 0 then
     -- note
     balls[cur_ball].n = math.min(math.max(balls[cur_ball].n+d, min_note), max_note)
+    show_info()
   elseif n == 2 then
     -- rotate
     for i=1,#balls do
@@ -154,9 +175,11 @@ function key(n, z)
       table.insert(balls, newball())
       cur_ball = #balls
     end
+    show_info()
   elseif n == 3 and z == 1 and not shift and #balls > 0 then
     -- select next ball
     cur_ball = cur_ball%#balls+1
+    show_info()
   end
 end
 
