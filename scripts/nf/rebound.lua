@@ -10,6 +10,10 @@
 -- written by nf in august 2018
 -- params and scales taken from tehn/awake, thanks
 
+-- TODO:
+-- - display ball number and note name on screen
+-- - ack-based version
+
 local cs = require 'controlspec'
 local Midi = require 'midi'
 local MusicUtil = require 'mark_eats/musicutil'
@@ -25,6 +29,11 @@ local clk = BeatClock.new()
 local scale_notes = {}
 local note_queue = {}
 local note_off_queue = {}
+
+local min_note = 0
+local max_note = 127
+local min_rand_note = min_note+24
+local max_rand_note = max_note-24
 
 local shift = false
 
@@ -111,7 +120,7 @@ end
 function enc(n, d)
   if n == 1 and not shift and cur_ball > 0 then
     -- note
-    balls[cur_ball].n = math.min(math.max(balls[cur_ball].n+d, 1), #scale_notes)
+    balls[cur_ball].n = math.min(math.max(balls[cur_ball].n+d, min_note), max_note)
   elseif n == 2 then
     -- rotate
     for i=1,#balls do
@@ -157,7 +166,7 @@ function newball()
     y = 32,
     v = 0.5*math.random()+0.5,
     a = math.random()*2*math.pi,
-    n = math.floor(math.random()*#scale_notes+1),
+    n = math.floor(math.random()*(max_rand_note-min_rand_note)+min_rand_note),
   }
 end
 
@@ -195,13 +204,13 @@ function updateball(b)
 end
 
 function enqueue_note(b, z)
-  local n = scale_notes[b.n]
+  local n = b.n
   if z == 0 then
     n = n + 12
   elseif z == 1 then
     n = n - 12
   end
-  n = math.max(0, math.min(127, n))
+  n = math.max(min_note, math.min(max_note, n))
   table.insert(note_queue, n)
 end
 
@@ -213,6 +222,7 @@ function play_notes()
   -- play queued notes
   while #note_queue > 0 do
     local n = table.remove(note_queue)
+    n = MusicUtil.snap_note_to_array(n, scale_notes)
     engine.hz(MusicUtil.note_num_to_freq(n))
     Midi.send_all({type='note_on', note=n})
     table.insert(note_off_queue, n)
