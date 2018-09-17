@@ -253,13 +253,11 @@ function init()
   end
 
   -- set up grid
-  -- print("grid")
-  -- grid refresh timer, 40 fps
+  -- grid refresh timer, 15 fps
   -- this caught me out first time
-  -- the template just updates the grid from keys
-  -- but it seems better to treat the grid like the screen
-  -- also g: isn't set yet during init
-  metro_grid_redraw = metro.alloc(function(stage) grid_redraw() end, 1 / 40)
+  -- the template updates the grid from keys
+  -- but it seems better to treat the grid like a screen
+  metro_grid_redraw = metro.alloc(function(stage) grid_redraw() end, 1 / 15)
   metro_grid_redraw:start()
   -- blink for copy mode
   metro_blink = metro.alloc(function(stage) blink = not blink end, 1 / 4)
