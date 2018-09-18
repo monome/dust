@@ -25,14 +25,16 @@
 
 local ControlSpec = require 'controlspec'
 local Ack = require 'jah/ack'
-local Midi = require 'midi'
-local Grid = require 'grid'
+local midi = require 'midi'
+local grid = require 'grid'
 local Metro = require 'metro'
 
 engine.name = 'Ack'
 
-local midi_device
-local grid_device
+local midi_device = midi.connect(1)
+
+local grid_device = grid.connect(1)
+
 local indicate_midi_event
 local indicate_gridkey_event
 
@@ -76,7 +78,7 @@ end
 local function update_device_indicators()
   screen.move(0,60)
   screen.font_size(8)
-  if midi_device then
+  if midi_device.attached then
     if indicate_midi_event then
       screen.level(8)
     else
@@ -85,10 +87,10 @@ local function update_device_indicators()
     screen.text("midi")
   end
   screen.level(15)
-  if midi_device and grid_device then
+  if midi_device.attached and grid_device.attached then
     screen.text("+")
   end
-  if grid_device then
+  if grid_device.attached then
     if indicate_gridkey_event then
       screen.level(8)
     else
@@ -96,7 +98,7 @@ local function update_device_indicators()
     end
     screen.text("grid")
   end
-  if midi_device == nil and grid_device == nil then
+  if midi_device.attached == false and grid_device.attached == false then
     screen.level(3)
     screen.text("no midi / grid")
   end
@@ -230,38 +232,6 @@ local function cc(ctl, value)
   end
 end
 
-local function grid_refresh()
-  if grid_device then
-    for channel=1,8 do
-      local brightness
-      if contains(selected_channels, channel) or all_modifier_is_held then
-        brightness = 15
-      else
-        brightness = 5
-      end
-
-      grid_device:led(channel, 8, brightness)
-    end
-    grid_device:refresh()
-  end
-end
-
-local function gridkey_event(x, y, s)
-  indicate_gridkey_event = true
-  if y == 8 and x < 9 then
-    if s == 1 then
-      trig_channel(x)
-      if params:get("grid selects channel") == 2 then
-        selected_channels = {x}
-        redraw()
-      end
-    else
-      reset_channel(x)
-      redraw()
-    end
-  end
-end
-
 local function midi_event(data)
   indicate_midi_event = true
   local status = data[1]
@@ -283,25 +253,39 @@ local function midi_event(data)
   end
 end
 
-function Midi.add(dev)
-  if not midi_device then
-    dev.event = midi_event
-    dev.remove = function()
-      midi_device = nil
+midi_device.event = midi_event
+
+local function grid_refresh()
+  for channel=1,8 do
+    local brightness
+    if contains(selected_channels, channel) or all_modifier_is_held then
+      brightness = 15
+    else
+      brightness = 5
     end
-    midi_device = dev
+
+    grid_device.led(channel, 8, brightness)
+  end
+  grid_device.refresh()
+end
+
+local function gridkey_event(x, y, s)
+  indicate_gridkey_event = true
+  if y == 8 and x < 9 then
+    if s == 1 then
+      trig_channel(x)
+      if params:get("grid selects channel") == 2 then
+        selected_channels = {x}
+        redraw()
+      end
+    else
+      reset_channel(x)
+      redraw()
+    end
   end
 end
 
-function Grid.add(dev)
-  if not grid_device then
-    dev.key = gridkey_event
-    dev.remove = function()
-      grid_device = nil
-    end
-    grid_device = dev
-  end
-end
+grid_device.event = gridkey_event
 
 function init()
   screen.aa(1)
