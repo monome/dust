@@ -769,9 +769,9 @@ Engine_Ack : CroneEngine {
 					fork {
 						this.killChannel(channelnum);
 						context.server.sync;
-		    	    	buffer.allocRead(path);
+						buffer.allocRead(path);
 						context.server.sync;
-		    	    	buffer.updateInfo(path);
+						buffer.updateInfo(path);
 						context.server.sync;
 						"sample % loaded into channel %"
 							.format(path.quote, channelnum).inform;
