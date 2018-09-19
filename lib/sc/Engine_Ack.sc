@@ -2,10 +2,11 @@ Engine_Ack : CroneEngine {
 	classvar debug = false;
 	var numChannels = 8;
 
-	var <buffers;
-	var <channelGroups;
-	var <channelControlBusses;
-	var <samplePlayerSynths;
+	var buffers;
+	var channelGroups;
+	var channelControlBusses;
+	var samplePlayerSynths; // TODO: not sure this is needed anymore since synths now are self-freeing and communication is made via channelGroups
+	var <muteGroups;
 
 	var sourceGroup;
 	var effectsGroup;
@@ -450,14 +451,17 @@ Engine_Ack : CroneEngine {
 		reverbSynth = Synth(this.reverbDefName, [\out, context.out_b, \in, reverbBus], target: effectsGroup);
 
 		samplePlayerSynths = Array.fill(numChannels);
+		muteGroups = Array.fill(numChannels, false);
 
 		context.server.sync;
 
+		// TODO: validate channelnum and provide better error reporting if invalid channelnum is sent
 		this.addCommand(\loadSample, "is") { |msg| this.cmdLoadSample(msg[1], msg[2]) };
 		this.addCommand(\multiTrig, "iiiiiiii") { |msg| this.cmdMultiTrig(msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8]) };
 		this.addCommand(\trig, "i") { |msg| this.cmdTrig(msg[1]) };
 		this.addCommand(\multiKill, "iiiiiiii") { |msg| this.cmdMultiKill(msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8]) };
 		this.addCommand(\kill, "i") { |msg| this.cmdKill(msg[1]) };
+		this.addCommand(\includeInMuteGroup, "ii") { |msg| this.cmdIncludeInMuteGroup(msg[1], msg[2]) };
 		this.addCommand(\sampleStart, "if") { |msg| this.cmdSampleStart(msg[1], msg[2]) };
 		this.addCommand(\sampleEnd, "if") { |msg| this.cmdSampleEnd(msg[1], msg[2]) };
 		this.addCommand(\loopPoint, "if") { |msg| this.cmdLoopPoint(msg[1], msg[2]) };
@@ -476,6 +480,7 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\filterEnvMod, "if") { |msg| this.cmdFilterEnvMod(msg[1], msg[2]) };
 		this.addCommand(\delaySend, "if") { |msg| this.cmdDelaySend(msg[1], msg[2]) };
 		this.addCommand(\reverbSend, "if") { |msg| this.cmdReverbSend(msg[1], msg[2]) };
+
 		this.addCommand(\delayTime, "f") { |msg| this.cmdDelayTime(msg[1]) };
 		this.addCommand(\delayFeedback, "f") { |msg| this.cmdDelayFeedback(msg[1]) };
 		this.addCommand(\delayLevel, "f") { |msg| this.cmdDelayLevel(msg[1]) };
@@ -499,7 +504,7 @@ Engine_Ack : CroneEngine {
 	cmdMultiTrig { |...channels|
 		context.server.makeBundle(nil) {
 			channels.do { |trig, channelnum|
-				if (trig.booleanValue) { this.cmdTrig(channelnum) };
+				if (trig.booleanValue) {this.cmdTrig(channelnum) };
 			};
 		};
 	}
@@ -519,7 +524,11 @@ Engine_Ack : CroneEngine {
 				)
 			};
 
-			this.killChannel(channelnum);
+			if (this.includedInMuteGroup(channelnum)) {
+				this.killMuteGroup;
+			} {
+				this.killChannel(channelnum);
+			};
 
 			samplePlayerSynths[channelnum] = Synth.new(
 				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString).asSymbol,
@@ -541,6 +550,10 @@ Engine_Ack : CroneEngine {
 		if (this.sampleIsLoaded(channelnum)) {
 			this.killChannel(channelnum);
 		}
+	}
+
+	cmdIncludeInMuteGroup { |channelnum, bool|
+		muteGroups[channelnum] = bool.asBoolean;
 	}
 
 	cmdSampleStart { |channelnum, f|
@@ -696,6 +709,18 @@ Engine_Ack : CroneEngine {
 
 	killChannel { |channelnum|
 		channelGroups[channelnum].set(\gate, 0);
+	}
+
+	killMuteGroup {
+		muteGroups do: { |included, channelnum|
+			if (included) {
+				channelGroups[channelnum].set(\gate, 0);
+			}
+		};
+	}
+
+	includedInMuteGroup { |channelnum|
+		^muteGroups[channelnum]
 	}
 
 	free {
