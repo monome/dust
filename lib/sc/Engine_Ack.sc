@@ -415,6 +415,7 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend,
 				filterLowpassLevel,
