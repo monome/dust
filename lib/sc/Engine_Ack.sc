@@ -60,6 +60,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\filterNotchLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterPeakLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterEnvMod] = \bipolar.asSpec;
+		channelSpecs[\dist] = \unipolar.asSpec;
 		// TODO slewSpec = ControlSpec(0, 5, default: 0);
 
 		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
@@ -99,6 +100,7 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend
 				/*
@@ -156,6 +158,8 @@ Engine_Ack : CroneEngine {
 				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
+				sig = Select.ar(dist > 0, [sig, (sig * (1 + (dist * 10))).tanh.softclip]);
+
 				sig = SVF.ar(
 					sig,
 					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
@@ -196,6 +200,7 @@ Engine_Ack : CroneEngine {
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
+					dist: channelSpecs[\dist],
 					delaySend: channelSpecs[\delaySend],
 					reverbSend: channelSpecs[\reverbSend]
 /*
@@ -238,6 +243,7 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend
 				/*
@@ -295,6 +301,8 @@ Engine_Ack : CroneEngine {
 				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
+				sig = Select.ar(dist > 0, [sig, (sig * (1 + (dist * 10))).tanh.softclip]);
+
 				sig = SVF.ar(
 					sig,
 					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
@@ -335,6 +343,7 @@ Engine_Ack : CroneEngine {
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
+					dist: channelSpecs[\dist],
 					delaySend: channelSpecs[\delaySend],
 					reverbSend: channelSpecs[\reverbSend]
 /*
@@ -478,6 +487,7 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\filterEnvAttack, "if") { |msg| this.cmdFilterEnvAttack(msg[1], msg[2]) };
 		this.addCommand(\filterEnvRelease, "if") { |msg| this.cmdFilterEnvRelease(msg[1], msg[2]) };
 		this.addCommand(\filterEnvMod, "if") { |msg| this.cmdFilterEnvMod(msg[1], msg[2]) };
+		this.addCommand(\dist, "if") { |msg| this.cmdDist(msg[1], msg[2]) };
 		this.addCommand(\delaySend, "if") { |msg| this.cmdDelaySend(msg[1], msg[2]) };
 		this.addCommand(\reverbSend, "if") { |msg| this.cmdReverbSend(msg[1], msg[2]) };
 
@@ -673,6 +683,10 @@ Engine_Ack : CroneEngine {
 
 	cmdFilterEnvMod { |channelnum, f|
 		channelControlBusses[channelnum][\filterEnvMod].set(channelSpecs[\filterEnvMod].constrain(f));
+	}
+
+	cmdDist { |channelnum, f|
+		channelControlBusses[channelnum][\dist].set(channelSpecs[\dist].constrain(f));
 	}
 
 	cmdDelaySend { |channelnum, f|

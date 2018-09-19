@@ -27,6 +27,7 @@ specs.filter_cutoff.default = 20000
 
 specs.filter_res = ControlSpec.UNIPOLAR
 specs.filter_env_mod = ControlSpec.BIPOLAR
+specs.dist = ControlSpec.UNIPOLAR
 
 specs.delay_time = ControlSpec.new(0.0001, 5, 'exp', 0, 0.1, 'secs')
 specs.delay_feedback = ControlSpec.new(0, 1.25, 'lin', 0, 0.5, '')
@@ -130,6 +131,22 @@ function Ack.add_filter_env_mod_param(channel)
   params:set_action(channel..": filter env mod", function(value) engine.filterEnvMod(channel-1, value) end)
 end
 
+function Ack.add_dist_param(channel)
+  params:add_control(channel..": dist", specs.dist, Formatters.unipolar_as_percentage)
+  params:set_action(channel..": dist", function(value) engine.dist(channel-1, value) end)
+end
+
+function Ack.add_mutegroup_param(channel)
+  params:add_option(channel..": in mutegroup", {"no", "yes"})
+  params:set_action(channel..": in mutegroup", function(value)
+    if value == 2 then
+      engine.includeInMuteGroup(channel-1, 1)
+    else
+      engine.includeInMuteGroup(channel-1, 0)
+    end
+  end)
+end
+
 function Ack.add_delay_send_param(channel)
   params:add_control(channel..": delay send", specs.send, Formatters.default)
   params:set_action(channel..": delay send", function(value) engine.delaySend(channel-1, value) end)
@@ -157,6 +174,8 @@ function Ack.add_channel_params(channel)
   Ack.add_filter_env_atk_param(channel)
   Ack.add_filter_env_rel_param(channel)
   Ack.add_filter_env_mod_param(channel)
+  Ack.add_dist_param(channel)
+  Ack.add_mutegroup_param(channel)
   Ack.add_delay_send_param(channel)
   Ack.add_reverb_send_param(channel)
 
