@@ -1,10 +1,12 @@
 Engine_Ack : CroneEngine {
+	classvar debug = false;
 	var numChannels = 8;
 
-	var <buffers;
-	var <channelGroups;
-	var <channelControlBusses;
-	var <samplePlayerSynths;
+	var buffers;
+	var channelGroups;
+	var channelControlBusses;
+	var samplePlayerSynths; // TODO: not sure this is needed anymore since synths now are self-freeing and communication is made via channelGroups
+	var <muteGroups;
 
 	var sourceGroup;
 	var effectsGroup;
@@ -58,6 +60,7 @@ Engine_Ack : CroneEngine {
 		channelSpecs[\filterNotchLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterPeakLevel] = ControlSpec(0, 1, step: 1, default: 0);
 		channelSpecs[\filterEnvMod] = \bipolar.asSpec;
+		channelSpecs[\dist] = \unipolar.asSpec;
 		// TODO slewSpec = ControlSpec(0, 5, default: 0);
 
 		delayTimeSpec = ControlSpec(0.0001, 5, 'exp', 0, 0.1, "secs");
@@ -70,7 +73,7 @@ Engine_Ack : CroneEngine {
 
 		// TODO: there's too much code duplication between mono and stereo SynthDef, look into using SynthDef.wrap or splitting up SynthDef for DRY
 		SynthDef(
-			(this.monoSamplePlayerDefName.asString++"_Test").asSymbol,
+			(this.monoSamplePlayerDefName.asString).asSymbol,
 			{
 				|
 				gate,
@@ -97,12 +100,12 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend
 				/*
 				TODO
 				speedSlew,
-				phasorFreqSlew,
 				volumeSlew,
 				panSlew,
 				filterCutoffSlew,
@@ -136,9 +139,9 @@ Engine_Ack : CroneEngine {
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 		
-				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
-				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
-				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+				var killEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), doneAction: Done.freeSelf);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod));
 		
 /*
 	TODO: debugging
@@ -155,7 +158,8 @@ Engine_Ack : CroneEngine {
 				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
+				sig = Select.ar(dist > 0, [sig, (sig * (1 + (dist * 10))).tanh.softclip]);
+
 				sig = SVF.ar(
 					sig,
 					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
@@ -167,7 +171,7 @@ Engine_Ack : CroneEngine {
 					filterPeakLevel
 				);
 				sig = Pan2.ar(sig, pan); // TODO: Mono, refactor
-				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				sig = sig * volumeEnv * killEnv * volume.dbamp;
 				Out.ar(out, sig);
 				Out.ar(delayBus, sig*delaySend.dbamp);
 				Out.ar(reverbBus, sig*reverbSend.dbamp);
@@ -196,12 +200,12 @@ Engine_Ack : CroneEngine {
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
+					dist: channelSpecs[\dist],
 					delaySend: channelSpecs[\delaySend],
 					reverbSend: channelSpecs[\reverbSend]
 /*
 	TODO
 					speedSlew: slewSpec,
-					phasorFreqSlew: slewSpec,
 					volumeSlew: slewSpec,
 					panSlew: slewSpec,
 					filterCutoffSlew: slewSpec,
@@ -212,7 +216,7 @@ Engine_Ack : CroneEngine {
 		).add;
 
 		SynthDef(
-			(this.stereoSamplePlayerDefName.asString++"_Test").asSymbol,
+			(this.stereoSamplePlayerDefName.asString).asSymbol,
 			{
 				|
 				gate,
@@ -239,12 +243,12 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend
 				/*
 				TODO
 				speedSlew,
-				phasorFreqSlew,
 				volumeSlew,
 				panSlew,
 				filterCutoffSlew,
@@ -278,9 +282,9 @@ Engine_Ack : CroneEngine {
 					interpolation: 4
 				); // TODO: tryout BLBufRd
 		
-				var freeEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
-				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), gate);
-				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod), gate);
+				var killEnv = EnvGen.ar(Env.cutoff(0.01), gate, doneAction: Done.freeSelf);
+				var volumeEnv = EnvGen.ar(Env.perc(volumeEnvAttack, volumeEnvRelease), doneAction: Done.freeSelf);
+				var filterEnv = EnvGen.ar(Env.perc(filterEnvAttack, filterEnvRelease, filterEnvMod));
 		
 /*
 	TODO: debugging
@@ -297,7 +301,8 @@ Engine_Ack : CroneEngine {
 				sig = sig * (((fwdOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is forward and phaseFromStart < sampleEnd or loopEnable == 1, continue playing (audition sound)
 				sig = sig * (((revOneshotPhaseDone < 1) + (loopEnable > 0)) > 0); // basically: as long as direction is backward and phaseFromStart > sampleEnd or loopEnable == 1, continue playing (audition sound)
 				
-				// sig = RLPF.ar(sig, filterCutoffSpec.map(filterCutoffSpec.unmap(filterCutoff)+filterEnv), filterRes); TODO
+				sig = Select.ar(dist > 0, [sig, (sig * (1 + (dist * 10))).tanh.softclip]);
+
 				sig = SVF.ar(
 					sig,
 					\widefreq.asSpec.map(\widefreq.asSpec.unmap(filterCutoff)+filterEnv), // TODO: use filterCutoffSpec
@@ -309,7 +314,7 @@ Engine_Ack : CroneEngine {
 					filterPeakLevel
 				);
 				sig = Balance2.ar(sig[0], sig[1], pan); // TODO: Stereo, refactor
-				sig = sig * volumeEnv * freeEnv * volume.dbamp;
+				sig = sig * volumeEnv * killEnv * volume.dbamp;
 				Out.ar(out, sig);
 				Out.ar(delayBus, sig*delaySend.dbamp);
 				Out.ar(reverbBus, sig*reverbSend.dbamp);
@@ -338,12 +343,12 @@ Engine_Ack : CroneEngine {
 					filterEnvAttack: channelSpecs[\filterEnvAttack],
 					filterEnvRelease: channelSpecs[\filterEnvRelease],
 					filterEnvMod: channelSpecs[\filterEnvMod],
+					dist: channelSpecs[\dist],
 					delaySend: channelSpecs[\delaySend],
 					reverbSend: channelSpecs[\reverbSend]
 /*
 	TODO
 					speedSlew: slewSpec,
-					phasorFreqSlew: slewSpec,
 					volumeSlew: slewSpec,
 					panSlew: slewSpec,
 					filterCutoffSlew: slewSpec,
@@ -358,7 +363,7 @@ Engine_Ack : CroneEngine {
 			{ |in, out, delayTime, feedback, level|
 				var sig = In.ar(in, 2);
 				var sigfeedback = LocalIn.ar(2);
-				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime);
+				sig = DelayC.ar(sig + sigfeedback, maxdelaytime: delayTimeSpec.maxval, delaytime: delayTime); // TODO: - ControlDur.ir
 				LocalOut.ar(sig * feedback);
 				Out.ar(out, sig * level.dbamp);
 			},
@@ -410,6 +415,7 @@ Engine_Ack : CroneEngine {
 				filterEnvAttack,
 				filterEnvRelease,
 				filterEnvMod,
+				dist,
 				delaySend,
 				reverbSend,
 				filterLowpassLevel,
@@ -419,7 +425,6 @@ Engine_Ack : CroneEngine {
 				filterPeakLevel
 /*
 	TODO
-				phasorFreqSlew,
 				volumeSlew,
 				panSlew,
 				filterCutoffSlew,
@@ -427,15 +432,22 @@ Engine_Ack : CroneEngine {
 */
 			].collect { |sym|
 				var bus = Bus.control;
-				postln("channelControlBus for %".format(sym));
-				postln("- set to default %".format(channelSpecs[sym].default));
+
+				if (debug) {
+					postln("channelControlBus for %".format(sym));
+				};
+
 				bus.set(channelSpecs[sym].default);
-				postln("");
+
+				if (debug) {
+					postln("- set to default %".format(channelSpecs[sym].default));
+					postln("");
+				};
 
 				sym -> bus
 			}.asDict
 		};
-		effectsGroup = Group.tail(context.xg); // TODO: ParGroup applicable here too?
+		effectsGroup = ParGroup.tail(context.xg);
 
 		// TODO: weirdness buffers = numChannels collect: { Buffer.new };
 		buffers = numChannels collect: { Buffer.alloc(numFrames: 1) };
@@ -449,12 +461,17 @@ Engine_Ack : CroneEngine {
 		reverbSynth = Synth(this.reverbDefName, [\out, context.out_b, \in, reverbBus], target: effectsGroup);
 
 		samplePlayerSynths = Array.fill(numChannels);
+		muteGroups = Array.fill(numChannels, false);
 
 		context.server.sync;
 
+		// TODO: validate channelnum and provide better error reporting if invalid channelnum is sent
 		this.addCommand(\loadSample, "is") { |msg| this.cmdLoadSample(msg[1], msg[2]) };
 		this.addCommand(\multiTrig, "iiiiiiii") { |msg| this.cmdMultiTrig(msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8]) };
 		this.addCommand(\trig, "i") { |msg| this.cmdTrig(msg[1]) };
+		this.addCommand(\multiKill, "iiiiiiii") { |msg| this.cmdMultiKill(msg[1], msg[2], msg[3], msg[4], msg[5], msg[6], msg[7], msg[8]) };
+		this.addCommand(\kill, "i") { |msg| this.cmdKill(msg[1]) };
+		this.addCommand(\includeInMuteGroup, "ii") { |msg| this.cmdIncludeInMuteGroup(msg[1], msg[2]) };
 		this.addCommand(\sampleStart, "if") { |msg| this.cmdSampleStart(msg[1], msg[2]) };
 		this.addCommand(\sampleEnd, "if") { |msg| this.cmdSampleEnd(msg[1], msg[2]) };
 		this.addCommand(\loopPoint, "if") { |msg| this.cmdLoopPoint(msg[1], msg[2]) };
@@ -471,8 +488,10 @@ Engine_Ack : CroneEngine {
 		this.addCommand(\filterEnvAttack, "if") { |msg| this.cmdFilterEnvAttack(msg[1], msg[2]) };
 		this.addCommand(\filterEnvRelease, "if") { |msg| this.cmdFilterEnvRelease(msg[1], msg[2]) };
 		this.addCommand(\filterEnvMod, "if") { |msg| this.cmdFilterEnvMod(msg[1], msg[2]) };
+		this.addCommand(\dist, "if") { |msg| this.cmdDist(msg[1], msg[2]) };
 		this.addCommand(\delaySend, "if") { |msg| this.cmdDelaySend(msg[1], msg[2]) };
 		this.addCommand(\reverbSend, "if") { |msg| this.cmdReverbSend(msg[1], msg[2]) };
+
 		this.addCommand(\delayTime, "f") { |msg| this.cmdDelayTime(msg[1]) };
 		this.addCommand(\delayFeedback, "f") { |msg| this.cmdDelayFeedback(msg[1]) };
 		this.addCommand(\delayLevel, "f") { |msg| this.cmdDelayLevel(msg[1]) };
@@ -496,7 +515,7 @@ Engine_Ack : CroneEngine {
 	cmdMultiTrig { |...channels|
 		context.server.makeBundle(nil) {
 			channels.do { |trig, channelnum|
-				if (trig.booleanValue) { this.cmdTrig(channelnum) };
+				if (trig.booleanValue) {this.cmdTrig(channelnum) };
 			};
 		};
 	}
@@ -516,15 +535,36 @@ Engine_Ack : CroneEngine {
 				)
 			};
 
-			samplePlayerSynths[channelnum].release; // TODO: direct this to channel group instead and synths could free themselves (and a release would not turn into an ugly error message, the 'Buffer UGen channel mismatch: expected 1, yet buffer has 2 channels' would not appear)
-			// TODO: this combined group/synth method could facilitate self-freeing synths without unneccessary node does not exist error messages in a general SynthDef-generating engine too
+			if (this.includedInMuteGroup(channelnum)) {
+				this.killMuteGroup;
+			} {
+				this.killChannel(channelnum);
+			};
 
 			samplePlayerSynths[channelnum] = Synth.new(
-				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString++"_Test").asSymbol,
+				(if (this.sampleIsStereo(channelnum), this.stereoSamplePlayerDefName, this.monoSamplePlayerDefName).asString).asSymbol,
 				args: samplePlayerSynthArgs,
 				target: channelGroups[channelnum]
 			);
 		};
+	}
+
+	cmdMultiKill { |...channels|
+		context.server.makeBundle(nil) {
+			channels.do { |trig, channelnum|
+				if (trig.booleanValue) { this.cmdKill(channelnum) };
+			};
+		};
+	}
+
+	cmdKill { |channelnum|
+		if (this.sampleIsLoaded(channelnum)) {
+			this.killChannel(channelnum);
+		}
+	}
+
+	cmdIncludeInMuteGroup { |channelnum, bool|
+		muteGroups[channelnum] = bool.asBoolean;
 	}
 
 	cmdSampleStart { |channelnum, f|
@@ -540,13 +580,11 @@ Engine_Ack : CroneEngine {
 	}
 
 	cmdEnableLoop { |channelnum|
-		"enableLoop".debug;
-		channelControlBusses[channelnum][\loopEnable].debug.set(1);
+		channelControlBusses[channelnum][\loopEnable].set(1);
 	}
 
 	cmdDisableLoop { |channelnum|
-		"disableLoop".debug;
-		channelControlBusses[channelnum][\loopEnable].debug.set(0);
+		channelControlBusses[channelnum][\loopEnable].set(0);
 	}
 
 	cmdSpeed { |channelnum, f|
@@ -576,7 +614,7 @@ Engine_Ack : CroneEngine {
 /*
 	TODO
 	cmdSpeedSlew { |channelnum, f|
-		channelControlBusses[channelnum][\phasorFreqSlew].set(slewSpec.constrain(f));
+		channelControlBusses[channelnum][\speedSlew].set(slewSpec.constrain(f));
 	}
 	cmdVolumeSlew { |channelnum, f|
 		channelControlBusses[channelnum][\volumeSlew].set(slewSpec.constrain(f));
@@ -648,6 +686,10 @@ Engine_Ack : CroneEngine {
 		channelControlBusses[channelnum][\filterEnvMod].set(channelSpecs[\filterEnvMod].constrain(f));
 	}
 
+	cmdDist { |channelnum, f|
+		channelControlBusses[channelnum][\dist].set(channelSpecs[\dist].constrain(f));
+	}
+
 	cmdDelaySend { |channelnum, f|
 		channelControlBusses[channelnum][\delaySend].set(channelSpecs[\delaySend].constrain(f));
 	}
@@ -680,6 +722,22 @@ Engine_Ack : CroneEngine {
 		reverbSynth.set(\level, reverbLevelSpec.constrain(f));
 	}
 
+	killChannel { |channelnum|
+		channelGroups[channelnum].set(\gate, 0);
+	}
+
+	killMuteGroup {
+		muteGroups do: { |included, channelnum|
+			if (included) {
+				channelGroups[channelnum].set(\gate, 0);
+			}
+		};
+	}
+
+	includedInMuteGroup { |channelnum|
+		^muteGroups[channelnum]
+	}
+
 	free {
 		samplePlayerSynths do: _.free;
 		channelGroups do: _.free;
@@ -709,9 +767,11 @@ Engine_Ack : CroneEngine {
 					var buffer = buffers[channelnum];
 					// TODO: stop any current sample playing for channelnum, to omit the 'Buffer UGen channel mismatch: expected 1, yet buffer has 2 channels' and better cleanup before loading the new sample
 					fork {
-		    	    	buffer.allocRead(path);
+						this.killChannel(channelnum);
 						context.server.sync;
-		    	    	buffer.updateInfo(path);
+						buffer.allocRead(path);
+						context.server.sync;
+						buffer.updateInfo(path);
 						context.server.sync;
 						"sample % loaded into channel %"
 							.format(path.quote, channelnum).inform;
