@@ -12,6 +12,8 @@ Engine_TestSine : CroneEngine {
 		^super.new(context, doneCallback);
 	}
 	// Rather than defining a SynthDef, use a shorthand to allocate a function and send it to the engine to play
+	// Defined as an empty method in CroneEngine
+	// https://github.com/monome/norns/blob/master/sc/core/CroneEngine.sc#L31
 	alloc {
 		// Define the synth variable, whichis a function
 		synth = {
