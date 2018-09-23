@@ -27,10 +27,13 @@ Engine_TestSine : CroneEngine {
 			// Create an output object with two copies of a SineOsc,
 			// passing the Lag'd amp and frequency as args
 			Out.ar(out, (SinOsc.ar(hz_) * amp_).dup);
-		// Send the function to the engine as a UGen graph
-		// pass the superclass's context method "out_b" as the value to the \out argument
-		// pass the superclass's context context method "xg" as the value to the target
-		// TODO What is a target and a context?
+		// Send the synth function to the engine as a UGen graph.
+		// It seems like when an Engine is loaded it is passed an AudioContext
+		// that is used to define audio routing stuff (Busses and Groups in SC parlance)
+		// These methods are defined in 
+		// https://github.com/monome/norns/blob/master/sc/core/CroneAudioContext.sc
+		// pass the CroneAudioContext method "out_b" as the value to the \out argument
+		// pass the CroneAudioContext method "xg" as the value to the target.
 		}.play(args: [\out, context.out_b], target: context.xg);
 
 		// Export argument symbols as modulatable paramaters
