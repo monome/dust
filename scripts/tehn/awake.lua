@@ -53,8 +53,9 @@ local edit_pos = 1
 local BeatClock = require 'beatclock'
 local clk = BeatClock.new()
 local clk_midi = midi.connect()
-clk_midi.event = clk.process_midi
-
+clk_midi.event = function(data)
+  clk:process_midi(data)
+end
 
 function build_scale()
   local n = 0
