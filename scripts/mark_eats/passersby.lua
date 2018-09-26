@@ -7,9 +7,7 @@
 -- KEY3 : Change tab
 -- ENC2/3 : Adjust parameters
 --
--- Responds to MIDI notes.
---
--- v1.0.0 Mark Eats
+-- v1.0.1 Mark Eats
 --
 
 local MusicUtil = require "mark_eats/musicutil"
@@ -24,6 +22,8 @@ local screen_dirty = true
 local PAGES = 4
 local page_id = 1
 local tab_id = 1
+
+local midi_in_device
 
 local input_indicator_active = false
 local input_indicator_metro
@@ -213,7 +213,7 @@ end
 -- Engine functions
 
 local function note_on(note_num, vel)
-  engine.noteOn(note_num, MusicUtil.note_num_to_freq(note_num), util.linlin(0, 127, 0, 1, vel))
+  engine.noteOn(note_num, MusicUtil.note_num_to_freq(note_num), vel)
 end
 
 local function set_pitch_bend(bend_st)
@@ -311,11 +311,145 @@ local function update_drift()
 end
 
 
+-- Input functions
+
+-- Encoder input
+function enc(n, delta)
+  
+  if n == 1 then
+    -- Page scroll
+    set_page_delta(util.clamp(delta, -1, 1), false)
+  end
+  
+  if page_id == 1 then
+    
+      if tab_id == 1 then
+        -- Wave
+        if n == 2 then
+          params:delta("Wave Shape", delta)
+        elseif n == 3 then
+          params:delta("Wave Folds", delta)
+        end
+        
+      else
+        -- FM
+        if n == 2 then
+          params:delta("FM Low Amount", delta)
+        elseif n == 3 then
+          params:delta("FM High Amount", delta)
+        end
+      end
+      
+  elseif page_id == 2 then
+    
+      if tab_id == 1 then
+        -- LPG
+        if n == 2 then
+          params:delta("LPG Peak", delta)
+        elseif n == 3 then
+          params:delta("LPG Decay", delta)
+        end
+        
+      else
+        -- Reverb
+        if n == 2 then
+          params:delta("Reverb Mix", delta)
+        end
+      end
+      
+  elseif page_id == 3 then
+    
+    if tab_id == 1 then
+      -- LFO
+      if n == 2 then
+        params:delta("LFO Frequency", delta)
+      elseif n == 3 then
+        params:delta("LFO Amount", delta)
+      end
+    
+    else
+      -- Destinations
+      if n == 2 then
+        params:delta("LFO Destination " .. 1, util.clamp(delta, -1, 1))
+      elseif n == 3 then
+        params:delta("LFO Destination " .. 2, util.clamp(delta, -1, 1))
+      end
+      
+    end
+      
+  elseif page_id == 4 then
+    
+    -- Randomize
+    if n == 2 then
+      if not dice_thrown then set_dice_throw_vel(delta * 0.05) end
+      
+    -- Drift
+    elseif n == 3 then
+      params:delta("Drift", delta)
+    end
+    
+  end
+end
+
+-- Key input
+function key(n, z)
+  if z == 1 then
+    
+    if n == 2 then
+      set_page_delta(1, true)
+      
+    elseif n == 3 then
+      set_tab_delta(1, true)
+      
+    end
+  end
+end
+
+-- MIDI input
+local function midi_event(data)
+  
+  if #data == 0 then return end
+  
+  local msg = midi.to_msg(data)
+  local channel_param = params:get("MIDI Channel")
+  
+  if channel_param == 1 or (channel_param > 1 and msg.ch == channel_param - 1) then
+    
+    -- Note on
+    if msg.type == "note_on" then
+      note_on(msg.note, msg.vel / 127)
+      start_input_indicator_timeout()
+      
+    -- CC
+    elseif msg.type == "cc" then
+      -- Mod wheel
+      if msg.cc == 1 then
+        set_mod_wheel(util.linlin(0, 127, 0, 1, msg.val))
+      end
+      
+    -- Pitch bend
+    elseif msg.type == "pitchbend" then
+      local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
+      set_pitch_bend(bend_st * 2) -- 2 Semitones of bend
+      
+    end
+  end
+end
+
+
 -- Init
 
 function init()
   
+  midi_in_device = midi.connect(1)
+  midi_in_device.event = midi_event
+  
   -- Add params
+  
+  params:add_number("MIDI Device", 1, 4, 1)
+  params:set_action("MIDI Device", function(value)
+    midi_in_device:reconnect(value)
+  end)
   
   local channels = {"All"}
   for i = 1, 16 do table.insert(channels, i) end
@@ -500,145 +634,6 @@ function init()
   end
   screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
   
-end
-
-
-
--- Input functions
-
--- Encoder input
-function enc(n, delta)
-  
-  if n == 1 then
-    -- Page scroll
-    set_page_delta(util.clamp(delta, -1, 1), false)
-  end
-  
-  if page_id == 1 then
-    
-      if tab_id == 1 then
-        -- Wave
-        if n == 2 then
-          params:delta("Wave Shape", delta)
-        elseif n == 3 then
-          params:delta("Wave Folds", delta)
-        end
-        
-      else
-        -- FM
-        if n == 2 then
-          params:delta("FM Low Amount", delta)
-        elseif n == 3 then
-          params:delta("FM High Amount", delta)
-        end
-      end
-      
-  elseif page_id == 2 then
-    
-      if tab_id == 1 then
-        -- LPG
-        if n == 2 then
-          params:delta("LPG Peak", delta)
-        elseif n == 3 then
-          params:delta("LPG Decay", delta)
-        end
-        
-      else
-        -- Reverb
-        if n == 2 then
-          params:delta("Reverb Mix", delta)
-        end
-      end
-      
-  elseif page_id == 3 then
-    
-    if tab_id == 1 then
-      -- LFO
-      if n == 2 then
-        params:delta("LFO Frequency", delta)
-      elseif n == 3 then
-        params:delta("LFO Amount", delta)
-      end
-    
-    else
-      -- Destinations
-      if n == 2 then
-        params:delta("LFO Destination " .. 1, util.clamp(delta, -1, 1))
-      elseif n == 3 then
-        params:delta("LFO Destination " .. 2, util.clamp(delta, -1, 1))
-      end
-      
-    end
-      
-  elseif page_id == 4 then
-    
-    -- Randomize
-    if n == 2 then
-      if not dice_thrown then set_dice_throw_vel(delta * 0.05) end
-      
-    -- Drift
-    elseif n == 3 then
-      params:delta("Drift", delta)
-    end
-    
-  end
-end
-
--- Key input
-function key(n, z)
-  if z == 1 then
-    
-    if n == 2 then
-      set_page_delta(1, true)
-      
-    elseif n == 3 then
-      set_tab_delta(1, true)
-      
-    end
-  end
-end
-
--- MIDI input
-local function midi_event(data)
-  
-  if #data == 0 then return end
-  
-  local midi_status = data[1]
-  local data1 = data[2]
-  local data2 = data[3]
-  
-  -- Note on
-  if (params:get("MIDI Channel") == 1 and midi_status >= 144 and midi_status <= 159 ) or (params:get("MIDI Channel") > 1 and midi_status == 144 + params:get("MIDI Channel") - 2) then
-    note_on(data1, data2)
-    start_input_indicator_timeout()
-    
-  -- Note off
-  -- elseif (params:get("MIDI Channel") == 1 and midi_status >= 128 and midi_status <= 143 ) or (params:get("MIDI Channel") > 1 and midi_status == 128 + params:get("MIDI Channel") - 2) then
-    
-  -- CC
-  elseif (params:get("MIDI Channel") == 1 and midi_status >= 176 and midi_status <= 191 ) or  (params:get("MIDI Channel") > 1 and midi_status == 176 + params:get("MIDI Channel") - 2) then
-    -- Mod wheel
-    if data1 == 1 then
-      set_mod_wheel(util.linlin(0, 127, 0, 1, data2))
-    end
-    
-  -- Pitch bend
-  elseif (params:get("MIDI Channel") == 1 and midi_status >= 224 and midi_status <= 239 ) or  (params:get("MIDI Channel") > 1 and midi_status == 224 + params:get("MIDI Channel") - 2) then
-    local bend_14bit = bit32.bor(bit32.lshift(data2, 7), data1)
-    local bend_st = (util.round(bend_14bit / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
-    set_pitch_bend(bend_st * 2) -- 2 Semitones of bend
-    
-  end
-end
-
-midi.add = function(dev)
-  dev.event = midi_event
-end
-
-function cleanup()
-  for id, dev in pairs(midi.devices) do
-    dev.event = nil
-  end
 end
 
 

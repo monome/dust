@@ -6,6 +6,7 @@
 -- @author Mark Eats
 
 local ControlSpec = require "controlspec"
+local MEFormatters = require "mark_eats/formatters"
 
 local Passersby = {}
 
@@ -28,32 +29,6 @@ specs.RANDOMIZE = ControlSpec.new(0, 1, "lin", 1, 0, "") -- Bit of a hack to get
 Passersby.specs = specs
 
 
-local function format_freq(param)
-  local freq = param:get()
-  if freq < 0.1 then
-    freq = util.round(freq, 0.001) .. " Hz"
-  elseif freq < 100 then
-    freq = util.round(freq, 0.01) .. " Hz"
-  elseif util.round(freq, 1) < 1000 then
-    freq = util.round(freq, 1) .. " Hz"
-  else
-    freq = util.round(freq / 1000, 0.01) .. " kHz"
-  end
-  return freq
-end
-
-local function format_secs(param)
-  local secs = param:get()
-  if util.round(secs, 0.01) >= 1 then
-    secs = util.round(secs, 0.1)
-  else
-    secs = util.round(secs, 0.01)
-    if string.len(secs) < 4 then secs = secs .. "0" end
-  end
-  return secs .. " s"
-end
-
-
 function Passersby.add_params()
   
   params:add_control("Wave Shape", specs.WAVE_SHAPE)
@@ -68,16 +43,16 @@ function Passersby.add_params()
   params:add_control("FM High Amount", specs.FM_HIGH_AMOUNT)
   params:set_action("FM High Amount", engine.fm2Amount)
   
-  params:add_control("LPG Peak", specs.LPG_PEAK, format_freq)
+  params:add_control("LPG Peak", specs.LPG_PEAK, MEFormatters.format_freq)
   params:set_action("LPG Peak", engine.lpgPeak)
   
-  params:add_control("LPG Decay", specs.LPG_DECAY, format_secs)
+  params:add_control("LPG Decay", specs.LPG_DECAY, MEFormatters.format_secs)
   params:set_action("LPG Decay", engine.lpgDecay)
   
   params:add_control("Reverb Mix", specs.REVERB_MIX)
   params:set_action("Reverb Mix", engine.reverbMix)
   
-  params:add_control("LFO Frequency", specs.LFO_FREQ, format_freq)
+  params:add_control("LFO Frequency", specs.LFO_FREQ, MEFormatters.format_freq)
   params:set_action("LFO Frequency", engine.lfoFreq)
   
   params:add_control("LFO Amount", specs.LFO_AMOUNT)
