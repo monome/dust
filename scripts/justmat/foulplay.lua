@@ -99,6 +99,7 @@ require 'er'
 engine.name = 'Ack'
 
 local g = grid.connect()
+local m = midi.connect()
 
 local ack = require 'jah/ack'
 local BeatClock = require 'beatclock'
@@ -114,6 +115,13 @@ local track_edit = 1
 local stopped = 1
 local pset_load_mode = false
 local current_pset = 0
+
+-- a table of midi note on/off status i = 1/0
+local note_off_queue = {}
+for i = 1, 8 do 
+  note_off_queue[i] = 0
+end
+
 -- added for grid support - junklight
 local current_mem_cell = 1
 local current_mem_cell_x = 4
@@ -123,6 +131,7 @@ local blink = false
 local copy_source_x = -1
 local copy_source_y = -1
 
+
 function simplecopy(obj)
   if type(obj) ~= 'table' then return obj end
   local res = {}
@@ -131,7 +140,7 @@ function simplecopy(obj)
   end
   return res
 end
----------------
+
 
 local memory_cell = {}
 for j = 1,25 do
@@ -151,18 +160,19 @@ for j = 1,25 do
   end
 end
 
+
 local function gettrack( cell , tracknum )
   return memory_cell[cell][tracknum]
 end
+
 
 local function cellfromgrid( x , y )
   return (((y - 1) * 5) + (x -4)) + 1
 end
 
-gettrack(current_mem_cell,i)
 
--- rotate_pattern comes to us via okyeron and stackexchange
 local function rotate_pattern(t, rot, n, r)
+  -- rotate_pattern comes to us via okyeron and stackexchange
   n, r = n or #t, {}
   rot = rot % n
   for i = 1, rot do
@@ -174,6 +184,7 @@ local function rotate_pattern(t, rot, n, r)
   return r
 end
 
+
 local function reer(i)
   if gettrack(current_mem_cell,i).k == 0 then
     for n=1,32 do gettrack(current_mem_cell,i).s[n] = false end
@@ -182,48 +193,117 @@ local function reer(i)
   end
 end
 
--- mutes are ignored for trigger logic target
 
 local function trig()
+  -- mute state is ignored for trigger logics
   for i, t in ipairs(memory_cell[current_mem_cell]) do
+    -- no trigger logic
     if t.trig_logic==0 and t.s[t.pos]  then
-      if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
-        engine.trig(i-1)
+      if math.random(100) <= t.prob and t.mute == 0 then
+        if params:get(i .. ": send midi") == 1 then
+          engine.trig(i-1)
+        else
+          m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+          note_off_queue[i] = 1
+        end
       end
-    elseif t.trig_logic == 1 then  -- and
+    else 
+      if note_off_queue[i] == 1 then
+        m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+        note_off_queue[i] = 0
+      end
+    end
+    -- logical and
+    if t.trig_logic == 1 then 
       if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
-        if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
-          engine.trig(i-1)
+        if math.random(100) <= t.prob and t.mute == 0 then
+          if params:get(i .. ": send midi") == 1 then
+            engine.trig(i-1)
+          else
+            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 1
+          end
+        else break end
+      else 
+        if note_off_queue[i] == 1 then
+          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+          note_off_queue[i] = 0
         end
       end
-    elseif t.trig_logic == 2 then  -- or
+    -- logical or  
+    elseif t.trig_logic == 2 then
       if t.s[t.pos] or gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
-        if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
-          engine.trig(i-1)
+        if math.random(100) <= t.prob and t.mute == 0 then
+          if params:get(i .. ": send midi") == 1 then
+            engine.trig(i-1)
+          else
+            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 1
+          end
+        else break end
+      else 
+        if note_off_queue[i] == 1 then
+          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          note_off_queue[i] = 0
         end
       end
-    elseif t.trig_logic == 3 then  -- nand
+    -- logical nand  
+    elseif t.trig_logic == 3 then
       if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
       elseif t.s[t.pos] then
-        if math.random(100) <= t.prob and gettrack(current_mem_cell, i).mute == 0 then
-          engine.trig(i-1)
+        if math.random(100) <= t.prob and t.mute == 0 then
+          if params:get(i .. ": send midi") == 1 then
+            engine.trig(i-1)
+          else
+            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 1
+          end
+        else break end
+      else 
+        if note_off_queue[i] == 1 then
+          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          note_off_queue[i] = 0
         end
       end
-    elseif t.trig_logic == 4 then  -- nor
+    -- logical nor  
+    elseif t.trig_logic == 4 then
       if not t.s[t.pos] then
-        if not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] and gettrack(current_mem_cell, i).mute == 0 then
-        engine.trig(i-1)
+        if not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] and t.mute == 0 then
+          if params:get(i .. ": send midi") == 1 then
+            engine.trig(i-1)
+          else
+            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 1
+          end
+        else break end
+      else 
+        if note_off_queue[i] == 1 then
+          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          note_off_queue[i] = 0
         end
       end
-    elseif t.trig_logic == 5 then  -- xor
-      if gettrack(current_mem_cell, i).mute == 0 then
+    -- logical xor   
+    elseif t.trig_logic == 5 then
+      if t.mute == 0 then
         if not t.s[t.pos] and not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         elseif t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
-        else engine.trig(i-1) end
-      end
+        else
+          if params:get(i .. ": send midi") == 1 then
+            engine.trig(i-1)
+          else
+            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 1
+          end
+          if note_off_queue[i] == 1 then
+            m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            note_off_queue[i] = 0
+          end
+        end
+      else break end
     end
   end
 end
+
 
 function init()
   for i=1, 8 do reer(i) end
@@ -233,17 +313,22 @@ function init()
   clk.on_step = step
   clk.on_select_internal = function() clk:start() end
   clk.on_select_external = reset_pattern
-
+  
+  -- add params
   clk:add_clock_params()
-
-  for channel=1,8 do
-    ack.add_channel_params(channel)
-  end
-
+  params:add_separator()
+  for i = 1, 8 do
+    params:add_option((i .. ": send midi"), {"no", "yes"}, 1)
+    params:add_number(i .. ": midi chan", 1, 16, 1)
+    params:add_number(i .. ": midi note", 0, 127, 0)
+    ack.add_channel_params(i)
+    params:add_separator()
+  end  
   ack.add_effects_params()
+  -- load default pset
   params:read("justmat/foulplay.pset")
   params:bang()
-
+  -- load pattern data
   loadstate()
 
   if stopped==1 then
@@ -251,12 +336,8 @@ function init()
   else
     clk:start()
   end
-
-  -- set up grid
+  
   -- grid refresh timer, 15 fps
-  -- this caught me out first time
-  -- the template updates the grid from keys
-  -- but it seems better to treat the grid like a screen
   metro_grid_redraw = metro.alloc(function(stage) grid_redraw() end, 1 / 15)
   metro_grid_redraw:start()
   -- blink for copy mode
@@ -264,10 +345,12 @@ function init()
   metro_blink:start()
 end
 
+
 function reset_pattern()
   reset = true
   clk:reset()
 end
+
 
 function step()
   if reset then
@@ -278,17 +361,21 @@ function step()
   else
     for i=1,8 do
       gettrack(current_mem_cell,i).pos = (gettrack(current_mem_cell,i).pos % gettrack(current_mem_cell,i).n) + 1
-    end
+    end 
   end
   trig()
   redraw()
 end
 
+
 function key(n,z)
-  -- normal and track edit views
+  -- home and track edit views
   if n==1 then view = z end
   if n==3 and z==1 and view==1 then
-    page = (page + 1) % 4
+    if params:get(track_edit ..": send midi") == 1 then
+      page = (page + 1) % 4
+    -- there are only 2 pages of midi options  
+    else page = (page + 1) % 2 end 
   end
   if n==3 then alt = z end
   -- track selection in track edit view
@@ -322,6 +409,7 @@ function key(n,z)
   redraw()
 end
 
+
 function enc(n,d)
   if alt==1 then
     -- mix volume control
@@ -338,14 +426,25 @@ function enc(n,d)
     end
   -- track edit view
   elseif view==1  and page==0 then
+    -- only show the engine edit options if midi note send is off
+    if params:get(track_edit .. ": send midi") == 1 then
     -- per track volume control
-    if n==1 then
-      params:delta(track_edit .. ": vol", d)
-    elseif n==2 then
-      params:delta(track_edit .. ": vol env atk", d)
-    elseif n==3 then
-      params:delta(track_edit .. ": vol env rel", d)
-    end
+      if n==1 then
+        params:delta(track_edit .. ": vol", d)
+      elseif n==2 then
+        params:delta(track_edit .. ": vol env atk", d)
+      elseif n==3 then
+        params:delta(track_edit .. ": vol env rel", d)
+      end
+    -- if send midi is on  
+    else
+      -- encoder 1 sets midi channel, 2 selects a note to send
+      if n==1 then
+        params:delta(track_edit .. ": midi chan", d)
+      elseif n==2 then
+        params:delta(track_edit .. ": midi note", d)
+      end
+    end  
 
   elseif view==1 and page==1 then
     -- trigger logic and probability settings
@@ -391,6 +490,7 @@ function enc(n,d)
   reer(track_edit)
   redraw()
 end
+
 
 function redraw()
   screen.aa(0)
@@ -449,21 +549,36 @@ function redraw()
     end
 
   elseif view==1 and page==0 then
-    screen.move(5, 10)
-    screen.level(15)
-    screen.text("track : " .. track_edit)
-    screen.move(120, 10)
-    screen.text_right("page " .. page + 1)
-    screen.move(5, 15)
-    screen.line(121, 15)
-    screen.move(64, 25)
-    screen.level(4)
-    screen.text_center("1. vol : " .. string.format("%.1f", params:get(track_edit .. ": vol")))
-    screen.move(64, 35)
-    screen.text_center("2. envelope attack : " .. params:get(track_edit .. ": vol env atk"))
-    screen.move(64, 45)
-    screen.text_center("3. envelope release : " .. params:get(track_edit .. ": vol env rel"))
-
+    if params:get(track_edit .. ": send midi") == 1 then
+      screen.move(5, 10)
+      screen.level(15)
+      screen.text("track : " .. track_edit)
+      screen.move(120, 10)
+      screen.text_right("page " .. page + 1)
+      screen.move(5, 15)
+      screen.line(121, 15)
+      screen.move(64, 25)
+      screen.level(4)
+      screen.text_center("1. vol : " .. string.format("%.1f", params:get(track_edit .. ": vol")))
+      screen.move(64, 35)
+      screen.text_center("2. envelope attack : " .. params:get(track_edit .. ": vol env atk"))
+      screen.move(64, 45)
+      screen.text_center("3. envelope release : " .. params:get(track_edit .. ": vol env rel"))
+    else
+      screen.move(5, 10)
+      screen.level(15)
+      screen.text("track : " .. track_edit)
+      screen.move(120, 10)
+      screen.text_right("page " .. page + 1)
+      screen.move(5, 15)
+      screen.line(121, 15)
+      screen.move(64, 25)
+      screen.level(4)
+      screen.text_center("1. midi channel : " .. params:get(track_edit .. ": midi chan"))
+      screen.move(64, 35)
+      screen.text_center("2. midi note : " .. params:get(track_edit .. ": midi note"))
+    end
+    
   elseif view==1 and page==1 then
     screen.move(5, 10)
     screen.level(15)
@@ -540,6 +655,7 @@ function redraw()
   screen.update()
 end
 
+
 midi.add = function(dev)
   dev.event = clk.process_midi
   print("foulplay: midi device added", dev.id, dev.name)
@@ -560,7 +676,7 @@ function g.event(x, y, state)
       gettrack(current_mem_cell, y).mute = 0
     end
   end
-  -- 4-6, are used to open track parameters pages
+  -- x 4-6, are used to open track parameters pages
   if y == 8 and x >= 4 and x <= 7 and state == 1 then
     view = 1
     page = x - 4
@@ -584,7 +700,7 @@ function g.event(x, y, state)
       step()
     end
   end
-  -- set pset load mode
+  -- set pset load button
   if x == 8 and y == 7 and state == 1 then
     pset_load_mode = true
   elseif x == 8 and y == 7 and state == 0 then
@@ -614,7 +730,6 @@ function g.event(x, y, state)
     copy_source_y = -1
   end
   -- memory cells
-  -- press to switch memory cell
   -- switches on grid down
   if not copy_mode and not pset_load_mode then
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 1 then
@@ -626,15 +741,13 @@ function g.event(x, y, state)
   else
     if y >= 1 and y <= 5 and x >= 4 and x <= 8 and state == 0 then
       if not pset_load_mode then
-      -- copy functionality
-      -- if we are in copy mode then don't switch
-      -- cells - copy cell instead
+        -- copy functionality
         if copy_source_x == -1 then
-        -- first button sets the source
+          -- first button sets the source
           copy_source_x = x
           copy_source_y = y
         else
-        -- copy source into target
+          -- second button copies source into target
           if copy_source_x ~= -1 and not ( copy_source_x == x and copy_source_y == y) then
             sourcecell = cellfromgrid( copy_source_x , copy_source_y )
             targetcell = cellfromgrid( x , y )
@@ -647,18 +760,16 @@ function g.event(x, y, state)
   redraw()
 end
 
+
 function grid_redraw()
   if g == nil then
     -- bail if we are too early
     return
   end
-  -- clear it all
   g.all(0)
   -- highlight current track
   g.led(1, track_edit, 15)
-  -- track page buttons
-  -- dim for off
-  -- bright for on
+  -- track edit page buttons
   for page = 0, 3 do
       g.led(page + 4, 8, 3)
   end
@@ -681,8 +792,8 @@ function grid_redraw()
   end
   -- highlight active cell
   g.led(current_mem_cell_x, current_mem_cell_y, 15)
-  -- copy mode - blink the source if set
   if copy_mode then
+    -- copy mode - blink the source if set
     if copy_source_x ~= -1 then
       if blink then
         g.led(copy_source_x, copy_source_y, 4)
@@ -707,7 +818,7 @@ function grid_redraw()
   if pset_load_mode then
     g.led(8, 7, 12)
   else g.led(8, 7, 3) end
-  -- copy button - bright for pressed, dim otherwise
+  -- copy button
   if copy_mode  then
     g.led(8, 8, 14)
   else
@@ -716,9 +827,11 @@ function grid_redraw()
   g.refresh()
 end
 
+
 function savestate()
   local file = io.open(data_dir .. "justmat/foulplay-pattern.data", "w+")
   io.output(file)
+  io.write("v1" .. "\n")
   for j = 1, 25 do
     for i = 1, 8 do
       io.write(memory_cell[j][i].k .. "\n")
@@ -738,21 +851,26 @@ function loadstate()
   if file then
     print("datafile found")
     io.input(file)
-    for j = 1, 25 do
-      for i = 1, 8 do
-        memory_cell[j][i].k = tonumber(io.read())
-        memory_cell[j][i].n = tonumber(io.read())
-        memory_cell[j][i].prob = tonumber(io.read())
-        memory_cell[j][i].trig_logic = tonumber(io.read())
-        memory_cell[j][i].logic_target = tonumber(io.read())
-        memory_cell[j][i].rotation = tonumber(io.read())
-        memory_cell[j][i].mute = tonumber(io.read())
+    if io.read() == "v1" then
+      for j = 1, 25 do
+        for i = 1, 8 do
+          memory_cell[j][i].k = tonumber(io.read())
+          memory_cell[j][i].n = tonumber(io.read())
+          memory_cell[j][i].prob = tonumber(io.read())
+          memory_cell[j][i].trig_logic = tonumber(io.read())
+          memory_cell[j][i].logic_target = tonumber(io.read())
+          memory_cell[j][i].rotation = tonumber(io.read())
+          memory_cell[j][i].mute = tonumber(io.read())
+        end
       end
+    else 
+      print("invalid data file")
     end
     io.close(file)
   end
   for i = 1, 8 do reer(i) end
 end
+
 
 cleanup = function()
   savestate()
