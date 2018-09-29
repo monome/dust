@@ -24,7 +24,6 @@ specs.REVERB_MIX = ControlSpec.UNIPOLAR
 specs.LFO_FREQ = ControlSpec.new(0.001, 10.0, "exp", 0, 0.5, "Hz")
 specs.LFO_AMOUNT = ControlSpec.new(0, 1, "lin", 0, 0.5, "")
 specs.DRIFT = ControlSpec.UNIPOLAR
-specs.RANDOMIZE = ControlSpec.new(0, 1, "lin", 1, 0, "") -- Bit of a hack to get a trigger param
 
 Passersby.specs = specs
 
@@ -70,7 +69,7 @@ function Passersby.add_params()
   
   params:bang()
   
-  params:add_control("Randomize", specs.RANDOMIZE, function() return "" end)
+  params:add_trigger("Randomize")
   params:set_action("Randomize", Passersby.randomize_params)
   
 end
@@ -89,7 +88,6 @@ function Passersby.randomize_params()
     if math.random() > 0.4 then params:set("LFO Destination " .. i, util.round(util.linlin(0, 1, 1, #Passersby.LFO_DESTINATIONS, math.random())))
     else params:set("LFO Destination " .. i, 0) end
   end
-  params:set("Randomize", 0)
 end
 
 return Passersby
