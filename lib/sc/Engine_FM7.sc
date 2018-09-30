@@ -9,10 +9,12 @@ Engine_FM7 : CroneEngine {
 
   alloc {
     synth = {
-      arg out, amp=0.5, amplag=0.02;
+      arg out, hz=440, amp=0.5, amplag=0.02;
       var amp_;
-      var ctrls = [[ 300, 0,    1   ],
-                   [ 400, pi/2, 1   ],
+      var hz_ = 440;
+      //hz_ = Lag.kr(hz, 0.01);
+      var ctrls = [[ LFNoise1.kr(0.5).range(300, 310), 0,    1   ],
+                   [ hz_, pi/2, 1   ],
                    [ 730, 0,    0.5 ],
                    [ 0,   0,    0   ],
                    [ 0,   0,    0   ],
@@ -31,6 +33,10 @@ Engine_FM7 : CroneEngine {
 
     this.addCommand("amp", "f", {arg msg;
       synth.set(\amp, msg[1]);
+    });
+
+    this.addCommand("hz", "f", {arg msg;
+      synth.set(\hz, msg[1]);
     });
   }
 
