@@ -26,7 +26,7 @@ Engine_MollyThePoly : CroneEngine {
 	var subOscLevel = 0;
 	var subOscDetune = 0;
 	var noiseLevel = 0;
-	var hpFilterCutoff = 20000;
+	var hpFilterCutoff = 10;
 	var lpFilterType = 0;
 	var lpFilterCutoff = 440;
 	var lpFilterResonance = 0.2;
@@ -43,7 +43,6 @@ Engine_MollyThePoly : CroneEngine {
 	var env2Decay = 0.3;
 	var env2Sustain = 0.5;
 	var env2Release = 0.5;
-	var amp = 0.5;
 	var ampMod = 0;
 	var channelPressure = 0;
 	var ringModFade = 0;
@@ -191,7 +190,7 @@ Engine_MollyThePoly : CroneEngine {
 
 		// Mixer and chorus
 		mixer = SynthDef(\mixer, {
-			arg in, out, amp, chorusMix;
+			arg in, out, amp = 0.5, chorusMix = 0;
 			var signal, chorus, chorusPreProcess, chorusLfo, chorusPreDelay = 0.01, chorusDepth = 0.0053, chorusDelay, controlLag = 0.005;
 
 			// Lag inputs
@@ -495,11 +494,6 @@ Engine_MollyThePoly : CroneEngine {
 			voiceGroup.set(\ampMod, ampMod);
 		});
 
-		this.addCommand(\amp, "f", { arg msg;
-			amp = msg[1];
-			mixer.set(\amp, amp);
-		});
-
 		this.addCommand(\ringModFade, "f", { arg msg;
 			ringModFade = msg[1];
 			voiceGroup.set(\ringModFade, ringModFade);
@@ -508,6 +502,10 @@ Engine_MollyThePoly : CroneEngine {
 		this.addCommand(\ringModMix, "f", { arg msg;
 			ringModMix = msg[1];
 			voiceGroup.set(\ringModMix, ringModMix);
+		});
+
+		this.addCommand(\amp, "f", { arg msg;
+			mixer.set(\amp, msg[1]);
 		});
 
 		this.addCommand(\chorusMix, "f", { arg msg;
