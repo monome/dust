@@ -67,36 +67,36 @@ function init()
   for i=1,#MusicUtil.SCALES do
     scales[i] = MusicUtil.SCALES[i].name
   end
-  params:add_option("scale", scales)
+  params:add_option("scale", "scale", scales)
   params:set_action("scale", build_scale)
 
-  params:add_option("root", MusicUtil.NOTE_NAMES)
+  params:add_option("root", "root", MusicUtil.NOTE_NAMES)
   params:set_action("root", build_scale)
 
   params:add_separator()
 
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp",cs.AMP)
+  params:add_control("amp", "amp", cs.AMP)
   params:set_action("amp",
   function(x) engine.amp(x) end) 
 
   cs.PW = cs.new(0,100,'lin',0,80,'%')
-  params:add_control("pw",cs.PW)
+  params:add_control("pw", "pw", cs.PW)
   params:set_action("pw",
   function(x) engine.pw(x/100) end) 
 
   cs.REL = cs.new(0.1,3.2,'lin',0,0.2,'s') 
-  params:add_control("release",cs.REL)
+  params:add_control("release", "release", cs.REL)
   params:set_action("release",
   function(x) engine.release(x) end) 
 
   cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff",cs.CUT)
+  params:add_control("cutoff", "cutoff", cs.CUT)
   params:set_action("cutoff",
   function(x) engine.cutoff(x) end) 
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain",cs.GAIN)
+  params:add_control("gain", "gain", cs.GAIN)
   params:set_action("gain",
   function(x) engine.gain(x) end) 
 

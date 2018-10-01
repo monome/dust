@@ -61,7 +61,7 @@ function build_scale()
   local n = 0
   for i=1,16 do
     notes[i] = n
-    n = n + scale_degrees[(params:get("scale mode") + i)%7 + 1]
+    n = n + scale_degrees[(params:get("scale_mode") + i)%7 + 1]
   end
   --tab.print(notes)
   for i=1,16 do freqs[i] = 110*2^((notes[i]+params:get("trans"))/12) end
@@ -78,38 +78,38 @@ function init()
   params:set("bpm",46)
   params:add_separator()
 
-  params:add_number("scale mode",1,7,3)
-  params:set_action("scale mode", function(n)
+  params:add_number("scale_mode", "scale mode", 1, 7, 3)
+  params:set_action("scale_mode", function(n)
     build_scale()
   end)
-  params:add_number("trans",-12,24,0)
+  params:add_number("trans", "trans", -12, 24, 0)
   params:set_action("trans", function(n)
     build_scale()
   end)
   params:add_separator()
 
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp",cs.AMP)
+  params:add_control("amp", "amp", cs.AMP)
   params:set_action("amp",
   function(x) engine.amp(x) end)
 
   cs.PW = cs.new(0,100,'lin',0,50,'%')
-  params:add_control("pw",cs.PW)
+  params:add_control("pw", "pw", cs.PW)
   params:set_action("pw",
   function(x) engine.pw(x/100) end)
 
   cs.REL = cs.new(0.1,3.2,'lin',0,1.2,'s')
-  params:add_control("release",cs.REL)
+  params:add_control("release", "release", cs.REL)
   params:set_action("release",
   function(x) engine.release(x) end)
 
   cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff",cs.CUT)
+  params:add_control("cutoff", "cutoff", cs.CUT)
   params:set_action("cutoff",
   function(x) engine.cutoff(x) end)
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain",cs.GAIN)
+  params:add_control("gain", "gain", cs.GAIN)
   params:set_action("gain",
   function(x) engine.gain(x) end)
 
@@ -186,15 +186,15 @@ end
 
 function enc(n, delta)
   if alt and n==1 then
-    params:delta("scale mode",delta)
+    params:delta("scale_mode", delta)
   elseif KEY3 and n==1 then
-    params:delta("trans",delta)
+    params:delta("trans", delta)
   elseif n == 1 then
-    params:delta("bpm",delta)
+    params:delta("bpm", delta)
   elseif alt and n == 2 then
-    params:delta("cutoff",delta)
+    params:delta("cutoff", delta)
   elseif alt and n == 3 then
-    params:delta("release",delta)
+    params:delta("release", delta)
   elseif KEY3 and n==2 then
     one.length = util.clamp(one.length+delta,1,16)
   elseif KEY3 and n==3 then
@@ -284,7 +284,7 @@ function redraw()
   screen.text("bpm:"..params:get("bpm"))
   screen.level(alt and 15 or 4)
   screen.move(0,20)
-  screen.text("sc:"..params:get("scale mode"))
+  screen.text("sc:"..params:get("scale_mode"))
   screen.level(KEY3 and 15 or 4)
   screen.move(0,30)
   screen.text("tr:"..params:get("trans"))

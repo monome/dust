@@ -200,16 +200,16 @@ local function trig()
     -- no trigger logic
     if t.trig_logic==0 and t.s[t.pos]  then
       if math.random(100) <= t.prob and t.mute == 0 then
-        if params:get(i .. ": send midi") == 1 then
+        if params:get(i.."send_midi") == 1 then
           engine.trig(i-1)
         else
-          m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+          m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
           note_off_queue[i] = 1
         end
       end
     else 
       if note_off_queue[i] == 1 then
-        m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+        m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan")) 
         note_off_queue[i] = 0
       end
     end
@@ -217,16 +217,16 @@ local function trig()
     if t.trig_logic == 1 then 
       if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
         if math.random(100) <= t.prob and t.mute == 0 then
-          if params:get(i .. ": send midi") == 1 then
+          if params:get(i.."send_midi") == 1 then
             engine.trig(i-1)
           else
-            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 1
           end
         else break end
       else 
         if note_off_queue[i] == 1 then
-          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+          m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
           note_off_queue[i] = 0
         end
       end
@@ -234,16 +234,16 @@ local function trig()
     elseif t.trig_logic == 2 then
       if t.s[t.pos] or gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         if math.random(100) <= t.prob and t.mute == 0 then
-          if params:get(i .. ": send midi") == 1 then
+          if params:get(i.."send_midi") == 1 then
             engine.trig(i-1)
           else
-            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 1
           end
         else break end
       else 
         if note_off_queue[i] == 1 then
-          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
           note_off_queue[i] = 0
         end
       end
@@ -252,16 +252,16 @@ local function trig()
       if t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos]  then
       elseif t.s[t.pos] then
         if math.random(100) <= t.prob and t.mute == 0 then
-          if params:get(i .. ": send midi") == 1 then
+          if params:get(i.."send_midi") == 1 then
             engine.trig(i-1)
           else
-            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 1
           end
         else break end
       else 
         if note_off_queue[i] == 1 then
-          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
           note_off_queue[i] = 0
         end
       end
@@ -269,16 +269,16 @@ local function trig()
     elseif t.trig_logic == 4 then
       if not t.s[t.pos] then
         if not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] and t.mute == 0 then
-          if params:get(i .. ": send midi") == 1 then
+          if params:get(i.."send_midi") == 1 then
             engine.trig(i-1)
           else
-            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 1
           end
         else break end
       else 
         if note_off_queue[i] == 1 then
-          m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan")) 
+          m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
           note_off_queue[i] = 0
         end
       end
@@ -288,14 +288,14 @@ local function trig()
         if not t.s[t.pos] and not gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         elseif t.s[t.pos] and gettrack(current_mem_cell,t.logic_target).s[gettrack(current_mem_cell,t.logic_target).pos] then
         else
-          if params:get(i .. ": send midi") == 1 then
+          if params:get(i.."send_midi") == 1 then
             engine.trig(i-1)
           else
-            m.note_on(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_on(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 1
           end
           if note_off_queue[i] == 1 then
-            m.note_off(params:get(i .. ": midi note"), 100, params:get(i .. ": midi chan"))
+            m.note_off(params:get(i.."midi_note"), 100, params:get(i.."midi_chan"))
             note_off_queue[i] = 0
           end
         end
@@ -318,9 +318,9 @@ function init()
   clk:add_clock_params()
   params:add_separator()
   for i = 1, 8 do
-    params:add_option((i .. ": send midi"), {"no", "yes"}, 1)
-    params:add_number(i .. ": midi chan", 1, 16, 1)
-    params:add_number(i .. ": midi note", 0, 127, 0)
+    params:add_option(i.."send_midi", i..": send midi", {"no", "yes"}, 1)
+    params:add_number(i.."midi_chan", i..": midi chan", 1, 16, 1)
+    params:add_number(i.."midi_note", i..": midi note", 0, 127, 0)
     ack.add_channel_params(i)
     params:add_separator()
   end  
@@ -372,7 +372,7 @@ function key(n,z)
   -- home and track edit views
   if n==1 then view = z end
   if n==3 and z==1 and view==1 then
-    if params:get(track_edit ..": send midi") == 1 then
+    if params:get(track_edit.."send_midi") == 1 then
       page = (page + 1) % 4
     -- there are only 2 pages of midi options  
     else page = (page + 1) % 2 end 
@@ -427,7 +427,7 @@ function enc(n,d)
   -- track edit view
   elseif view==1  and page==0 then
     -- only show the engine edit options if midi note send is off
-    if params:get(track_edit .. ": send midi") == 1 then
+    if params:get(track_edit.."send_midi") == 1 then
     -- per track volume control
       if n==1 then
         params:delta(track_edit .. ": vol", d)
@@ -549,7 +549,7 @@ function redraw()
     end
 
   elseif view==1 and page==0 then
-    if params:get(track_edit .. ": send midi") == 1 then
+    if params:get(track_edit.."send_midi") == 1 then
       screen.move(5, 10)
       screen.level(15)
       screen.text("track : " .. track_edit)

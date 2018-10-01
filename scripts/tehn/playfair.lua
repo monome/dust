@@ -126,7 +126,7 @@ end
 function enc(n,d)
   if n==1 then
     if alt==1 then
-      params:delta("bpm",d)
+      params:delta("bpm", d)
     else
       track_edit = util.clamp(track_edit+d,1,4)
     end
