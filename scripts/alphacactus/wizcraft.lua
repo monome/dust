@@ -1,10 +1,10 @@
 -- wizcraft
 -- key1 shift^
--- key2 add vector / ^add 2
--- key3 / ^clear screen
--- enc1 output / ^
--- enc2 drift / ^detune
--- enc3 / ^noise
+-- key2 add voice / ^
+-- key3 clear screen / ^
+-- enc1 drift / ^output
+-- enc2 push/pull / ^detune
+-- enc3 up/down / ^noise
 
 g = grid.connect()
 
@@ -176,7 +176,11 @@ end
 
 function enc(n, d)
     if n == 1 then
-        params:delta("drift", d)
+        if mode == 1 then
+            mix:delta("output", d)
+        else
+            params:delta("drift", d)
+        end
     elseif n == 2 then
         if mode == 1 then
             params:delta("detune", d)
@@ -227,10 +231,10 @@ function key(n, z)
     elseif n == 3 then
         if z == 1 then
             if mode == 1 then
+
+            else
                 engine.stopAll()
                 vectors = {}
-            else
-
             end
         end
     end
