@@ -31,15 +31,15 @@ local function randomsample()
 end
 
 local function randomparams()
-  params:set("1: speed", math.random(-200,200))
-  params:set("1: jitter", math.random(0,500))
-  params:set("1: size", math.random(1,500))
-  params:set("1: density", math.random(0,512))
-  params:set("1: pitch", math.random(-24,0))
-  params:set("1: spread", math.random(0,100))
-  params:set("*: mix", math.random(0,100))
-  params:set("*: room", math.random(0,100))
-  params:set("*: damp", math.random(0,100))
+  params:set("1speed", math.random(-200,200))
+  params:set("1jitter", math.random(0,500))
+  params:set("1size", math.random(1,500))
+  params:set("1density", math.random(0,512))
+  params:set("1pitch", math.random(-24,0))
+  params:set("1spread", math.random(0,100))
+  params:set("reverb_mix", math.random(0,100))
+  params:set("reverb_room", math.random(0,100))
+  params:set("reverb_damp", math.random(0,100))
 end
 
 function init()
@@ -55,44 +55,44 @@ function init()
   
   local sep = ": "
 
-  params:add_taper("*"..sep.."mix", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."mix", function(value) engine.reverb_mix(value / 100) end)
+  params:add_taper("reverb_mix", "*"..sep.."mix", 0, 100, 50, 0, "%")
+  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
 
-  params:add_taper("*"..sep.."room", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."room", function(value) engine.reverb_room(value / 100) end)
+  params:add_taper("reverb_room", "*"..sep.."room", 0, 100, 50, 0, "%")
+  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
 
-  params:add_taper("*"..sep.."damp", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."damp", function(value) engine.reverb_damp(value / 100) end)
+  params:add_taper("reverb_damp", "*"..sep.."damp", 0, 100, 50, 0, "%")
+  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
   
   for v = 1, VOICES do
     params:add_separator()
 
-    params:add_file(v..sep.."sample")
-    params:set_action(v..sep.."sample", function(file) engine.read(v, file) end)
+    params:add_file(v.."sample", v..sep.."sample")
+    params:set_action(v.."sample", function(file) engine.read(v, file) end)
 
-    params:add_taper(v..sep.."volume", -60, 20, 0, 0, "dB")
-    params:set_action(v..sep.."volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+    params:add_taper(v.."volume", v..sep.."volume", -60, 20, 0, 0, "dB")
+    params:set_action(v.."volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
 
-    params:add_taper(v..sep.."speed", -200, 200, 100, 0, "%")
-    params:set_action(v..sep.."speed", function(value) engine.speed(v, value / 100) end)
+    params:add_taper(v.."speed", v..sep.."speed", -200, 200, 100, 0, "%")
+    params:set_action(v.."speed", function(value) engine.speed(v, value / 100) end)
 
-    params:add_taper(v..sep.."jitter", 0, 500, 0, 5, "ms")
-    params:set_action(v..sep.."jitter", function(value) engine.jitter(v, value / 1000) end)
+    params:add_taper(v.."jitter", v..sep.."jitter", 0, 500, 0, 5, "ms")
+    params:set_action(v.."jitter", function(value) engine.jitter(v, value / 1000) end)
 
-    params:add_taper(v..sep.."size", 1, 500, 100, 5, "ms")
-    params:set_action(v..sep.."size", function(value) engine.size(v, value / 1000) end)
+    params:add_taper(v.."size", v..sep.."size", 1, 500, 100, 5, "ms")
+    params:set_action(v.."size", function(value) engine.size(v, value / 1000) end)
 
-    params:add_taper(v..sep.."density", 0, 512, 20, 6, "hz")
-    params:set_action(v..sep.."density", function(value) engine.density(v, value) end)
+    params:add_taper(v.."density", v..sep.."density", 0, 512, 20, 6, "hz")
+    params:set_action(v.."density", function(value) engine.density(v, value) end)
 
-    params:add_taper(v..sep.."pitch", -24, 24, 0, 0, "st")
-    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
+    params:add_taper(v.."pitch", v..sep.."pitch", -24, 24, 0, 0, "st")
+    params:set_action(v.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
 
-    params:add_taper(v..sep.."spread", 0, 100, 0, 0, "%")
-    params:set_action(v..sep.."spread", function(value) engine.spread(v, value / 100) end)
+    params:add_taper(v.."spread", v..sep.."spread", 0, 100, 0, 0, "%")
+    params:set_action(v.."spread", function(value) engine.spread(v, value / 100) end)
 
-    params:add_taper(v..sep.."att / dec", 1, 9000, 1000, 3, "ms")
-    params:set_action(v..sep.."att / dec", function(value) engine.envscale(v, value / 1000) end)
+    params:add_taper(v.."fade", v..sep.."att / dec", 1, 9000, 1000, 3, "ms")
+    params:set_action(v.."fade", function(value) engine.envscale(v, value / 1000) end)
   end
   
   params:bang()
@@ -109,12 +109,12 @@ end
 
 function enc(n, d)
   if n == 1 then
-    params:delta("1: volume", d)
+    params:delta("1volume", d)
   elseif n == 2 then
-    params:delta("1: speed", d)
+    params:delta("1speed", d)
     screen_dirty = true
   elseif n == 3 then
-    params:delta("1: pitch", d)
+    params:delta("1pitch", d)
     screen_dirty = true
   end
 end
@@ -128,7 +128,7 @@ function key(n, z)
       -- nothing for now
     else
       channel = channel + 1
-      params:set("1: sample", randomsample())
+      params:set("1sample", randomsample())
       randomparams()
       start_voice()
       screen_dirty = true
@@ -169,11 +169,11 @@ local function drawtv()
 end
 
 local function cleanfilename()
-  return(string.gsub(params:get("1: sample"), "/home/we/dust/audio/tape/", ""))
+  return(string.gsub(params:get("1sample"), "/home/we/dust/audio/tape/", ""))
 end
 
 local function guidetext(parameter, measure)
-  return(parameter .. ": " .. printround(params:get("1: " .. parameter), 1) .. measure)
+  return(parameter .. ": " .. printround(params:get("1"..parameter), 1) .. measure)
 end
 
 function redraw()

@@ -119,7 +119,7 @@ end
 function init()
 
   -- parameters
-  params:add_number("bpm", 15, 400, 60)
+  params:add_number("bpm", "bpm", 15, 400, 60)
 
   ack.add_effects_params()
 

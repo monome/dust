@@ -315,10 +315,10 @@ BI1 = controlspec.new(-1, 1, 'lin', 0, 0, "")
 
 -------------------- init
 init = function()
-  params:add_option("midi_sync",{"off","on"})
-  params:add_number("tempo",40,240,92)
+  params:add_option("midi_sync", "midi_sync", {"off", "on"})
+  params:add_number("tempo", "tempo", 40, 240, 92)
   params:set_action("tempo", function() update_tempo() end)
-  params:add_number("quant_div",1,32,4)
+  params:add_number("quant_div", "quant_div", 1, 32, 4)
   params:set_action("quant_div",function() update_tempo() end)
   p = {}
   for i=1,TRACKS do
@@ -352,7 +352,7 @@ init = function()
     p[i] = poll.set("phase_quant_"..i, function(x) phase(i,x) end)
     p[i]:start()
 
-    params:add_control(i.."vol",UP1)
+    params:add_control(i.."vol", i.."vol", UP1)
     params:set_action(i.."vol", function(x) engine.amp(i,x) end)
     --params:add_control(i.."pan",BI1)
     --params:set_action(i.."pan",
@@ -360,19 +360,19 @@ init = function()
         --engine.play_dac(i,1,math.min(1,1+x))
         --engine.play_dac(i,2,math.min(1,1-x))
       --end)
-    params:add_control(i.."rec",UP1)
+    params:add_control(i.."rec", i.."rec", UP1)
     params:set_action(i.."rec",
       function(x)
         track[i].rec_level = x
         set_rec(i)
       end)
-    params:add_control(i.."pre",controlspec.UNIPOLAR)
+    params:add_control(i.."pre", i.."pre", controlspec.UNIPOLAR)
     params:set_action(i.."pre",
       function(x)
         track[i].pre_level = x
         set_rec(i)
       end)
-    params:add_control(i.."speed_mod", controlspec.BIPOLAR)
+    params:add_control(i.."speed_mod", i.."speed_mod", controlspec.BIPOLAR)
     params:set_action(i.."speed_mod", function() update_rate(i) end)
   end
 
@@ -387,7 +387,7 @@ init = function()
   midiclocktimer = metro.alloc()
   midiclocktimer.count = -1
   midiclocktimer.callback = function()
-    if midi_device and params:get("midi_sync")==2 then midi_device.send({248}) end
+    if midi_device and params:get("midi_sync") == 2 then midi_device.send({248}) end
   end
   update_tempo()
   midiclocktimer:start()
