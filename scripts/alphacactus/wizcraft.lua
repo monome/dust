@@ -47,9 +47,13 @@ function Vector:update()
     self.x = self.x + self.xv
     self.y = self.y + self.yv
 
-    local note = ((7-(self.y/8))*5) + (self.x/8)
-    engine.start(self.id, getHzET(note))
 end
+
+function Vector:play_note()
+    local note = ((7-(self.y/8))*5) + (self.x/8)
+    engine.start(self.id, 55*2^(note/12))
+end
+
 
 function Vector:draw(c)
     screen.level(c)
@@ -172,7 +176,7 @@ end
 
 function enc(n, d)
     if n == 1 then
-        mix:delta("output", d)
+        params:delta("drift", d)
     elseif n == 2 then
         if mode == 1 then
             params:delta("detune", d)
@@ -190,6 +194,8 @@ function enc(n, d)
                 else
                     v.y = util.clamp(v.y-d, 0, 31-v.s)
                 end
+
+                v:play_note()
             end
         end
     elseif n == 3 then
@@ -199,6 +205,7 @@ function enc(n, d)
             for i=1,#vectors do
                 local v = vectors[i]
                 v.y = util.clamp(v.y+d, 0, 64-v.s)
+                v:play_note()
             end
         end
     end
@@ -214,8 +221,7 @@ function key(n, z)
             else
                 local v = Vector:new()
                 table.insert(vectors, v)
-                local note = ((7-(v.y/8))*5) + (v.x/8)
-                engine.start(v.id, getHzET(note))
+                v:play_note()
             end
         end
     elseif n == 3 then
