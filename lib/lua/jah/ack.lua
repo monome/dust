@@ -87,8 +87,8 @@ function Ack.add_vol_param(channel)
 end
 
 function Ack.add_vol_env_atk_param(channel)
-  params:add_control(channel..": vol env atk", specs.volume_env_attack, Formatters.secs_as_ms)
-  params:set_action(channel..": vol env atk", function(value) engine.volumeEnvAttack(channel-1, value) end)
+  params:add_control(channel.."_vol_env_atk", channel..": vol env atk", specs.volume_env_attack, Formatters.secs_as_ms)
+  params:set_action(channel.."_vol_env_atk", function(value) engine.volumeEnvAttack(channel-1, value) end)
 end
 
 function Ack.add_vol_env_rel_param(channel)

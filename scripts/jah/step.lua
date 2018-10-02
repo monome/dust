@@ -87,7 +87,7 @@ end
 
 local function refresh_grid_button(x, y, refresh)
   if grid_device then
-    if params:get("last row cuts") == 2 and y == 8 then
+    if params:get("last_row_cuts") == 2 and y == 8 then
       if x-1 == playpos then
         grid_device:led(x, y, PLAYPOS_LEVEL)
       else
@@ -135,7 +135,7 @@ end
 local function tick()
   ticks = (ticks or -1) + 1
 
-  if queued_playpos and params:get("cut quant") == 1 then
+  if queued_playpos and params:get("cut_quant") == 1 then
     ticks_to_next = 0
   end
 
@@ -149,7 +149,7 @@ local function tick()
     end
     local ts = {}
     for y=1,8 do
-      if trig_is_set(params:get("pattern"), playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
+      if trig_is_set(params:get("pattern"), playpos+1, y) and not (params:get("last_row_cuts") == 2 and y == 8) then
         ts[y] = 1
       else
         ts[y] = 0
@@ -178,7 +178,7 @@ local function tick()
 end
 
 local function update_metro_time()
-  timer.time = 60/params:get("tempo")/ppqn/params:get("beats per pattern")
+  timer.time = 60/params:get("tempo")/ppqn/params:get("beats_per_pattern")
 end
 
 local function update_swing(swing_amount)
@@ -189,7 +189,7 @@ end
 
 local function gridkey_event(x, y, state)
   if state == 1 then
-    if params:get("last row cuts") == 2 and y == 8 then
+    if params:get("last_row_cuts") == 2 and y == 8 then
       queued_playpos = x-1
     else
       set_trig(params:get("pattern"), x, y, not trig_is_set(params:get("pattern"), x, y))
