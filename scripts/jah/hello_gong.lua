@@ -157,14 +157,13 @@ local function note_off(note)
 end
 
 local function default_patch()
-  params:set("osc1 > osc3 freq", 1)
-  params:set("osc1 partial no", 2)
-  -- params:set_raw("osc1 partial no", 0.13043) -- = 2 mapped
-  params:set("osc3 gain", 1)
-  params:set("osc3 index", 5)
-  params:set("osc3 > amp", 0.1)
-  params:set("env > osc1 gain", 0.5)
-  params:set("env > amp gain", 1)
+  params:set("osc1_to_osc3freq", 1)
+  params:set("osc1partial", 2)
+  params:set("osc3gain", 1)
+  params:set("osc3index", 5)
+  params:set("osc3outlevel", 0.1)
+  params:set("env_to_osc1gain", 0.5)
+  params:set("env_to_ampgain", 1)
   --[[
   params:set("delay send", -20)
   params:set("delay time left", 0.03)
