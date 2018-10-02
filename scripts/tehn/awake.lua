@@ -23,8 +23,6 @@
 -- modify sound params in
 -- SYSTEM > AUDIO menu
 
-local cs = require 'controlspec'
-
 engine.name = 'PolyPerc'
 
 local g = grid.connect()
@@ -78,40 +76,33 @@ function init()
   params:set("bpm",46)
   params:add_separator()
 
-  params:add_number("scale_mode", "scale mode", 1, 7, 3)
-  params:set_action("scale_mode", function(n)
-    build_scale()
-  end)
-  params:add_number("trans", "trans", -12, 24, 0)
-  params:set_action("trans", function(n)
-    build_scale()
-  end)
+  params:add{type="number",id="scale_mode",name="scale mode",
+    min=1,max=7,default=3,
+    action=function(n) build_scale() end}
+  params:add{type="number",id="trans",
+    min = -12, max = 24, default = 0,
+    action = function() build_scale() end}
   params:add_separator()
 
-  cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp", "amp", cs.AMP)
-  params:set_action("amp",
-  function(x) engine.amp(x) end)
+  cs_AMP = controlspec.new(0,1,'lin',0,0.5,'')
+  params:add{type="control",id="amp",controlspec=cs_AMP,
+    action=function(x) engine.amp(x) end}
 
-  cs.PW = cs.new(0,100,'lin',0,50,'%')
-  params:add_control("pw", "pw", cs.PW)
-  params:set_action("pw",
-  function(x) engine.pw(x/100) end)
+  cs_PW = controlspec.new(0,100,'lin',0,50,'%')
+  params:add{type="control",id="pw",controlspec=cs_PW,
+    action=function(x) engine.pw(x/100) end}
 
-  cs.REL = cs.new(0.1,3.2,'lin',0,1.2,'s')
-  params:add_control("release", "release", cs.REL)
-  params:set_action("release",
-  function(x) engine.release(x) end)
+  cs_REL = controlspec.new(0.1,3.2,'lin',0,1.2,'s')
+  params:add{type="control",id="release",controlspec=cs_REL,
+    action=function(x) engine.release(x) end}
 
-  cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff", "cutoff", cs.CUT)
-  params:set_action("cutoff",
-  function(x) engine.cutoff(x) end)
+  cs_CUT = controlspec.new(50,5000,'exp',0,555,'hz')
+  params:add{type="control",id="cutoff",controlspec=cs_CUT,
+    action=function(x) engine.cutoff(x) end}
 
-  cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain", "gain", cs.GAIN)
-  params:set_action("gain",
-  function(x) engine.gain(x) end)
+  cs_GAIN = controlspec.new(0,4,'lin',0,1,'')
+  params:add{type="control",id="gain",controlspec=cs_GAIN,
+    action=function(x) engine.gain(x) end}
 
   params:read("tehn/awake.pset")
   params:bang()
