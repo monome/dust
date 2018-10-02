@@ -10,22 +10,16 @@ Engine_FM7 : CroneEngine {
   alloc {
     synth = {
       arg out, hz=440, amp=0.5, amplag=0.02;
-      var amp_;
-      // this works
-      var hz_ = 440;
-      // this fails on norns with "Error: Audio Engine"
-      // var hz_;
-      // hz_ = Lag.kr(hz, 0.01);
-      // this fails on norns with "Error: Audio Engine"
-      // var hz_ = hz;
-      var ctrls = [[ LFNoise1.kr(0.5).range(300, 310), 0,    1   ],
+      var amp_,hz_, ctrls, mods;
+      hz_ = Lag.kr(hz, 0.01);
+      ctrls = [[ LFNoise1.kr(0.5).range(300, 310), 0,    1   ],
                    [ hz_, pi/2, 1   ],
                    [ 730, 0,    0.5 ],
                    [ 0,   0,    0   ],
                    [ 0,   0,    0   ],
                    [ 0,   0,    0   ]];
 
-      var mods = [[0,0,0,0,0,0],
+      mods = [[0,0,0,0,0,0],
                   [0,0,0,0,0,0],
                   [0,0,0,0,0,0],
                   [0,0,0,0,0,0],
