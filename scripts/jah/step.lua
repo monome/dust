@@ -87,7 +87,7 @@ end
 
 local function refresh_grid_button(x, y, refresh)
   if grid_device then
-    if params:get("last row cuts") == 2 and y == 8 then
+    if params:get("last_row_cuts") == 2 and y == 8 then
       if x-1 == playpos then
         grid_device:led(x, y, PLAYPOS_LEVEL)
       else
@@ -135,7 +135,7 @@ end
 local function tick()
   ticks = (ticks or -1) + 1
 
-  if queued_playpos and params:get("cut quant") == 1 then
+  if queued_playpos and params:get("cut_quant") == 1 then
     ticks_to_next = 0
   end
 
@@ -149,7 +149,7 @@ local function tick()
     end
     local ts = {}
     for y=1,8 do
-      if trig_is_set(params:get("pattern"), playpos+1, y) and not (params:get("last row cuts") == 2 and y == 8) then
+      if trig_is_set(params:get("pattern"), playpos+1, y) and not (params:get("last_row_cuts") == 2 and y == 8) then
         ts[y] = 1
       else
         ts[y] = 0
@@ -178,7 +178,7 @@ local function tick()
 end
 
 local function update_metro_time()
-  timer.time = 60/params:get("tempo")/ppqn/params:get("beats per pattern")
+  timer.time = 60/params:get("tempo")/ppqn/params:get("beats_per_pattern")
 end
 
 local function update_swing(swing_amount)
@@ -189,7 +189,7 @@ end
 
 local function gridkey_event(x, y, state)
   if state == 1 then
-    if params:get("last row cuts") == 2 and y == 8 then
+    if params:get("last_row_cuts") == 2 and y == 8 then
       queued_playpos = x-1
     else
       set_trig(params:get("pattern"), x, y, not trig_is_set(params:get("pattern"), x, y))
@@ -228,23 +228,23 @@ function init()
   timer = Metro.alloc()
   timer.callback = tick
 
-  params:add_number("pattern", 1, NUMPATTERNS, 1)
+  params:add_number("pattern", "pattern", 1, NUMPATTERNS, 1)
   params:set_action("pattern", function(value) refresh_grid() end)
-  params:add_option("last row cuts", {"no", "yes"}, 1)
-  params:set_action("last row cuts", function(value)
+  params:add_option("last_row_cuts", "last row cuts", {"no", "yes"}, 1)
+  params:set_action("last_row_cuts", function(value)
     last_row_cuts = (value == 2)
     refresh_grid()
   end)
-  params:add_option("cut quant", {"no", "yes"}, 1)
-  params:add_number("beats per pattern", 1, 8, 4)
-  params:set_action("beats per pattern", function(value) update_metro_time() end)
-  params:add_control("tempo", tempo_spec)
+  params:add_option("cut_quant", "cut quant", {"no", "yes"}, 1)
+  params:add_number("beats_per_pattern", "beats per pattern", 1, 8, 4)
+  params:set_action("beats_per_pattern", function(value) update_metro_time() end)
+  params:add_control("tempo", "tempo", tempo_spec)
   params:set_action("tempo", function(bpm) update_metro_time() end)
 
   update_metro_time()
 
-  params:add_control("swing amount", swing_amount_spec)
-  params:set_action("swing amount", update_swing)
+  params:add_control("swing_amount", "swing amount", swing_amount_spec)
+  params:set_action("swing_amount", update_swing)
 
   params:add_separator()
   Ack.add_params()
@@ -272,7 +272,7 @@ function enc(n, delta)
   elseif n == 2 then
     params:delta("tempo", delta)
   elseif n == 3 then
-    params:delta("swing amount", delta)
+    params:delta("swing_amount", delta)
   end
   redraw()
 end
@@ -323,7 +323,7 @@ function redraw()
   screen.move(10,50)
   screen.text(params:string("tempo"))
   screen.move(70,50)
-  screen.text(params:string("swing amount"))
+  screen.text(params:string("swing_amount"))
   screen.level(3)
   screen.move(10,60)
   screen.text("tempo")
