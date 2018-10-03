@@ -134,7 +134,7 @@ local function midi_event(data)
   if #data == 0 then return end
   
   local msg = midi.to_msg(data)
-  local channel_param = params:get("MIDI Channel")
+  local channel_param = params:get("midi_channel")
   
   if channel_param == 1 or (channel_param > 1 and msg.ch == channel_param - 1) then
     
@@ -214,14 +214,13 @@ function init()
   
   -- Add params
   
-  params:add_number("MIDI Device", 1, 4, 1)
-  params:set_action("MIDI Device", function(value)
+  params:add{type = "number", id = "midi_device", name = "MIDI Device", min = 1, max = 4, default = 1, action = function(value)
     midi_in_device:reconnect(value)
-  end)
+  end}
   
   local channels = {"All"}
   for i = 1, 16 do table.insert(channels, i) end
-  params:add_option("MIDI Channel", channels)
+  params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
   
   params:add_separator()
   
