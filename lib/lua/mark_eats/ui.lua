@@ -222,6 +222,38 @@ function UI.ScrollingList:redraw()
 end
 
 
+-------- Message --------
+
+UI.Message = {}
+UI.Message.__index = UI.Message
+
+--- Create a new Message object.
+-- @param text_array Array of lines of text.
+-- @return Instance of Message.
+function UI.Message.new(text_array)
+  local message = {}
+  setmetatable(UI.Message, {__index = UI})
+  setmetatable(message, UI.Message)
+  message.text = text_array or {}
+  message.active = true
+  return message
+end
+
+--- Redraw Message.
+-- Call when changed.
+function UI.Message:redraw()
+  local LINE_HEIGHT = 11
+  local y = util.round(34 - LINE_HEIGHT * (#self.text - 1) * 0.5)
+  for i = 1, #self.text do
+    if self.active then screen.level(15)
+    else screen.level(3) end
+    screen.move(64, y)
+    screen.text_center(self.text[i])
+    y = y + 11
+  end
+end
+
+
 -------- PlaybackIcon --------
 
 UI.PlaybackIcon = {}

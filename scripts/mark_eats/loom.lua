@@ -32,10 +32,10 @@ local MollyThePoly = require "mark_eats/mollythepoly"
 
 engine.name = "MollyThePoly"
 
-local specs = {}
-specs.OUTPUT = {"Audio", "MIDI", "Audio + MIDI"}
-specs.STEP_LENGTH_NAMES = {"1 bar", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/48", "1/64"}
-specs.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
+local options = {}
+options.OUTPUT = {"Audio", "MIDI", "Audio + MIDI"}
+options.STEP_LENGTH_NAMES = {"1 bar", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/48", "1/64"}
+options.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
 
 local DATA_FILE_PATH = data_dir .. "mark_eats/loom.data"
 
@@ -132,12 +132,12 @@ local function load_pattern(index)
   if index > #save_data.patterns then return end
   
   local pattern = copy_object(save_data.patterns[index])
-  params:set("BPM", pattern.bpm)
-  params:set("Step Length", pattern.step_length)
-  params:set("Pattern Width", pattern.pattern_width)
-  params:set("Pattern Height", pattern.pattern_height)
-  params:set("Min Velocity", pattern.min_velocity)
-  params:set("Max Velocity", pattern.max_velocity)
+  params:set("bpm", pattern.bpm)
+  params:set("step_length", pattern.step_length)
+  params:set("pattern_width", pattern.pattern_width)
+  params:set("pattern_height", pattern.pattern_height)
+  params:set("min_velocity", pattern.min_velocity)
+  params:set("max_velocity", pattern.max_velocity)
   notes = pattern.notes
   triggers = pattern.triggers
   root_note = pattern.root_note
@@ -154,12 +154,12 @@ end
 local function save_pattern(index)
   local pattern = {}
   pattern.name = os.date("%b %d %H:%M")
-  pattern.bpm = params:get("BPM")
-  pattern.step_length = params:get("Step Length")
-  pattern.pattern_width = params:get("Pattern Width")
-  pattern.pattern_height = params:get("Pattern Height")
-  pattern.min_velocity = params:get("Min Velocity")
-  pattern.max_velocity = params:get("Max Velocity")
+  pattern.bpm = params:get("bpm")
+  pattern.step_length = params:get("step_length")
+  pattern.pattern_width = params:get("pattern_width")
+  pattern.pattern_height = params:get("pattern_height")
+  pattern.min_velocity = params:get("min_velocity")
+  pattern.max_velocity = params:get("max_velocity")
   pattern.notes = notes
   pattern.triggers = triggers
   pattern.root_note = root_note
@@ -191,7 +191,7 @@ end
 
 local function note_on(note_num)
   
-  local min_vel, max_vel = params:get("Min Velocity"), params:get("Max Velocity")
+  local min_vel, max_vel = params:get("min_velocity"), params:get("max_velocity")
   if min_vel > max_vel then
     max_vel = min_vel
   end
@@ -200,12 +200,12 @@ local function note_on(note_num)
   -- print("note_on", note_num, note_midi_vel)
   
   -- Audio engine out
-  if params:get("Output") == 1 or params:get("Output") == 3 then
+  if params:get("output") == 1 or params:get("output") == 3 then
     engine.noteOn(note_num, MusicUtil.note_num_to_freq(note_num), note_midi_vel / 127)
   end
   
   -- MIDI out
-  if (params:get("Output") == 2 or params:get("Output") == 3) then
+  if (params:get("output") == 2 or params:get("output") == 3) then
     midi_out_device.note_on(note_num, note_midi_vel, midi_out_channel)
   end
   
@@ -216,12 +216,12 @@ local function note_off(note_num)
   -- print("note_off", note_num)
   
   -- Audio engine out
-  if params:get("Output") == 1 or params:get("Output") == 3 then
+  if params:get("output") == 1 or params:get("output") == 3 then
     engine.noteOff(note_num)
   end
   
   -- MIDI out
-  if (params:get("Output") == 2 or params:get("Output") == 3) then
+  if (params:get("output") == 2 or params:get("output") == 3) then
     midi_out_device.note_off(note_num, nil, midi_out_channel)
   end
   
@@ -233,7 +233,7 @@ local function all_notes_off()
   engine.noteKillAll()
   
   -- MIDI out
-  if (params:get("Output") == 2 or params:get("Output") == 3) then
+  if (params:get("output") == 2 or params:get("output") == 3) then
     for k, a in pairs(active_notes) do
       midi_out_device.note_off(a, 96, midi_out_channel)
     end
@@ -411,8 +411,8 @@ local function advance_step()
     n.advance_countdown = n.advance_countdown - 1
     if n.advance_countdown == 0 then
       n.advance_countdown = n.length
-      if n.direction > 0 then n.head = n.head % params:get("Pattern Height") + 1
-      else n.head = (n.head + params:get("Pattern Height") - 2) % params:get("Pattern Height") + 1 end
+      if n.direction > 0 then n.head = n.head % params:get("pattern_height") + 1
+      else n.head = (n.head + params:get("pattern_height") - 2) % params:get("pattern_height") + 1 end
     end
     n.active = false
   end
@@ -425,8 +425,8 @@ local function advance_step()
     t.advance_countdown = t.advance_countdown - 1
     if t.advance_countdown == 0 then
       t.advance_countdown = t.length
-      if t.direction > 0 then t.head = t.head % params:get("Pattern Width") + 1
-      else t.head = (t.head + params:get("Pattern Width") - 2) % params:get("Pattern Width") + 1 end
+      if t.direction > 0 then t.head = t.head % params:get("pattern_width") + 1
+      else t.head = (t.head + params:get("pattern_width") - 2) % params:get("pattern_width") + 1 end
     end
     t.active = false
     
@@ -434,13 +434,13 @@ local function advance_step()
     local tx
     for ti = 0, t.length - 1 do
       tx = t.head + (ti * t.direction * -1)
-      tx = (tx - 1) % params:get("Pattern Width") + 1
+      tx = (tx - 1) % params:get("pattern_width") + 1
       if tx <= grid_w then trails[tx][t.position] = TRAIL_ANI_LENGTH end
       for _, n in pairs(notes) do
         local ny
         for ni = 0, n.length - 1 do
           ny = n.head + (ni * n.direction * -1)
-          ny = (ny - 1) % params:get("Pattern Height") + 1
+          ny = (ny - 1) % params:get("pattern_height") + 1
           if ny <= grid_h then trails[n.position][ny] = TRAIL_ANI_LENGTH end
           if tx == n.position and t.position == ny then
             if not n.active then
@@ -461,7 +461,7 @@ local function advance_step()
       local ny
       for ni = 0, n.length - 1 do
         ny = n.head + (ni * n.direction * -1)
-        ny = (ny - 1) % params:get("Pattern Height") + 1
+        ny = (ny - 1) % params:get("pattern_height") + 1
         if ny <= grid_h then trails[n.position][ny] = TRAIL_ANI_LENGTH end
       end
     end
@@ -485,7 +485,7 @@ local function advance_step()
   
   -- Add remaining, the new notes
   for _, sa in pairs(active_notes_this_step) do
-    if #active_notes < params:get("Max Active Notes") then
+    if #active_notes < params:get("max_active_notes") then
       note_on(sa)
       table.insert(active_notes, sa)
     end
@@ -576,7 +576,7 @@ function enc(n, delta)
     if pages.index == 1 then
       
       if n == 2 and beat_clock.external == false then
-        params:delta("BPM", delta)
+        params:delta("bpm", delta)
         
       elseif n == 3 then
         if delta > 0 then
@@ -860,68 +860,59 @@ function init()
   
   -- Add params
   
-  params:add_number("Grid Device", 1, 4, 1)
-  params:set_action("Grid Device", function(value)
+  params:add{type = "number", id = "grid_device", name = "Grid Device", min = 1, max = 4, default = 1, action = function(value)
     grid_device.all(0)
     grid_device.refresh()
     grid_device:reconnect(value)
-  end)
+  end}
   
-  params:add_option("Output", specs.OUTPUT)
-  params:set_action("Output", all_notes_off)
+  params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_off}
   
-  params:add_number("MIDI Out Device", 1, 4, 1)
-  params:set_action("MIDI Out Device", function(value)
+  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1, action = function(value)
     midi_out_device:reconnect(value)
-  end)
+  end}
   
-  params:add_number("MIDI Out Channel", 1, 16, 1)
-  params:set_action("MIDI Out Channel", function(value)
+  params:add{type = "number", id = "midi_out_channel", name = "MIDI Out Channel", min = 1, max = 16, default = 1, action = function(value)
     all_notes_off()
     midi_out_channel = value
-  end)
+  end}
   
-  params:add_number("Max Active Notes", 1, 16, 16)
+  params:add{type = "number", id = "max_active_notes", name = "Max Active Notes", min = 1, max = 16, default = 16}
   
-  params:add_option("Clock", {"Internal", "External"}, beat_clock.external or 2 and 1)
-  params:set_action("Clock", function(value)
+  params:add{type = "option", id = "clock", name = "Clock", options = {"Internal", "External"}, default = beat_clock.external or 2 and 1, action = function(value)
     beat_clock:clock_source_change(value)
-  end)
+  end}
   
-  params:add_number("Clock MIDI In Device", 1, 4, 1)
-  params:set_action("Clock MIDI In Device", function(value)
+  params:add{type = "number", id = "clock_midi_in_device", name = "Clock MIDI In Device", min = 1, max = 4, default = 1, action = function(value)
     midi_in_device:reconnect(value)
-  end)
+  end}
   
-  params:add_option("Clock Out", {"Off", "On"}, beat_clock.send or 2 and 1)
-  params:set_action("Clock Out", function(value)
+  params:add{type = "option", id = "clock_out", name = "Clock Out", options = {"Off", "On"}, default = beat_clock.send or 2 and 1, action = function(value)
     if value == 1 then beat_clock.send = false
     else beat_clock.send = true end
-  end)
+  end}
   
   params:add_separator()
   
-  params:add_number("BPM", 1, 480, beat_clock.bpm)
-  params:set_action("BPM", function(value)
+  params:add{type = "number", id = "bpm", name = "BPM", min = 1, max = 480, default = beat_clock.bpm, action = function(value)
     beat_clock:bpm_change(value)
     screen_dirty = true
-  end)
+  end}
   
-  params:add_option("Step Length", specs.STEP_LENGTH_NAMES, 10)
-  params:set_action("Step Length", function(value)
-    beat_clock.steps_per_beat = specs.STEP_LENGTH_DIVIDERS[value] / 4
+  params:add{type = "option", id = "step_length", name = "Step Length", options = options.STEP_LENGTH_NAMES, default = 10, action = function(value)
+    beat_clock.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
     beat_clock:bpm_change(beat_clock.bpm)
-  end)
+  end}
   
-  params:add_number("Pattern Width", 8, 64, 16)
-  params:add_number("Pattern Height", 8, 64, 16)
+  params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 8, max = 64, default = 16}
+  params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 8, max = 64, default = 16}
   
-  params:add_number("Min Velocity", 1, 127, 80)
-  params:add_number("Max Velocity", 1, 127, 100)
+  params:add{type = "number", id = "min_velocity", name = "Min Velocity", min = 1, max = 127, default = 80}
+  params:add{type = "number", id = "max_velocity", name = "Max Velocity", min = 1, max = 127, default = 100}
   
   params:add_separator()
   
-  midi_out_channel = params:get("MIDI Out Channel")
+  midi_out_channel = params:get("midi_out_channel")
   
   -- Engine params
   
@@ -960,7 +951,7 @@ function grid_redraw()
     for y = 1, 16 do
       if trails[x][y] then grid_leds[x][y] = util.round(util.linlin(0, TRAIL_ANI_LENGTH, 0, TRAIL_BRIGHTNESS, trails[x][y]))
       else grid_leds[x][y] = 0 end
-      if (x > params:get("Pattern Width") or y > params:get("Pattern Height")) and grid_leds[x][y] < OUTSIDE_BRIGHTNESS then grid_leds[x][y] = OUTSIDE_BRIGHTNESS end
+      if (x > params:get("pattern_width") or y > params:get("pattern_height")) and grid_leds[x][y] < OUTSIDE_BRIGHTNESS then grid_leds[x][y] = OUTSIDE_BRIGHTNESS end
     end
   end
   
@@ -998,7 +989,7 @@ function grid_redraw()
       local ny
       for i = 0, n.length - 1 do
         ny = n.head + (i * n.direction * -1)
-        ny = (ny - 1) % params:get("Pattern Height") + 1
+        ny = (ny - 1) % params:get("pattern_height") + 1
         if ny > 0 and ny <= grid_h then
           grid_leds[n.position][ny] = brightness
         end
@@ -1014,7 +1005,7 @@ function grid_redraw()
       local tx
       for i = 0, t.length - 1 do
         tx = t.head + (i * t.direction * -1)
-        tx = (tx - 1) % params:get("Pattern Width") + 1
+        tx = (tx - 1) % params:get("pattern_width") + 1
         if tx > 0 and tx <= grid_w then
           grid_leds[tx][t.position] = brightness
         end
@@ -1099,7 +1090,7 @@ function redraw()
         screen.text("External")
       else
         screen.level(15)
-        screen.text(params:get("BPM") .. " BPM")
+        screen.text(params:get("bpm") .. " BPM")
       end
       
       -- Status
