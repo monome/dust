@@ -19,6 +19,8 @@ local MusicUtil = require 'mark_eats/musicutil'
 
 engine.name = "PolyPerc"
 
+local m = midi.connect()
+
 local balls = {}
 local cur_ball = 0
 
@@ -78,34 +80,34 @@ function init()
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
   params:add_control("amp", "amp", cs.AMP)
   params:set_action("amp",
-  function(x) engine.amp(x) end) 
+  function(x) engine.amp(x) end)
 
   cs.PW = cs.new(0,100,'lin',0,80,'%')
   params:add_control("pw", "pw", cs.PW)
   params:set_action("pw",
-  function(x) engine.pw(x/100) end) 
+  function(x) engine.pw(x/100) end)
 
-  cs.REL = cs.new(0.1,3.2,'lin',0,0.2,'s') 
+  cs.REL = cs.new(0.1,3.2,'lin',0,0.2,'s')
   params:add_control("release", "release", cs.REL)
   params:set_action("release",
-  function(x) engine.release(x) end) 
+  function(x) engine.release(x) end)
 
   cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
   params:add_control("cutoff", "cutoff", cs.CUT)
   params:set_action("cutoff",
-  function(x) engine.cutoff(x) end) 
+  function(x) engine.cutoff(x) end)
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
   params:add_control("gain", "gain", cs.GAIN)
   params:set_action("gain",
-  function(x) engine.gain(x) end) 
+  function(x) engine.gain(x) end)
 
   params:bang()
 end
 
 function build_scale()
   scale_notes = MusicUtil.generate_scale(params:get("root"), params:get("scale"), 9)
-end 
+end
 
 function redraw()
   screen.clear()
@@ -240,14 +242,14 @@ end
 function play_notes()
   -- send note off for previously played notes
   while #note_off_queue > 0 do
-    Midi.send_all({type='note_off', note=table.remove(note_off_queue)})
+    m.send({type='note_off', note=table.remove(note_off_queue)})
   end
   -- play queued notes
   while #note_queue > 0 do
     local n = table.remove(note_queue)
     n = MusicUtil.snap_note_to_array(n, scale_notes)
     engine.hz(MusicUtil.note_num_to_freq(n))
-    Midi.send_all({type='note_on', note=n})
+    m.send({type='note_on', note=n})
     table.insert(note_off_queue, n)
   end
 end
