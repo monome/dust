@@ -370,9 +370,9 @@ function enc(n, delta)
     else
       -- Destinations
       if n == 2 then
-        params:delta("lfo_destination_" .. 1, util.clamp(delta, -1, 1))
+        params:delta("lfo_destination_1", util.clamp(delta, -1, 1))
       elseif n == 3 then
-        params:delta("lfo_destination_" .. 2, util.clamp(delta, -1, 1))
+        params:delta("lfo_destination_2", util.clamp(delta, -1, 1))
       end
       
     end
