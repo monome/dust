@@ -67,14 +67,8 @@ specs.env_to_ampgain = ControlSpec.BIPOLAR
 Gong.specs = specs
 
 local function bind(paramname, id, formatter)
-  params:add_control(paramname, specs[id], formatter)
-  params:set_action(paramname, engine[id])
-  --[[
-  params:set_action(paramname, function(value)
-    print(value)
-    engine[id](value)
-  end)
-  ]]
+  params:add_control(id, paramname, specs[id], formatter)
+  params:set_action(id, engine[id])
 end
 
 function Gong.add_params()
@@ -86,8 +80,8 @@ function Gong.add_params()
   params:add_separator()
 
   for oscnum=1,numoscs do
-    params:add_option("osc"..oscnum.." type", {"partial", "fixed"})
-    params:set_action("osc"..oscnum.." type", function(value)
+    params:add_option("osc"..oscnum.."_type", "osc"..oscnum.." type", {"partial", "fixed"})
+    params:set_action("osc"..oscnum.."_type", function(value)
       if value == 1 then
         engine["osc"..oscnum.."fixed"](0)
       else
@@ -99,23 +93,23 @@ function Gong.add_params()
     bind("osc"..oscnum.." fixed freq", "osc"..oscnum.."fixedfreq")
     bind("osc"..oscnum.." index", "osc"..oscnum.."index")
 
-    bind( "env > osc"..oscnum.." freq", "env_to_osc"..oscnum.."freq", Formatters.percentage)
-    bind( "lfo > osc"..oscnum.." freq", "lfo_to_osc"..oscnum.."freq", Formatters.percentage)
+    bind("env > osc"..oscnum.." freq", "env_to_osc"..oscnum.."freq", Formatters.percentage)
+    bind("lfo > osc"..oscnum.." freq", "lfo_to_osc"..oscnum.."freq", Formatters.percentage)
 
     for src=1,numoscs do
       bind("osc"..src.." > osc"..oscnum.." freq", "osc"..src.."_to_osc"..oscnum.."freq", Formatters.percentage)
     end
 
     bind("osc"..oscnum.." gain", "osc"..oscnum.."gain", Formatters.percentage)
-    bind( "env > osc"..oscnum.." gain", "env_to_osc"..oscnum.."gain", Formatters.percentage)
-    bind( "lfo > osc"..oscnum.." gain", "lfo_to_osc"..oscnum.."gain", Formatters.percentage)
+    bind("env > osc"..oscnum.." gain", "env_to_osc"..oscnum.."gain", Formatters.percentage)
+    bind("lfo > osc"..oscnum.." gain", "lfo_to_osc"..oscnum.."gain", Formatters.percentage)
 
     bind("osc"..oscnum.." > amp", "osc"..oscnum.."outlevel", Formatters.percentage)
     params:add_separator()
   end
 
-  params:add_option("filter mode", {"lowpass", "bandpass", "highpass", "notch", "peak"})
-  params:set_action("filter mode", function(value) engine.filtermode(value-1) end)
+  params:add_option("filter_mode", "filter mode", {"lowpass", "bandpass", "highpass", "notch", "peak"})
+  params:set_action("filter_mode", function(value) engine.filtermode(value-1) end)
   bind("filter cutoff", "filtercutoff")
   bind("env > filter cutoff", "env_to_filtercutoff", Formatters.percentage)
   bind("lfo > filter cutoff", "lfo_to_filtercutoff", Formatters.percentage)

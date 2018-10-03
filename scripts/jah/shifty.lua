@@ -24,9 +24,9 @@ function redraw()
   screen.level(15)
   screen.text("shifty")
   screen.move(0, 24)
-  screen.text("pitch ratio: "..params:string("pitch ratio"))
+  screen.text("pitch ratio: "..params:string("pitch_ratio"))
   screen.move(0, 32)
-  screen.text("freq shift: "..params:string("freqshift freq"))
+  screen.text("freq shift: "..params:string("freqshift_freq"))
   screen.update()
 end
 
@@ -34,10 +34,10 @@ function enc(n, delta)
   if n == 1 then
     mix:delta("output", delta)
   elseif n == 2 then
-    params:delta("pitch ratio", delta)
+    params:delta("pitch_ratio", delta)
     redraw()
   elseif n == 3 then
-    params:delta("freqshift freq", delta)
+    params:delta("freqshift_freq", delta)
     redraw()
   end
 end
