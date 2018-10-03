@@ -1,14 +1,12 @@
 -- wizcraft
 -- key1 shift^
 -- key2 add voice / ^
--- key3 clear screen / ^
+-- key3 / ^clear screen
 -- enc1 drift / ^output
 -- enc2 push/pull / ^detune
 -- enc3 up/down / ^noise
 
-g = grid.connect()
-
-engine.name = 'PolySub'
+engine.name = "PolySub"
 
 vectors = {}
 NUM_VECTORS = 16
@@ -35,19 +33,19 @@ function Vector:new()
     return o
 end
 
+
 function Vector:update()
     self.xa = (math.random() * ((math.random(1,2)*2)-3))
     self.ya = (math.random() * ((math.random(1,2)*2)-3))
 
     self.xv = util.clamp(self.xv + self.xa, -1*params:get("drift"), 1*params:get("drift"))
     self.yv = util.clamp(self.yv + self.ya, -1*params:get("drift"), 1*params:get("drift"))
---    self.xv = self.xv + self.xa
-  --  self.yv = self.yv + self.ya
 
     self.x = self.x + self.xv
     self.y = self.y + self.yv
 
 end
+
 
 function Vector:play_note()
     local note = ((7-(self.y/8))*5) + (self.x/8)
@@ -66,12 +64,9 @@ function Vector:draw(c)
     screen.fill()
 end
 
-function getHzET(note)
-    return 55*2^(note/12)
-end
 
 function init()
-    mode = 0
+    shift = 0
 
     params:add_control("drift", controlspec.new(0,2,"lin",0,0,""))
 
@@ -128,9 +123,11 @@ function init()
     clk:start()
 end
 
+
 function tick()
     redraw()
 end
+
 
 function redraw()
     screen.clear()
@@ -153,6 +150,7 @@ function redraw()
     screen.update()
 end
 
+
 function check_collisions()
     for i=1,#vectors do
         local v = vectors[i]
@@ -165,8 +163,7 @@ function check_collisions()
                     table.remove(vectors, j)
 
                     v.s = v.s + 4
-                    local note = ((7-(v.y/8))*5) + (v.x/8)
-                    engine.start(v.id, getHzET(note))
+                    v:play_note()
                 end
             end
         end
@@ -175,16 +172,18 @@ end
 
 
 function enc(n, d)
-    if n == 1 then
-        if mode == 1 then
+    if shift == 1 then
+        if n == 1 then
             mix:delta("output", d)
-        else
-            params:delta("drift", d)
-        end
-    elseif n == 2 then
-        if mode == 1 then
+        elseif n == 2 then
             params:delta("detune", d)
-        else
+        elseif n == 3 then
+            params:delta("noise", d)
+        end
+    else
+        if n == 1 then
+            params:delta("drift", d)
+        elseif n == 2 then
             for i=1,#vectors do
                 local v = vectors[i]
                 if v.x > 64 then
@@ -201,11 +200,7 @@ function enc(n, d)
 
                 v:play_note()
             end
-        end
-    elseif n == 3 then
-        if mode == 1 then
-            params:delta("noise", d)
-        else
+        elseif n == 3 then
             for i=1,#vectors do
                 local v = vectors[i]
                 v.y = util.clamp(v.y+d, 0, 64-v.s)
@@ -215,32 +210,31 @@ function enc(n, d)
     end
 end
 
-function key(n, z)
-    if n == 1 then
-        mode = z
-    elseif n == 2 then
-        if z == 1 then
-            if mode == 1 then
 
-            else
+function key(n, z)
+    if n == 1 then -- shift button
+        shift = z
+    end
+
+    if shift == 1 then 
+        if n == 2 then
+            -- empty for now
+        elseif n == 3 then -- clear all vectors
+            engine.stopAll()
+            vectors = {}
+        end
+    else
+        if n == 2 then -- add vector
+            if z == 1 then 
                 local v = Vector:new()
                 table.insert(vectors, v)
                 v:play_note()
             end
-        end
-    elseif n == 3 then
-        if z == 1 then
-            if mode == 1 then
-
-            else
-                engine.stopAll()
-                vectors = {}
-            end
+        elseif n == 3 then 
+            -- empty for now
         end
     end
-
 end
-
 
 
 
