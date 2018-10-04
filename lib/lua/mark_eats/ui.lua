@@ -20,11 +20,12 @@ UI.Pages.__index = UI.Pages
 -- @param num_pages Total number of pages, defaults to 3.
 -- @return Instance of Pages.
 function UI.Pages.new(index, num_pages)
-  local pages = {}
+  local pages = {
+    index = index or 1,
+    num_pages = num_pages or 3
+  }
   setmetatable(UI.Pages, {__index = UI})
   setmetatable(pages, UI.Pages)
-  pages.index = index or 1
-  pages.num_pages = num_pages or 3
   return pages
 end
 
@@ -71,11 +72,12 @@ UI.Tabs.__index = UI.Tabs
 -- @param titles Table of strings for tab titles.
 -- @return Instance of Tabs.
 function UI.Tabs.new(index, titles)
-  local tabs = {}
+  local tabs = {
+    index = index or 1,
+    titles = titles or {}
+  }
   setmetatable(UI.Tabs, {__index = UI})
   setmetatable(tabs, UI.Tabs)
-  tabs.index = index or 1
-  tabs.titles = titles or {}
   return tabs
 end
 
@@ -125,14 +127,15 @@ UI.List.__index = UI.List
 -- @param entries Table of strings for list entries.
 -- @return Instance of List.
 function UI.List.new(x, y, index, entries)
-  local list = {}
+  local list = {
+    x = x or 0,
+    y = y or 0,
+    index = index or 1,
+    entries = entries or {},
+    active = true
+  }
   setmetatable(UI.List, {__index = UI})
   setmetatable(list, UI.List)
-  list.x = x or 0
-  list.y = y or 0
-  list.index = index or 1
-  list.entries = entries or {}
-  list.active = true
   return list
 end
 
@@ -179,14 +182,15 @@ UI.ScrollingList.__index = UI.ScrollingList
 -- @param entries Table of strings for list entries.
 -- @return Instance of ScrollingList.
 function UI.ScrollingList.new(x, y, index, entries)
-  local list = {}
+  local list = {
+    x = x or 0,
+    y = y or 0,
+    index = index or 1,
+    entries = entries or {},
+    active = true
+  }
   setmetatable(UI.ScrollingList, {__index = UI})
   setmetatable(list, UI.ScrollingList)
-  list.x = x or 0
-  list.y = y or 0
-  list.index = index or 1
-  list.entries = entries or {}
-  list.active = true
   return list
 end
 
@@ -231,11 +235,12 @@ UI.Message.__index = UI.Message
 -- @param text_array Array of lines of text.
 -- @return Instance of Message.
 function UI.Message.new(text_array)
-  local message = {}
+  local message = {
+    text = text_array or {},
+    active = true
+  }
   setmetatable(UI.Message, {__index = UI})
   setmetatable(message, UI.Message)
-  message.text = text_array or {}
-  message.active = true
   return message
 end
 
@@ -266,14 +271,15 @@ UI.PlaybackIcon.__index = UI.PlaybackIcon
 -- @param status Status number. 1 = Play, 2 = Reverse Play, 3 = Pause, 4 = Stop. Defaults to 1.
 -- @return Instance of PlaybackIcon.
 function UI.PlaybackIcon.new(x, y, size, status)
-  local playback_icon = {}
+  local playback_icon = {
+    x = x or 0,
+    y = y or 0,
+    size = size or 6,
+    status = status or 1,
+    active = true
+  }
   setmetatable(UI.PlaybackIcon, {__index = UI})
   setmetatable(playback_icon, UI.PlaybackIcon)
-  playback_icon.x = x or 0
-  playback_icon.y = y or 0
-  playback_icon.size = size or 6
-  playback_icon.status = status or 1
-  playback_icon.active = true
   return playback_icon
 end
 

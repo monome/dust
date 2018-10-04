@@ -152,20 +152,21 @@ local function load_pattern(index)
 end
 
 local function save_pattern(index)
-  local pattern = {}
-  pattern.name = os.date("%b %d %H:%M")
-  pattern.bpm = params:get("bpm")
-  pattern.step_length = params:get("step_length")
-  pattern.pattern_width = params:get("pattern_width")
-  pattern.pattern_height = params:get("pattern_height")
-  pattern.min_velocity = params:get("min_velocity")
-  pattern.max_velocity = params:get("max_velocity")
-  pattern.notes = notes
-  pattern.triggers = triggers
-  pattern.root_note = root_note
-  pattern.scale_type = scale_type
-  pattern.custom_scale = custom_scale
-  pattern.scale_notes = scale_notes
+  local pattern = {
+    name = os.date("%b %d %H:%M"),
+    bpm = params:get("bpm"),
+    step_length = params:get("step_length"),
+    pattern_width = params:get("pattern_width"),
+    pattern_height = params:get("pattern_height"),
+    min_velocity = params:get("min_velocity"),
+    max_velocity = params:get("max_velocity"),
+    notes = notes,
+    triggers = triggers,
+    root_note = root_note,
+    scale_type = scale_type,
+    custom_scale = custom_scale,
+    scale_notes = scale_notes
+  }
   
   save_data.patterns[index] = copy_object(pattern)
   last_edited_slot = index
@@ -234,7 +235,7 @@ local function all_notes_off()
   
   -- MIDI out
   if (params:get("output") == 2 or params:get("output") == 3) then
-    for k, a in pairs(active_notes) do
+    for _, a in pairs(active_notes) do
       midi_out_device.note_off(a, 96, midi_out_channel)
     end
   end
@@ -347,7 +348,7 @@ local function add_random()
     local available_positions = {}
     for i = 1, grid_w do
       local available = true
-      for kn, vn in pairs(notes) do
+      for _, vn in pairs(notes) do
         if vn.position == i then
           available = false
           break
@@ -369,7 +370,7 @@ local function add_random()
     local available_positions = {}
     for i = 1, grid_h do
       local available = true
-      for kt, vt in pairs(triggers) do
+      for _, vt in pairs(triggers) do
         if vt.position == i then
           available = false
           break
@@ -729,7 +730,7 @@ local function grid_event(x, y, z)
       elseif v.x == x and v.active then
         
         local three_keys = false
-        for kk, kv in pairs(down_keys) do
+        for _, kv in pairs(down_keys) do
           if kv.x == x then
             three_keys = true
             break
@@ -748,7 +749,7 @@ local function grid_event(x, y, z)
       elseif v.y == y and v.active then
         
         local three_keys = false
-        for kk, kv in pairs(down_keys) do
+        for _, kv in pairs(down_keys) do
           if kv.y == y then
             three_keys = true
             break
@@ -926,6 +927,7 @@ function init()
   save_menu_list = UI.List.new(92, 25, 1, save_menu_items)
   playback_icon = UI.PlaybackIcon.new(121, 1)
   
+  screen.aa(1)
   screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
   grid_redraw_metro:start(1 / GRID_FRAMERATE)
   beat_clock:start()
@@ -1064,7 +1066,6 @@ end
 function redraw()
   
   screen.clear()
-  screen.aa(1)
   
   if confirm_message then
     confirm_message:redraw()
@@ -1167,9 +1168,4 @@ function redraw()
   end
   
   screen.update()
-end
-
-
-function cleanup()
-  
 end
