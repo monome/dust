@@ -72,20 +72,20 @@ function init()
   engine.stop(1)
   engine.stop(2)
 
-  params:add_option("speed buffer 1", speedlist)
-  params:set("speed buffer 1", 3)
-  params:set_action("speed buffer 1", function(x) engine.rate(1, speedlist[params:get("speed buffer 1")]) end)
-  params:add_option("speed buffer 2", speedlist)
-  params:set_action("speed buffer 2", function(x) engine.rate(2, speedlist[params:get("speed buffer 2")]) end)
-  params:set("speed buffer 2", 3)
-  params:add_control("vol 1",controlspec.new(0,1,'lin',0,1,''))
-  params:set_action("vol 1", function(x) engine.amp(1, x) end)
-  params:add_control("vol 2",controlspec.new(0,1,'lin',0,1,''))
-  params:set_action("vol 2", function(x) engine.amp(2, x) end)
-  params:set("vol 2", 0.0)
+  params:add_option("speed_buffer_1","speed buffer 1", speedlist)
+  params:set("speed_buffer_1", 3)
+  params:set_action("speed_buffer_1", function(x) engine.rate(1, speedlist[params:get("speed_buffer_1")]) end)
+  params:add_option("speed_buffer_2","speed buffer 2", speedlist)
+  params:set_action("speed_buffer_2", function(x) engine.rate(2, speedlist[params:get("speed_buffer_2")]) end)
+  params:set("speed_buffer_2", 3)
+  params:add_control("vol_1","vol 1",controlspec.new(0,1,'lin',0,1,''))
+  params:set_action("vol_1", function(x) engine.amp(1, x) end)
+  params:add_control("vol_2","vol 2",controlspec.new(0,1,'lin',0,1,''))
+  params:set_action("vol_2", function(x) engine.amp(2, x) end)
+  params:set("vol_2", 0.0)
 
-  params:add_number("KEY3 ( ~~, 0.5, 1.5, 2 )",0,3,0)
-  params:set_action("KEY3 ( ~~, 0.5, 1.5, 2 )", function(x) KEY3 = x end)
+  params:add_number("KEY3","KEY3 ( ~~, 0.5, 1.5, 2 )",0,3,0)
+  params:set_action("KEY3", function(x) KEY3 = x end)
 
   counter = metro.alloc(count, 0.01, -1)
   rec_time = 0
@@ -96,7 +96,7 @@ function init()
 end
 
 function warble()
-  local bufSpeed1 = speedlist[params:get("speed buffer 1")]
+  local bufSpeed1 = speedlist[params:get("speed_buffer_1")]
   if bufSpeed1 > 1.99 then
       ray = bufSpeed1 + (math.random(-15,15)/1000)
     elseif bufSpeed1 >= 1.0 then
@@ -114,7 +114,7 @@ function warble()
 end
 
 function half_speed()
-  ray = speedlist[params:get("speed buffer 1")] / 2
+  ray = speedlist[params:get("speed_buffer_1")] / 2
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -123,7 +123,7 @@ function half_speed()
 end
 
 function oneandahalf_speed()
-  ray = speedlist[params:get("speed buffer 1")] * 1.5
+  ray = speedlist[params:get("speed_buffer_1")] * 1.5
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -132,7 +132,7 @@ function oneandahalf_speed()
 end
 
 function double_speed()
-  ray = speedlist[params:get("speed buffer 1")] * 2
+  ray = speedlist[params:get("speed_buffer_1")] * 2
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -141,9 +141,9 @@ function double_speed()
 end
 
 function restore_speed()
-  ray = speedlist[params:get("speed buffer 1")]
+  ray = speedlist[params:get("speed_buffer_1")]
   engine.rate_lag(1,0.6)
-  engine.rate(1,speedlist[params:get("speed buffer 1")])
+  engine.rate(1,speedlist[params:get("speed_buffer_1")])
   redraw()
 end
 
@@ -151,7 +151,7 @@ function clear_all()
   engine.stop(1)
   engine.stop(2)
   engine.clear()
-  ray = speedlist[params:get("speed buffer 1")]
+  ray = speedlist[params:get("speed_buffer_1")]
   engine.loop_start(1,0)
   engine.loop_end(1,60)
   engine.loop_start(2,0)
