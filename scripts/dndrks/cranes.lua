@@ -6,7 +6,7 @@
 -- then:
 -- press key 2 to play.
 -- ..
--- listen: it's buffer 1.
+-- listen: it's voice 1.
 --
 -- ////
 -- head to params to find
@@ -15,7 +15,7 @@
 --
 -- *** back home: ***
 -- key 1 (hold) = toggle loop pts
---    for buffer 2
+--    for voice 2
 -- key 2 (after loop playing) =
 --    toggle overwrite
 -- key 3 = ~~ / 0.5 / 1.5 / 2
@@ -23,7 +23,7 @@
 -- key 3 + key 1 (hold) = erase
 -- enc 1 = overwrite (see key 2)
 --    (0 = add, 1 = clear)
--- enc 2/3 = buff 1 + 2 loop pts
+-- enc 2/3 = vox 1 + 2 loop pts
 --
 
 engine.name = "SoftCut"
@@ -72,12 +72,12 @@ function init()
   engine.stop(1)
   engine.stop(2)
 
-  params:add_option("speed_buffer_1","speed buffer 1", speedlist)
-  params:set("speed_buffer_1", 3)
-  params:set_action("speed_buffer_1", function(x) engine.rate(1, speedlist[params:get("speed_buffer_1")]) end)
-  params:add_option("speed_buffer_2","speed buffer 2", speedlist)
-  params:set_action("speed_buffer_2", function(x) engine.rate(2, speedlist[params:get("speed_buffer_2")]) end)
-  params:set("speed_buffer_2", 3)
+  params:add_option("speed_voice_1","speed_voice_1", speedlist)
+  params:set("speed_voice_1", 3)
+  params:set_action("speed_voice_1", function(x) engine.rate(1, speedlist[params:get("speed_voice_1")]) end)
+  params:add_option("speed_voice_2","speed voice 2", speedlist)
+  params:set_action("speed_voice_2", function(x) engine.rate(2, speedlist[params:get("speed_voice_2")]) end)
+  params:set("speed_voice_2", 3)
   params:add_control("vol_1","vol 1",controlspec.new(0,1,'lin',0,1,''))
   params:set_action("vol_1", function(x) engine.amp(1, x) end)
   params:add_control("vol_2","vol 2",controlspec.new(0,1,'lin',0,1,''))
@@ -96,7 +96,7 @@ function init()
 end
 
 function warble()
-  local bufSpeed1 = speedlist[params:get("speed_buffer_1")]
+  local bufSpeed1 = speedlist[params:get("speed_voice_1")]
   if bufSpeed1 > 1.99 then
       ray = bufSpeed1 + (math.random(-15,15)/1000)
     elseif bufSpeed1 >= 1.0 then
@@ -114,7 +114,7 @@ function warble()
 end
 
 function half_speed()
-  ray = speedlist[params:get("speed_buffer_1")] / 2
+  ray = speedlist[params:get("speed_voice_1")] / 2
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -123,7 +123,7 @@ function half_speed()
 end
 
 function oneandahalf_speed()
-  ray = speedlist[params:get("speed_buffer_1")] * 1.5
+  ray = speedlist[params:get("speed_voice_1")] * 1.5
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -132,7 +132,7 @@ function oneandahalf_speed()
 end
 
 function double_speed()
-  ray = speedlist[params:get("speed_buffer_1")] * 2
+  ray = speedlist[params:get("speed_voice_1")] * 2
   engine.rate_lag(1,0.6 + (math.random(-30,10)/100))
   engine.rate(1,ray)
   screen.move(0,30)
@@ -141,9 +141,9 @@ function double_speed()
 end
 
 function restore_speed()
-  ray = speedlist[params:get("speed_buffer_1")]
+  ray = speedlist[params:get("speed_voice_1")]
   engine.rate_lag(1,0.6)
-  engine.rate(1,speedlist[params:get("speed_buffer_1")])
+  engine.rate(1,speedlist[params:get("speed_voice_1")])
   redraw()
 end
 
@@ -151,7 +151,7 @@ function clear_all()
   engine.stop(1)
   engine.stop(2)
   engine.clear()
-  ray = speedlist[params:get("speed_buffer_1")]
+  ray = speedlist[params:get("speed_voice_1")]
   engine.loop_start(1,0)
   engine.loop_end(1,60)
   engine.loop_start(2,0)
@@ -272,33 +272,33 @@ end
 -- encoder hardware interaction
 function enc(n,d)
 
-  -- encoder 3: buffer 1's loop end point
+  -- encoder 3: voice 1's loop end point
   if n == 3 and KEY1_hold == false then
     end_point_1 = util.clamp((end_point_1 + d/100),0.0,60.0)
-    print("buffer 1 loop end "..end_point_1)
+    print("voice 1 loop end "..end_point_1)
     engine.loop_end(1,end_point_1)
     redraw()
 
-  -- encoder 2: buffer 1's loop start point
+  -- encoder 2: voice 1's loop start point
   elseif n == 2 and KEY1_hold == false then
     start_point_1 = util.clamp((start_point_1 + d/100),0.0,60.0)
-    print("buffer 1 loop start "..start_point_1)
+    print("voice 1 loop start "..start_point_1)
     engine.loop_start(1,start_point_1)
     redraw()
 
   elseif n == 3 and KEY1_hold == true then
     end_point_2 = util.clamp((end_point_2 + d/100),0.0,60.0)
-    print("buffer 2 loop end "..end_point_2)
+    print("voice 2 loop end "..end_point_2)
     engine.loop_end(2,end_point_2)
     redraw()
 
   elseif n == 2 and KEY1_hold == true then
     start_point_2 = util.clamp((start_point_2 + d/100),0.0,60.0)
-    print("buffer 2 loop start "..start_point_2)
+    print("voice 2 loop start "..start_point_2)
     engine.loop_start(2,start_point_2)
     redraw()
 
-  -- encoder 1: buffer 1's overwrite/overdub amount
+  -- encoder 1: voice 1's overwrite/overdub amount
   -- 0 is full overdub
   -- 1 is full overwrite
   elseif n == 1 then
