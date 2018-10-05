@@ -24,7 +24,7 @@ local function add_rcontrol(args)
 end
 
 function init()
-  engine.new("LFO", "MultiLFO2")
+  engine.new("LFO", "MultiLFO")
   engine.new("Env", "ADSREnv")
   engine.new("FilterMod", "Mixer")
   engine.new("Osc", "SquareOsc")
@@ -56,7 +56,7 @@ function init()
   add_rcontrol {
     id="lfo_frequency",
     name="LFO.Frequency",
-    spec=R.specs.MultiLFO2.Frequency,
+    spec=R.specs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 

@@ -22,7 +22,7 @@ end
 
 
 function init()
-  engine.new("LFO", "MultiLFO2")
+  engine.new("LFO", "MultiLFO")
   engine.new("SoundIn", "SoundIn")
   engine.new("PitchShift", "PitchShift")
   engine.new("FreqShift", "FreqShift")
@@ -69,7 +69,7 @@ function init()
     name="LFO Rate",
     ref="LFO.Frequency",
     formatter=Formatters.round(0.001),
-    spec=R.specs.MultiLFO2.Frequency
+    spec=R.specs.MultiLFO.Frequency
   }
 
   add_rcontrol {

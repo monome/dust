@@ -203,7 +203,7 @@ midi_device.event = midi_event
 
 local function create_modules()
   poly_new("FreqGate", "FreqGate")
-  poly_new("LFO", "MultiLFO2")
+  poly_new("LFO", "MultiLFO")
   poly_new("Env", "ADSREnv")
   poly_new("OscA", "SquareOsc")
   poly_new("OscB", "SquareOsc")
@@ -289,7 +289,7 @@ local function add_rcontrols()
     id="lfo_frequency",
     name="LFO Frequency",
     ref="LFO.Frequency",
-    spec=R.specs.MultiLFO2.Frequency,
+    spec=R.specs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 

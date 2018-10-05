@@ -71,6 +71,7 @@ Engine_R : CroneEngine {
 			};
 			this.bulkpolysetCommand(msg[1], msg[2]);
 		};
+/*
 		this.addCommand('newmacro', "ss") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \newmacroCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
@@ -89,6 +90,7 @@ Engine_R : CroneEngine {
 			};
 			this.macrosetCommand(msg[1], msg[2]);
 		};
+*/
 		this.addCommand('trace', "i") { |msg|
 			trace = msg[1].asBoolean;
 		};
@@ -1016,86 +1018,10 @@ RSquareOscillatorModule : RModule {
 	}
 }
 
-// Status: tested. subject to removal
+// Status: partly tested, TODO: test in_Reset together with param_Reset
+// Inspiration from A-145
 RMultiLFOModule : RModule {
 	*shortName { ^'MultiLFO' }
-
-	*params {
-		^[
-			'Frequency' -> (
-				Spec: ControlSpec(0.1, 30, 'exp', 0, 1, "Hz"),
-				LagTime: 0.01
-			),
-			'PulseWidth' -> (
-				Spec: \unipolar.asSpec.copy.default_(0.5),
-				LagTime: 0.01
-			),
-			'FM' -> (
-				Spec: \unipolar.asSpec, // TODO: bipolar?
-				LagTime: 0.01
-			),
-			'PWM' -> (
-				Spec: \unipolar.asSpec.copy.default_(0.4),
-				LagTime: 0.01
-			),
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_FM,
-				in_PWM,
-				out_Sine,
-				out_Triangle,
-				out_Saw,
-				out_Square,
-				param_Frequency,
-				param_PulseWidth,
-				param_FM,
-				param_PWM
-			|
-
-			var sig_FM = In.ar(in_FM);
-			var sig_PWM = In.ar(in_PWM);
-
-			var frequencySpec = ControlSpec(0.1, 30, 'exp', 0, 1, "Hz");
-
-			var frequency = frequencySpec.map(
-				frequencySpec.unmap(param_Frequency) + (sig_FM * param_FM)
-			);
-
-			var pulseWidth = (
-				param_PulseWidth + (sig_PWM * param_PWM)
-			).clip(0, 1);
-
-			Out.ar(
-				out_Sine,
-				SinOsc.ar(frequency) * 0.5
-			);
-
-			Out.ar(
-				out_Triangle,
-				LFTri.ar(frequency) * 0.5
-			);
-
-			Out.ar(
-				out_Saw,
-				LFSaw.ar(frequency) * 0.5
-			);
-
-			Out.ar(
-				out_Square,
-				LFPulse.ar(frequency, pulseWidth / 2) * 0.5
-			);
-		}
-	}
-}
-
-// Status: tested
-// Inspiration from A-145
-RMultiLFO2Module : RModule {
-	*shortName { ^'MultiLFO2' }
 
 	*params {
 		^[
@@ -1167,7 +1093,7 @@ RMultiLFO2Module : RModule {
 	}
 }
 
-// Status: lin mode tested and okay, issues with exp mode (curve)
+// Status: lin mode tested and ok, issues with exp mode (curve)
 // Inspired by A-138a/A-138b
 RMixerModule : RModule {
 	*shortName { ^'Mixer' }
@@ -2016,7 +1942,7 @@ RFreqShiftModule : RModule {
 	}
 }
 
-// Status: partly tested
+// Status: tested, TODO: make a script
 RNoiseModule : RModule {
 	*shortName { ^'Noise' }
 
