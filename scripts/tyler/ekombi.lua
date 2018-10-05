@@ -330,7 +330,7 @@ function count(c)
         for n=1, cnt do
           if position / ( ppq // (tab.count(track[pending[i]][cnt]))) == n-1 then
             if track[pending[i]][cnt][n] == 1 then
-              engine.trig(i-1) -- samples are only 0-3
+              engine.trig(pending[i]//2) -- samples are only 0-3
             end
           end
         end
@@ -525,5 +525,4 @@ function load_pattern()
     print("LOAD COMPLETE")
     io.close(file)
   end
-  -- for i = 1, 8 do reer(i) end
 end
