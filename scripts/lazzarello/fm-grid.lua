@@ -1,7 +1,7 @@
--- earthsea
+-- fmrthsea
 --
 -- subtractive FM polysynth
--- controlled by midi or grid
+-- controlled by grid
 --
 -- grid pattern player:
 -- 1 1 record toggle
