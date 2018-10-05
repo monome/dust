@@ -12,7 +12,7 @@ specs.ADSREnv = {
 	Gate = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
-specs.Amp2 = {
+specs.Amp = {
 	Level = ControlSpec.UNIPOLAR
 }
 

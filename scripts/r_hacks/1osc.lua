@@ -1,8 +1,4 @@
--- FILTER
---
--- Square wave oscillator with
--- pulse width modulation thru
--- modulatable lowpass filter
+-- 1OSC
 --
 
 local ControlSpec = require 'controlspec'

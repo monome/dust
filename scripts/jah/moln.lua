@@ -208,7 +208,7 @@ local function create_modules()
   poly_new("OscA", "SquareOsc")
   poly_new("OscB", "SquareOsc")
   poly_new("Filter", "LPFilter")
-  poly_new("Amp", "Amp2")
+  poly_new("Amp", "Amp")
 
   engine.new("SoundOut", "SoundOut")
 end
