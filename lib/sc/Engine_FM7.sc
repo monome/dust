@@ -33,7 +33,7 @@ Engine_FM7 : CroneEngine {
         var ctrls, mods, osc, snd, aenv;
 
         // the 6 oscillators, their frequence, phase and amplitude
-        ctrls = [[ Lag.kr(hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
+        ctrls = [[ Lag.kr(hz,0.01), phase1, Lag.kr(amp1,0.01) ],
                  [ Lag.kr(hz2,0.01), phase2, Lag.kr(amp2,0.01) ],
                  [ Lag.kr(hz3,0.01), phase3, Lag.kr(amp3,0.01) ],
                  [ Lag.kr(hz4,0.01), phase4, Lag.kr(amp4,0.01) ],
