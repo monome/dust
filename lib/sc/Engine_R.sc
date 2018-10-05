@@ -1241,7 +1241,7 @@ RMixerModule : RModule {
 	}
 }
 
-// Status: partly tested, to be renamed to Amp2 or something?
+// Status: partly tested, to be renamed to Amp or something?
 // Inspiration from A-130/A-131
 RDAmplifierModule : RModule {
 	*shortName { ^'DAmp' }
@@ -1310,7 +1310,7 @@ RDAmplifierModule : RModule {
 
 // Status: tested, but shortName to be changed?
 RAmplifierModule : RModule {
-	*shortName { ^'Amp2' }
+	*shortName { ^'Amp' }
 
 	*params {
 		^[

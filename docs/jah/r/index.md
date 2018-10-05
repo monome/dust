@@ -48,7 +48,7 @@ ADSR Envelope inspired by A-140.
 	- `Release`
 	- `Gate`
 
-### Amp2
+### Amp
 
 Simple amplifier with level parameter and exponential or linear gain modulation.
 

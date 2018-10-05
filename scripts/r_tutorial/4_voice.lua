@@ -29,7 +29,7 @@ function init()
   engine.new("FilterMod", "Mixer")
   engine.new("Osc", "SquareOsc")
   engine.new("Filter", "MMFilter")
-  engine.new("Amp", "Amp2")
+  engine.new("Amp", "Amp")
   engine.new("SoundOut", "SoundOut")
 
   engine.connect("LFO/Sine", "Osc/PWM")
