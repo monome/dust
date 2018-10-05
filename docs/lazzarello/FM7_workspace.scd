@@ -9,6 +9,49 @@ NodeWatcher
 */
 
 (
+var notes, synth, on, off;
+
+MIDIClient.init;
+MIDIIn.connectAll;
+
+notes = Array.newClear(128);
+
+synth = SynthDef(\fm7, { | out, freq, amp |
+	var ctrl, mod, osc;
+	ctrl = [[freq,0,amp],
+		[0,0,0],
+		[0,0,0],
+		[0,0,0],
+		[0,0,0],
+		[0,0,0]];
+
+	mod = [[0,0,0,0,0,0],
+		[0,0,0,0,0,0],
+		[0,0,0,0,0,0],
+		[0,0,0,0,0,0],
+		[0,0,0,0,0,0],
+		[0,0,0,0,0,0],
+		[0,0,0,0,0,0]];
+
+	osc = FM7.ar(ctrl,mod);
+	Out.ar(out, osc);
+}).add;
+
+on = MIDIFunc.noteOn({ | veloc,num,chan,src |
+	notes[num] = Synth(\fm7, [\freq,num.midicps,
+		\amp, veloc * 0.00315
+	]);
+});
+
+off = MIDIFunc.noteOff({ | veloc, num, chan, src |
+	notes[num].release;
+});
+
+q = {on.free; off.free };
+)
+q.value;
+
+(
 {
     var ctls = [
         // freq, phase, amp
@@ -40,16 +83,16 @@ NodeWatcher
 	var hz_;
 	hz_ = 440;
 	//hz_ = Lag.kr(MouseX.kr(60,440), 0.01);
-	ctls = [ [ LFNoise1.kr(0.5).range(300, 310), 0,    1   ],
-  [ hz_, pi/2, 1   ],
-  [ 730, 0,    0.5 ],
-  [ 0,   0,    0   ],
-  [ 0,   0,    0   ],
-  [ 0,   0,    0   ] ];
+	ctls = [ [ hz_, 0,    1   ],
+		  [ hz_ * 2, 0, 0.5   ],
+		  [ hz_ * 3.3, 0,    0.5 ],
+		  [ 0,   0,    0   ],
+		  [ 0,   0,    0   ],
+		  [ 0,   0,    0   ] ];
 
     mods = [
-        [Line.kr(0, 0.001, 2), Line.kr(0.1, 0, 4), 0, MouseY.kr(0, 6), 0, 0],
         [0, 0, 0, 0, 0, 0],
+		[MouseX.kr(0,0.5), 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
