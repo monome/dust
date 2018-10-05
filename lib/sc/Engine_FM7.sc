@@ -8,6 +8,7 @@ Engine_FM7 : CroneEngine {
   classvar <maxNumVoices;
 
   var <ctlBus;
+  // this is not used in the implementation here. Is this something needed by CroneEngine?
   var <mixBus;
   var <gr;
   var <voices;
@@ -28,6 +29,7 @@ Engine_FM7 : CroneEngine {
         // envelope for each voice
         ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve=-1.0;
 
+        // declare some vars for this scope
         var ctrls, mods, osc, snd, aenv;
 
         // the 6 oscillators, their frequence, phase and amplitude
@@ -48,17 +50,22 @@ Engine_FM7 : CroneEngine {
 
         // The FM7 class also has a .algoAr() method which implements all 32 algorithms in the DX7
         osc = FM7.ar(ctrls,mods);     
+        // Like a VCA
         amp = Lag.ar(K2A.ar(amp), amplag);
+        // an amplitude envelope with ADSR controls
         aenv = EnvGen.ar(
                   Env.adsr( ampAtk, ampDec, ampSus, ampRel, 1.0, ampCurve),
                   gate, doneAction:2);
-        Out.ar(out, (osc * amp * aenv).dup);
+        // the output bus, is this multiplication the right way to do this?
+        // oscilator times envelope times vca.
+        Out.ar(out, (osc * aenv * amp).dup);
       });
 
       // Tell Crone about our SynthDef
       CroneDefs.add(polyDef);
 
-      // this is exposed as a class variable and it's how we get all the params exposed to Maiden (Matron?) 
+      // set all the defaults. Why aren't these values the same as the the values for the SynthDef args?
+      // DRY it up?
       paramDefaults = Dictionary.with(
         \amp -> -12.dbamp, \amplag -> 0.02,
         \hz1 -> 440, \hz2 -> 220, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
@@ -73,26 +80,33 @@ Engine_FM7 : CroneEngine {
     ^super.new(context, doneCallback);
   }
 
+  // allocate all the controls and parameters
   alloc {
+    // allocate a control group in parallel
     gr = ParGroup.new(context.xg);
     
     // put our voices into a dictionary
     voices = Dictionary.new;
-    // put our control bug into a dictionary
+    // put our control bus into a dictionary
     ctlBus = Dictionary.new;
 
+    // loop through all the control names (are these the args from the SynthDef?)
     polyDef.allControlNames.do({ arg ctl;
       var name = ctl.name;
       postln("control name: " ++ name);
       // weird logic here. These params are not in paramDefaults so why not loop through that collection?
+      // it looks like we're doing some kind of map filtering
       if((name != \gate) && (name != \hz) && (name != \out), {
+        // add this control name to the Bus for the server context
         ctlBus.add(name -> Bus.control(context.server));
+        // set this control name to have default value from the first dictionary.
         ctlBus[name].set(paramDefaults[name]);
       });
     });
     ctlBus.postln;
 
-    ctlBus[\level].setSynchronous( 0.2 );
+    // set the amplitude to 0.2. Didn't we already set this somewhere else? 
+    ctlBus[\amp].setSynchronous( 0.2 );
 
     this.addCommand(\start, "if", { arg msg;
       this.addVoice(msg[1], msg[2], true);
@@ -118,14 +132,45 @@ Engine_FM7 : CroneEngine {
   }
 
   addVoice { arg id, hz, map=true;
+    // the output is the out bus of our client context, the pitch is the value of hz
+    var params = List.with(\out, context.out_b.index, \hz, hz);
+    var numVoices = voices.size;
 
+    if(voices[id].notNil, {
+      voices[id].set(\gate,1);
+      voices[id].set(\hz, hz);
+    }, { 
+      if(numVoices < maxNumVoices, { 
+        ctlBus.keys.do({ arg name;
+          params.add(name);
+          params.add(ctlBus[name].getSynchronous);
+        });
+        // add a new Synth from our SynthDef into the voices dictionary
+        // the doneAction:2 param for the envelope should free the synth implicitly
+        voices.add(id -> Synth.new(\polyFM7, params, gr));
+        // NodeWatcher informs the client of the server state, so we get free voice information from there?
+        NodeWatcher.register(voices[id]);
+        voices[id].onFree({
+          voices.removeAt(id);
+        });
+
+        if(map, {
+          ctlBus.keys.do({ arg name;
+            voices[id].map(name, ctlBus[name]);
+          });
+        });
+      });
+    });
   }
 
   removeVoice { arg id;
-
+    if(true, {
+      voices[id].set(\gate,0);
+    });
   }
 
   free {
-
+    gr.free;
+    ctlBus.do({ arg bus,i; bus.free; });
   }
 }
