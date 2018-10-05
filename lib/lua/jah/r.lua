@@ -98,13 +98,6 @@ specs.Mixer = {
 }
 
 specs.MultiLFO = {
-	Frequency = ControlSpec.new(0.1, 30, "exp", 0, 1, "Hz"),
-	PulseWidth = ControlSpec.new(0, 1, "linear", 0, 0.5, ""),
-	FM = ControlSpec.UNIPOLAR,
-	PWM = ControlSpec.new(0, 1, "linear", 0, 0.4, "")
-}
-
-specs.MultiLFO2 = {
 	Frequency = ControlSpec.new(0.01, 50, "exp", 0, 1, "Hz"),
 	Reset = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }

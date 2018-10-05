@@ -194,18 +194,6 @@ Mixer module inspired by A-138A/A-138B.
 
 ### MultiLFO
 
-LFO with multiple waveform outputs.
-
-- Inputs: `FM`, `PWM`
-- Outputs: `Sine`, `Triangle`, `Saw`, `Square`
-- Parameters:
-	- `Frequency`
-	- `PulseWidth`
-	- `FM`
-	- `PWM`
-
-### MultiLFO2
-
 LFO with multiple waveform outputs inspired by A-145.
 
 - Inputs: `Reset`

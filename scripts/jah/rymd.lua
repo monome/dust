@@ -23,7 +23,7 @@ local function file_exists(name)
 end
 
 local function create_modules()
-  engine.new("LFO", "MultiLFO2")
+  engine.new("LFO", "MultiLFO")
   engine.new("SoundIn", "SoundIn")
   engine.new("Direct", "SGain")
   engine.new("FXSend", "SGain")
@@ -120,7 +120,7 @@ local function add_rcontrols()
     name="Mod Rate",
     id="mod_rate",
     ref="LFO.Frequency",
-    spec=R.specs.MultiLFO2.Frequency,
+    spec=R.specs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 

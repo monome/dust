@@ -21,7 +21,7 @@ local function file_exists(name)
 end
 
 local function create_modules()
-  engine.new("LFO", "MultiLFO2")
+  engine.new("LFO", "MultiLFO")
   engine.new("SoundIn", "SoundIn")
   engine.new("FilterL", "LPMoog")
   engine.new("FilterR", "LPMoog")
@@ -78,7 +78,7 @@ local function add_rcontrols()
     name="LFO Rate",
     ref="LFO.Frequency",
     formatter=Formatters.round(0.001),
-    spec=R.specs.MultiLFO2.Frequency
+    spec=R.specs.MultiLFO.Frequency
   }
 
   add_rcontrol {
