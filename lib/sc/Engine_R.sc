@@ -1308,7 +1308,7 @@ RDAmplifierModule : RModule {
 	}
 }
 
-// Status: tested, but shortName to be changed?
+// Status: tested
 RAmplifierModule : RModule {
 	*shortName { ^'Amp' }
 
@@ -1800,6 +1800,7 @@ RMoogLowpassFilterModule : RModule {
 
 // Status: tested
 // Inspiration from A-140
+// TODO: is it possible to implement Retrig(?)
 RADSREnvelopeModule : RModule {
 	*shortName { ^'ADSREnv' }
 
