@@ -26,12 +26,10 @@ function init()
   engine.new("Filter", "MMFilter")
   engine.new("SoundOut", "SoundOut")
 
-  engine.connect("Filter/Lowpass", "SoundOut/Left")
-  engine.connect("Filter/Lowpass", "SoundOut/Right")
-
-  scroll:push("Square wave oscillator with")
-  scroll:push("pulse width modulation thru")
-  scroll:push("modulatable lowpass filter")
+  scroll:push("Oscillator with")
+  scroll:push("pulse width and lowpass")
+  scroll:push("filter modulated by an")
+  scroll:push("LFO.")
   scroll:push("")
 
   local current_lfo_wave
@@ -123,6 +121,29 @@ function init()
     ref="Osc.PWM",
     spec=R.specs.MultiOsc.PWM,
     formatter=Formatters.percentage
+  }
+
+  local current_filter_type
+  local filter_type_option = Option.new(
+    "filter_tyoe",
+    "Filter/Type",
+    {"Lowpass", "Highpass", "Bandpass", "Notch"}
+  )
+  scroll:push(filter_type_option)
+  params:add {
+    param=filter_type_option,
+    action=function(value)
+      if current_filter_type then
+        engine.disconnect("Filter/"..current_filter_type, "SoundOut/Left")
+        engine.disconnect("Filter/"..current_filter_type, "SoundOut/Right")
+      end
+      if not current_filter_type then
+        current_filter_type = "Lowpass" -- default
+      end
+      current_filter_type = filter_type_option.options[value]
+      engine.connect("Filter/"..current_filter_type, "SoundOut/Left")
+      engine.connect("Filter/"..current_filter_type, "SoundOut/Right")
+    end
   }
 
   add_rcontrol {
