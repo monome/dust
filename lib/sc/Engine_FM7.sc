@@ -25,9 +25,9 @@ Engine_FM7 : CroneEngine {
         // operator amplitudes
         amp1=1,amp2=0.5,amp3=0.3,amp4=1,amp5=1,amp6=1,
         // operator phases
-        phase1=0,phase2=pi/2,phase3=0,phase4=0,phase5=0,phase6=0,
+        phase1=0,phase2=0,phase3=0,phase4=0,phase5=0,phase6=0,
         // envelope for each voice
-        ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve=-1.0;
+        ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve= -1.0;
 
         // declare some vars for this scope
         var ctrls, mods, osc, snd, aenv;
@@ -70,7 +70,7 @@ Engine_FM7 : CroneEngine {
         \amp -> -12.dbamp, \amplag -> 0.02,
         \hz1 -> 440, \hz2 -> 220, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
         \amp1 -> 1,\amp2 -> 0.5,\amp3 -> 0.3,\amp -> 1,\amp5 -> 1,\amp6 -> 1,
-        \phase1 -> 0,\phase2 -> pi/2,\phase3 -> 0,\phase4 -> 0,\phase5 -> 0,\phase6 -> 0,
+        \phase1 -> 0,\phase2 -> 0,\phase3 -> 0,\phase4 -> 0,\phase5 -> 0,\phase6 -> 0,
         \ampAtk -> 0.05, \ampDec -> 0.1, \ampSus -> 1.0, \ampRel -> 1.0, \ampCurve -> -1.0;       
       );
     }
