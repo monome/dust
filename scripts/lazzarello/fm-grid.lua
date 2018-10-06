@@ -20,6 +20,7 @@ local mode_transpose = 0
 local root = { x=5, y=5 }
 local trans = { x=5, y=5 }
 local lit = {}
+local encoder_mode = 0
 
 local screen_framerate = 15
 local screen_refresh_metro
@@ -92,34 +93,134 @@ function init()
 end
 
 function enc(n,delta)
-  if n == 1 then
-    hz_position = (hz_position + delta) % 1024
-    local hz = (hz_position / 1024) * 5
-    engine.hz2(hz)
-    print("hz multiple is " .. hz)
-  elseif n == 2 then
-    ph_position = (ph_position + delta) % 1024
-    local phase = (ph_position / 1024)
-    engine.phase2(phase)
-    print("phase is " .. phase)
-  elseif n == 3 then
-    amp_position = (amp_position + delta) % 1024
-    local amp = (amp_position / 1024)
-    engine.amp2(amp)
-    print("amp is " .. amp)
+  -- gross...but hey, it'll work for now. refactor to be a function that takes the encoder_mode as an arg
+  if encoder_mode == 2 then
+    if n == 1 then
+      hz_position = (hz_position + delta) % 1024
+      local hz = (hz_position / 1024) * 5
+      engine.hz2(hz)
+      print("hz2 multiple is " .. hz)
+    elseif n == 2 then
+      ph_position = (ph_position + delta) % 1024
+      local phase = (ph_position / 1024)
+      engine.phase2(phase)
+      print("phase2 is " .. phase)
+    elseif n == 3 then
+      amp_position = (amp_position + delta) % 1024
+      local amp = (amp_position / 1024)
+      engine.amp2(amp)
+      print("amp2 is " .. amp)
+    end
+  elseif encoder_mode == 3 then
+    if n == 1 then
+      hz_position = (hz_position + delta) % 1024
+      local hz = (hz_position / 1024) * 5
+      engine.hz3(hz)
+      print("hz3 multiple is " .. hz)
+    elseif n == 2 then
+      ph_position = (ph_position + delta) % 1024
+      local phase = (ph_position / 1024)
+      engine.phase3(phase)
+      print("phase3 is " .. phase)
+    elseif n == 3 then
+      amp_position = (amp_position + delta) % 1024
+      local amp = (amp_position / 1024)
+      engine.amp3(amp)
+      print("amp3 is " .. amp)
+    end
+  elseif encoder_mode == 4 then
+    if n == 1 then
+      hz_position = (hz_position + delta) % 1024
+      local hz = (hz_position / 1024) * 5
+      engine.hz4(hz)
+      print("hz4 multiple is " .. hz)
+    elseif n == 2 then
+      ph_position = (ph_position + delta) % 1024
+      local phase = (ph_position / 1024)
+      engine.phase4(phase)
+      print("phase4 is " .. phase)
+    elseif n == 3 then
+      amp_position = (amp_position + delta) % 1024
+      local amp = (amp_position / 1024)
+      engine.amp4(amp)
+      print("amp4 is " .. amp)
+    end
+  elseif encoder_mode == 5 then
+    if n == 1 then
+      hz_position = (hz_position + delta) % 1024
+      local hz = (hz_position / 1024) * 5
+      engine.hz5(hz)
+      print("hz5 multiple is " .. hz)
+    elseif n == 2 then
+      ph_position = (ph_position + delta) % 1024
+      local phase = (ph_position / 1024)
+      engine.phase5(phase)
+      print("phase5 is " .. phase)
+    elseif n == 3 then
+      amp_position = (amp_position + delta) % 1024
+      local amp = (amp_position / 1024)
+      engine.amp5(amp)
+      print("amp5 is " .. amp)
+    end
+  elseif encoder_mode == 6 then
+    if n == 1 then
+      hz_position = (hz_position + delta) % 1024
+      local hz = (hz_position / 1024) * 5
+      engine.hz6(hz)
+      print("hz6 multiple is " .. hz)
+    elseif n == 2 then
+      ph_position = (ph_position + delta) % 1024
+      local phase = (ph_position / 1024)
+      engine.phase6(phase)
+      print("phase6 is " .. phase)
+    elseif n == 3 then
+      amp_position = (amp_position + delta) % 1024
+      local amp = (amp_position / 1024)
+      engine.amp6(amp)
+      print("amp6 is " .. amp)
+    end
+  else
+    print("in global encoder mode")
   end
 end
-        
+
+-- this function is gross. it should be smaller functions.
 function g.event(x, y, z)
   if x == 1 and (y > 2 and y < 8) then
     if y == 3 then
       if z == 1 then
         print("entered grid (1,3)")
-        function enc(n,d)
-          if n == 1 then
-            print("entered encoder event loop")
-          end
-        end
+        encoder_mode = 2
+      else
+        encoder_mode = 0
+      end
+    elseif y == 4 then
+      if z == 1 then
+        print("entered grid (1,4)")
+        encoder_mode = 3
+      else
+        encoder_mode = 0
+      end
+    elseif y == 5 then
+      if z == 1 then
+        print("entered grid (1,5)")
+        encoder_mode = 4
+      else
+        encoder_mode = 0
+      end
+    elseif y == 6 then
+      if z == 1 then
+        print("entered grid (1,6)")
+        encoder_mode = 5
+      else
+        encoder_mode = 0
+      end
+    elseif y == 7 then
+      if z == 1 then
+        print("entered grid (1,7)")
+        encoder_mode = 6
+      else
+        encoder_mode = 0
       end
     end
   end
