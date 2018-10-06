@@ -85,10 +85,18 @@ function init()
     startup_ani_count = startup_ani_count + 1
   end
   startup_ani_metro:start( 0.1, 3 )
-
+  ph_position,hz_position,amp_position = 0,0,0
 end
 
 function g.event(x, y, z)
+  if x == 1 and (y > 2 and y < 8) then
+    if z == 1 then
+      print("pressed row ".. y .. " in column ".. x)
+    else
+      print("released row ".. y .. " in column ".. x)
+    end
+  end
+  
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then
@@ -202,11 +210,23 @@ function gridredraw()
   g:refresh()
 end
 
-
-
 function enc(n,delta)
   if n == 1 then
-    mix:delta("output", delta)
+    -- put some logic in here to change which hzx variable the encoder controls
+    hz_position = (hz_position + delta) % 1024
+    local hz = (hz_position / 1024) * 5
+    engine.hz2(hz)
+    print("hz multiple is " .. hz)
+  elseif n == 2 then
+    ph_position = (ph_position + delta) % 1024
+    local phase = (ph_position / 1024)
+    engine.phase2(phase)
+    print("phase is " .. phase)
+  elseif n == 3 then
+    amp_position = (amp_position + delta) % 1024
+    local amp = (amp_position / 1024)
+    engine.amp2(amp)
+    print("amp is " .. amp)
   end
 end
 
