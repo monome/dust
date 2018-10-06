@@ -2,9 +2,11 @@
 --
 
 local ControlSpec = require 'controlspec'
-local Option = require 'params/option'
 local Control = require 'params/control'
+local Option = require 'params/option'
+local Trigger = require 'params/trigger'
 local Formatters = require 'jah/formatters'
+local ParamSet = require 'paramset'
 local Scroll = require 'jah/scroll'
 local R = require 'jah/r'
 local scroll = Scroll.new()
@@ -62,18 +64,15 @@ function init()
     formatter=Formatters.round(0.001)
   }
 
-  -- TODO: add support to Scroll
-  --[[
+  local reset_trigger = Trigger.new("lfo_reset", "LFO.Reset")
+  reset_trigger.action = function()
+    engine.set("LFO.Reset", 1)
+    engine.set("LFO.Reset", 0)
+  end
+  scroll:push(reset_trigger)
   params:add {
-    type = "trigger",
-    id = "lfo_reset",
-    name = "LFO.Reset",
-    action = function()
-      engine.set("LFO.Reset", 1)
-      engine.set("LFO.Reset", 0)
-    end
+    param = reset_trigger
   }
-  ]]
     
   local current_osc_wave
   local osc_wave_option = Option.new(
@@ -182,6 +181,20 @@ function redraw()
   screen.clear()
   scroll:draw(screen)
   screen.update()
+end
+
+function key(n, s)
+  if n == 3 and s == 1 then
+    if scroll.selected_param then
+      local param = scroll.selected_param
+      if param.t == ParamSet.tTRIGGER then
+        param:bang()
+      else
+        param:set_default()
+        redraw()
+      end
+    end
+  end
 end
 
 function enc(n, delta)
