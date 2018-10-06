@@ -1,12 +1,15 @@
 -- fmrthsea
 --
--- subtractive FM polysynth
--- controlled by grid
+-- FM polysynth
+-- controlled by grid or MIDI
 --
 -- grid pattern player:
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
+-- enc 1: frequency
+-- enc 2: phase
+-- enc 3: amplitude
 
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
@@ -88,15 +91,38 @@ function init()
   ph_position,hz_position,amp_position = 0,0,0
 end
 
+function enc(n,delta)
+  if n == 1 then
+    hz_position = (hz_position + delta) % 1024
+    local hz = (hz_position / 1024) * 5
+    engine.hz2(hz)
+    print("hz multiple is " .. hz)
+  elseif n == 2 then
+    ph_position = (ph_position + delta) % 1024
+    local phase = (ph_position / 1024)
+    engine.phase2(phase)
+    print("phase is " .. phase)
+  elseif n == 3 then
+    amp_position = (amp_position + delta) % 1024
+    local amp = (amp_position / 1024)
+    engine.amp2(amp)
+    print("amp is " .. amp)
+  end
+end
+        
 function g.event(x, y, z)
   if x == 1 and (y > 2 and y < 8) then
-    if z == 1 then
-      print("pressed row ".. y .. " in column ".. x)
-    else
-      print("released row ".. y .. " in column ".. x)
+    if y == 3 then
+      if z == 1 then
+        print("entered grid (1,3)")
+        function enc(n,d)
+          if n == 1 then
+            print("entered encoder event loop")
+          end
+        end
+      end
     end
   end
-  
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then
@@ -208,26 +234,6 @@ function gridredraw()
   end
 
   g:refresh()
-end
-
-function enc(n,delta)
-  if n == 1 then
-    -- put some logic in here to change which hzx variable the encoder controls
-    hz_position = (hz_position + delta) % 1024
-    local hz = (hz_position / 1024) * 5
-    engine.hz2(hz)
-    print("hz multiple is " .. hz)
-  elseif n == 2 then
-    ph_position = (ph_position + delta) % 1024
-    local phase = (ph_position / 1024)
-    engine.phase2(phase)
-    print("phase is " .. phase)
-  elseif n == 3 then
-    amp_position = (amp_position + delta) % 1024
-    local amp = (amp_position / 1024)
-    engine.amp2(amp)
-    print("amp is " .. amp)
-  end
 end
 
 function key(n,z)
@@ -371,4 +377,3 @@ function cleanup()
   pat:stop()
   pat = nil
 end
-
