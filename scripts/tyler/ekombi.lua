@@ -73,7 +73,7 @@ pattern_select = 1
 
 -- display variables
 pattern_display = "default"
-meter_display = 50
+meter_display = 47
 
 -- grid variables
 -- for holding one gridkey and pressing another further right
@@ -127,7 +127,7 @@ function init()
     ack.add_channel_params(channel)
   end
 
-  params:read("gittifer/ekombi.pset")
+  params:read("tyler/ekombi.pset")
 
   -- metronome setup
   counter = metro.alloc()
@@ -251,7 +251,9 @@ function enc(n,d)
   if n == 3 then
     for i=1, 4 do
       params:delta(i..": filter cutoff", d)
+      print(d, params:get(i..": filter cutoff"))
     end
+    --meter_display = util.clamp(meter_display + d/100, 0, 47)
   end
   
 redraw()
@@ -295,7 +297,7 @@ end
     first, the B track is checked (the 'quarter' note, before the tuplet division) then if the note is on, we check
     each of the subdivisions, and if those turn out to be on, the nth subdivision of the tuple of the track is triggered.
     The complicated divisons and multiplations of each of the track sets and subsets is to find the exact position value,
-    that when % by that value returns 1, the track triggers.
+    that when / by that value returns n-1, the track triggers.
 ]]--
 
 
@@ -307,26 +309,31 @@ function count(c)
     fast_gridredraw()
   end
 
+  pending = {}
   for i=2, 8, 2 do
     cnt = tab.count(track[i])
     if cnt == 0 or cnt == nil then
       return
     else
       if track[i][cnt][(q_position%cnt)+1] == 1 then
-        cnt = tab.count(track[i-1])
-          if cnt == 0 or cnt == nil then
-            return
-          else
-            for n=1, cnt do
-            if position / ( ppq // (tab.count(track[i-1][cnt]))) == n-1 then
-              if track[i-1][cnt][n] == 1 then
-                engine.trig(i//2 -1) -- samples are only 0-3
-              end
+        table.insert(pending,i-1)
+      end
+    end
+  end
+  
+  if tab.count(pending) > 0 then
+    for i=1, tab.count(pending) do
+      cnt = tab.count(track[pending[i]])
+      if cnt == 0 or cnt == nil then
+        return
+      else
+        for n=1, cnt do
+          if position / ( ppq // (tab.count(track[pending[i]][cnt]))) == n-1 then
+            if track[pending[i]][cnt][n] == 1 then
+              engine.trig(pending[i]//2) -- samples are only 0-3
             end
           end
         end
-      else
-        -- pass
       end
     end
   end
@@ -361,6 +368,10 @@ function redraw()
       end
     end
   
+    -- meter display
+    --screen.rect(124,56,3,-meter_display)
+    --screen.fill()
+  
     -- param display
     screen.move(0,5)
     screen.text("bpm:"..params:get("bpm"))
@@ -368,18 +379,31 @@ function redraw()
     screen.level(15)
     screen.text_center("pattern:"..pattern_select)
     
-    
-    -- pause icon
+    -- pause/play icon
     if not running then
       screen.rect(123,57,2,6)
       screen.rect(126,57,2,6)
       screen.fill()
+    else
+      screen.move(123,57)
+      screen.line_rel(6,3)
+      screen.line_rel(-6,3)
+      screen.fill()
     end
   
-  -- currently selected pattern
   screen.level(1)
+    -- currently selected pattern
     screen.move(128,5)
     screen.text_right(pattern_display)
+    
+    --[[ meter outline
+    screen.rect(124, 9, 4, 47)
+    screen.move(124, 32)
+    screen.line_rel(3,0)
+    screen.move(124, 33)
+    screen.line_rel(3,0)
+    screen.stroke()
+    --]]
   
 screen.update()  
 end
@@ -452,7 +476,7 @@ end
 --
 function save_pattern()
   local count = 0
-  local file = io.open(data_dir .. "gittifer/ekombi.data", "r+")
+  local file = io.open(data_dir .. "tyler/ekombi.data", "r+")
   io.output(file)
   for l=1, ((pattern_select - 1) * 136) do 
       file:read("*line")
@@ -477,7 +501,7 @@ end
 
 function load_pattern()
   local tracklen = 0
-  local file = io.open(data_dir .. "gittifer/ekombi.data", "r")
+  local file = io.open(data_dir .. "tyler/ekombi.data", "r")
   if file then
     print("datafile found")
     io.input(file)
@@ -501,5 +525,4 @@ function load_pattern()
     print("LOAD COMPLETE")
     io.close(file)
   end
-  -- for i = 1, 8 do reer(i) end
 end
