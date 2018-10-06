@@ -7,6 +7,7 @@
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
+-- 1 3-7 put encoders into modulation mode
 -- enc 1: frequency
 -- enc 2: phase
 -- enc 3: amplitude
