@@ -1,8 +1,8 @@
--- 
+--
 -- a step sequencer
 --
 -- ----------
--- 
+--
 -- requires a grid.
 --
 -- ----------
@@ -34,22 +34,22 @@
 --
 -- row 2 is a multi-use row.
 -- if playing its function is
--- "jump to step". 
--- 
--- if recording, touching your 
+-- "jump to step".
+--
+-- if recording, touching your
 -- current position on row 2 will
 -- input a rest.
--- 
--- if holding the sequence load 
+--
+-- if holding the sequence load
 -- button (15, 1), each of the 16
 -- pads represent a sequence.
--- sequence loading happens on the 
--- "next step" by default, but 
+-- sequence loading happens on the
+-- "next step" by default, but
 -- can be configured to
 -- "last step" in PARAMETERS.
 --
--- ---------- 
--- 
+-- ----------
+--
 -- row 3 and greater are an
 -- earthsea style keyboard.
 --
@@ -122,8 +122,8 @@ end
 
 local function note_from_grid(x, y)
   local note = ((7 - y) * 5) + x + 36
-  return note 
-end  
+  return note
+end
 
 
 local function current_note_name()
@@ -145,46 +145,46 @@ end
 function init()
   screen.aa(0)
   screen.line_width(1)
-  
+
   clk.on_step = step
   clk.on_select_internal = function() end
   clk.on_select_external = reset_pattern
   clk:add_clock_params()
   params:add_separator()
-  
-  params:add_option("seq change", {"next step", "last step"}, 1)
+
+  params:add_option("seq_change","seq change", {"next step", "last step"}, 1)
   params:add_separator()
-  
+
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp",cs.AMP)
+  params:add_control("amp","amp",cs.AMP)
   params:set_action("amp", function(x) engine.amp(x) end)
 
   cs.PW = cs.new(0,100,'lin',0,50,'%')
-  params:add_control("pw",cs.PW)
+  params:add_control("pw","pw",cs.PW)
   params:set_action("pw", function(x) engine.pw(x/100) end)
 
   cs.REL = cs.new(0.1,3.2,'lin',0,1.2,'s')
-  params:add_control("release",cs.REL)
+  params:add_control("release","release",cs.REL)
   params:set_action("release", function(x) engine.release(x) end)
 
   cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff",cs.CUT)
+  params:add_control("cutoff","cutoff",cs.CUT)
   params:set_action("cutoff", function(x) engine.cutoff(x) end)
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain",cs.GAIN)
+  params:add_control("gain","gain",cs.GAIN)
   params:set_action("gain", function(x) engine.gain(x) end)
-  
+
   screen_refresh_timer = metro.alloc(function(stage) redraw() end, 1 / 15)
   screen_refresh_timer:start()
-  
+
   grid_refresh_timer = metro.alloc(function(stage) grid_redraw() end, 1 / 15)
   grid_refresh_timer:start()
-  
+
   if playing then
     clk:start()
   else clk:stop() end
-  
+
   params:read("justmat/paths.pset")
   params:bang()
 end
@@ -195,11 +195,11 @@ function step()
     current_seq = next_seq
     end_of_seq_change = false
   end
-  
+
   if seq_data[current_seq][current_step].note_num then
     trig(seq_data[current_seq][current_step].note_num)
   end
-  
+
   current_step = current_step + 1
   if current_step > seq_data[current_seq].steps then
     current_step = 1
@@ -208,23 +208,23 @@ end
 
 
 function key(n, z)
-  if n == 1 and z == 1 then 
+  if n == 1 and z == 1 then
     alt = true
   else
     alt = false
   end
-  
-  if n == 2 and z == 1 then 
+
+  if n == 2 and z == 1 then
     enc_sel_mode = true
-  else 
-    enc_sel_mode = false 
+  else
+    enc_sel_mode = false
   end
-  
+
   if n == 3 and z == 1 then
     if not playing and not step_edit_mode then
       clk:start()
       playing = true
-    else 
+    else
       clk:stop()
       playing = false
     end
@@ -246,7 +246,7 @@ function enc(n, d)
     last_enc = 1
     time_last_enc = util.time()
   end
-  
+
   if n == 2 then
     if step_edit_mode then
       seq_data[current_seq][current_step].prob = util.clamp(seq_data[current_seq][current_step].prob + d, 0, 100)
@@ -258,12 +258,12 @@ function enc(n, d)
     last_enc = 2
     time_last_enc = util.time()
   end
-  
+
   if n == 3 then
     if step_edit_mode then
       if seq_data[current_seq][current_step].note_num then
         seq_data[current_seq][current_step].note_num = util.clamp(seq_data[current_seq][current_step].note_num + d, 0, 127)
-      else 
+      else
         seq_data[current_seq][current_step].note_num = 0
       end
     elseif enc_sel_mode then
@@ -279,7 +279,7 @@ end
 
 function g.event(x, y, z)
   -- y = 1 is the control row
-  if y == 1 then 
+  if y == 1 then
     if x == 1 then
       if z == 1 then
         if not playing and not step_edit_mode then
@@ -294,12 +294,12 @@ function g.event(x, y, z)
           playing = false
         end
       end
-    -- record mode  
+    -- record mode
     elseif x == 2 and z == 1 and not step_edit_mode then
       if record_mode then
         record_mode = false
       else record_mode = true end
-    -- clear sequence/ return to init state  
+    -- clear sequence/ return to init state
     elseif x == 13 then
       if z == 1 then
         clear_hold_time = util.time()
@@ -314,16 +314,16 @@ function g.event(x, y, z)
           playing = false
           current_step = 1
         end
-      clear_hold_time = 0.0  
+      clear_hold_time = 0.0
       end
     -- sequence load mode
     elseif x == 15 then
       if z == 1 then
         seq_load_mode = true
-      else 
-        seq_load_mode = false 
+      else
+        seq_load_mode = false
       end
-    -- step edit mode  
+    -- step edit mode
     elseif x == 16 and z == 1 then
       if not playing and not record_mode then
         if step_edit_mode then
@@ -332,19 +332,19 @@ function g.event(x, y, z)
       end
     end
   end
-  -- y == 2 is the playbar    
+  -- y == 2 is the playbar
   if y == 2 and z == 1 then
     if record_mode and not playing then
       if x == current_step then
         seq_data[current_seq][x].note_num = nil
         current_step = current_step + 1
         if current_step > seq_data[current_seq].steps then
-          current_step = 1  
+          current_step = 1
         end
       end
     else
       if seq_load_mode then
-        if params:get('seq change') == 1 then
+        if params:get('seq_change') == 1 then
           current_seq = x
         else
           end_of_seq_change = true
@@ -354,7 +354,7 @@ function g.event(x, y, z)
         current_step = x
       end
     end
-  -- y == 3 or greater is the keybed  
+  -- y == 3 or greater is the keybed
   elseif y >= 3 then
     if z == 1 and not step_edit_mode then
       trig(note_from_grid(x, y))
@@ -380,7 +380,7 @@ function redraw()
     screen.text("step : " .. current_step )
     screen.move(85, 9)
     screen.text("prob : " .. seq_data[current_seq][current_step].prob)
-  else 
+  else
     screen.text("bpm : " .. params:get("bpm"))
     screen.move(123, 9)
     if last_enc == 1 and current_enc1 == 2 then
@@ -400,18 +400,18 @@ function redraw()
   screen.move(2, 13)
   screen.line(128, 13)
   screen.stroke()
-  
+
   -- encoder function selection
   screen.move(84, 25)
   if step_edit_mode then
     screen.text("1. step")
   else screen.text("1. " .. seq_enc_choices[current_enc1]) end
-  
+
   screen.move(84, 40)
   if step_edit_mode then
     screen.text("2. prob ")
   else screen.text("2. " .. engine_enc_choices[current_enc2]) end
-  
+
   screen.move(84, 55)
   if step_edit_mode then
     screen.text("3. note")
@@ -461,28 +461,28 @@ function grid_redraw()
   if not playing then
     g.led(1, 1, 8)
   else g.led(1, 1, 3) end
-  
+
   if record_mode then
     g.led(2, 1, 8)
   else g.led(2, 1, 3) end
-  
+
   if clear_hold_time > 0.0 then
     g.led(13, 1, 8)
   else g.led(13, 1, 3) end
-  
+
   if seq_load_mode then
     g.led(15, 1, 8)
   else g.led(15, 1, 3) end
-  
+
   if step_edit_mode then
     g.led(16, 1, 8)
   else g.led(16, 1, 3) end
-  
+
   for i = 1, seq_data[current_seq].steps do
     if i == current_step then
       g.led(i, 2, 8)
-    else 
-      g.led(i, 2, 3) 
+    else
+      g.led(i, 2, 3)
     end
   end
   g.refresh()
