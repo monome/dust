@@ -76,40 +76,40 @@ label = {"_","+", "-", "<", ">", "*", "?", "!", ":", "#"}
 
 function init()
   cs.AMP = cs.new(0,1,'lin',0,0.75,'')
-  params:add_control("amp",cs.AMP)
+  params:add_control("amp", "amp", cs.AMP)
   params:set_action("amp",
   function(x) engine.amp(x) end)
   engine.amp(0.75)
 
   cs.DECAY = cs.new(0.1,15,'lin',0,3.6,'s')
-  params:add_control("damping",cs.DECAY)
+  params:add_control("damping", "damping", cs.DECAY)
   params:set_action("damping",
   function(x) engine.decay(x) end)
 
   cs.COEF = cs.new(0,1,'lin',0,0.11,'')
-  params:add_control("brightness",cs.COEF)
+  params:add_control("brightness", "brightness", cs.COEF)
   params:set_action("brightness",
   function(x) engine.coef(x) end)
 
   cs.LPF_FREQ = cs.new(100,10000,'lin',0,3600,'')
-  params:add_control("lpf_freq",cs.LPF_FREQ)
+  params:add_control("lpf_freq", "lpf_freq", cs.LPF_FREQ)
   params:set_action("lpf_freq",
   function(x) engine.lpf_freq(x) end)
   engine.lpf_freq(3600.0)
 
   cs.LPF_GAIN = cs.new(0,3.2,'lin',0,0.5,'')
-  params:add_control("lpf_gain",cs.LPF_GAIN)
+  params:add_control("lpf_gain", "lpf_gain", cs.LPF_GAIN)
   params:set_action("lpf_gain",
   function(x) engine.lpf_gain(x) end)
 
   cs.BPF_FREQ = cs.new(100,10000,'lin',0,1200,'')
-  params:add_control("bpf_freq",cs.BPF_FREQ)
+  params:add_control("bpf_freq", "bpf_freq", cs.BPF_FREQ)
   params:set_action("bpf_freq",
   function(x) engine.bpf_freq(x) end)
   engine.bpf_freq(1200.0)
 
   cs.BPF_RES = cs.new(0,4,'lin',0,0.5,'')
-  params:add_control("bpf_res",cs.BPF_RES)
+  params:add_control("bpf_res", "bpf_res", cs.BPF_RES)
   params:set_action("bpf_res",
   function(x) engine.bpf_res(x) end)
 

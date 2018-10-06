@@ -157,14 +157,13 @@ local function note_off(note)
 end
 
 local function default_patch()
-  params:set("osc1 > osc3 freq", 1)
-  params:set("osc1 partial no", 2)
-  -- params:set_raw("osc1 partial no", 0.13043) -- = 2 mapped
-  params:set("osc3 gain", 1)
-  params:set("osc3 index", 5)
-  params:set("osc3 > amp", 0.1)
-  params:set("env > osc1 gain", 0.5)
-  params:set("env > amp gain", 1)
+  params:set("osc1_to_osc3freq", 1)
+  params:set("osc1partial", 2)
+  params:set("osc3gain", 1)
+  params:set("osc3index", 5)
+  params:set("osc3outlevel", 0.1)
+  params:set("env_to_osc1gain", 0.5)
+  params:set("env_to_ampgain", 1)
   --[[
   params:set("delay send", -20)
   params:set("delay time left", 0.03)
@@ -244,14 +243,14 @@ local function add_midi_cc_params()
     midi_cc_note_list[i] = i
   end
   cc_type = {"abs", "rel"}
-  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
-  params:add_option("filter cutoff cc type", cc_type)
-  params:add_option("filter resonance cc", midi_cc_note_list, 2)
-  params:add_option("filter resonance cc type", cc_type)
-  params:add_option("timbre cc", midi_cc_note_list, 3)
-  params:add_option("timbre cc type", cc_type)
-  params:add_option("timemod cc", midi_cc_note_list, 4)
-  params:add_option("timemod cc type", cc_type)
+  params:add_option("filter_cutoff_cc", "filter cutoff cc", midi_cc_note_list, 1)
+  params:add_option("filter_cutoff_cc_type", "filter cutoff cc type", cc_type)
+  params:add_option("filter_resonance_cc", "filter resonance cc", midi_cc_note_list, 2)
+  params:add_option("filter_resonance_cc_type", "filter resonance cc type", cc_type)
+  params:add_option("timbre_cc", "timbre cc", midi_cc_note_list, 3)
+  params:add_option("timbre_cc_type", "timbre cc type", cc_type)
+  params:add_option("timemod_cc", "timemod cc", midi_cc_note_list, 4)
+  params:add_option("timemod_cc_type", "timemod cc type", cc_type)
 end
 
 function init()

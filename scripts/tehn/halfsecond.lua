@@ -1,7 +1,7 @@
 -- softcut test
 -- half sec loop 75% decay
 --
--- ENC1 to toggle HOLD
+-- KEY3 to toggle HOLD
 
 engine.name = 'SoftCut'
 
