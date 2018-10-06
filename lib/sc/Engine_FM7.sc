@@ -20,8 +20,8 @@ Engine_FM7 : CroneEngine {
       polyDef = SynthDef.new(\polyFM7, {
         // args for whole instrument
         arg out, amp=0.2, amplag=0.02, gate=1, hz,
-        // operator frequencies
-        hz1=440, hz2=220, hz3=0, hz4=0, hz5=0, hz6=0,
+        // operator frequencies. these can be partials or custom intervals
+        hz1=1, hz2=2, hz3=0, hz4=0, hz5=0, hz6=0,
         // operator amplitudes
         amp1=1,amp2=0.5,amp3=0.3,amp4=1,amp5=1,amp6=1,
         // operator phases
@@ -33,12 +33,12 @@ Engine_FM7 : CroneEngine {
         var ctrls, mods, osc, snd, aenv;
 
         // the 6 oscillators, their frequence, phase and amplitude
-        ctrls = [[ Lag.kr(hz,0.01), phase1, Lag.kr(amp1,0.01) ],
-                 [ Lag.kr(hz2,0.01), phase2, Lag.kr(amp2,0.01) ],
-                 [ Lag.kr(hz3,0.01), phase3, Lag.kr(amp3,0.01) ],
-                 [ Lag.kr(hz4,0.01), phase4, Lag.kr(amp4,0.01) ],
-                 [ Lag.kr(hz5,0.01), phase5, Lag.kr(amp5,0.01) ],
-                 [ Lag.kr(hz6,0.01), phase6, Lag.kr(amp6,0.01) ]];
+        ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
+                 [ Lag.kr(hz * hz2,0.01), phase2, Lag.kr(amp2,0.01) ],
+                 [ Lag.kr(hz * hz3,0.01), phase3, Lag.kr(amp3,0.01) ],
+                 [ Lag.kr(hz * hz4,0.01), phase4, Lag.kr(amp4,0.01) ],
+                 [ Lag.kr(hz * hz5,0.01), phase5, Lag.kr(amp5,0.01) ],
+                 [ Lag.kr(hz * hz6,0.01), phase6, Lag.kr(amp6,0.01) ]];
 
         // All the operaters modulation params, this is 36 params, which could be exposed and mapped to a Grid.
         mods = [[0,0,0,0,0,0],
@@ -68,7 +68,7 @@ Engine_FM7 : CroneEngine {
       // DRY it up?
       paramDefaults = Dictionary.with(
         \amp -> -12.dbamp, \amplag -> 0.02,
-        \hz1 -> 440, \hz2 -> 220, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
+        \hz1 -> 1, \hz2 -> 2, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
         \amp1 -> 1,\amp2 -> 0.5,\amp3 -> 0.3,\amp -> 1,\amp5 -> 1,\amp6 -> 1,
         \phase1 -> 0,\phase2 -> 0,\phase3 -> 0,\phase4 -> 0,\phase5 -> 0,\phase6 -> 0,
         \ampAtk -> 0.05, \ampDec -> 0.1, \ampSus -> 1.0, \ampRel -> 1.0, \ampCurve -> -1.0;       
