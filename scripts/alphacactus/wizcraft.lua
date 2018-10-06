@@ -1,6 +1,6 @@
 -- wizcraft
 -- key1 shift^
--- key2 add voice / ^
+-- key2 add vector / ^
 -- key3 / ^clear screen
 -- enc1 drift / ^output
 -- enc2 push/pull / ^detune
@@ -11,10 +11,17 @@ engine.name = "PolySub"
 vectors = {}
 NUM_VECTORS = 16
 
+forces = {}
+
 next_id = 0
 function get_next_id()
     next_id = (next_id % NUM_VECTORS) + 1
     return next_id
+end
+
+-- return plus or minus one at random
+function flip()
+    return ((math.random(1,2)*2)-3)
 end
 
 Vector = {id=0, x=0, y=0, xv=0, yv=0, xa=0, ya=0, s=8}
@@ -24,41 +31,38 @@ function Vector:new()
     setmetatable(o, self)
     self.__index = self
 
-    o.id = get_next_id()
     o.x=math.random(128)
     o.y=math.random(64)
-    o.xa=math.random() * ((math.random(1,2)*2)-3)
-    o.ya=math.random() * ((math.random(1,2)*2)-3)
+    o.xa=math.random() * flip()
+    o.ya=math.random() * flip()
 
     return o
 end
 
-
 function Vector:update()
-    self.xa = (math.random() * ((math.random(1,2)*2)-3))
-    self.ya = (math.random() * ((math.random(1,2)*2)-3))
+    self.xa = math.random() * flip() 
+    self.ya = math.random() * flip()
 
     self.xv = util.clamp(self.xv + self.xa, -1*params:get("drift"), 1*params:get("drift"))
     self.yv = util.clamp(self.yv + self.ya, -1*params:get("drift"), 1*params:get("drift"))
 
     self.x = self.x + self.xv
     self.y = self.y + self.yv
-
 end
-
 
 function Vector:play_note()
     local note = ((7-(self.y/8))*5) + (self.x/8)
     engine.start(self.id, 55*2^(note/12))
 end
 
-
 function Vector:draw(c)
     screen.level(c)
 
-    screen.move(self.x, self.y)
+    local x = self.x+self.s
+    local y = self.y+self.s
+    screen.move(x, y)
     for i=1,self.s do
-        screen.line(self.x+math.random(2*self.s), self.y+math.random(2*self.s))
+        screen.line(x+(math.random(self.s)*flip()), y+(math.random(self.s)*flip()))
     end
 
     screen.fill()
@@ -66,6 +70,7 @@ end
 
 
 function init()
+    tmp = 1
     shift = 0
 
     params:add_control("drift", controlspec.new(0,2,"lin",0,0,""))
@@ -145,6 +150,7 @@ function redraw()
             end
         end
     end
+    screen.close()
     screen.stroke()
 
     screen.update()
@@ -154,16 +160,22 @@ end
 function check_collisions()
     for i=1,#vectors do
         local v = vectors[i]
-        for j=i+1,#vectors do
-            local o = vectors[j]
-            
-            if o then
-                if math.abs(v.x-o.x) < v.s and math.abs(v.y-o.y) < v.s then
-                    engine.stop(o.id)
-                    table.remove(vectors, j)
+        if v then
+            local vx = v.x + v.s
+            local vy = v.y + v.s
+            for j=i+1,#vectors do
+                local o = vectors[j]
+                if o then
+                    local ox = o.x + o.s
+                    local oy = o.y + o.s
+                    
+                    if math.abs(vx-ox) < v.s and math.abs(vy-oy) < v.s then
+                        engine.stop(o.id)
+                        table.remove(vectors, j)
 
-                    v.s = v.s + 4
-                    v:play_note()
+                        v.s = v.s + 4
+                        v:play_note()
+                    end
                 end
             end
         end
@@ -218,7 +230,8 @@ function key(n, z)
 
     if shift == 1 then 
         if n == 2 then
-            -- empty for now
+            local f = Vector:new()
+            table.insert(forces, f)
         elseif n == 3 then -- clear all vectors
             engine.stopAll()
             vectors = {}
@@ -227,6 +240,7 @@ function key(n, z)
         if n == 2 then -- add vector
             if z == 1 then 
                 local v = Vector:new()
+                v.id = get_next_id()
                 table.insert(vectors, v)
                 v:play_note()
             end
