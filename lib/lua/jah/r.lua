@@ -115,9 +115,9 @@ specs['Amp2'] = {
 
 specs['CrossFader'] = {
 	Fade = ControlSpec.BIPOLAR,
-	TrimA = ControlSpec.new(-1.#INF, 12, "db", 0, -1.#INF, " dB"),
-	TrimB = ControlSpec.new(-1.#INF, 12, "db", 0, -1.#INF, " dB"),
-	Master = ControlSpec.new(-1.#INF, 12, "db", 0, -1.#INF, " dB")
+	TrimA = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
+	TrimB = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
+	Master = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB")
 }
 
 specs['Delay'] = {
