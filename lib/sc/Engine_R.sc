@@ -553,7 +553,7 @@ RModule {
 	}
 
 	*generateLuaSpecs {
-		^"specs."++this.shortName.asString++" = {\n"++
+		^"specs['"++this.shortName.asString++"'] = {\n"++
 			if (this.params.isNil) {
 				""
 			} {
@@ -562,7 +562,14 @@ RModule {
 					"\t" ++ param.asString ++ " = " ++ if (controlSpec.class == Symbol) {
 						"\\" ++ controlSpec.asString
 					} {
-						controlSpec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[controlSpec.minval, controlSpec.maxval, controlSpec.warp.asSpecifier.asString.quote, controlSpec.step, controlSpec.default, controlSpec.units.quote].join(", ")++")") // TODO: cater for -INF and INF
+						controlSpec.asSpecifier !? { |specifier| "ControlSpec."++specifier.asString.toUpper } ? ("ControlSpec.new("++[
+							switch (controlSpec.minval) { -inf } { "-math.huge" } { inf } { "math.huge" } ? controlSpec.minval,
+							switch (controlSpec.maxval) { -inf } { "-math.huge" } { inf } { "math.huge" } ? controlSpec.maxval,
+							controlSpec.warp.asSpecifier.asString.quote,
+							controlSpec.step,
+							controlSpec.default,
+							controlSpec.units.quote
+						].join(", ")++")")
 					}
 				}.join(",\n") ++ "\n"
 			} ++
@@ -1167,7 +1174,7 @@ RMixerModule : RModule {
 	}
 }
 
-// Status: partly tested, to be renamed to Amp or something?
+// Status: partly tested, to be renamed to something better? Amp2?
 // Inspiration from A-130/A-131
 RDAmplifierModule : RModule {
 	*shortName { ^'DAmp' }
@@ -2005,7 +2012,7 @@ RDelayModule : RModule {
 
 // Status: not tested
 R4x4MatrixModule : RModule {
-	*shortName { ^'Matrix4x4' }
+	*shortName { ^'4x4Matrix' }
 
 	*params {
 		^[
@@ -2059,39 +2066,301 @@ R4x4MatrixModule : RModule {
 				param_Gate_4_4
 			|
 
-			var sig = [In.ar(in_1), In.ar(in_2), In.ar(in_3), In.ar(in_4)];
+			var sigs = [In.ar(in_1), In.ar(in_2), In.ar(in_3), In.ar(in_4)];
 
 			Out.ar(
 				out_1,
-				(sig[0] * Lag.kr(param_Gate_1_1, param_FadeTime)) +
-				(sig[1] * Lag.kr(param_Gate_1_2, param_FadeTime)) +
-				(sig[2] * Lag.kr(param_Gate_1_3, param_FadeTime)) +
-				(sig[3] * Lag.kr(param_Gate_1_4, param_FadeTime))
+				(sigs[0] * Lag.kr(param_Gate_1_1, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_1, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_1, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_1, param_FadeTime))
 			);
 
 			Out.ar(
 				out_2,
-				(sig[0] * Lag.kr(param_Gate_2_1, param_FadeTime)) +
-				(sig[1] * Lag.kr(param_Gate_2_2, param_FadeTime)) +
-				(sig[2] * Lag.kr(param_Gate_2_3, param_FadeTime)) +
-				(sig[3] * Lag.kr(param_Gate_2_4, param_FadeTime))
+				(sigs[0] * Lag.kr(param_Gate_1_2, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_2, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_2, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_2, param_FadeTime))
 			);
 
 			Out.ar(
 				out_3,
-				(sig[0] * Lag.kr(param_Gate_3_1, param_FadeTime)) +
-				(sig[1] * Lag.kr(param_Gate_3_2, param_FadeTime)) +
-				(sig[2] * Lag.kr(param_Gate_3_3, param_FadeTime)) +
-				(sig[3] * Lag.kr(param_Gate_3_4, param_FadeTime))
+				(sigs[0] * Lag.kr(param_Gate_1_3, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_3, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_3, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_3, param_FadeTime))
 			);
 
 			Out.ar(
 				out_4,
-				(sig[0] * Lag.kr(param_Gate_4_1, param_FadeTime)) +
-				(sig[1] * Lag.kr(param_Gate_4_2, param_FadeTime)) +
-				(sig[2] * Lag.kr(param_Gate_4_3, param_FadeTime)) +
-				(sig[3] * Lag.kr(param_Gate_4_4, param_FadeTime))
+				(sigs[0] * Lag.kr(param_Gate_1_4, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_4, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_4, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_4, param_FadeTime))
 			);
+		}
+	}
+}
+
+// Status: not tested
+R8x8MatrixModule : RModule {
+	*shortName { ^'8x8Matrix' }
+
+	*params {
+		^[
+			'FadeTime' -> ControlSpec(0, 1000, 'lin', 0, 5, "ms"),
+			'Gate_1_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_1_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_2_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_3_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_4_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_5_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_6_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_7_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_1' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_2' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_3' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_4' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_5' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_6' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_7' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+			'Gate_8_8' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_1,
+				in_2,
+				in_3,
+				in_4,
+				in_5,
+				in_6,
+				in_7,
+				in_8,
+				out_1,
+				out_2,
+				out_3,
+				out_4,
+				out_5,
+				out_6,
+				out_7,
+				out_8,
+				param_FadeTime,
+				param_Gate_1_1,
+				param_Gate_1_2,
+				param_Gate_1_3,
+				param_Gate_1_4,
+				param_Gate_1_5,
+				param_Gate_1_6,
+				param_Gate_1_7,
+				param_Gate_1_8,
+				param_Gate_2_1,
+				param_Gate_2_2,
+				param_Gate_2_3,
+				param_Gate_2_4,
+				param_Gate_2_5,
+				param_Gate_2_6,
+				param_Gate_2_7,
+				param_Gate_2_8,
+				param_Gate_3_1,
+				param_Gate_3_2,
+				param_Gate_3_3,
+				param_Gate_3_4,
+				param_Gate_3_5,
+				param_Gate_3_6,
+				param_Gate_3_7,
+				param_Gate_3_8,
+				param_Gate_4_1,
+				param_Gate_4_2,
+				param_Gate_4_3,
+				param_Gate_4_4,
+				param_Gate_4_5,
+				param_Gate_4_6,
+				param_Gate_4_7,
+				param_Gate_4_8,
+				param_Gate_5_1,
+				param_Gate_5_2,
+				param_Gate_5_3,
+				param_Gate_5_4,
+				param_Gate_5_5,
+				param_Gate_5_6,
+				param_Gate_5_7,
+				param_Gate_5_8,
+				param_Gate_6_1,
+				param_Gate_6_2,
+				param_Gate_6_3,
+				param_Gate_6_4,
+				param_Gate_6_5,
+				param_Gate_6_6,
+				param_Gate_6_7,
+				param_Gate_6_8,
+				param_Gate_7_1,
+				param_Gate_7_2,
+				param_Gate_7_3,
+				param_Gate_7_4,
+				param_Gate_7_5,
+				param_Gate_7_6,
+				param_Gate_7_7,
+				param_Gate_7_8,
+				param_Gate_8_1,
+				param_Gate_8_2,
+				param_Gate_8_3,
+				param_Gate_8_4,
+				param_Gate_8_5,
+				param_Gate_8_6,
+				param_Gate_8_7,
+				param_Gate_8_8
+			|
+
+			var sigs = [In.ar(in_1), In.ar(in_2), In.ar(in_3), In.ar(in_4), In.ar(in_5), In.ar(in_6), In.ar(in_7), In.ar(in_8)];
+
+			Out.ar(
+				out_1,
+				(sigs[0] * Lag.kr(param_Gate_1_1, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_1, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_1, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_1, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_1, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_1, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_1, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_1, param_FadeTime))
+			);
+
+			Out.ar(
+				out_2,
+				(sigs[0] * Lag.kr(param_Gate_1_2, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_2, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_2, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_2, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_2, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_2, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_2, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_2, param_FadeTime))
+			);
+
+			Out.ar(
+				out_3,
+				(sigs[0] * Lag.kr(param_Gate_1_3, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_3, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_3, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_3, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_3, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_3, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_3, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_3, param_FadeTime))
+			);
+
+			Out.ar(
+				out_4,
+				(sigs[0] * Lag.kr(param_Gate_1_4, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_4, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_4, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_4, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_4, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_4, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_4, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_4, param_FadeTime))
+			);
+
+			Out.ar(
+				out_5,
+				(sigs[0] * Lag.kr(param_Gate_1_5, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_5, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_5, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_5, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_5, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_5, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_5, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_5, param_FadeTime))
+			);
+
+			Out.ar(
+				out_6,
+				(sigs[0] * Lag.kr(param_Gate_1_6, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_6, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_6, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_6, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_6, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_6, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_6, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_6, param_FadeTime))
+			);
+
+			Out.ar(
+				out_7,
+				(sigs[0] * Lag.kr(param_Gate_1_7, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_7, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_7, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_7, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_7, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_7, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_7, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_7, param_FadeTime))
+			);
+
+			Out.ar(
+				out_8,
+				(sigs[0] * Lag.kr(param_Gate_1_8, param_FadeTime)) +
+				(sigs[1] * Lag.kr(param_Gate_2_8, param_FadeTime)) +
+				(sigs[2] * Lag.kr(param_Gate_3_8, param_FadeTime)) +
+				(sigs[3] * Lag.kr(param_Gate_4_8, param_FadeTime)) +
+				(sigs[4] * Lag.kr(param_Gate_5_8, param_FadeTime)) +
+				(sigs[5] * Lag.kr(param_Gate_6_8, param_FadeTime)) +
+				(sigs[6] * Lag.kr(param_Gate_7_8, param_FadeTime)) +
+				(sigs[7] * Lag.kr(param_Gate_8_8, param_FadeTime))
+			);
+
 		}
 	}
 }
