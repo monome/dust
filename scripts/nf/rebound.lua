@@ -106,7 +106,7 @@ function init()
 end
 
 function build_scale()
-  scale_notes = MusicUtil.generate_scale(params:get("root"), params:get("scale"), 9)
+  scale_notes = MusicUtil.generate_scale(params:get("root") - 1, params:get("scale"), 9)
 end
 
 function redraw()
