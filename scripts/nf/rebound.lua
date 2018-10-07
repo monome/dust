@@ -51,8 +51,6 @@ function show_info()
 end
 
 function init()
-  screen.aa(1)
-
   local u = metro.alloc()
   u.time = 1/60
   u.count = -1
@@ -110,6 +108,7 @@ function build_scale()
 end
 
 function redraw()
+  screen.aa(1)
   screen.clear()
   if shift then
     screen.level(5)
