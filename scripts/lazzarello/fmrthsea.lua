@@ -7,7 +7,7 @@
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
--- 1 3-7 put encoders into modulation mode
+-- 1 3-7 toggle encoders into modulation modes
 -- enc 1: frequency
 -- enc 2: phase
 -- enc 3: amplitude
@@ -57,9 +57,6 @@ local function setEncoderMode(mode)
   encoder_mode = mode
 end
 
-local function toggleModModes(x,y,z)
-  print("toggle led modes")
-end
 
 local ctrl_functions = {
   function(arg) engine.hz1(arg) end,
@@ -148,47 +145,15 @@ function enc(n,delta)
   end
 end
 
--- this function is gross. it should be smaller functions or a table of functions
--- https://stackoverflow.com/questions/37447704/what-is-the-alternative-for-switch-statement-in-lua-language#37493047
 function g.event(x, y, z)
   if x == 1 and (y > 2 and y < 8) then
-    if y == 3 then
-      if z == 1 then
-        print("entered grid (1,3)")
-        encoder_mode = 2
-      else
-        encoder_mode = 0
-      end
-    elseif y == 4 then
-      if z == 1 then
-        print("entered grid (1,4)")
-        encoder_mode = 3
-      else
-        encoder_mode = 0
-      end
-    elseif y == 5 then
-      if z == 1 then
-        print("entered grid (1,5)")
-        encoder_mode = 4
-      else
-        encoder_mode = 0
-      end
-    elseif y == 6 then
-      if z == 1 then
-        print("entered grid (1,6)")
-        encoder_mode = 5
-      else
-        encoder_mode = 0
-      end
-    elseif y == 7 then
-      if z == 1 then
-        print("entered grid (1,7)")
-        encoder_mode = 6
-      else
-        encoder_mode = 0
-      end
+    if z == 1 and getEncoderMode() == y - 1 then
+      setEncoderMode(1)
+    elseif z == 1 then
+      setEncoderMode(y - 1) 
     end
   end
+
   if x == 1 then
     if z == 1 then
       if y == 1 and pat.rec == 0 then
@@ -241,7 +206,6 @@ function g.event(x, y, z)
   gridredraw()
 end
 
-
 function grid_note(e)
   local note = ((7-e.y)*5) + e.x
   if e.state > 0 then
@@ -288,11 +252,18 @@ function grid_note_trans(e)
   gridredraw()
 end
 
+local function toggleModLED(mode)
+  if mode ~= 1 then
+    g.led(1,mode + 1,12)
+  end
+end
+
 function gridredraw()
   g.all(0)
   g.led(1,1,2 + pat.rec * 10)
   g.led(1,2,2 + pat.play * 10)
   g.led(1,8,2 + mode_transpose * 10)
+  toggleModLED(getEncoderMode())
 
   if mode_transpose == 1 then g.led(trans.x, trans.y, 4) end
   for i,e in pairs(lit) do
