@@ -21,7 +21,7 @@ local mode_transpose = 0
 local root = { x=5, y=5 }
 local trans = { x=5, y=5 }
 local lit = {}
-local encoder_mode = 0
+local encoder_mode = 1
 
 local screen_framerate = 15
 local screen_refresh_metro
@@ -57,31 +57,29 @@ local function setEncoderMode(mode)
   encoder_mode = mode
 end
 
-local hz_functions = {
-  [1] = function(arg) engine.hz1(arg) end,
-  [2] = function(arg) engine.hz2(arg) end,
-  [3] = function(arg) engine.hz3(arg) end,
-  [4] = function(arg) engine.hz4(arg) end,
-  [5] = function(arg) engine.hz5(arg) end,
-  [6] = function(arg) engine.hz6(arg) end,
-}
+local function toggleModModes(x,y,z)
+  print("toggle led modes")
+end
 
-local phase_functions = {
-  [1] = function(arg) engine.phase1(arg) end,
-  [2] = function(arg) engine.phase2(arg) end,
-  [3] = function(arg) engine.phase3(arg) end,
-  [4] = function(arg) engine.phase4(arg) end,
-  [5] = function(arg) engine.phase5(arg) end,
-  [6] = function(arg) engine.phase6(arg) end,
-}
-
-local amp_functions = {
-  [1] = function(arg) engine.amp1(arg) end,
-  [2] = function(arg) engine.amp2(arg) end,
-  [3] = function(arg) engine.amp3(arg) end,
-  [4] = function(arg) engine.amp4(arg) end,
-  [5] = function(arg) engine.amp5(arg) end,
-  [6] = function(arg) engine.amp6(arg) end,
+local ctrl_functions = {
+  function(arg) engine.hz1(arg) end,
+  function(arg) engine.hz2(arg) end,
+  function(arg) engine.hz3(arg) end,
+  function(arg) engine.hz4(arg) end,
+  function(arg) engine.hz5(arg) end,
+  function(arg) engine.hz6(arg) end,
+  function(arg) engine.phase1(arg) end,
+  function(arg) engine.phase2(arg) end,
+  function(arg) engine.phase3(arg) end,
+  function(arg) engine.phase4(arg) end,
+  function(arg) engine.phase5(arg) end,
+  function(arg) engine.phase6(arg) end,
+  function(arg) engine.amp1(arg) end,
+  function(arg) engine.amp2(arg) end,
+  function(arg) engine.amp3(arg) end,
+  function(arg) engine.amp4(arg) end,
+  function(arg) engine.amp5(arg) end,
+  function(arg) engine.amp6(arg) end,
 }
 
 function init()
@@ -129,22 +127,24 @@ function init()
 end
 
 function enc(n,delta)
-  -- https://stackoverflow.com/questions/1791234/lua-call-function-from-a-string-with-function-name
   if n == 1 then
     hz_position = (hz_position + delta) % 1024
     local hz = (hz_position / 1024) * 5
-    hz_functions[encoder_mode](hz)
-    print("hz" .. encoder_mode .. " multiple is " .. hz)
+    local mode = getEncoderMode()
+    ctrl_functions[mode](hz)
+    print("hz" .. mode .. " multiple is " .. hz)
   elseif n == 2 then
     ph_position = (ph_position + delta) % 1024
     local phase = (ph_position / 1024)
-    phase_functions[encoder_mode](phase)
-    print("phase" .. encoder_mode .. " is " .. phase)
+    local mode = getEncoderMode()
+    ctrl_functions[mode + 6](phase)
+    print("phase" .. mode .. " is " .. phase)
   elseif n == 3 then
     amp_position = (amp_position + delta) % 1024
     local amp = (amp_position / 1024)
-    amp_functions[encoder_mode](amp)
-    print("amp" .. encoder_mode .. " is " .. amp)
+    local mode = getEncoderMode()
+    ctrl_functions[mode + 6*2](amp)
+    print("amp" .. mode .. " is " .. amp)
   end
 end
 
