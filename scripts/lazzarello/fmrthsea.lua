@@ -83,16 +83,16 @@ function init()
   pat = pattern_time.new()
   pat.process = grid_note_trans
 
-  params:add_control("ampAtk", controlspec.new(0.01,10,"lin",0,0.05,""))
+  params:add_control("ampAtk","ampAtk", controlspec.new(0.01,10,"lin",0,0.05,""))
   params:set_action("ampAtk", function(x) engine.ampAtk(x) end)
 
-  params:add_control("ampDec", controlspec.new(0,2,"lin",0,0.1,""))
+  params:add_control("ampDec","ampDec", controlspec.new(0,2,"lin",0,0.1,""))
   params:set_action("ampDec", function(x) engine.ampDec(x) end)
 
-  params:add_control("ampSus", controlspec.new(0,1,"lin",0,1,""))
+  params:add_control("ampSus","ampSus", controlspec.new(0,1,"lin",0,1,""))
   params:set_action("ampSus", function(x) engine.ampSus(x) end)
 
-  params:add_control("ampRel", controlspec.new(0.01,10,"lin",0,1,""))
+  params:add_control("ampRel","ampRel", controlspec.new(0.01,10,"lin",0,1,""))
   params:set_action("ampRel", function(x) engine.ampRel(x) end)
 
   engine.amp(0.05)
