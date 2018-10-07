@@ -49,6 +49,41 @@ end
 -- current count of active voices
 local nvoices = 0
 
+local function getEncoderMode()
+  return encoder_mode
+end
+
+local function setEncoderMode(mode)
+  encoder_mode = mode
+end
+
+local hz_functions = {
+  [1] = function(arg) engine.hz1(arg) end,
+  [2] = function(arg) engine.hz2(arg) end,
+  [3] = function(arg) engine.hz3(arg) end,
+  [4] = function(arg) engine.hz4(arg) end,
+  [5] = function(arg) engine.hz5(arg) end,
+  [6] = function(arg) engine.hz6(arg) end,
+}
+
+local phase_functions = {
+  [1] = function(arg) engine.phase1(arg) end,
+  [2] = function(arg) engine.phase2(arg) end,
+  [3] = function(arg) engine.phase3(arg) end,
+  [4] = function(arg) engine.phase4(arg) end,
+  [5] = function(arg) engine.phase5(arg) end,
+  [6] = function(arg) engine.phase6(arg) end,
+}
+
+local amp_functions = {
+  [1] = function(arg) engine.amp1(arg) end,
+  [2] = function(arg) engine.amp2(arg) end,
+  [3] = function(arg) engine.amp3(arg) end,
+  [4] = function(arg) engine.amp4(arg) end,
+  [5] = function(arg) engine.amp5(arg) end,
+  [6] = function(arg) engine.amp6(arg) end,
+}
+
 function init()
   pat = pattern_time.new()
   pat.process = grid_note_trans
@@ -94,98 +129,27 @@ function init()
 end
 
 function enc(n,delta)
-  -- gross...but hey, it'll work for now. refactor to be a function that takes the encoder_mode as an arg
-  if encoder_mode == 2 then
-    if n == 1 then
-      hz_position = (hz_position + delta) % 1024
-      local hz = (hz_position / 1024) * 5
-      engine.hz2(hz)
-      print("hz2 multiple is " .. hz)
-    elseif n == 2 then
-      ph_position = (ph_position + delta) % 1024
-      local phase = (ph_position / 1024)
-      engine.phase2(phase)
-      print("phase2 is " .. phase)
-    elseif n == 3 then
-      amp_position = (amp_position + delta) % 1024
-      local amp = (amp_position / 1024)
-      engine.amp2(amp)
-      print("amp2 is " .. amp)
-    end
-  elseif encoder_mode == 3 then
-    if n == 1 then
-      hz_position = (hz_position + delta) % 1024
-      local hz = (hz_position / 1024) * 5
-      engine.hz3(hz)
-      print("hz3 multiple is " .. hz)
-    elseif n == 2 then
-      ph_position = (ph_position + delta) % 1024
-      local phase = (ph_position / 1024)
-      engine.phase3(phase)
-      print("phase3 is " .. phase)
-    elseif n == 3 then
-      amp_position = (amp_position + delta) % 1024
-      local amp = (amp_position / 1024)
-      engine.amp3(amp)
-      print("amp3 is " .. amp)
-    end
-  elseif encoder_mode == 4 then
-    if n == 1 then
-      hz_position = (hz_position + delta) % 1024
-      local hz = (hz_position / 1024) * 5
-      engine.hz4(hz)
-      print("hz4 multiple is " .. hz)
-    elseif n == 2 then
-      ph_position = (ph_position + delta) % 1024
-      local phase = (ph_position / 1024)
-      engine.phase4(phase)
-      print("phase4 is " .. phase)
-    elseif n == 3 then
-      amp_position = (amp_position + delta) % 1024
-      local amp = (amp_position / 1024)
-      engine.amp4(amp)
-      print("amp4 is " .. amp)
-    end
-  elseif encoder_mode == 5 then
-    if n == 1 then
-      hz_position = (hz_position + delta) % 1024
-      local hz = (hz_position / 1024) * 5
-      engine.hz5(hz)
-      print("hz5 multiple is " .. hz)
-    elseif n == 2 then
-      ph_position = (ph_position + delta) % 1024
-      local phase = (ph_position / 1024)
-      engine.phase5(phase)
-      print("phase5 is " .. phase)
-    elseif n == 3 then
-      amp_position = (amp_position + delta) % 1024
-      local amp = (amp_position / 1024)
-      engine.amp5(amp)
-      print("amp5 is " .. amp)
-    end
-  elseif encoder_mode == 6 then
-    if n == 1 then
-      hz_position = (hz_position + delta) % 1024
-      local hz = (hz_position / 1024) * 5
-      engine.hz6(hz)
-      print("hz6 multiple is " .. hz)
-    elseif n == 2 then
-      ph_position = (ph_position + delta) % 1024
-      local phase = (ph_position / 1024)
-      engine.phase6(phase)
-      print("phase6 is " .. phase)
-    elseif n == 3 then
-      amp_position = (amp_position + delta) % 1024
-      local amp = (amp_position / 1024)
-      engine.amp6(amp)
-      print("amp6 is " .. amp)
-    end
-  else
-    print("in global encoder mode")
+  -- https://stackoverflow.com/questions/1791234/lua-call-function-from-a-string-with-function-name
+  if n == 1 then
+    hz_position = (hz_position + delta) % 1024
+    local hz = (hz_position / 1024) * 5
+    hz_functions[encoder_mode](hz)
+    print("hz" .. encoder_mode .. " multiple is " .. hz)
+  elseif n == 2 then
+    ph_position = (ph_position + delta) % 1024
+    local phase = (ph_position / 1024)
+    phase_functions[encoder_mode](phase)
+    print("phase" .. encoder_mode .. " is " .. phase)
+  elseif n == 3 then
+    amp_position = (amp_position + delta) % 1024
+    local amp = (amp_position / 1024)
+    amp_functions[encoder_mode](amp)
+    print("amp" .. encoder_mode .. " is " .. amp)
   end
 end
 
--- this function is gross. it should be smaller functions.
+-- this function is gross. it should be smaller functions or a table of functions
+-- https://stackoverflow.com/questions/37447704/what-is-the-alternative-for-switch-statement-in-lua-language#37493047
 function g.event(x, y, z)
   if x == 1 and (y > 2 and y < 8) then
     if y == 3 then
