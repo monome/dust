@@ -23,7 +23,7 @@ local function add_rcontrol(args)
 end
 
 function init()
-  engine.new("Osc", "SquareOsc")
+  engine.new("Osc", "PulseOsc")
   engine.new("SoundOut", "SoundOut")
 
   engine.connect("Osc/Out", "SoundOut/Left")
@@ -35,19 +35,19 @@ function init()
   add_rcontrol {
     id="osc_range",
     name="Osc.Range",
-    spec=R.specs.SquareOsc.Range
+    spec=R.specs.PulseOsc.Range
   }
 
   add_rcontrol {
     id="osc_tune",
     name="Osc.Tune",
-    spec=R.specs.SquareOsc.Tune
+    spec=R.specs.PulseOsc.Tune
   }
 
   add_rcontrol {
     id="osc_pulsewidth",
     name="Osc.PulseWidth",
-    spec=R.specs.SquareOsc.PulseWidth,
+    spec=R.specs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 

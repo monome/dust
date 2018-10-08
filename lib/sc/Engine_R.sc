@@ -29,48 +29,56 @@ Engine_R : CroneEngine {
 			};
 			this.newCommand(msg[1], msg[2]);
 		};
+
 		this.addCommand('delete', "s") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \deleteCommand, msg[1].asString[0..20]].debug(\received);
 			};
 			this.deleteCommand(msg[1]);
 		};
+
 		this.addCommand('connect', "ss") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \connectCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
 			};
 			this.connectCommand(msg[1], msg[2]);
 		};
+
 		this.addCommand('disconnect', "ss") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \disconnectCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
 			};
 			this.disconnectCommand(msg[1], msg[2]);
 		};
+
 		this.addCommand('set', "sf") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \setCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
 			};
 			this.setCommand(msg[1], msg[2]);
 		};
+
 		this.addCommand('polyset', "sfi") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \polysetCommand, (msg[1].asString + msg[2].asString + msg[3].asString)[0..20]].debug(\received);
 			};
 			this.polysetCommand(msg[1], msg[2], msg[3]);
 		};
+
 		this.addCommand('bulkset', "s") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \bulksetCommand, msg[1].asString[0..20]].debug(\received);
 			};
 			this.bulksetCommand(msg[1]);
 		};
+
 		this.addCommand('bulkpolyset', "si") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \bulkpolysetCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
 			};
 			this.bulkpolysetCommand(msg[1], msg[2]);
 		};
+
 /*
 		this.addCommand('newmacro', "ss") { |msg|
 			if (trace) {
@@ -78,12 +86,14 @@ Engine_R : CroneEngine {
 			};
 			this.newmacroCommand(msg[1], msg[2]);
 		};
+
 		this.addCommand('deletemacro', "s") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \deletemacroCommand, (msg[1].asString)[0..20]].debug(\received);
 			};
 			this.deletemacroCommand(msg[1]);
 		};
+
 		this.addCommand('macroset', "sf") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \macrosetCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
@@ -91,6 +101,7 @@ Engine_R : CroneEngine {
 			this.macrosetCommand(msg[1], msg[2]);
 		};
 */
+
 		this.addCommand('trace', "i") { |msg|
 			trace = msg[1].asBoolean;
 		};
@@ -404,7 +415,6 @@ Engine_R : CroneEngine {
 		^this.lookupRModuleClassByKind(kind).new(context, processingGroup, inbusses, outbusses);
 	}
 
-	// TODO: use shortName instead
 	lookupRModuleClassByKind { |kind|
 		^this.class.allRModuleClasses.detect { |rModuleClass| rModuleClass.shortName == kind }
 	}
@@ -484,7 +494,6 @@ RModule {
 			controlSpec = this.class.paramControlSpecs[name];
 			constrainedParamValue = controlSpec.constrain(value);
 			synth.set(name, constrainedParamValue);
-			// nopost TODO "%, node %: synth.set(%, %); // param: %, spec: %".format(this.class, synth.nodeID, name.asString, constrainedParamValue, parameter, controlSpec).inform;
 		}
 	}
 
@@ -567,7 +576,7 @@ RModule {
 							switch (controlSpec.maxval) { -inf } { "-math.huge" } { inf } { "math.huge" } ? controlSpec.maxval,
 							controlSpec.warp.asSpecifier.asString.quote,
 							controlSpec.step,
-							controlSpec.default,
+							switch (controlSpec.default) { -inf } { "-math.huge" } { inf } { "math.huge" } ? controlSpec.default,
 							controlSpec.units.quote
 						].join(", ")++")")
 					}
@@ -604,41 +613,12 @@ RModule {
 			" None",
 			"\n" ++
 			params.collect { |param|
-				"\t- `" ++ param ++ "` ( [Description Here] )"
+				"\t- `" ++ param ++ "`"
 			}.join($\n)
 		) ++ "\n"
 	}
 
-	*shortName { ^this.subclassResponsibility(thisMethod) }
-}
-
-// Status: tested
-RTestGenModule : RModule {
-	*shortName { ^'TestGen' }
-
-	*params {
-		^[
-			'Frequency' -> (
-				Spec: \widefreq.asSpec,
-				LagTime: 0 // TODO: all lag times have to be 0 if params with \db spec (such as param_Amplitude) are used (fixed by resorting to NamedControls in R?)
-			),
-			'Amplitude' -> \db.asSpec,
-			'Wave' -> ControlSpec(0, 1, step: 1, default: 0)
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				out_Out,
-				param_Frequency,
-				param_Amplitude,
-				param_Wave
-			|
-
-			Out.ar(out_Out, SelectX.ar(param_Wave, [SinOsc.ar(param_Frequency), WhiteNoise.ar]) * param_Amplitude.dbamp);
-		}
-	}
+	*shortName { ^this.subclassResponsibility(thisMethod) } // Preferable <= 8 chars
 }
 
 // Status: tested
@@ -752,7 +732,7 @@ RMultiOscillatorModule : RModule {
 				out_Sine,
 				out_Triangle,
 				out_Saw,
-				out_Square,
+				out_Pulse,
 				param_Range,
 				param_Tune,
 				param_FM,
@@ -794,7 +774,7 @@ RMultiOscillatorModule : RModule {
 			);
 
 			Out.ar(
-				out_Square,
+				out_Pulse,
 				Pulse.ar(frequency, pulseWidth / 2) * 0.5
 			);
 		}
@@ -958,8 +938,8 @@ RSawtoothOscillatorModule : RModule {
 }
 
 // Status: tested
-RSquareOscillatorModule : RModule {
-	*shortName { ^'SquareOsc' }
+RPulseOscModule : RModule {
+	*shortName { ^'PulseOsc' }
 
 	*params {
 		^[
@@ -1048,7 +1028,7 @@ RMultiLFOModule : RModule {
 				out_Saw,
 				out_Sine,
 				out_Triangle,
-				out_Square,
+				out_Pulse,
 				param_Frequency,
 				param_Reset
 			|
@@ -1069,8 +1049,8 @@ RMultiLFOModule : RModule {
 			var trianglePhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency*2, -0.5, 1.5, -0.5);
 			var triangleSig = trianglePhase.fold(-0.5, 0.5) * 0.5; // +- 2.5V
 
-			var squarePhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency*1, 0, 1, 0);
-			var squareSig = ((squarePhase < 0.5)*0.5)-0.25; // +- 2.5V
+			var pulsePhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency*1, 0, 1, 0);
+			var pulseSig = ((pulsePhase < 0.5)*0.5)-0.25; // +- 2.5V
 
 			Out.ar(
 				out_InvSaw,
@@ -1093,17 +1073,16 @@ RMultiLFOModule : RModule {
 			);
 
 			Out.ar(
-				out_Square,
-				squareSig
+				out_Pulse,
+				pulseSig
 			);
 		}
 	}
 }
 
-// Status: lin mode tested and ok, issues with exp mode (curve)
-// Inspired by A-138a/A-138b
-RMixerModule : RModule {
-	*shortName { ^'Mixer' }
+// Status: tested
+RLinMixerModule : RModule {
+	*shortName { ^'LinMixer' }
 
 	*params {
 		^[
@@ -1126,8 +1105,7 @@ RMixerModule : RModule {
 			'Out' -> (
 				Spec: \unipolar.asSpec,
 				LagTime: 0.1
-			),
-			'Mode' -> \unipolar.asSpec.copy.step_(1),
+			)
 		]
 	}
 
@@ -1143,8 +1121,7 @@ RMixerModule : RModule {
 				param_In2,
 				param_In3,
 				param_In4,
-				param_Out,
-				param_Mode
+				param_Out
 			|
 
 			var sig_In1 = In.ar(in_In1);
@@ -1152,32 +1129,85 @@ RMixerModule : RModule {
 			var sig_In3 = In.ar(in_In3);
 			var sig_In4 = In.ar(in_In4);
 
-			// var curveSpec = ControlSpec.new(0, 1, 6.8449); TODO: more of a \db.asSpec curve
-			var curveSpec = ControlSpec.new(0, 1, 13.81523);
-
-			var in1Gain = SelectX.kr(param_Mode, [param_In1, curveSpec.map(param_In1)]);
-			var in2Gain = SelectX.kr(param_Mode, [param_In2, curveSpec.map(param_In2)]);
-			var in3Gain = SelectX.kr(param_Mode, [param_In3, curveSpec.map(param_In3)]);
-			var in4Gain = SelectX.kr(param_Mode, [param_In4, curveSpec.map(param_In4)]);
-			var outGain = SelectX.kr(param_Mode, [param_Out, curveSpec.map(param_Out)]);
-
 			Out.ar(
 				out_Out,
 				(
-					(sig_In1 * in1Gain) +
-					(sig_In2 * in2Gain) +
-					(sig_In3 * in3Gain) +
-					(sig_In4 * in4Gain)
-				) * outGain
+					(sig_In1 * param_In1) +
+					(sig_In2 * param_In2) +
+					(sig_In3 * param_In3) +
+					(sig_In4 * param_In4)
+				) * param_Out
 			);
 		}
 	}
 }
 
-// Status: partly tested, to be renamed to something better? Amp2?
+// Status: untested
+RDbMixerModule : RModule {
+	*shortName { ^'DbMixer' }
+
+	*params {
+		^[
+			'In1' -> (
+				Spec: \db.asSpec,
+				LagTime: 0
+			),
+			'In2' -> (
+				Spec: \db.asSpec,
+				LagTime: 0
+			),
+			'In3' -> (
+				Spec: \db.asSpec,
+				LagTime: 0
+			),
+			'In4' -> (
+				Spec: \db.asSpec,
+				LagTime: 0
+			),
+			'Out' -> (
+				Spec: \db.asSpec,
+				LagTime: 0
+			)
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_In1,
+				in_In2,
+				in_In3,
+				in_In4,
+				out_Out,
+				param_In1,
+				param_In2,
+				param_In3,
+				param_In4,
+				param_Out
+			|
+
+			var sig_In1 = In.ar(in_In1);
+			var sig_In2 = In.ar(in_In2);
+			var sig_In3 = In.ar(in_In3);
+			var sig_In4 = In.ar(in_In4);
+
+			Out.ar(
+				out_Out,
+				(
+					(sig_In1 * param_In1.dbamp) +
+					(sig_In2 * param_In2.dbamp) +
+					(sig_In3 * param_In3.dbamp) +
+					(sig_In4 * param_In4.dbamp)
+				) * param_Out.dbamp
+			);
+		}
+	}
+}
+
+// Status: partly tested, exp mode needs more testing, to be renamed to something better? Amp2?
 // Inspiration from A-130/A-131
 RDAmplifierModule : RModule {
-	*shortName { ^'DAmp' }
+	*shortName { ^'Amp2' }
 
 	*params {
 		^[
@@ -1274,220 +1304,6 @@ RAmplifierModule : RModule {
 				out_Out,
 				sig_In * (param_Level + sig_Lin.clip(0, 0.5) + curveSpec.map(sig_Exp).clip(0, 0.5)).clip(0, 0.5)
 			);
-		}
-	}
-}
-
-// Status: tested
-RMGainModule : RModule {
-	*shortName { ^'MGain' }
-
-	*params {
-		^[
-			'Gain' -> (
-				Spec: \db.asSpec.copy.maxval_(12).default_(0),
-				// TODO LagTime: 0.1
-			),
-			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_In,
-				out_Out,
-				param_Gain,
-				param_Mute
-			|
-
-			var sig_In = In.ar(in_In);
-
-			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
-
-			Out.ar(out_Out, sig_In * gain);
-		}
-	}
-}
-
-// Status: tested
-RSGainModule : RModule {
-	*shortName { ^'SGain' }
-
-	*params {
-		^[
-			'Gain' -> (
-				Spec: \db.asSpec.copy.maxval_(12).default_(0),
-				// TODO LagTime: 0.1
-			),
-			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_Left,
-				in_Right,
-				out_Left,
-				out_Right,
-				param_Gain,
-				param_Mute
-			|
-
-			var sig_Left = In.ar(in_Left);
-			var sig_Right = In.ar(in_Right);
-
-			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
-
-			Out.ar(out_Left, sig_Left * gain);
-			Out.ar(out_Right, sig_Right * gain);
-		}
-	}
-}
-
-// Status: not tested
-RQGainModule : RModule {
-	*shortName { ^'QGain' }
-
-	*params {
-		^[
-			'Gain' -> (
-				Spec: \db.asSpec.copy.maxval_(12).default_(0),
-				// TODO LagTime: 0.1
-			),
-			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_In1,
-				in_In2,
-				in_In3,
-				in_In4,
-				out_Out1,
-				out_Out2,
-				out_Out3,
-				out_Out4,
-				param_Gain,
-				param_Mute
-			|
-
-			var sig_In1 = In.ar(in_In1);
-			var sig_In2 = In.ar(in_In2);
-			var sig_In3 = In.ar(in_In3);
-			var sig_In4 = In.ar(in_In4);
-
-			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
-
-			Out.ar(out_Out1, sig_In1 * gain);
-			Out.ar(out_Out2, sig_In2 * gain);
-			Out.ar(out_Out3, sig_In3 * gain);
-			Out.ar(out_Out4, sig_In4 * gain);
-		}
-	}
-}
-
-// Status: not tested
-ROGainModule : RModule {
-	*shortName { ^'OGain' }
-
-	*params {
-		^[
-			'Gain' -> (
-				Spec: \db.asSpec.copy.maxval_(12).default_(0),
-				// TODO LagTime: 0.1
-			),
-			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_In1,
-				in_In2,
-				in_In3,
-				in_In4,
-				in_In5,
-				in_In6,
-				in_In7,
-				in_In8,
-				out_Out1,
-				out_Out2,
-				out_Out3,
-				out_Out4,
-				out_Out5,
-				out_Out6,
-				out_Out7,
-				out_Out8,
-				param_Gain,
-				param_Mute
-			|
-
-			var sig_In1 = In.ar(in_In1);
-			var sig_In2 = In.ar(in_In2);
-			var sig_In3 = In.ar(in_In3);
-			var sig_In4 = In.ar(in_In4);
-			var sig_In5 = In.ar(in_In5);
-			var sig_In6 = In.ar(in_In6);
-			var sig_In7 = In.ar(in_In7);
-			var sig_In8 = In.ar(in_In8);
-
-			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
-
-			Out.ar(out_Out1, sig_In1 * gain);
-			Out.ar(out_Out2, sig_In2 * gain);
-			Out.ar(out_Out3, sig_In3 * gain);
-			Out.ar(out_Out4, sig_In4 * gain);
-			Out.ar(out_Out5, sig_In5 * gain);
-			Out.ar(out_Out6, sig_In6 * gain);
-			Out.ar(out_Out7, sig_In7 * gain);
-			Out.ar(out_Out8, sig_In8 * gain);
-		}
-	}
-}
-
-// Status: not tested
-RCrossFaderModule : RModule {
-	*shortName { ^'CrossFader' }
-
-	*params {
-		^[
-			'Fade' -> \bipolar.asSpec, // TODO: remove need for .asSpec
-			'TrimA' -> \db.asSpec.copy.maxval_(12),
-			'TrimB' -> \db.asSpec.copy.maxval_(12),
-			'Master' -> \db.asSpec.copy.maxval_(12)
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				in_InALeft,
-				in_InARight,
-				in_InBLeft,
-				in_InBRight,
-				out_Left,
-				out_Right,
-				param_Fade,
-				param_TrimA,
-				param_TrimB,
-				param_Master
-			|
-
-			var sig_InALeft = In.ar(in_InALeft);
-			var sig_InARight = In.ar(in_InARight);
-			var sig_InBLeft = In.ar(in_InBLeft);
-			var sig_InBRight = In.ar(in_InBRight);
-
-			var sig_inA = [sig_InALeft, sig_InARight] * param_TrimA.dbamp;
-			var sig_inB = [sig_InBLeft, sig_InBRight] * param_TrimB.dbamp;
-			var sig = XFade2.ar(sig_inA, sig_inB, param_Fade, param_Master.dbamp);
-			Out.ar(out_Left, sig[0]);
-			Out.ar(out_Right, sig[1]);
 		}
 	}
 }
@@ -1676,8 +1492,8 @@ RSVFLowpassFilterModule : RModule {
 }
 
 // Status: tested
-RMoogLowpassFilterModule : RModule {
-	*shortName { ^'LPMoog' }
+RLadderLowpassFilterModule : RModule {
+	*shortName { ^'LPLadder' }
 
 	*params {
 		^[
@@ -1790,7 +1606,7 @@ RADSREnvelopeModule : RModule {
 
 // Status: partly tested
 RSampleAndHoldModule : RModule {
-	*shortName { ^'SampleHold' }
+	*shortName { ^'SampHold' }
 
 	*ugenGraphFunc {
 		^{
@@ -1828,9 +1644,100 @@ RRingModulatorModule : RModule {
 	}
 }
 
+// Status: tested, TODO: make a script
+RNoiseModule : RModule {
+	*shortName { ^'Noise' }
+
+	*ugenGraphFunc {
+		^{
+			|
+				out_Out
+			|
+
+			Out.ar(
+				out_Out,
+				WhiteNoise.ar
+			);
+		}
+	}
+}
+
+// Status: partly tested - but what modulation input range should be used?
+RDelayModule : RModule {
+	*shortName { ^'Delay' }
+
+	*params {
+		^[
+			'DelayTime' -> (
+				Spec: ControlSpec(0.1, 5000, 'exp', 0, 300, "ms"),
+				LagTime: 0.25
+			),
+			'DelayTimeModulation' -> (
+				Spec: \bipolar.asSpec,
+				LagTime: 0.1
+			),
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_In,
+				in_DelayTimeModulation,
+				out_Out,
+				param_DelayTime,
+				param_DelayTimeModulation
+			|
+
+			var sig_In = In.ar(in_In);
+			var sig_DelayTimeModulation = In.ar(in_DelayTimeModulation);
+
+			var delayTimeSpec = ControlSpec(0.1, 5000, 'exp', 0, 300, "ms");
+
+			var delayTimeMs = delayTimeSpec.map(
+				delayTimeSpec.unmap(param_DelayTime) + (sig_DelayTimeModulation * param_DelayTimeModulation)
+			);
+
+			var delayed = DelayC.ar(sig_In, maxdelaytime: delayTimeSpec.maxval/1000, delaytime: delayTimeMs/1000); // TODO: ControlDur.ir minimum
+
+			Out.ar(out_Out, delayed);
+		}
+	}
+}
+
+// Status: tested
+RFreqGateModule : RModule {
+	*shortName { ^'FreqGate' }
+
+	*params {
+		^[
+			'Frequency' -> \freq.asSpec,
+			'Gate' -> ControlSpec(0, 1, step: 1, default: 0)
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				out_Frequency,
+				out_Gate,
+				out_Trig,
+				param_Frequency,
+				param_Gate
+			|
+
+			var sig_Gate = K2A.ar(param_Gate);
+			var octs = ((param_Frequency.cpsoct-3)/10).clip(-0.5, 0.5); // 0.1 = 1 oct
+			Out.ar(out_Frequency, K2A.ar(octs));
+			Out.ar(out_Gate, sig_Gate);
+			Out.ar(out_Gate, Trig.ar(sig_Gate));
+		}
+	}
+}
+
 // Status: partly tested - review modulation input mapping
 RPitchShiftModule : RModule {
-	*shortName { ^'PitchShift' }
+	*shortName { ^'PShift' }
 
 	*params {
 		^[
@@ -1905,7 +1812,7 @@ RPitchShiftModule : RModule {
 
 // Status: partly tested - review modulation input mapping
 RFreqShiftModule : RModule {
-	*shortName { ^'FreqShift' }
+	*shortName { ^'FShift' }
 
 	*params {
 		^[
@@ -1949,38 +1856,46 @@ RFreqShiftModule : RModule {
 	}
 }
 
-// Status: tested, TODO: make a script
-RNoiseModule : RModule {
-	*shortName { ^'Noise' }
+// Status: tested
+RTestGenModule : RModule {
+	*shortName { ^'TestGen' }
+
+	*params {
+		^[
+			'Frequency' -> (
+				Spec: \widefreq.asSpec,
+				LagTime: 0 // TODO: all lag times have to be 0 if params with \db spec (such as param_Amplitude) are used (fixed by resorting to NamedControls in R?)
+			),
+			'Amplitude' -> \db.asSpec,
+			'Wave' -> ControlSpec(0, 1, step: 1, default: 0)
+		]
+	}
 
 	*ugenGraphFunc {
 		^{
 			|
-				out_Out
+				out_Out,
+				param_Frequency,
+				param_Amplitude,
+				param_Wave
 			|
 
-			Out.ar(
-				out_Out,
-				WhiteNoise.ar
-			);
+			Out.ar(out_Out, SelectX.ar(param_Wave, [SinOsc.ar(param_Frequency), WhiteNoise.ar]) * param_Amplitude.dbamp);
 		}
 	}
 }
 
-// Status: partly tested - modulation input review needed
-RDelayModule : RModule {
-	*shortName { ^'Delay' }
+// Status: tested
+RMGainModule : RModule {
+	*shortName { ^'MGain' }
 
 	*params {
 		^[
-			'DelayTime' -> (
-				Spec: ControlSpec(0.1, 5000, 'exp', 0, 300, "ms"),
-				LagTime: 0.25
+			'Gain' -> (
+				Spec: \db.asSpec.copy.maxval_(12).default_(0),
+				// TODO LagTime: 0.1
 			),
-			'DelayTimeModulation' -> (
-				Spec: \bipolar.asSpec,
-				LagTime: 0.1
-			),
+			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
 		]
 	}
 
@@ -1988,31 +1903,205 @@ RDelayModule : RModule {
 		^{
 			|
 				in_In,
-				in_DelayTimeModulation,
 				out_Out,
-				param_DelayTime,
-				param_DelayTimeModulation
+				param_Gain,
+				param_Mute
 			|
 
 			var sig_In = In.ar(in_In);
-			var sig_DelayTimeModulation = In.ar(in_DelayTimeModulation);
 
-			var delayTimeSpec = ControlSpec(0.1, 5000, 'exp', 0, 300, "ms");
+			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
 
-			var delayTimeMs = delayTimeSpec.map(
-				delayTimeSpec.unmap(param_DelayTime) + (sig_DelayTimeModulation * param_DelayTimeModulation)
-			);
+			Out.ar(out_Out, sig_In * gain);
+		}
+	}
+}
 
-			var delayed = DelayC.ar(sig_In, maxdelaytime: delayTimeSpec.maxval/1000, delaytime: delayTimeMs/1000); // TODO: ControlDur.ir minimum
+// Status: tested
+RSGainModule : RModule {
+	*shortName { ^'SGain' }
 
-			Out.ar(out_Out, delayed);
+	*params {
+		^[
+			'Gain' -> (
+				Spec: \db.asSpec.copy.maxval_(12).default_(0),
+				// TODO LagTime: 0.1
+			),
+			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_Left,
+				in_Right,
+				out_Left,
+				out_Right,
+				param_Gain,
+				param_Mute
+			|
+
+			var sig_Left = In.ar(in_Left);
+			var sig_Right = In.ar(in_Right);
+
+			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
+
+			Out.ar(out_Left, sig_Left * gain);
+			Out.ar(out_Right, sig_Right * gain);
+		}
+	}
+}
+
+// Status: not tested
+RQGainModule : RModule {
+	*shortName { ^'QGain' }
+
+	*params {
+		^[
+			'Gain' -> (
+				Spec: \db.asSpec.copy.maxval_(12).default_(0),
+				// TODO LagTime: 0.1
+			),
+			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_In1,
+				in_In2,
+				in_In3,
+				in_In4,
+				out_Out1,
+				out_Out2,
+				out_Out3,
+				out_Out4,
+				param_Gain,
+				param_Mute
+			|
+
+			var sig_In1 = In.ar(in_In1);
+			var sig_In2 = In.ar(in_In2);
+			var sig_In3 = In.ar(in_In3);
+			var sig_In4 = In.ar(in_In4);
+
+			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
+
+			Out.ar(out_Out1, sig_In1 * gain);
+			Out.ar(out_Out2, sig_In2 * gain);
+			Out.ar(out_Out3, sig_In3 * gain);
+			Out.ar(out_Out4, sig_In4 * gain);
+		}
+	}
+}
+
+// Status: not tested
+ROGainModule : RModule {
+	*shortName { ^'OGain' }
+
+	*params {
+		^[
+			'Gain' -> (
+				Spec: \db.asSpec.copy.maxval_(12).default_(0),
+				// TODO LagTime: 0.1
+			),
+			'Mute' -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_In1,
+				in_In2,
+				in_In3,
+				in_In4,
+				in_In5,
+				in_In6,
+				in_In7,
+				in_In8,
+				out_Out1,
+				out_Out2,
+				out_Out3,
+				out_Out4,
+				out_Out5,
+				out_Out6,
+				out_Out7,
+				out_Out8,
+				param_Gain,
+				param_Mute
+			|
+
+			var sig_In1 = In.ar(in_In1);
+			var sig_In2 = In.ar(in_In2);
+			var sig_In3 = In.ar(in_In3);
+			var sig_In4 = In.ar(in_In4);
+			var sig_In5 = In.ar(in_In5);
+			var sig_In6 = In.ar(in_In6);
+			var sig_In7 = In.ar(in_In7);
+			var sig_In8 = In.ar(in_In8);
+
+			var gain = param_Gain.dbamp * Lag.kr(Select.kr(param_Mute, [1, 0], 0.01));
+
+			Out.ar(out_Out1, sig_In1 * gain);
+			Out.ar(out_Out2, sig_In2 * gain);
+			Out.ar(out_Out3, sig_In3 * gain);
+			Out.ar(out_Out4, sig_In4 * gain);
+			Out.ar(out_Out5, sig_In5 * gain);
+			Out.ar(out_Out6, sig_In6 * gain);
+			Out.ar(out_Out7, sig_In7 * gain);
+			Out.ar(out_Out8, sig_In8 * gain);
+		}
+	}
+}
+
+// Status: not tested
+RCrossFaderModule : RModule {
+	*shortName { ^'XFader' }
+
+	*params {
+		^[
+			'Fade' -> \bipolar.asSpec, // TODO: remove need for .asSpec
+			'TrimA' -> \db.asSpec.copy.maxval_(12),
+			'TrimB' -> \db.asSpec.copy.maxval_(12),
+			'Master' -> \db.asSpec.copy.maxval_(12)
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_InALeft,
+				in_InARight,
+				in_InBLeft,
+				in_InBRight,
+				out_Left,
+				out_Right,
+				param_Fade,
+				param_TrimA,
+				param_TrimB,
+				param_Master
+			|
+
+			var sig_InALeft = In.ar(in_InALeft);
+			var sig_InARight = In.ar(in_InARight);
+			var sig_InBLeft = In.ar(in_InBLeft);
+			var sig_InBRight = In.ar(in_InBRight);
+
+			var sig_inA = [sig_InALeft, sig_InARight] * param_TrimA.dbamp;
+			var sig_inB = [sig_InBLeft, sig_InBRight] * param_TrimB.dbamp;
+			var sig = XFade2.ar(sig_inA, sig_inB, param_Fade, param_Master.dbamp);
+			Out.ar(out_Left, sig[0]);
+			Out.ar(out_Right, sig[1]);
 		}
 	}
 }
 
 // Status: not tested
 R4x4MatrixModule : RModule {
-	*shortName { ^'4x4Matrix' }
+	*shortName { ^'44Matrix' }
 
 	*params {
 		^[
@@ -2105,7 +2194,7 @@ R4x4MatrixModule : RModule {
 
 // Status: not tested
 R8x8MatrixModule : RModule {
-	*shortName { ^'8x8Matrix' }
+	*shortName { ^'88Matrix' }
 
 	*params {
 		^[
@@ -2365,109 +2454,41 @@ R8x8MatrixModule : RModule {
 	}
 }
 
-RFreqGateModule : RModule {
-	*shortName { ^'FreqGate' }
-
-	*params {
-		^[
-			'Frequency' -> \freq.asSpec,
-			'Gate' -> ControlSpec(0, 1, step: 1, default: 0)
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				out_Frequency,
-				out_Gate,
-				out_Trig,
-				param_Frequency,
-				param_Gate
-			|
-
-			var sig_Gate = K2A.ar(param_Gate);
-			var octs = ((param_Frequency.cpsoct-3)/10).clip(-0.5, 0.5); // 0.1 = 1 oct
-			Out.ar(out_Frequency, K2A.ar(octs));
-			Out.ar(out_Gate, sig_Gate);
-			Out.ar(out_Gate, Trig.ar(sig_Gate));
-		}
-	}
-}
-
-RFreqModGateModule : RModule {
-	*shortName { ^'FreqModGate' }
-
-	*params {
-		^[
-			'Frequency' -> \freq.asSpec,
-			'Gate' -> ControlSpec(0, 1, step: 1, default: 0),
-			'Mod1' -> \bipolar.asSpec,
-			'Mod2' -> \bipolar.asSpec
-		]
-	}
-
-	*ugenGraphFunc {
-		^{
-			|
-				out_Frequency,
-				out_Gate,
-				out_Mod1,
-				out_Mod2,
-				out_Trig,
-				param_Frequency,
-				param_Gate,
-				param_Mod1,
-				param_Mod2
-			|
-
-			var sig_Mod1 = K2A.ar(param_Mod1*0.5);
-			var sig_Mod2 = K2A.ar(param_Mod2*0.5);
-			var sig_Gate = K2A.ar(param_Gate);
-			var octs = ((param_Frequency.cpsoct-3)/10).clip(-0.5, 0.5); // 0.1 = 1 oct
-			Out.ar(out_Frequency, K2A.ar(octs));
-			Out.ar(out_Mod1, sig_Mod1);
-			Out.ar(out_Mod2, sig_Mod2);
-			Out.ar(out_Gate, sig_Gate);
-			Out.ar(out_Gate, Trig.ar(sig_Gate));
-		}
-	}
-}
-
-/*
-RFMVoiceModule : RModule { // TODO: or use FM7 ?
+RFMVoiceModule : RModule {
 	classvar numOscs = 3;
-	*params {
-		var params;
 
-		params = params.add("param_Timbre" -> ControlSpec(0, 5, 'lin', nil, 1, ""));
+	*shortName { ^'FMVoice' }
+
+	*params {
+		var params = [
+			'Freq' -> \freq.asSpec,
+			'Timbre' -> ControlSpec(0, 5, 'lin', nil, 1, "")
+		];
 
 		numOscs.do { |oscnum|
 			params = params.addAll(
 				[
-					"param_Osc%Gain".format(oscnum+1) -> \amp.asSpec,
-					"param_Osc%Partial".format(oscnum+1) -> ControlSpec(0.5, 12, 'lin', 0.5, 1, ""),
-					"param_Osc%Fixed".format(oscnum+1) -> ControlSpec(0, 1, 'lin', 1, 0, ""),
-					"param_Osc%Fixedfreq".format(oscnum+1) -> \widefreq.asSpec,
-					"param_Osc%Index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
-					"param_Osc%Outlevel".format(oscnum+1) -> \amp.asSpec,
-					"param_Mod_To_Osc%Freq".format(oscnum+1) -> \bipolar.asSpec,
-					"param_Mod_To_Osc%Gain".format(oscnum+1) -> \bipolar.asSpec,
+					"Osc%Gain".format(oscnum+1) -> \amp.asSpec,
+					"Osc%Partial".format(oscnum+1) -> ControlSpec(0.5, 12, 'lin', 0.5, 1, ""),
+					"Osc%Fixed".format(oscnum+1) -> ControlSpec(0, 1, 'lin', 1, 0, ""),
+					"Osc%Fixedfreq".format(oscnum+1) -> \widefreq.asSpec,
+					"Osc%Index".format(oscnum+1) -> ControlSpec(0, 24, 'lin', 0, 3, ""),
+					"Osc%Outlevel".format(oscnum+1) -> \amp.asSpec,
+					"Mod_To_Osc%Freq".format(oscnum+1) -> \bipolar.asSpec,
+					"Mod_To_Osc%Gain".format(oscnum+1) -> \bipolar.asSpec,
 				]
 			);
+
 			numOscs.do { |dest|
 				params = params.add(
-					"param_Osc%_To_Osc%Freq".format(oscnum+1, dest+1) -> \amp.asSpec
+					"Osc%_To_Osc%Freq".format(oscnum+1, dest+1) -> \amp.asSpec
 				);
 			};
 		};
-		params = params.collect { |assoc|
+
+		^params.collect { |assoc|
 			assoc.key.asSymbol -> assoc.value
 		};
-		// params.collect{ |assoc| assoc.key}.debug(\debug);
-
-		params = params.asDict;
-
-		^params;
 	}
 
 	*ugenGraphFunc {
@@ -2559,4 +2580,3 @@ RFMVoiceModule : RModule { // TODO: or use FM7 ?
 		}
 	}
 }
-*/

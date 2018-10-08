@@ -13,15 +13,15 @@ Text based patching engine
 ## Commands
 
 - `new ss` - creates module named `[arg1]` of type `[arg2]`. See section "Available Modules" below.
-	- Examples: `new Osc SquareOsc`, `new Out SoundOut`
+	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
 - `delete s` - removes module named `[arg1]`.
 	- Example: `delete Osc`
 - `connect ss` - send module output referenced in `[arg1]` (expressed as `[ModuleName]/[Output]`) to module input referenced in `[arg2]` (expressed as `[ModuleName]/[Input]`).
-	- Examples: `connect Osc/Out Out/Left`, `connect Osc/Out Out/Right`
+	- Examples: `connect Osc/Pulse Out/Left`, `connect Osc/Pulse Out/Right`
 - `disconnect ss` - disconnect module output referenced in `[arg1]` (expressed as `[ModuleName]/[Output]`) from module input referenced in `[arg2]` (expressed as `[ModuleName]/[Input]`).
 	- Example: `disconnect Osc/Out Out/Left`
 - `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
-	- Examples: `set Osc.Frequency 432`, `set Osc.PulseWidth 0.5`
+	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 - `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
 
 ### Commands for optimized OSC messaging
@@ -35,128 +35,7 @@ Text based patching engine
 
 ## Available Modules
 
-### ADSREnv
-
-ADSR Envelope inspired by A-140.
-
-- Inputs: `Gate`
-- Outputs: `Out`
-- Parameters:
-	- `Attack`
-	- `Decay`
-	- `Sustain`
-	- `Release`
-	- `Gate`
-
-### Amp
-
-Simple amplifier with level parameter and exponential or linear gain modulation.
-
-- Inputs: `Exp`, `Lin`, `In`
-- Outputs: `Out` - TODO: By convention -0.5 to 0.5
-- Parameters:
-	- `Level`
-
-### DAmp
-
-Amplifier inspired by A-130/A-131.
-
-- Inputs: `GainModulation`, `In1`, `In2`
-- Outputs: `Out`
-- Parameters:
-	- `Gain`
-	- `GainModulation`
-	- `In1`
-	- `In2`
-	- `Out`
-	- `Mode`
-
-### Delay
-- Inputs: `In`, `DelayTimeModulation`
-- Outputs: `Out`
-- Parameters:
-	- `DelayTime`
-	- `DelayTimeModulation`
-
-### FreqGate
-
-CV/Gate thing (TODO)
-
-- Inputs: None
-- Outputs: `Frequency`, `Gate`, `Trig` - TODO: By convention 0.1 per octave
-- Parameters:
-	- `Frequency`
-	- `Gate`
-
-### FreqModGate
-
-CV/Gate thing (TODO)
-
-- Inputs: None
-- Outputs: `Frequency`, `Gate`, `Mod1`, `Mod2`, `Trig`
-- Parameters:
-	- `Frequency`
-	- `Gate`
-	- `Mod1`
-	- `Mod2`
-
-### FreqShift
-- Inputs: `Left`, `Right`, `FM`
-- Outputs: `Left`, `Right`
-- Parameters:
-	- `Frequency`
-	- `FM`
-
-### LPFilter
-
-Lowpass SVF filter.
-
-- Inputs: `In`, `FM`, `ResonanceModulation`
-- Outputs: `Out`
-- Parameters:
-	- `AudioLevel`
-	- `Frequency`
-	- `Resonance`
-	- `FM`
-	- `ResonanceModulation`
-
-### LPMoog
-
-Lowpass Moog ladder filter.
-
-- Inputs: `In`, `FM`, `ResonanceModulation`
-- Outputs: `Out`
-- Parameters:
-	- `Frequency`
-	- `Resonance`
-	- `FM`
-	- `ResonanceModulation`
-
-### MGain
-
-Mono amplifier with mute parameter and dB gain.
-
-- Inputs: `In`
-- Outputs: `Out`
-- Parameters:
-	- `Gain`
-	- `Mute`
-
-### MMFilter
-
-Multimode SVF filter inspired by A-121.
-
-- Inputs: `In`, `FM`, `ResonanceModulation`
-- Outputs: `Notch`, `Highpass`, `Bandpass`, `Lowpass`
-- Parameters:
-	- `AudioLevel`
-	- `Frequency`
-	- `Resonance`
-	- `FM`
-	- `ResonanceModulation`
-
-### Matrix4x4
-
+### 44Matrix
 - Inputs: `1`, `2`, `3`, `4`
 - Outputs: `1`, `2`, `3`, `4`
 - Parameters:
@@ -178,10 +57,107 @@ Multimode SVF filter inspired by A-121.
 	- `Gate_4_3`
 	- `Gate_4_4`
 
-### Mixer
+### 88Matrix
+- Inputs: `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`
+- Outputs: `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`
+- Parameters:
+	- `FadeTime`
+	- `Gate_1_1`
+	- `Gate_1_2`
+	- `Gate_1_3`
+	- `Gate_1_4`
+	- `Gate_1_5`
+	- `Gate_1_6`
+	- `Gate_1_7`
+	- `Gate_1_8`
+	- `Gate_2_1`
+	- `Gate_2_2`
+	- `Gate_2_3`
+	- `Gate_2_4`
+	- `Gate_2_5`
+	- `Gate_2_6`
+	- `Gate_2_7`
+	- `Gate_2_8`
+	- `Gate_3_1`
+	- `Gate_3_2`
+	- `Gate_3_3`
+	- `Gate_3_4`
+	- `Gate_3_5`
+	- `Gate_3_6`
+	- `Gate_3_7`
+	- `Gate_3_8`
+	- `Gate_4_1`
+	- `Gate_4_2`
+	- `Gate_4_3`
+	- `Gate_4_4`
+	- `Gate_4_5`
+	- `Gate_4_6`
+	- `Gate_4_7`
+	- `Gate_4_8`
+	- `Gate_5_1`
+	- `Gate_5_2`
+	- `Gate_5_3`
+	- `Gate_5_4`
+	- `Gate_5_5`
+	- `Gate_5_6`
+	- `Gate_5_7`
+	- `Gate_5_8`
+	- `Gate_6_1`
+	- `Gate_6_2`
+	- `Gate_6_3`
+	- `Gate_6_4`
+	- `Gate_6_5`
+	- `Gate_6_6`
+	- `Gate_6_7`
+	- `Gate_6_8`
+	- `Gate_7_1`
+	- `Gate_7_2`
+	- `Gate_7_3`
+	- `Gate_7_4`
+	- `Gate_7_5`
+	- `Gate_7_6`
+	- `Gate_7_7`
+	- `Gate_7_8`
+	- `Gate_8_1`
+	- `Gate_8_2`
+	- `Gate_8_3`
+	- `Gate_8_4`
+	- `Gate_8_5`
+	- `Gate_8_6`
+	- `Gate_8_7`
+	- `Gate_8_8`
 
-Mixer module inspired by A-138A/A-138B.
+### ADSREnv
+- Inputs: `Gate`
+- Outputs: `Out`
+- Parameters:
+	- `Attack`
+	- `Decay`
+	- `Sustain`
+	- `Release`
+	- `Gate`
 
+### Amp
+
+Simple amplifier with level parameter and exponential or linear gain modulation.
+
+- Inputs: `Exp`, `Lin`, `In`
+- Outputs: `Out`
+- Parameters:
+	- `Level`
+
+### Amp2
+- Inputs: `GainModulation`, `In1`, `In2`
+- Outputs: `Out`
+- Parameters:
+	- `Gain`
+	- `GainModulation`
+	- `In1`
+	- `In2`
+	- `Out`
+	- `Mode`
+
+### DbMixer
 - Inputs: `In1`, `In2`, `In3`, `In4`
 - Outputs: `Out`
 - Parameters:
@@ -190,24 +166,124 @@ Mixer module inspired by A-138A/A-138B.
 	- `In3`
 	- `In4`
 	- `Out`
-	- `Mode`
+
+### Delay
+- Inputs: `In`, `DelayTimeModulation`
+- Outputs: `Out`
+- Parameters:
+	- `DelayTime`
+	- `DelayTimeModulation`
+
+### FMVoice
+- Inputs: `Modulation`
+- Outputs: `Out`
+- Parameters:
+	- `Freq`
+	- `Timbre`
+	- `Osc1Gain`
+	- `Osc1Partial`
+	- `Osc1Fixed`
+	- `Osc1Fixedfreq`
+	- `Osc1Index`
+	- `Osc1Outlevel`
+	- `Osc1_To_Osc1Freq`
+	- `Osc1_To_Osc2Freq`
+	- `Osc1_To_Osc3Freq`
+	- `Osc2Gain`
+	- `Osc2Partial`
+	- `Osc2Fixed`
+	- `Osc2Fixedfreq`
+	- `Osc2Index`
+	- `Osc2Outlevel`
+	- `Osc2_To_Osc1Freq`
+	- `Osc2_To_Osc2Freq`
+	- `Osc2_To_Osc3Freq`
+	- `Osc3Gain`
+	- `Osc3Partial`
+	- `Osc3Fixed`
+	- `Osc3Fixedfreq`
+	- `Osc3Index`
+	- `Osc3Outlevel`
+	- `Osc3_To_Osc3Freq`
+	- `Osc3_To_Osc2Freq`
+	- `Osc3_To_Osc1Freq`
+	- `Mod_To_Osc1Gain`
+	- `Mod_To_Osc2Gain`
+	- `Mod_To_Osc3Gain`
+	- `Mod_To_Osc1Freq`
+	- `Mod_To_Osc2Freq`
+	- `Mod_To_Osc3Freq`
+
+### FShift
+- Inputs: `Left`, `Right`, `FM`
+- Outputs: `Left`, `Right`
+- Parameters:
+	- `Frequency`
+	- `FM`
+
+### FreqGate
+- Inputs: None
+- Outputs: `Frequency`, `Gate`, `Trig`
+- Parameters:
+	- `Frequency`
+	- `Gate`
+
+### LPFilter
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Out`
+- Parameters:
+	- `AudioLevel`
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
+
+### LPLadder
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Out`
+- Parameters:
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
+
+### LinMixer
+- Inputs: `In1`, `In2`, `In3`, `In4`
+- Outputs: `Out`
+- Parameters:
+	- `In1`
+	- `In2`
+	- `In3`
+	- `In4`
+	- `Out`
+
+### MGain
+- Inputs: `In`
+- Outputs: `Out`
+- Parameters:
+	- `Gain`
+	- `Mute`
+
+### MMFilter
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Notch`, `Highpass`, `Bandpass`, `Lowpass`
+- Parameters:
+	- `AudioLevel`
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
 
 ### MultiLFO
-
-LFO with multiple waveform outputs inspired by A-145.
-
 - Inputs: `Reset`
-- Outputs: `InvSaw`, `Saw`, `Sine`, `Triangle`, `Square`
+- Outputs: `InvSaw`, `Saw`, `Sine`, `Triangle`, `Pulse`
 - Parameters:
 	- `Frequency`
 	- `Reset`
 
 ### MultiOsc
-
-Oscillator inspired by A-110. Note: Triangle waveform is not band limited.
-
 - Inputs: `FM`, `PWM`
-- Outputs: `Sine`, `Triangle`, `Saw`, `Square`
+- Outputs: `Sine`, `Triangle`, `Saw`, `Pulse`
 - Parameters:
 	- `Range`
 	- `Tune`
@@ -216,25 +292,18 @@ Oscillator inspired by A-110. Note: Triangle waveform is not band limited.
 	- `PWM`
 
 ### Noise
-
-Noise generator.
-
 - Inputs: None
 - Outputs: `Out`
 - Parameters: None
 
 ### OGain
-
-8-in/8-out amplifier with mute parameter and dB gain.
-
 - Inputs: `In1`, `In2`, `In3`, `In4`, `In5`, `In6`, `In7`, `In8`
 - Outputs: `Out1`, `Out2`, `Out3`, `Out4`, `Out5`, `Out6`, `Out7`, `Out8`
 - Parameters:
 	- `Gain`
 	- `Mute`
 
-### PitchShift
-
+### PShift
 - Inputs: `Left`, `Right`, `PitchRatioModulation`, `PitchDispersionModulation`, `TimeDispersionModulation`
 - Outputs: `Left`, `Right`
 - Parameters:
@@ -245,10 +314,17 @@ Noise generator.
 	- `PitchDispersionModulation`
 	- `TimeDispersionModulation`
 
+### PulseOsc
+- Inputs: `FM`, `PWM`
+- Outputs: `Out`
+- Parameters:
+	- `Range`
+	- `Tune`
+	- `FM`
+	- `PulseWidth`
+	- `PWM`
+
 ### QGain
-
-4-in/4-out amplifier with mute parameter and dB gain.
-
 - Inputs: `In1`, `In2`, `In3`, `In4`
 - Outputs: `Out1`, `Out2`, `Out3`, `Out4`
 - Parameters:
@@ -261,24 +337,18 @@ Noise generator.
 - Parameters: None
 
 ### SGain
-
-Stereo amplifier with mute parameter and dB gain.
-
 - Inputs: `Left`, `Right`
 - Outputs: `Left`, `Right`
 - Parameters:
 	- `Gain`
 	- `Mute`
 
-### SampleHold
+### SampHold
 - Inputs: `In`, `Trig`
 - Outputs: `Out`
 - Parameters: None
 
 ### SawOsc
-
-Sawtooth oscillator.
-
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -287,9 +357,6 @@ Sawtooth oscillator.
 	- `FM`
 
 ### SineOsc
-
-Sine oscillator.
-
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -307,19 +374,6 @@ Sine oscillator.
 - Outputs: None
 - Parameters: None
 
-### SquareOsc
-
-Square oscillator.
-
-- Inputs: `FM`, `PWM`
-- Outputs: `Out`
-- Parameters:
-	- `Range`
-	- `Tune`
-	- `FM`
-	- `PulseWidth`
-	- `PWM`
-
 ### TestGen
 - Inputs: None
 - Outputs: `Out`
@@ -329,9 +383,6 @@ Square oscillator.
 	- `Wave`
 
 ### TriOsc
-
-Triangle oscillator. Note: not band-limited.
-
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -339,9 +390,21 @@ Triangle oscillator. Note: not band-limited.
 	- `Tune`
 	- `FM`
 
+### XFader
+- Inputs: `InALeft`, `InARight`, `InBLeft`, `InBRight`
+- Outputs: `Left`, `Right`
+- Parameters:
+	- `Fade`
+	- `TrimA`
+	- `TrimB`
+	- `Master`
+
 ## Considerations
 
 - Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
+
+## Known Issues
+
 - Shooting a lot of commands to R may cause messages to be delayed.
 
 ## Example Usage

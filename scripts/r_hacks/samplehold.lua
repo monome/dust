@@ -25,7 +25,7 @@ end
 function init()
   engine.new("Noise", "Noise")
   engine.new("LFO", "MultiLFO")
-  engine.new("SampleHold", "SampleHold")
+  engine.new("SampleHold", "SampHold")
   engine.new("Osc", "SineOsc")
   engine.new("SoundOut", "SoundOut")
 

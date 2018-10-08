@@ -4,7 +4,7 @@ local ControlSpec = require 'controlspec'
 
 local specs = {}
 
-specs['4x4Matrix'] = {
+specs['44Matrix'] = {
 	FadeTime = ControlSpec.new(0, 1000, "linear", 0, 5, "ms"),
 	Gate_1_1 = ControlSpec.new(0, 1, "linear", 1, 0, ""),
 	Gate_1_2 = ControlSpec.new(0, 1, "linear", 1, 0, ""),
@@ -24,7 +24,7 @@ specs['4x4Matrix'] = {
 	Gate_4_4 = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
-specs['8x8Matrix'] = {
+specs['88Matrix'] = {
 	FadeTime = ControlSpec.new(0, 1000, "linear", 0, 5, "ms"),
 	Gate_1_1 = ControlSpec.new(0, 1, "linear", 1, 0, ""),
 	Gate_1_2 = ControlSpec.new(0, 1, "linear", 1, 0, ""),
@@ -113,11 +113,12 @@ specs['Amp2'] = {
 	Mode = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
-specs['CrossFader'] = {
-	Fade = ControlSpec.BIPOLAR,
-	TrimA = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
-	TrimB = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
-	Master = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB")
+specs['DbMixer'] = {
+	In1 = ControlSpec.DB,
+	In2 = ControlSpec.DB,
+	In3 = ControlSpec.DB,
+	In4 = ControlSpec.DB,
+	Out = ControlSpec.DB
 }
 
 specs['Delay'] = {
@@ -125,21 +126,52 @@ specs['Delay'] = {
 	DelayTimeModulation = ControlSpec.BIPOLAR
 }
 
+specs['FMVoice'] = {
+	Freq = ControlSpec.FREQ,
+	Timbre = ControlSpec.new(0, 5, "linear", 0, 1, ""),
+	Osc1Gain = ControlSpec.AMP,
+	Osc1Partial = ControlSpec.new(0.5, 12, "linear", 0.5, 1, ""),
+	Osc1Fixed = ControlSpec.new(0, 1, "linear", 1, 0, ""),
+	Osc1Fixedfreq = ControlSpec.WIDEFREQ,
+	Osc1Index = ControlSpec.new(0, 24, "linear", 0, 3, ""),
+	Osc1Outlevel = ControlSpec.AMP,
+	Osc1_To_Osc1Freq = ControlSpec.AMP,
+	Osc1_To_Osc2Freq = ControlSpec.AMP,
+	Osc1_To_Osc3Freq = ControlSpec.AMP,
+	Osc2Gain = ControlSpec.AMP,
+	Osc2Partial = ControlSpec.new(0.5, 12, "linear", 0.5, 1, ""),
+	Osc2Fixed = ControlSpec.new(0, 1, "linear", 1, 0, ""),
+	Osc2Fixedfreq = ControlSpec.WIDEFREQ,
+	Osc2Index = ControlSpec.new(0, 24, "linear", 0, 3, ""),
+	Osc2Outlevel = ControlSpec.AMP,
+	Osc2_To_Osc1Freq = ControlSpec.AMP,
+	Osc2_To_Osc2Freq = ControlSpec.AMP,
+	Osc2_To_Osc3Freq = ControlSpec.AMP,
+	Osc3Gain = ControlSpec.AMP,
+	Osc3Partial = ControlSpec.new(0.5, 12, "linear", 0.5, 1, ""),
+	Osc3Fixed = ControlSpec.new(0, 1, "linear", 1, 0, ""),
+	Osc3Fixedfreq = ControlSpec.WIDEFREQ,
+	Osc3Index = ControlSpec.new(0, 24, "linear", 0, 3, ""),
+	Osc3Outlevel = ControlSpec.AMP,
+	Osc3_To_Osc3Freq = ControlSpec.AMP,
+	Osc3_To_Osc2Freq = ControlSpec.AMP,
+	Osc3_To_Osc1Freq = ControlSpec.AMP,
+	Mod_To_Osc1Gain = ControlSpec.BIPOLAR,
+	Mod_To_Osc2Gain = ControlSpec.BIPOLAR,
+	Mod_To_Osc3Gain = ControlSpec.BIPOLAR,
+	Mod_To_Osc1Freq = ControlSpec.BIPOLAR,
+	Mod_To_Osc2Freq = ControlSpec.BIPOLAR,
+	Mod_To_Osc3Freq = ControlSpec.BIPOLAR
+}
+
+specs['FShift'] = {
+	Frequency = ControlSpec.new(-2000, 2000, "linear", 0, 0, "Hz"),
+	FM = ControlSpec.BIPOLAR
+}
+
 specs['FreqGate'] = {
 	Frequency = ControlSpec.FREQ,
 	Gate = ControlSpec.new(0, 1, "linear", 1, 0, "")
-}
-
-specs['FreqModGate'] = {
-	Frequency = ControlSpec.FREQ,
-	Gate = ControlSpec.new(0, 1, "linear", 1, 0, ""),
-	Mod1 = ControlSpec.BIPOLAR,
-	Mod2 = ControlSpec.BIPOLAR
-}
-
-specs['FreqShift'] = {
-	Frequency = ControlSpec.new(-2000, 2000, "linear", 0, 0, "Hz"),
-	FM = ControlSpec.BIPOLAR
 }
 
 specs['LPFilter'] = {
@@ -150,11 +182,19 @@ specs['LPFilter'] = {
 	ResonanceModulation = ControlSpec.BIPOLAR
 }
 
-specs['LPMoog'] = {
+specs['LPLadder'] = {
 	Frequency = ControlSpec.WIDEFREQ,
 	Resonance = ControlSpec.UNIPOLAR,
 	FM = ControlSpec.BIPOLAR,
 	ResonanceModulation = ControlSpec.BIPOLAR
+}
+
+specs['LinMixer'] = {
+	In1 = ControlSpec.UNIPOLAR,
+	In2 = ControlSpec.UNIPOLAR,
+	In3 = ControlSpec.UNIPOLAR,
+	In4 = ControlSpec.UNIPOLAR,
+	Out = ControlSpec.UNIPOLAR
 }
 
 specs['MGain'] = {
@@ -168,15 +208,6 @@ specs['MMFilter'] = {
 	Resonance = ControlSpec.UNIPOLAR,
 	FM = ControlSpec.BIPOLAR,
 	ResonanceModulation = ControlSpec.BIPOLAR
-}
-
-specs['Mixer'] = {
-	In1 = ControlSpec.UNIPOLAR,
-	In2 = ControlSpec.UNIPOLAR,
-	In3 = ControlSpec.UNIPOLAR,
-	In4 = ControlSpec.UNIPOLAR,
-	Out = ControlSpec.UNIPOLAR,
-	Mode = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
 specs['MultiLFO'] = {
@@ -200,13 +231,21 @@ specs['OGain'] = {
 	Mute = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
-specs['PitchShift'] = {
+specs['PShift'] = {
 	PitchRatio = ControlSpec.new(0, 4, "linear", 0, 1, ""),
 	PitchDispersion = ControlSpec.new(0, 4, "linear", 0, 0, ""),
 	TimeDispersion = ControlSpec.new(0, 1, "linear", 0, 0, ""),
 	PitchRatioModulation = ControlSpec.BIPOLAR,
 	PitchDispersionModulation = ControlSpec.BIPOLAR,
 	TimeDispersionModulation = ControlSpec.BIPOLAR
+}
+
+specs['PulseOsc'] = {
+	Range = ControlSpec.new(-2, 2, "linear", 1, 0, ""),
+	Tune = ControlSpec.new(-600, 600, "linear", 0, 0, "cents"),
+	FM = ControlSpec.UNIPOLAR,
+	PulseWidth = ControlSpec.new(0, 1, "linear", 0, 0.5, ""),
+	PWM = ControlSpec.new(0, 1, "linear", 0, 0.4, "")
 }
 
 specs['QGain'] = {
@@ -222,7 +261,7 @@ specs['SGain'] = {
 	Mute = ControlSpec.new(0, 1, "linear", 1, 0, "")
 }
 
-specs['SampleHold'] = {
+specs['SampHold'] = {
 }
 
 specs['SawOsc'] = {
@@ -243,14 +282,6 @@ specs['SoundIn'] = {
 specs['SoundOut'] = {
 }
 
-specs['SquareOsc'] = {
-	Range = ControlSpec.new(-2, 2, "linear", 1, 0, ""),
-	Tune = ControlSpec.new(-600, 600, "linear", 0, 0, "cents"),
-	FM = ControlSpec.UNIPOLAR,
-	PulseWidth = ControlSpec.new(0, 1, "linear", 0, 0.5, ""),
-	PWM = ControlSpec.new(0, 1, "linear", 0, 0.4, "")
-}
-
 specs['TestGen'] = {
 	Frequency = ControlSpec.WIDEFREQ,
 	Amplitude = ControlSpec.DB,
@@ -261,6 +292,13 @@ specs['TriOsc'] = {
 	Range = ControlSpec.new(-2, 2, "linear", 1, 0, ""),
 	Tune = ControlSpec.new(-600, 600, "linear", 0, 0, "cents"),
 	FM = ControlSpec.UNIPOLAR
+}
+
+specs['XFader'] = {
+	Fade = ControlSpec.BIPOLAR,
+	TrimA = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
+	TrimB = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB"),
+	Master = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB")
 }
 
 R.specs = specs

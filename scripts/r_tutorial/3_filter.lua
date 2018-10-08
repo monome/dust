@@ -25,7 +25,7 @@ end
 
 function init()
   engine.new("LFO", "MultiLFO")
-  engine.new("Osc", "SquareOsc")
+  engine.new("Osc", "PulseOsc")
   engine.new("Filter", "MMFilter")
   engine.new("SoundOut", "SoundOut")
 
@@ -52,19 +52,19 @@ function init()
   add_rcontrol {
     id="osc_range",
     name="Osc.Range",
-    spec=R.specs.SquareOsc.Range
+    spec=R.specs.PulseOsc.Range
   }
 
   add_rcontrol {
     id="osc_tune",
     name="Osc.Tune",
-    spec=R.specs.SquareOsc.Tune
+    spec=R.specs.PulseOsc.Tune
   }
 
   add_rcontrol {
     id="osc_pulsewidth",
     name="Osc.PulseWidth",
-    spec=R.specs.SquareOsc.PulseWidth,
+    spec=R.specs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
@@ -72,7 +72,7 @@ function init()
     id="lfo_to_osc_pwm",
     name="LFO > Osc.PWM",
     ref="Osc.PWM",
-    spec=R.specs.SquareOsc.PWM,
+    spec=R.specs.PulseOsc.PWM,
     formatter=Formatters.percentage
   }
 

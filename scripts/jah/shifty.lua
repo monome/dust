@@ -24,8 +24,8 @@ end
 function init()
   engine.new("LFO", "MultiLFO")
   engine.new("SoundIn", "SoundIn")
-  engine.new("PitchShift", "PitchShift")
-  engine.new("FreqShift", "FreqShift")
+  engine.new("PitchShift", "PShift")
+  engine.new("FreqShift", "FShift")
   engine.new("SoundOut", "SoundOut")
 
   engine.connect("LFO/Sine", "FreqShift/FM")
@@ -41,28 +41,28 @@ function init()
   add_rcontrol {
     name="Freq Shift",
     ref="FreqShift.Frequency",
-    spec=R.specs.FreqShift.Frequency
+    spec=R.specs.FShift.Frequency
   }
 
   add_rcontrol {
     name="Pitch Ratio",
     ref="PitchShift.PitchRatio",
     formatter=Formatters.percentage,
-    spec=R.specs.PitchShift.PitchRatio
+    spec=R.specs.PShift.PitchRatio
   }
 
   add_rcontrol {
     name="Pitch Dispersion",
     ref="PitchShift.PitchDispersion",
     formatter=Formatters.percentage,
-    spec=R.specs.PitchShift.PitchDispersion
+    spec=R.specs.PShift.PitchDispersion
   }
 
   add_rcontrol {
     name="Time Dispersion",
     ref="PitchShift.TimeDispersion",
     formatter=Formatters.percentage,
-    spec=R.specs.PitchShift.TimeDispersion
+    spec=R.specs.PShift.TimeDispersion
   }
 
   add_rcontrol {
@@ -76,14 +76,14 @@ function init()
     name="LFO > Freq Shift",
     ref="FreqShift.FM",
     formatter=Formatters.percentage,
-    spec=R.specs.PitchShift.PitchRatioModulation
+    spec=R.specs.FShift.FM
   }
 
   add_rcontrol {
     name="LFO > Pitch Ratio",
     ref="PitchShift.PitchRatioModulation",
     formatter=Formatters.percentage,
-    spec=R.specs.PitchShift.PitchRatioModulation
+    spec=R.specs.PShift.PitchRatioModulation
   }
 
   scroll:push("") -- TODO

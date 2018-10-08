@@ -205,8 +205,8 @@ local function create_modules()
   poly_new("FreqGate", "FreqGate")
   poly_new("LFO", "MultiLFO")
   poly_new("Env", "ADSREnv")
-  poly_new("OscA", "SquareOsc")
-  poly_new("OscB", "SquareOsc")
+  poly_new("OscA", "PulseOsc")
+  poly_new("OscB", "PulseOsc")
   poly_new("Filter", "LPFilter")
   poly_new("Amp", "Amp")
 
@@ -244,7 +244,7 @@ local function add_rcontrols()
     id="osc_a_range",
     name="Osc A Range",
     ref="OscA.Range",
-    spec=R.specs.SquareOsc.Range,
+    spec=R.specs.PulseOsc.Range,
     formatter=Formatters.round(1)
   }
 
@@ -252,7 +252,7 @@ local function add_rcontrols()
     id="osc_a_pulsewidth",
     name="Osc A PulseWidth",
     ref="OscA.PulseWidth",
-    spec=R.specs.SquareOsc.PulseWidth,
+    spec=R.specs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
@@ -260,7 +260,7 @@ local function add_rcontrols()
     id="osc_b_range",
     name="Osc B Range",
     ref="OscB.Range",
-    spec=R.specs.SquareOsc.Range,
+    spec=R.specs.PulseOsc.Range,
     formatter=Formatters.round(1)
   }
 
@@ -268,7 +268,7 @@ local function add_rcontrols()
     id="osc_b_pulsewidth",
     name="Osc B PulseWidth",
     ref="OscB.PulseWidth",
-    spec=R.specs.SquareOsc.PulseWidth,
+    spec=R.specs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
