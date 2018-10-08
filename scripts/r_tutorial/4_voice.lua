@@ -26,7 +26,7 @@ end
 function init()
   engine.new("LFO", "MultiLFO")
   engine.new("Env", "ADSREnv")
-  engine.new("FilterMod", "Mixer")
+  engine.new("FilterMod", "LinMixer")
   engine.new("Osc", "PulseOsc")
   engine.new("Filter", "MMFilter")
   engine.new("Amp", "Amp")
@@ -128,7 +128,7 @@ function init()
     id="lfo_to_filter_fm",
     name="LFO > Filter.FM",
     ref="FilterMod.In1",
-    spec=R.specs.Mixer.In1,
+    spec=R.specs.LinMixer.In1,
     formatter=Formatters.percentage
   }
 
@@ -136,7 +136,7 @@ function init()
     id="env_to_filter_fm",
     name="Env > Filter.FM",
     ref="FilterMod.In2",
-    spec=R.specs.Mixer.In2,
+    spec=R.specs.LinMixer.In2,
     formatter=Formatters.percentage
   }
 

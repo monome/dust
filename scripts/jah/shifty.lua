@@ -38,6 +38,9 @@ function init()
   engine.connect("FreqShift/Left", "SoundOut/Left")
   engine.connect("FreqShift/Right", "SoundOut/Right")
 
+  scroll:push("SHIFTY")
+  scroll:push("")
+
   add_rcontrol {
     name="Freq Shift",
     ref="FreqShift.Frequency",

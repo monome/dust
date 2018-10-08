@@ -30,7 +30,7 @@ function init()
   engine.new("SoundOut", "SoundOut")
 
   engine.connect("Noise/Out", "SampleHold/In")
-  engine.connect("LFO/Square", "SampleHold/Trig")
+  engine.connect("LFO/Pulse", "SampleHold/Trig")
   engine.connect("SampleHold/Out", "Osc/FM")
 
   engine.connect("Osc/Out", "SoundOut/Left")

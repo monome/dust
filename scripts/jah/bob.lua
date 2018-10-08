@@ -23,16 +23,14 @@ end
 local function create_modules()
   engine.new("LFO", "MultiLFO")
   engine.new("SoundIn", "SoundIn")
-  engine.new("FilterL", "LPMoog")
-  engine.new("FilterR", "LPMoog")
+  engine.new("FilterL", "LPLadder")
+  engine.new("FilterR", "LPLadder")
   engine.new("SoundOut", "SoundOut")
 end
 
 local function connect_modules()
   engine.connect("LFO/Sine", "FilterL/FM")
   engine.connect("LFO/Sine", "FilterR/FM")
-  engine.connect("LFO/Sine", "FilterL/ResonanceModulation")
-  engine.connect("LFO/Sine", "FilterR/ResonanceModulation")
 
   engine.connect("SoundIn/Left", "FilterL/In")
   engine.connect("SoundIn/Right", "FilterR/In")
@@ -50,7 +48,7 @@ local function add_rcontrol(args)
 end
 
 local function add_rcontrols()
-  local filter_spec = R.specs.LPMoog.Frequency:copy()
+  local filter_spec = R.specs.LPLadder.Frequency:copy()
   filter_spec.maxval = 10000
   add_rcontrol {
     id="cutoff",
@@ -65,7 +63,7 @@ local function add_rcontrols()
   add_rcontrol {
     id="resonance",
     name="Resonance",
-    spec=R.specs.LPMoog.Resonance,
+    spec=R.specs.LPLadder.Resonance,
     formatter=Formatters.percentage,
     action=function (value)
       engine.set("FilterL.Resonance", value)
@@ -85,21 +83,10 @@ local function add_rcontrols()
     id="lfo_to_cutoff",
     name="LFO > Cutoff",
     formatter=Formatters.percentage,
-    spec=R.specs.LPMoog.FM,
+    spec=R.specs.LPLadder.FM,
     action=function (value)
       engine.set("FilterL.FM", value)
       engine.set("FilterR.FM", value)
-    end
-  }
-
-  add_rcontrol {
-    id="lfo_to_resonance",
-    name="LFO > Resonance",
-    formatter=Formatters.percentage,
-    spec=R.specs.LPMoog.ResonanceModulation,
-    action=function (value)
-      engine.set("FilterL.ResonanceModulation", value)
-      engine.set("FilterR.ResonanceModulation", value)
     end
   }
 end

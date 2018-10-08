@@ -38,7 +38,7 @@ function init()
   local lfo_wave_option = Option.new(
     "lfo_wave",
     "LFO/Wave",
-    {"InvSaw", "Saw", "Sine", "Triangle", "Square"}
+    {"InvSaw", "Saw", "Sine", "Triangle", "Pulse"}
   )
   scroll:push(lfo_wave_option)
   params:add {
@@ -78,7 +78,8 @@ function init()
   local osc_wave_option = Option.new(
     "osc_wave",
     "Osc/Wave",
-    {"Sine", "Triangle", "Saw", "Square"}
+    {"Sine", "Triangle", "Saw", "Pulse"},
+    4
   )
   scroll:push(osc_wave_option)
   params:add {
@@ -88,7 +89,7 @@ function init()
         engine.disconnect("Osc/"..current_osc_wave, "Filter/In")
       end
       if not current_osc_wave then
-        current_osc_wave = "Square" -- default
+        current_osc_wave = "Pulse" -- default
       end
       current_osc_wave = osc_wave_option.options[value]
       engine.connect("Osc/"..current_osc_wave, "Filter/In")
