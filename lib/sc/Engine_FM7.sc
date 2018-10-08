@@ -1,8 +1,6 @@
 // CroneEngine_FM7
 // A DX7 Frequency Modulation synth model
 Engine_FM7 : CroneEngine {
-  var <synth;
-
   classvar <polyDef;
   classvar <paramDefaults;
   classvar <maxNumVoices;
@@ -27,7 +25,14 @@ Engine_FM7 : CroneEngine {
         // operator phases
         phase1=0,phase2=0,phase3=0,phase4=0,phase5=0,phase6=0,
         // envelope for each voice
-        ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve= -1.0;
+        ampAtk=0.05, ampDec=0.1, ampSus=1.0, ampRel=1.0, ampCurve= -1.0,
+        // phase modulation params
+        hz1_to_hz1=0, hz1_to_hz2=0, hz1_to_hz3=0, hz1_to_hz4=0, hz1_to_hz5=0, hz1_to_hz6=0,
+        hz2_to_hz1=0, hz2_to_hz2=0, hz2_to_hz3=0, hz2_to_hz4=0, hz2_to_hz5=0, hz2_to_hz6=0,
+        hz3_to_hz1=0, hz3_to_hz2=0, hz3_to_hz3=0, hz3_to_hz4=0, hz3_to_hz5=0, hz3_to_hz6=0,
+        hz4_to_hz1=0, hz4_to_hz2=0, hz4_to_hz3=0, hz4_to_hz4=0, hz4_to_hz5=0, hz4_to_hz6=0,
+        hz5_to_hz1=0, hz5_to_hz2=0, hz5_to_hz3=0, hz5_to_hz4=0, hz5_to_hz5=0, hz5_to_hz6=0,
+        hz6_to_hz1=0, hz6_to_hz2=0, hz6_to_hz3=0, hz6_to_hz4=0, hz6_to_hz5=0, hz6_to_hz6=0;
 
         // declare some vars for this scope
         var ctrls, mods, osc, snd, aenv;
@@ -41,12 +46,12 @@ Engine_FM7 : CroneEngine {
                  [ Lag.kr(hz * hz6,0.01), phase6, Lag.kr(amp6,0.01) ]];
 
         // All the operaters modulation params, this is 36 params, which could be exposed and mapped to a Grid.
-        mods = [[0,0,0,0,0,0],
-                [0,0,0,0,0,0],
-                [0,0,0,0,0,0],
-                [0,0,0,0,0,0],
-                [0,0,0,0,0,0],
-                [0,0,0,0,0,0]];
+        mods = [[hz1_to_hz1, hz1_to_hz2, hz1_to_hz3, hz1_to_hz4, hz1_to_hz5, hz1_to_hz6],
+               [hz2_to_hz1, hz2_to_hz2, hz2_to_hz3, hz2_to_hz4, hz2_to_hz5, hz2_to_hz6],
+               [hz3_to_hz1, hz3_to_hz2, hz3_to_hz3, hz3_to_hz4, hz3_to_hz5, hz3_to_hz6],
+               [hz4_to_hz1, hz4_to_hz2, hz4_to_hz3, hz4_to_hz4, hz4_to_hz5, hz4_to_hz6],
+               [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
+               [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
 
         // The FM7 class also has a .algoAr() method which implements all 32 algorithms in the DX7
         osc = FM7.ar(ctrls,mods);     
@@ -71,7 +76,13 @@ Engine_FM7 : CroneEngine {
         \hz1 -> 1, \hz2 -> 2, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
         \amp1 -> 1,\amp2 -> 0.5,\amp3 -> 0.3,\amp -> 1,\amp5 -> 1,\amp6 -> 1,
         \phase1 -> 0,\phase2 -> 0,\phase3 -> 0,\phase4 -> 0,\phase5 -> 0,\phase6 -> 0,
-        \ampAtk -> 0.05, \ampDec -> 0.1, \ampSus -> 1.0, \ampRel -> 1.0, \ampCurve -> -1.0;       
+        \ampAtk -> 0.05, \ampDec -> 0.1, \ampSus -> 1.0, \ampRel -> 1.0, \ampCurve -> -1.0,
+        \hz1_to_hz1 -> 0, \hz1_to_hz2 -> 0, \hz1_to_hz3 -> 0, \hz1_to_hz4 -> 0, \hz1_to_hz5 -> 0, \hz1_to_hz6 -> 0,
+        \hz2_to_hz1 -> 0, \hz2_to_hz2 -> 0, \hz2_to_hz3 -> 0, \hz2_to_hz4 -> 0, \hz2_to_hz5 -> 0, \hz2_to_hz6 -> 0,
+        \hz3_to_hz1 -> 0, \hz3_to_hz2 -> 0, \hz3_to_hz3 -> 0, \hz3_to_hz4 -> 0, \hz3_to_hz5 -> 0, \hz3_to_hz6 -> 0,
+        \hz4_to_hz1 -> 0, \hz4_to_hz2 -> 0, \hz4_to_hz3 -> 0, \hz4_to_hz4 -> 0, \hz4_to_hz5 -> 0, \hz4_to_hz6 -> 0,
+        \hz5_to_hz1 -> 0, \hz5_to_hz2 -> 0, \hz5_to_hz3 -> 0, \hz5_to_hz4 -> 0, \hz5_to_hz5 -> 0, \hz5_to_hz6 -> 0,
+        \hz6_to_hz1 -> 0, \hz6_to_hz2 -> 0, \hz6_to_hz3 -> 0, \hz6_to_hz4 -> 0, \hz6_to_hz5 -> 0, \hz6_to_hz6 -> 0;       
       );
     }
   }
