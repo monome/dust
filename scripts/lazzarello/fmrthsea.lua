@@ -95,6 +95,114 @@ function init()
   params:add_control("ampRel","ampRel", controlspec.new(0.01,10,"lin",0,1,""))
   params:set_action("ampRel", function(x) engine.ampRel(x) end)
 
+  params:add_control("hz1_to_hz1","Osc1 phase mod Osc1", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz1", function(x) engine.hz1_to_hz1(x) end)
+
+  params:add_control("hz1_to_hz2","Osc1 phase mod Osc2", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz2", function(x) engine.hz1_to_hz2(x) end)
+
+  params:add_control("hz1_to_hz3","Osc1 phase mod Osc3", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz3", function(x) engine.hz1_to_hz3(x) end)
+
+  params:add_control("hz1_to_hz4","Osc1 phase mod Osc4", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz4", function(x) engine.hz1_to_hz4(x) end)
+
+  params:add_control("hz1_to_hz5","Osc1 phase mod Osc5", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz5", function(x) engine.hz1_to_hz5(x) end)
+
+  params:add_control("hz1_to_hz6","Osc1 phase mod Osc6", controlspec.new(0,3,"lin",0,1,""))  
+  params:set_action("hz1_to_hz6", function(x) engine.hz1_to_hz6(x) end)
+
+  params:add_control("hz2_to_hz1","Osc2 phase mod Osc1", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz2_to_hz1", function(x) engine.hz2_to_hz1(x) end)
+
+  params:add_control("hz2_to_hz2","Osc2 phase mod Osc2", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz2_to_hz2", function(x) engine.hz2_to_hz2(x) end)
+
+  params:add_control("hz2_to_hz3","Osc2 phase mod Osc3", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz2_to_hz3", function(x) engine.hz2_to_hz3(x) end)
+
+  params:add_control("hz2_to_hz4","Osc2 phase mod Osc4", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz2_to_hz4", function(x) engine.hz2_to_hz4(x) end)
+
+  params:add_control("hz2_to_hz5","Osc2 phase mod Osc5", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz2_to_hz5", function(x) engine.hz2_to_hz5(x) end)
+
+  params:add_control("hz2_to_hz6","Osc2 phase mod Osc6", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz1_to_hz6", function(x) engine.hz2_to_hz6(x) end)
+
+  params:add_control("hz3_to_hz1","Osc3 phase mod Osc1", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz1", function(x) engine.hz3_to_hz1(x) end)
+
+  params:add_control("hz3_to_hz2","Osc3 phase mod Osc2", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz2", function(x) engine.hz3_to_hz2(x) end)
+
+  params:add_control("hz3_to_hz3","Osc3 phase mod Osc3", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz3", function(x) engine.hz3_to_hz3(x) end)
+
+  params:add_control("hz3_to_hz4","Osc3 phase mod Osc4", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz4", function(x) engine.hz3_to_hz4(x) end)
+
+  params:add_control("hz3_to_hz5","Osc3 phase mod Osc5", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz5", function(x) engine.hz3_to_hz5(x) end)
+
+  params:add_control("hz3_to_hz6","Osc3 phase mod Osc6", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz3_to_hz6", function(x) engine.hz3_to_hz6(x) end)
+
+  params:add_control("hz4_to_hz1","Osc4 phase mod Osc1", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz1", function(x) engine.hz4_to_hz1(x) end)
+
+  params:add_control("hz4_to_hz2","Osc4 phase mod Osc2", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz2", function(x) engine.hz4_to_hz2(x) end)
+
+  params:add_control("hz4_to_hz3","Osc4 phase mod Osc3", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz3", function(x) engine.hz4_to_hz3(x) end)
+
+  params:add_control("hz4_to_hz4","Osc4 phase mod Osc4", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz4", function(x) engine.hz4_to_hz4(x) end)
+
+  params:add_control("hz4_to_hz5","Osc4 phase mod Osc5", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz5", function(x) engine.hz4_to_hz5(x) end)
+
+  params:add_control("hz4_to_hz6","Osc4 phase mod Osc6", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz4_to_hz6", function(x) engine.hz4_to_hz6(x) end)
+
+  params:add_control("hz5_to_hz1","Osc5 phase mod Osc1", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz1", function(x) engine.hz5_to_hz1(x) end)
+
+  params:add_control("hz5_to_hz2","Osc5 phase mod Osc2", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz2", function(x) engine.hz5_to_hz2(x) end)
+
+  params:add_control("hz5_to_hz3","Osc5 phase mod Osc3", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz3", function(x) engine.hz5_to_hz3(x) end)
+
+  params:add_control("hz5_to_hz4","Osc5 phase mod Osc4", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz4", function(x) engine.hz5_to_hz4(x) end)
+
+  params:add_control("hz5_to_hz5","Osc5 phase mod Osc5", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz5", function(x) engine.hz5_to_hz5(x) end)
+
+  params:add_control("hz5_to_hz6","Osc5 phase mod Osc6", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz5_to_hz6", function(x) engine.hz5_to_hz6(x) end)
+
+  params:add_control("hz6_to_hz1","Osc6 phase mod Osc1", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz1", function(x) engine.hz6_to_hz1(x) end)
+
+  params:add_control("hz6_to_hz2","Osc6 phase mod Osc2", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz2", function(x) engine.hz6_to_hz2(x) end)
+
+  params:add_control("hz6_to_hz3","Osc6 phase mod Osc3", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz3", function(x) engine.hz6_to_hz3(x) end)
+
+  params:add_control("hz6_to_hz4","Osc6 phase mod Osc4", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz4", function(x) engine.hz6_to_hz4(x) end)
+
+  params:add_control("hz6_to_hz5","Osc6 phase mod Osc5", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz5", function(x) engine.hz6_to_hz5(x) end)
+
+  params:add_control("hz6_to_hz6","Osc6 phase mod Osc6", controlspec.new(0,3,"lin",0,0,""))  
+  params:set_action("hz6_to_hz6", function(x) engine.hz6_to_hz6(x) end)
+
   engine.amp(0.05)
   engine.stopAll()
   stop_all_screen_notes()

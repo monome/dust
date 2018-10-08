@@ -53,7 +53,7 @@ Engine_FM7 : CroneEngine {
                [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
                [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
 
-        // The FM7 class also has a .algoAr() method which implements all 32 algorithms in the DX7
+        // The FM7 class also has a .arAlgo() method which implements all 32 algorithms in the DX7
         osc = FM7.ar(ctrls,mods);     
         // Like a VCA
         amp = Lag.ar(K2A.ar(amp), amplag);
