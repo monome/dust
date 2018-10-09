@@ -7,6 +7,7 @@ Dictionary
 ParGroup
 NodeWatcher
 ControlSpec
+OutputProxy
 */
 (pi).postln;
 (
@@ -53,7 +54,7 @@ q.value;
 
 (
 {
-	var algo = 10;
+	var algo = 31;
     var ctls = [
         // freq, phase, amp
         [LFNoise1.kr(0.5).range(300, 310), 0, 1],
@@ -63,8 +64,19 @@ q.value;
         [LFNoise1.kr(0.5).exprange(3, 100), 0, 1],
         [LFNoise1.kr(0.5).exprange(3, 100), 0, 1]
     ];
-    FM7.arAlgo(algo, ctls, MouseX.kr(0, 2));
+    //FM7.arAlgo(algo, ctls, MouseX.kr(0, 2));
+	FM7.arAlgo(algo, ctls, 0);
 }.play
+/*
+algo 0
+[ [ [ 0, 1, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 1, 0, 0 ], [ 0, 0, 0, 0, 1, 0 ], [ 0, 0, 0, 0, 0, 1 ], [ 0, 0, 0, 0, 0, 0 ] ], [ 0, 2 ] ]
+algo 1
+[ [ [ 0, 1, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 1, 0, 0 ], [ 0, 0, 0, 0, 1, 0 ], [ 0, 0, 0, 0, 0, 1 ], [ 0, 0, 0, 0, 0, 0 ] ], [ 0, 2 ] ]
+algo 2
+[ [ [ 0, 1, 0, 0, 0, 0 ], [ 0, 0, 1, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 1, 0 ], [ 0, 0, 0, 0, 0, 1 ], [ 0, 0, 0, 0, 0, 0 ] ], [ 0, 3 ] ]
+
+
+*/
 )
 
 (
