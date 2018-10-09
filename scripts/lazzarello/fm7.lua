@@ -103,10 +103,13 @@ function init()
   startup_ani_metro:start( 0.1, 3 )
   ph_position,hz_position,amp_position = 0,0,0
   selected = {}
+  mods = {}
   for m = 1,6 do
     selected[m] = {}
+    mods[m] = {}
     for n = 1,6 do
       selected[m][n] = 0
+      mods[m][n] = 0
     end
   end
   light = 0  
@@ -263,12 +266,16 @@ function key(n,z)
     for x = 1,6 do
       for y = 1,6 do
         selected[x][y] = 0
+        mods[x][y] = 0
       end
     end
     
-    -- choose new random notes
+    -- choose new random mods
     for i = 1,number do
-      selected[math.random(6)][math.random(6)] = 1
+      x = math.random(6)
+      y = math.random(6)
+      selected[x][y] = 1
+      mods[x][y] = 1 
     end
   end
   redraw()
@@ -276,8 +283,6 @@ end
 
 function redraw()
   screen.clear()
-  --screen.move(0,0)
-  
   for m = 1,6 do
     for n = 1,6 do
       screen.rect(m*9, n*9, 9, 9)
@@ -288,9 +293,15 @@ function redraw()
       end
       screen.level(l)
       screen.move_rel(2, 6)
-      screen.text(number)
+      screen.text(mods[m][n])
       screen.stroke()
     end
+  end
+  for m = 1,6 do
+    screen.rect(80,m*9,9,9)
+    screen.move_rel(12,6)
+    screen.text("out "..m)
+    screen.stroke()    
   end
 
   screen.update()
