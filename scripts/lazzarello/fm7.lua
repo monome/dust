@@ -110,7 +110,7 @@ function init()
     end
   end
   light = 0  
-  number = 1
+  number = 0
 end
 
 function enc(n,delta)
@@ -262,10 +262,10 @@ end
 
 function redraw()
   screen.clear()
+  screen.move(0,0)
   
   for m = 1,6 do
     for n = 1,6 do
-      screen.move(0,0)
       screen.rect(m*9, n*9, 8, 8)
 
       l = 2
