@@ -3,13 +3,14 @@
 --
 -- ----------
 --
--- requires a grid.
---
--- ----------
---
 -- enc1 - bpm
 -- enc2 - cutoff
 -- enc3 - release
+--
+-- hold key1 for 1 sec to
+-- access step edit mode.
+-- hold key1 again to return 
+-- to normal use.
 --
 -- hold key2 and turn an
 -- encoder to change the
@@ -53,7 +54,12 @@
 -- row 3 and greater are an
 -- earthsea style keyboard.
 --
--- v1.0 justmat
+-- there is an option in 
+-- PARAMETERS to enable keybed
+-- highlighting of the black keys.
+-- (thanks to @ypxkap)
+--
+-- v1.1 justmat
 
 engine.name = "PolyPerc"
 
@@ -73,6 +79,7 @@ local current_seq = 1
 local current_step = 1
 local next_seq = nil
 
+local black_keys = {}
 local note_name = nil
 local last_note_name = nil
 local last_enc = nil
@@ -136,9 +143,21 @@ end
 local function trig(note)
   if math.random(100) <= seq_data[current_seq][current_step].prob then
     engine.hz(music_util.note_num_to_freq(note))
-    last_note_num = note
     last_note_name = music_util.note_num_to_name(note)
   end
+end
+
+
+local function keybed_leds()
+  for y = 3, 8 do
+    for x = 1, 16 do
+      local note = music_util.note_num_to_name(note_from_grid(x, y), 1)
+      if string.find(note, "%#") then
+        table.insert(black_keys, {x, y})
+      end
+    end
+  end
+  return black_keys
 end
 
 
@@ -153,6 +172,7 @@ function init()
   params:add_separator()
 
   params:add_option("seq_change","seq change", {"next step", "last step"}, 1)
+  params:add_option("show_black_keys", "show black keys", {"no", "yes"}, 1)
   params:add_separator()
 
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
@@ -180,6 +200,8 @@ function init()
 
   grid_refresh_timer = metro.alloc(function(stage) grid_redraw() end, 1 / 15)
   grid_refresh_timer:start()
+  
+  black_keys = keybed_leds()
 
   if playing then
     clk:start()
@@ -209,9 +231,10 @@ end
 
 function key(n, z)
   if n == 1 and z == 1 then
-    alt = true
-  else
-    alt = false
+    time_last = util.time()
+    if util.time() - time_last <= 1.0 then
+      step_edit_mode = not step_edit_mode
+    end
   end
 
   if n == 2 and z == 1 then
@@ -219,7 +242,7 @@ function key(n, z)
   else
     enc_sel_mode = false
   end
-
+  
   if n == 3 and z == 1 then
     if not playing and not step_edit_mode then
       clk:start()
@@ -485,5 +508,12 @@ function grid_redraw()
       g.led(i, 2, 3)
     end
   end
+  
+  if params:get("show_black_keys") == 2 then
+    for index, t in pairs(black_keys) do
+      g.led(t[1], t[2], 2)
+    end
+  end
+  
   g.refresh()
 end
