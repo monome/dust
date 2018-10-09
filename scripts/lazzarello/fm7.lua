@@ -104,15 +104,17 @@ function init()
   ph_position,hz_position,amp_position = 0,0,0
   selected = {}
   mods = {}
+  carriers = {}
   for m = 1,6 do
     selected[m] = {}
     mods[m] = {}
+    carriers[m] = 0
     for n = 1,6 do
       selected[m][n] = 0
       mods[m][n] = 0
     end
   end
-  light = 0  
+  light = 0
   number = 3
 end
 
@@ -267,6 +269,7 @@ function key(n,z)
       for y = 1,6 do
         selected[x][y] = 0
         mods[x][y] = 0
+        params:set("hz"..x.."_to_hz"..y,mods[x][y])
       end
     end
     
@@ -276,6 +279,7 @@ function key(n,z)
       y = math.random(6)
       selected[x][y] = 1
       mods[x][y] = 1 
+      params:set("hz"..x.."_to_hz"..y,mods[x][y])
     end
   end
   redraw()
