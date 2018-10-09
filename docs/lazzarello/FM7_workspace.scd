@@ -6,8 +6,9 @@ StartUp
 Dictionary
 ParGroup
 NodeWatcher
+ControlSpec
 */
-
+(pi).postln;
 (
 var notes, synth, on, off;
 
@@ -26,7 +27,6 @@ synth = SynthDef(\fm7, { | out, freq, amp |
 		[0,0,0]];
 
 	mod = [[0,0,0,0,0,0],
-		[0,0,0,0,0,0],
 		[0,0,0,0,0,0],
 		[0,0,0,0,0,0],
 		[0,0,0,0,0,0],
@@ -53,6 +53,7 @@ q.value;
 
 (
 {
+	var algo = 10;
     var ctls = [
         // freq, phase, amp
         [LFNoise1.kr(0.5).range(300, 310), 0, 1],
@@ -62,7 +63,7 @@ q.value;
         [LFNoise1.kr(0.5).exprange(3, 100), 0, 1],
         [LFNoise1.kr(0.5).exprange(3, 100), 0, 1]
     ];
-    FM7.arAlgo(10, ctls, MouseX.kr(0, 2))
+    FM7.arAlgo(algo, ctls, MouseX.kr(0, 2));
 }.play
 )
 
