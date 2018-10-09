@@ -17,7 +17,7 @@ Engine_FM7 : CroneEngine {
     StartUp.add {
       polyDef = SynthDef.new(\polyFM7, {
         // args for whole instrument
-        arg out, amp=0.2, amplag=0.02, gate=1, hz, algo=1, feedback = 1,selection=0
+        arg out, amp=0.2, amplag=0.02, gate=1, hz, algo=1, feedback = 1,selection=0,
         // operator frequencies. these can be partials or custom intervals
         hz1=1, hz2=2, hz3=0, hz4=0, hz5=0, hz6=0,
         // operator amplitudes
