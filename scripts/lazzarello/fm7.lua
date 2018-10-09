@@ -111,6 +111,15 @@ function init()
   end
   startup_ani_metro:start( 0.1, 3 )
   ph_position,hz_position,amp_position = 0,0,0
+  selected = {}
+  for m = 1,6 do
+    selected[m] = {}
+    for n = 1,6 do
+      selected[m][n] = 0
+    end
+  end
+  light = 0  
+  number = 1
 end
 
 function enc(n,delta)
@@ -344,18 +353,18 @@ end
 
 function redraw()
   screen.clear()
-  screen.aa(0)
-  screen.line_width(1)
+  
+  for m = 1,6 do
+    for n = 1,6 do
+      screen.rect(0.5+m*9, 0.5+n*9, 8, 8)
 
-  local first_ripple = true
-  for n_key, n_val in pairs(screen_notes) do
-    for r_key, r_val in pairs(n_val.ripples) do
-      if first_ripple then -- Avoid extra line when returning from menu
-        screen.move(n_val.x + r_val.radius, n_val.y)
-        first_ripple = false
+      l = 2
+      if selected[m][n] == 1 then
+        l = l + 3 + light
       end
-      screen.level(math.max(1,math.floor(r_val.life * 15 + 0.5)))
-      screen.circle(n_val.x, n_val.y, r_val.radius)
+      screen.level(l)
+      screen.move_rel(1, 6)
+      screen.text(number)
       screen.stroke()
     end
   end
