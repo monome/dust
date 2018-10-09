@@ -266,14 +266,14 @@ function redraw()
   
   for m = 1,6 do
     for n = 1,6 do
-      screen.rect(m*9, n*9, 8, 8)
+      screen.rect(m*9, n*9, 9, 9)
 
       l = 2
       if selected[m][n] == 1 then
         l = l + 3 + light
       end
       screen.level(l)
-      screen.move_rel(1, 6)
+      screen.move_rel(2, 6)
       screen.text(number)
       screen.stroke()
     end
