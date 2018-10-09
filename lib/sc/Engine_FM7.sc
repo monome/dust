@@ -35,7 +35,7 @@ Engine_FM7 : CroneEngine {
         hz6_to_hz1=0, hz6_to_hz2=0, hz6_to_hz3=0, hz6_to_hz4=0, hz6_to_hz5=0, hz6_to_hz6=0;
 
         // declare some vars for this scope
-        var ctrls, mods, osc, snd, aenv;
+        var ctrls, mods, osc, snd, aenv, osc_array;
 
         // the 6 oscillators, their frequence, phase and amplitude
         ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
