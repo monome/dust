@@ -242,7 +242,7 @@ function key(n, z)
   else
     enc_sel_mode = false
   end
-  
+
   if n == 3 and z == 1 then
     if not playing and not step_edit_mode then
       clk:start()
@@ -510,7 +510,7 @@ function grid_redraw()
   end
   
   if params:get("show_black_keys") == 2 then
-    for index, t in pairs(black_keys) do
+    for _, t in pairs(black_keys) do
       g.led(t[1], t[2], 2)
     end
   end
