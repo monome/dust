@@ -110,7 +110,7 @@ function init()
     end
   end
   light = 0  
-  number = 0
+  number = 3
 end
 
 function enc(n,delta)
@@ -258,11 +258,25 @@ function gridredraw()
 end
 
 function key(n,z)
+  if n == 2 and z== 1 then
+    -- clear selected
+    for x = 1,6 do
+      for y = 1,6 do
+        selected[x][y] = 0
+      end
+    end
+    
+    -- choose new random notes
+    for i = 1,number do
+      selected[math.random(6)][math.random(6)] = 1
+    end
+  end
+  redraw()
 end
 
 function redraw()
   screen.clear()
-  screen.move(0,0)
+  --screen.move(0,0)
   
   for m = 1,6 do
     for n = 1,6 do
