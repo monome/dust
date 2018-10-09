@@ -17,7 +17,7 @@ Engine_FM7 : CroneEngine {
     StartUp.add {
       polyDef = SynthDef.new(\polyFM7, {
         // args for whole instrument
-        arg out, amp=0.2, amplag=0.02, gate=1, hz,
+        arg out, amp=0.2, amplag=0.02, gate=1, hz, algo=1, feedback = 1,selection=0
         // operator frequencies. these can be partials or custom intervals
         hz1=1, hz2=2, hz3=0, hz4=0, hz5=0, hz6=0,
         // operator amplitudes
@@ -53,8 +53,12 @@ Engine_FM7 : CroneEngine {
                [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
                [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
 
-        // The FM7 class also has a .arAlgo() method which implements all 32 algorithms in the DX7
-        osc = FM7.ar(ctrls,mods);     
+        osc_array = [
+          FM7.ar(ctrls,mods);     
+          FM7.arAlgo(algo, ctrls,feedback);
+        ];
+        osc = osc_array[0];
+        osc_algo = osc_algo[1];
         // Like a VCA
         amp = Lag.ar(K2A.ar(amp), amplag);
         // an amplitude envelope with ADSR controls
