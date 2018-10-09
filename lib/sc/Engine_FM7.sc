@@ -58,7 +58,7 @@ Engine_FM7 : CroneEngine {
           FM7.arAlgo(algo, ctrls,feedback)
         ];
         osc = osc_array[0];
-        osc_algo = osc_algo[1];
+        osc_algo = osc_array[1];
         // Like a VCA
         amp = Lag.ar(K2A.ar(amp), amplag);
         // an amplitude envelope with ADSR controls
