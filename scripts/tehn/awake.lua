@@ -172,7 +172,7 @@ function gridredraw()
       g.led(two.pos, 1, 3)
     end
   end
-  g:refresh()
+  g.refresh()
 end
 
 function enc(n, delta)

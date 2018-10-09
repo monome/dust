@@ -3,13 +3,6 @@
 -- http://monome.org/
 --   docs/norns/dust/tehn/mlr
 --
--- new/180828
---
--- - 6 channels
--- - improved sound engine
--- - alt+REC clears buffer
--- - panning
---
 -- /////////
 -- ////
 -- ////////////
@@ -78,6 +71,7 @@ function event(e)
     for i=1,4 do
       pattern[i]:watch(e)
     end
+    recall_watch(e)
     event_exec(e)
   end
 end
@@ -94,6 +88,7 @@ function event_q_clock()
       for i=1,4 do
         pattern[i]:watch(e)
       end
+      recall_watch(e)
       event_exec(e)
     end
     quantize_events = {}
@@ -156,9 +151,35 @@ end
 
 ------ patterns
 pattern = {}
-for i=1,TRACKS do
+for i=1,4 do
   pattern[i] = pattern_time.new()
   pattern[i].process = event_exec
+end
+
+------ recalls
+recall = {}
+for i=1,4 do
+  recall[i] = {}
+  recall[i].recording = false
+  recall[i].has_data = false
+  recall[i].active = false
+  recall[i].event = {}
+end
+
+function recall_watch(e)
+  for i=1,4 do
+    if recall[i].recording == true then
+      --print("recall: event rec")
+      table.insert(recall[i].event, e)
+      recall[i].has_data = true
+    end
+  end
+end
+
+function recall_exec(i)
+  for _,e in pairs(recall[i].event) do
+    event_exec(e)
+  end
 end
 
 view = vREC
@@ -433,8 +454,8 @@ gridkey_nav = function(x,z)
       set_view(vREC)
     elseif x==2 then set_view(vCUT)
     elseif x==3 then set_view(vCLIP)
-    elseif x>4 and x <9 then
-      i = x - 4
+    elseif x>4 and x<9 then
+      local i = x - 4
       if alt == 1 then
         pattern[i]:rec_stop()
         pattern[i]:stop()
@@ -448,6 +469,25 @@ gridkey_nav = function(x,z)
         pattern[i]:stop()
       else pattern[i]:start()
       end
+    elseif x>8 and x<13 then
+      local i = x-8
+      if alt == 1 then
+        --print("recall: clear "..i)
+        recall[i].event = {}
+        recall[i].recording = false
+        recall[i].has_data = false
+        recall[i].active = false
+      elseif recall[i].recording == true then
+        --print("recall: stop")
+        recall[i].recording = false
+      elseif recall[i].has_data == false then
+        --print("recall: rec")
+        recall[i].recording = true
+      elseif recall[i].has_data == true then
+        --print("recall: exec")
+        recall_exec(i)
+        recall[i].active = true
+      end
     elseif x==15 and alt == 0 then
       quantize = 1 - quantize
       if quantize == 0 then quantizer:stop()
@@ -458,8 +498,9 @@ gridkey_nav = function(x,z)
     elseif x==16 then alt = 1
     end
   elseif z==0 then
-    if x==16 then alt = 0 end
-    if x==15 and view == vTIME then set_view(-1) end
+    if x==16 then alt = 0
+    elseif x==15 and view == vTIME then set_view(-1)
+    elseif x>8 and x<13 then recall[x-8].active = false end
   end
   dirtygrid=true
 end
@@ -470,10 +511,17 @@ gridredraw_nav = function()
   if alt==1 then g.led(16,1,9) end
   if quantize==1 then g.led(15,1,9) end
   for i=1,4 do
+    -- patterns
     if pattern[i].rec == 1 then g.led(i+4,1,15)
     elseif pattern[i].play == 1 then g.led(i+4,1,9)
     elseif pattern[i].count > 0 then g.led(i+4,1,5)
     else g.led(i+4,1,3) end
+    -- recalls
+    local b = 2
+    if recall[i].recording == true then b=15
+    elseif recall[i].active == true then b=11
+    elseif recall[i].has_data == true then b=5 end
+    g.led(i+8,1,b)
   end
 end
 
