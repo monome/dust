@@ -32,6 +32,18 @@ Text based patching engine
 	- Example: `bulkset "Osc.Frequency 432 Osc.PulseWidth 0.5"` is the same thing as sending `set Osc.Frequency 432` and `set Osc.PulseWidth 0.5` TODO: floating point precision?
 - `bulkpolyset si` - sets module parameters in bulk for a number of modules by convention suffixed with an index (1..`[arg2]`).
 	- Example: `bulkpolyset "Osc.Frequency 432 Osc.PulseWidth 0.5" 3` is the same thing as sending `set Osc1.Frequency 432`, `set Osc1.PulseWidth 0.5`, `set Osc2.Frequency 432`, `set Osc2.PulseWidth 0.5`, `set Osc3.Frequency 432` and `set Osc3.PulseWidth 0.5`
+- `newmacro ss` - creates a macro for a list of module parameters.
+	- Example: `newmacro A "Carrier.Frequency Operator.Frequency"`.
+- `macroset sf` - sets parameters for module parameters included in the macro
+	- Example: given above macro `macroset A 432` is the same thing as sending `set Carrier.Frequency 432` and `set Operator.Frequency 432`.
+- `deletemacro s` - removes a registered macro.
+	- Example: `deletemacro A`.
+- `newpolymacro ss` - creates a macro for a list of module parameters.
+	- Example: `newpolymacro B "Carrier.Frequency Operator.Frequency"`.
+- `polymacroset sf` - sets parameters for module parameters included in the macro
+	- Example: given above macro `macroset B 432 3` is the same thing as sending `set Carrier1.Frequency 432`, `set Operator1.Frequency 432`, `set Carrier2.Frequency 432`, `set Operator2.Frequency 432`, `set Carrier3.Frequency 432` and `set Operator3.Frequency 432`.
+- `deletepolymacro s` - removes a registered polymacro.
+	- Example: `deletemacro B`.
 
 ## Available Modules
 
@@ -402,10 +414,7 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 ## Considerations
 
 - Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
-
-## Known Issues
-
-- Shooting a lot of commands to R may cause messages to be delayed.
+- Shooting a lot of commands to R may cause messages to be delayed. Utilizing one of the commands for optimized OSC messages might help.
 
 ## Example Usage
 

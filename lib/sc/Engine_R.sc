@@ -2,6 +2,8 @@ Engine_R : CroneEngine {
 	classvar testrout; // TODO: temporary
 	var <modules;
 	var <engineTopGroup;
+	var macros;
+	var polymacros;
 	var trace=false;
 
 	// TODO: temporary
@@ -79,7 +81,6 @@ Engine_R : CroneEngine {
 			this.bulkpolysetCommand(msg[1], msg[2]);
 		};
 
-/*
 		this.addCommand('newmacro', "ss") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \newmacroCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
@@ -100,7 +101,6 @@ Engine_R : CroneEngine {
 			};
 			this.macrosetCommand(msg[1], msg[2]);
 		};
-*/
 
 		this.addCommand('trace', "i") { |msg|
 			trace = msg[1].asBoolean;
@@ -111,6 +111,7 @@ Engine_R : CroneEngine {
 		engineTopGroup = Group.tail(context.xg);
 		context.server.sync;
 
+		macros = ();
 		modules = [];
 	}
 
@@ -278,7 +279,7 @@ Engine_R : CroneEngine {
 	bulksetCommand { |bundle|
 		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
 			bundle.asString.split($ ).clump(2).do { |cmd, i|
-					this.setCommand(cmd[0], cmd[1]);
+				this.setCommand(cmd[0], cmd[1]);
 			}
 		}
 	}
@@ -297,16 +298,38 @@ Engine_R : CroneEngine {
 		}
 	}
 
-	newmacroCommand { |name, spec|
-		// TODO
+	newmacroCommand { |name, bundle|
+		macros[name.asSymbol] = bundle.asString.split($ );
 	}
 
 	deletemacroCommand { |name|
-		// TODO
+		macros[name.asSymbol] = nil;
 	}
 
 	macrosetCommand { |name, value|
-		// TODO
+		var moduleparams = macros[name.asSymbol]; // TODO: validate presence
+		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
+			moduleparams.do { |moduleparam|
+				this.setCommand(moduleparam, value);
+			};
+		}
+	}
+
+	newpolymacroCommand { |name, bundle|
+		polymacros[name.asSymbol] = bundle.asString.split($ );
+	}
+
+	deletepolymacroCommand { |name|
+		polymacros[name.asSymbol] = nil;
+	}
+
+	polymacrosetCommand { |name, value, polyphony|
+		var moduleparams = polymacros[name.asSymbol]; // TODO: validate presence
+		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
+			moduleparams.do { |moduleparam|
+				this.prPolyset(moduleparam, value, polyphony, false);
+			}
+		}
 	}
 
 	prPolyset { |moduleparam, value, polyphony, bundle|
