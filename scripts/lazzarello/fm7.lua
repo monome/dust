@@ -27,11 +27,6 @@ local encoder_mode = 1
 local screen_framerate = 15
 local screen_refresh_metro
 
-local ripple_repeat_rate = 1 / 0.3 / screen_framerate
-local ripple_decay_rate = 1 / 0.5 / screen_framerate
-local ripple_growth_rate = 1 / 0.02 / screen_framerate
-local screen_notes = {}
-
 local MAX_NUM_VOICES = 16
 
 engine.name = 'FM7'
@@ -86,7 +81,6 @@ function init()
 
   engine.amp(0.05)
   engine.stopAll()
-  stop_all_screen_notes()
 
   FM7.add_params()
 
@@ -97,7 +91,6 @@ function init()
 
   screen_refresh_metro = metro.alloc()
   screen_refresh_metro.callback = function(stage)
-    update()
     redraw()
   end
   screen_refresh_metro:start(1 / screen_framerate)
@@ -105,8 +98,6 @@ function init()
   local startup_ani_count = 1
   local startup_ani_metro = metro.alloc()
   startup_ani_metro.callback = function(stage)
-    start_screen_note(-startup_ani_count)
-    stop_screen_note(-startup_ani_count)
     startup_ani_count = startup_ani_count + 1
   end
   startup_ani_metro:start( 0.1, 3 )
@@ -161,7 +152,6 @@ function g.event(x, y, z)
         trans.y = 5
         pat:stop()
         engine.stopAll()
-        stop_all_screen_notes()
         pat:clear()
         pat:rec_start()
       elseif y == 1 and pat.rec == 1 then
@@ -181,7 +171,6 @@ function g.event(x, y, z)
       elseif y == 2 and pat.play == 1 then
         pat:stop()
         engine.stopAll()
-        stop_all_screen_notes()
         nvoices = 0
         lit = {}
       elseif y == 8 then
@@ -212,7 +201,6 @@ function grid_note(e)
       --engine.start(id, getHz(x, y-1))
       --print("grid > "..id.." "..note)
       engine.start(e.id, getHzET(note))
-      start_screen_note(note)
       lit[e.id] = {}
       lit[e.id].x = e.x
       lit[e.id].y = e.y
@@ -221,7 +209,6 @@ function grid_note(e)
   else
     if lit[e.id] ~= nil then
       engine.stop(e.id)
-      stop_screen_note(note)
       lit[e.id] = nil
       nvoices = nvoices - 1
     end
@@ -236,7 +223,6 @@ function grid_note_trans(e)
       --engine.start(id, getHz(x, y-1))
       --print("grid > "..id.." "..note)
       engine.start(e.id, getHzET(note))
-      start_screen_note(note)
       lit[e.id] = {}
       lit[e.id].x = e.x + trans.x - root.x
       lit[e.id].y = e.y + trans.y - root.y
@@ -244,7 +230,6 @@ function grid_note_trans(e)
     end
   else
     engine.stop(e.id)
-    stop_screen_note(note)
     lit[e.id] = nil
     nvoices = nvoices - 1
   end
@@ -275,88 +260,13 @@ end
 function key(n,z)
 end
 
-function start_screen_note(note)
-  local screen_note = nil
-
-  -- Get an existing screen_note if it exists
-  local count = 0
-  for key, val in pairs(screen_notes) do
-    if val.note == note then
-      screen_note = val
-      break
-    end
-    count = count + 1
-    if count > 8 then return end
-  end
-
-  if screen_note then
-    screen_note.active = true
-  else
-    screen_note = {note = note, active = true, repeat_timer = 0, x = math.random(128), y = math.random(64), init_radius = math.random(6,18), ripples = {} }
-    table.insert(screen_notes, screen_note)
-  end
-
-  add_ripple(screen_note)
-
-end
-
-function stop_screen_note(note)
-  for key, val in pairs(screen_notes) do
-    if val.note == note then
-      val.active = false
-      break
-    end
-  end
-end
-
-function stop_all_screen_notes()
-  for key, val in pairs(screen_notes) do
-    val.active = false
-  end
-end
-
-function add_ripple(screen_note)
-  if tab.count(screen_note.ripples) < 6 then
-    local ripple = {radius = screen_note.init_radius, life = 1}
-    table.insert(screen_note.ripples, ripple)
-  end
-end
-
-function update()
-  for n_key, n_val in pairs(screen_notes) do
-
-    if n_val.active then
-      n_val.repeat_timer = n_val.repeat_timer + ripple_repeat_rate
-      if n_val.repeat_timer >= 1 then
-        add_ripple(n_val)
-        n_val.repeat_timer = 0
-      end
-    end
-
-    local r_count = 0
-    for r_key, r_val in pairs(n_val.ripples) do
-      r_val.radius = r_val.radius + ripple_growth_rate
-      r_val.life = r_val.life - ripple_decay_rate
-
-      if r_val.life <= 0 then
-        n_val.ripples[r_key] = nil
-      else
-        r_count = r_count + 1
-      end
-    end
-
-    if r_count == 0 and not n_val.active then
-      screen_notes[n_key] = nil
-    end
-  end
-end
-
 function redraw()
   screen.clear()
   
   for m = 1,6 do
     for n = 1,6 do
-      screen.rect(0.5+m*9, 0.5+n*9, 8, 8)
+      screen.move(0,0)
+      screen.rect(m*9, n*9, 8, 8)
 
       l = 2
       if selected[m][n] == 1 then
@@ -376,14 +286,12 @@ local function note_on(note, vel)
   if nvoices < MAX_NUM_VOICES then
     --engine.start(id, getHz(x, y-1))
     engine.start(note, getHzET(note))
-    start_screen_note(note)
     nvoices = nvoices + 1
   end
 end
 
 local function note_off(note, vel)
   engine.stop(note)
-  stop_screen_note(note)
   nvoices = nvoices - 1
 end
 
@@ -409,7 +317,6 @@ midi.add = function(dev)
 end
 
 function cleanup()
-  stop_all_screen_notes()
   pat:stop()
   pat = nil
 end
