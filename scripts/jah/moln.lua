@@ -105,19 +105,6 @@ local function add_rcontrol(args)
   }
 end
 
-local function add_poly_rcontrol(args)
-  add_rcontrol {
-    id=args.id,
-    name=args.name,
-    ref=args.ref,
-    spec=args.spec,
-    formatter=args.formatter,
-    action = function (value)
-      poly_set { args.ref or args.name, value }
-    end
-  }
-end
-
 local function to_hz(note)
   local exp = (note - 21) / 12
   return 27.5 * 2^exp
@@ -240,123 +227,211 @@ local function init_static_module_params()
 end
 
 local function add_rcontrols()
-  add_poly_rcontrol {
+  engine.newmacro(
+    "osc_a_range",
+    "OscA1.Range OscA2.Range OscA3.Range OscA4.Range"
+  )
+  add_rcontrol {
     id="osc_a_range",
     name="Osc A Range",
-    ref="OscA.Range",
     spec=R.specs.PulseOsc.Range,
-    formatter=Formatters.round(1)
+    formatter=Formatters.round(1),
+    action=function (value)
+      engine.macroset("osc_a_range", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "osc_a_pulsewidth",
+    "OscA1.PulseWidth OscA2.PulseWidth OscA3.PulseWidth OscA4.PulseWidth"
+  )
+  add_rcontrol {
     id="osc_a_pulsewidth",
     name="Osc A PulseWidth",
-    ref="OscA.PulseWidth",
     spec=R.specs.PulseOsc.PulseWidth,
-    formatter=Formatters.percentage
+    formatter=Formatters.percentage,
+    action=function (value)
+      engine.macroset("osc_a_pulsewidth", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "osc_b_range",
+    "OscB1.Range OscB2.Range OscB3.Range OscB4.Range"
+  )
+  add_rcontrol {
     id="osc_b_range",
     name="Osc B Range",
-    ref="OscB.Range",
     spec=R.specs.PulseOsc.Range,
-    formatter=Formatters.round(1)
+    formatter=Formatters.round(1),
+    action=function (value)
+      engine.macroset("osc_b_range", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "osc_b_pulsewidth",
+    "OscB1.PulseWidth OscB2.PulseWidth OscB3.PulseWidth OscB4.PulseWidth"
+  )
+  add_rcontrol {
     id="osc_b_pulsewidth",
     name="Osc B PulseWidth",
-    ref="OscB.PulseWidth",
     spec=R.specs.PulseOsc.PulseWidth,
-    formatter=Formatters.percentage
+    formatter=Formatters.percentage,
+    action=function (value)
+      engine.macroset("osc_b_pulsewidth", value)
+    end
   }
 
+  engine.newmacro(
+    "osc_a_detune",
+    "OscA1.Tune OscA2.Tune OscA3.Tune OscA4.Tune"
+  )
+  engine.newmacro(
+    "osc_b_detune",
+    "OscB1.Tune OscB2.Tune OscB3.Tune OscB4.Tune"
+  )
   add_rcontrol {
     id="osc_detune",
     name="Osc A-B Detune",
     spec=ControlSpec.UNIPOLAR,
     formatter=Formatters.percentage,
     action=function (value)
-      poly_set {
-        "OscA.Tune", -value*10,
-        "OscB.Tune", value*10
-      }
+      engine.macroset("osc_a_detune", -value*10)
+      engine.macroset("osc_b_detune", value*10)
     end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "lfo_frequency",
+    "LFO1.Frequency LFO2.Frequency LFO3.Frequency LFO4.Frequency"
+  )
+  add_rcontrol {
     id="lfo_frequency",
     name="LFO Frequency",
-    ref="LFO.Frequency",
     spec=R.specs.MultiLFO.Frequency,
-    formatter=Formatters.round(0.001)
+    formatter=Formatters.round(0.001),
+    action=function (value)
+      engine.macroset("lfo_frequency", value)
+    end
   }
 
+  engine.newmacro(
+    "osc_a_pwm",
+    "OscA1.PWM OscA2.PWM OscA3.PWM OscA4.PWM"
+  )
+  engine.newmacro(
+    "osc_b_pwm",
+    "OscB1.PWM OscB2.PWM OscB3.PWM OscB4.PWM"
+  )
   add_rcontrol {
     id="lfo_to_osc_pwm",
     name="LFO > Osc A-B PWM",
     spec=ControlSpec.UNIPOLAR,
     formatter=Formatters.percentage,
     action=function (value)
-      poly_set {
-        "OscA.PWM", value*0.76,
-        "OscB.PWM", value*0.56
-      }
+      engine.macroset("osc_a_pwm", value*0.76)
+      engine.macroset("osc_b_pwm", value*0.56)
     end
   }
 
+  engine.newmacro(
+    "filter_frequency",
+    "Filter1.Frequency Filter2.Frequency Filter3.Frequency Filter4.Frequency"
+  )
   local filter_spec = R.specs.MMFilter.Frequency:copy()
   filter_spec.maxval = 10000
-  add_poly_rcontrol {
+  add_rcontrol {
     id="filter_frequency",
     name="Filter Frequency",
-    ref="Filter.Frequency",
-    spec=filter_spec
+    spec=filter_spec,
+    action=function (value)
+      engine.macroset("filter_frequency", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "filter_resonance",
+    "Filter1.Resonance Filter2.Resonance Filter3.Resonance Filter4.Resonance"
+  )
+  add_rcontrol {
     id="filter_resonance",
     name="Filter Resonance",
-    ref="Filter.Resonance",
     spec=R.specs.MMFilter.Resonance,
-    formatter=Formatters.percentage
+    formatter=Formatters.percentage,
+    action=function (value)
+      engine.macroset("filter_resonance", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "env_to_filter_fm",
+    "Filter1.FM Filter2.FM Filter3.FM Filter4.FM"
+  )
+  add_rcontrol {
     id="env_to_filter_fm",
     name="Env > Filter FM",
-    ref="Filter.FM",
     spec=R.specs.MMFilter.FM,
-    formatter=Formatters.percentage
+    formatter=Formatters.percentage,
+    action=function (value)
+      engine.macroset("env_to_filter_fm", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "env_attack",
+    "Env1.Attack Env2.Attack Env3.Attack Env4.Attack"
+  )
+  add_rcontrol {
     id="env_attack",
     name="Env Attack",
     ref="Env.Attack",
-    spec=R.specs.ADSREnv.Attack
+    spec=R.specs.ADSREnv.Attack,
+    action=function (value)
+      engine.macroset("env_attack", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "env_decay",
+    "Env1.Decay Env2.Decay Env3.Decay Env4.Decay"
+  )
+  add_rcontrol {
     id="env_decay",
     name="Env Decay",
     ref="Env.Decay",
-    spec=R.specs.ADSREnv.Decay
+    spec=R.specs.ADSREnv.Decay,
+    action=function (value)
+      engine.macroset("env_decay", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "env_sustain",
+    "Env1.Sustain Env2.Sustain Env3.Sustain Env4.Sustain"
+  )
+  add_rcontrol {
     id="env_sustain",
     name="Env Sustain",
     ref="Env.Sustain",
-    spec=R.specs.ADSREnv.Sustain
+    spec=R.specs.ADSREnv.Sustain,
+    action=function (value)
+      engine.macroset("env_sustain", value)
+    end
   }
 
-  add_poly_rcontrol {
+  engine.newmacro(
+    "env_release",
+    "Env1.Release Env2.Release Env3.Release Env4.Release"
+  )
+  add_rcontrol {
     id="env_release",
     name="Env Release",
     ref="Env.Release",
-    spec=R.specs.ADSREnv.Release
+    spec=R.specs.ADSREnv.Release,
+    action=function (value)
+      engine.macroset("env_release", value)
+    end
   }
 end
 
@@ -477,10 +552,10 @@ end
 function enc(n, delta)
   if n == 1 then
     mix:delta("output", delta)
-  elseif n == 2 then
+  elseif n == 3 then
     scroll:navigate(util.clamp(delta, -1, 1)) -- TODO: hack
     redraw()
-  elseif n == 3 then
+  elseif n == 2 then
     if scroll.selected_param then
       local param = scroll.selected_param
       param:delta(delta)

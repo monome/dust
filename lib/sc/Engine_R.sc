@@ -299,20 +299,55 @@ Engine_R : CroneEngine {
 	}
 
 	newmacroCommand { |name, bundle|
-		macros[name.asSymbol] = bundle.asString.split($ );
+		var macro;
+		var bus = Bus.control;
+
+		macro = (
+			moduleparams: bundle.asString.split($ ),
+			bus: bus
+		);
+
+		macro[\moduleparams].do { |moduleparam|
+			var moduleRef, parameter, module, spec;
+			# moduleRef, parameter = moduleparam.asString.split($.);
+
+			module = this.lookupModuleByName(moduleRef);
+			if (module.isNil) {
+				"module named % not found among modules %".format(moduleRef.quote, modules.collect { |module| module[\name].asString }.join(", ").quote).error;
+			} {
+				spec = this.getModuleSpec(module[\kind]);
+
+				if (spec[\parameters].includes(parameter.asSymbol)) {
+					module[\instance].map(parameter, bus);
+				} {
+					"parameter % not valid for module named % (kind: %)".format(parameter.asString.quote, moduleRef.asString.quote, module[\kind].asString.quote).error;
+				}
+			}
+		};
+
+		macros[name.asSymbol] = macro;
 	}
 
 	deletemacroCommand { |name|
+		macros[name.asSymbol][\bus].free;
+		macros[name.asSymbol][\moduleparams].do {
+			// Reset to current bus value
+		};
 		macros[name.asSymbol] = nil;
 	}
 
 	macrosetCommand { |name, value|
+/*
 		var moduleparams = macros[name.asSymbol]; // TODO: validate presence
 		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
 			moduleparams.do { |moduleparam|
 				this.setCommand(moduleparam, value);
 			};
 		}
+*/
+		// TODO: validate presence of macro
+		// TODO: controlSpecs are not checked here! only allow macro creation of params with same controlSpec in newmacro and constrain here?
+		macros[name.asSymbol][\bus].set(value);
 	}
 
 	newpolymacroCommand { |name, bundle|
@@ -510,8 +545,16 @@ RModule {
 		"".postln;
 	}
 
+	map { |parameter, bus|
+		this.class.params.detect { |param| param.key == parameter.asSymbol } !? { |param| // TODO: DRY
+			var name;
+			name = ("param_"++param.key.asString).asSymbol;
+			synth.map(name, bus);
+		}
+	}
+
 	set { |parameter, value|
-		this.class.params.detect { |param| param.key == parameter.asSymbol } !? { |param|
+		this.class.params.detect { |param| param.key == parameter.asSymbol } !? { |param| // TODO: DRY
 			var name, controlSpec, constrainedParamValue;
 			name = ("param_"++param.key.asString).asSymbol;
 			controlSpec = this.class.paramControlSpecs[name];
