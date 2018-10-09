@@ -54,8 +54,8 @@ Engine_FM7 : CroneEngine {
                [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
 
         osc_array = [
-          FM7.ar(ctrls,mods);     
-          FM7.arAlgo(algo, ctrls,feedback);
+          FM7.ar(ctrls,mods),     
+          FM7.arAlgo(algo, ctrls,feedback)
         ];
         osc = osc_array[0];
         osc_algo = osc_algo[1];
