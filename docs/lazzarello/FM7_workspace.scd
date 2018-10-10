@@ -9,8 +9,25 @@ NodeWatcher
 ControlSpec
 OutputProxy
 ArrayedCollection
+Array
+Multichannel
+Control
 */
 (pi).postln;
+
+(
+var chans;
+chans = [1,0,0,0,0,1].collect({|val, i|
+	[val,i];
+});
+chans = chans.select({|val, i|
+	val[0] == 1
+});
+chans = chans.collect({|val,i|
+	val.removeAt(1);
+});
+)
+
 (
 var notes, synth, on, off;
 
@@ -83,7 +100,7 @@ algo 32
 
 (
 {
-    var ctls, mods, chans;
+    var ctls, mods, chans, osc;
 
     ctls = [
         // freq, phase, amp
@@ -98,7 +115,11 @@ algo 32
     mods = [
 [ 0, 1, 0, 0, 0, 0 ], [ 0, 0, 0, 0, 0, 0 ], [ 0, 0, 0, 1, 0, 0 ], [ 0, 0, 0, 0, 1, 0 ], [ 0, 0, 0, 0, 0, 1 ], [ 0, 0, 0, 0, 0, 0 ]
     ];
-    chans = [ 0, 1, 2, 3, 4, 5 ] ;
-    FM7.ar(ctls, mods).slice(chans) * -12.dbamp; // using "slice" to select specific channels
+    chans = [ 0, 1, 2, 3, 4 ] ;
+    osc = FM7.ar(ctls, mods).slice(chans) * -12.dbamp; // using "slice" to select specific channels
+	osc.do({|val|
+		val.class.postln;
+	});
+	osc;
 }.play;
 )
