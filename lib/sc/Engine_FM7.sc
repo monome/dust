@@ -32,10 +32,12 @@ Engine_FM7 : CroneEngine {
         hz3_to_hz1=0, hz3_to_hz2=0, hz3_to_hz3=0, hz3_to_hz4=0, hz3_to_hz5=0, hz3_to_hz6=0,
         hz4_to_hz1=0, hz4_to_hz2=0, hz4_to_hz3=0, hz4_to_hz4=0, hz4_to_hz5=0, hz4_to_hz6=0,
         hz5_to_hz1=0, hz5_to_hz2=0, hz5_to_hz3=0, hz5_to_hz4=0, hz5_to_hz5=0, hz5_to_hz6=0,
-        hz6_to_hz1=0, hz6_to_hz2=0, hz6_to_hz3=0, hz6_to_hz4=0, hz6_to_hz5=0, hz6_to_hz6=0;
+        hz6_to_hz1=0, hz6_to_hz2=0, hz6_to_hz3=0, hz6_to_hz4=0, hz6_to_hz5=0, hz6_to_hz6=0,
+	// boolean if the carrier is output
+	carrier1=1,carrier2=1,carrier3=0,carrier4=0,carrier5=0,carrier6=0;
 
         // declare some vars for this scope
-        var ctrls, mods, osc, snd, aenv;
+        var ctrls, mods, osc, snd, aenv, chans, chan_vec;
 
         // the 6 oscillators, their frequence, phase and amplitude
         ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
@@ -52,8 +54,23 @@ Engine_FM7 : CroneEngine {
                [hz4_to_hz1, hz4_to_hz2, hz4_to_hz3, hz4_to_hz4, hz4_to_hz5, hz4_to_hz6],
                [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
                [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
-
+	// This fails because all these args are OutputProxy objects, not Integers
+	//chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
+	// This works because the values are integers
+	//chan_vec = [0,1,0,0,1,0];
+	// this is gross but I don't know how to work with collections in supercollider too well.
+	chans = chan_vec.collect({|val, i|
+		[val,i];
+	});
+	chans = chans.select({|val, i|
+		val[0] == 1
+	});
+	chans = chans.collect({|val,i|
+		val.removeAt(1);
+	});
         osc = FM7.ar(ctrls,mods);
+	// This fails if chan_vec is filled with OutputProxy objects, succeeds if Integers
+        //osc = FM7.ar(ctrls,mods).slice(chans);
         // Like a VCA
         amp = Lag.ar(K2A.ar(amp), amplag);
         // an amplitude envelope with ADSR controls
