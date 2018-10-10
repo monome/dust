@@ -239,7 +239,7 @@ local function create_macros()
 
   create_poly_macro("osc_a_range", "OscA.Range")
   create_poly_macro("osc_a_pulsewidth", "OscA.PulseWidth")
-  create_poly_macro("osc_b_range", "OscA.Range")
+  create_poly_macro("osc_b_range", "OscB.Range")
   create_poly_macro("osc_b_pulsewidth", "OscB.PulseWidth")
   create_poly_macro("osc_a_detune", "OscA.Tune")
   create_poly_macro("osc_b_detune", "OscB.Tune")
