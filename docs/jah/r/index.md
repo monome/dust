@@ -23,27 +23,14 @@ Text based patching engine
 - `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
 	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 - `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
-
-### Commands for optimized OSC messaging
-
-- `polyset sfi` - sets parameters for a number of modules by convention suffixed with an index (1..`[arg3]`).
-	- Example: `polyset Osc.Frequency 220 3` is the same thing as sending `set Osc1.Frequency 220`, `set Osc2.Frequency 220`, `set Osc3.Frequency 220`.
 - `bulkset s` - sets module parameters in bulk serialized in a string.
 	- Example: `bulkset "Osc.Frequency 432 Osc.PulseWidth 0.5"` is the same thing as sending `set Osc.Frequency 432` and `set Osc.PulseWidth 0.5` TODO: floating point precision?
-- `bulkpolyset si` - sets module parameters in bulk for a number of modules by convention suffixed with an index (1..`[arg2]`).
-	- Example: `bulkpolyset "Osc.Frequency 432 Osc.PulseWidth 0.5" 3` is the same thing as sending `set Osc1.Frequency 432`, `set Osc1.PulseWidth 0.5`, `set Osc2.Frequency 432`, `set Osc2.PulseWidth 0.5`, `set Osc3.Frequency 432` and `set Osc3.PulseWidth 0.5`
-- `newmacro ss` - creates a macro for a list of module parameters.
+- `newmacro ss` - creates a macro for a list of module parameters, in order to be able to set the list of parameters simultenously to the same value. This requires the parameters to refer to the same spec.
 	- Example: `newmacro A "Carrier.Frequency Operator.Frequency"`.
 - `macroset sf` - sets parameters for module parameters included in the macro
 	- Example: given above macro `macroset A 432` is the same thing as sending `set Carrier.Frequency 432` and `set Operator.Frequency 432`.
 - `deletemacro s` - removes a registered macro.
 	- Example: `deletemacro A`.
-- `newpolymacro ss` - creates a macro for a list of module parameters.
-	- Example: `newpolymacro B "Carrier.Frequency Operator.Frequency"`.
-- `polymacroset sf` - sets parameters for module parameters included in the macro
-	- Example: given above macro `macroset B 432 3` is the same thing as sending `set Carrier1.Frequency 432`, `set Operator1.Frequency 432`, `set Carrier2.Frequency 432`, `set Operator2.Frequency 432`, `set Carrier3.Frequency 432` and `set Operator3.Frequency 432`.
-- `deletepolymacro s` - removes a registered polymacro.
-	- Example: `deletemacro B`.
 
 ## Available Modules
 
@@ -368,6 +355,13 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Tune`
 	- `FM`
 
+### SineLFO
+- Inputs: `Reset`
+- Outputs: `Out`
+- Parameters:
+	- `Frequency`
+	- `Reset`
+
 ### SineOsc
 - Inputs: `FM`
 - Outputs: `Out`
@@ -414,12 +408,60 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 ## Considerations
 
 - Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
-- Shooting a lot of commands to R may cause messages to be delayed. Utilizing one of the commands for optimized OSC messages might help.
+- Shooting a lot of commands to R may cause messages to be delayed. Using macros or bulkset commands might help.
 
 ## Example Usage
 
 ```
-[TODO]
+-- spawn modules
+engine.new("LFO", "MultiLFO")
+engine.new("Osc", "PulseOsc")
+engine.new("SoundOut", "SoundOut")
+
+-- connect LFO to Osc to modulate its PulseWidth
+engine.connect("LFO/Sine", "Osc/PWM")
+
+-- connect oscillator to audio outputs
+engine.connect("Osc/Out", "SoundOut/Left")
+engine.connect("Osc/Out", "SoundOut/Right")
+
+-- set some parameter values
+engine.set("Osc.PulseWidth", 0.25)
+engine.set("LFO.Frequency", 0.5)
+engine.set("Osc.PWM", 0.2)
+```
+
+## The R Lua Module
+
+Prerequisite:
+
+```
+local R = require 'jah/r'
+```
+
+The R Lua module contains:
+
+1. Specs for all included modules.
+
+```
+R.specs.PulseOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
+```
+
+2. A number of convenience engine functions for working with R and polyphonic modules.
+
+```
+R.engine.poly_new("Osc", "MultiOsc", 3) -- creates MultiOsc modules Osc1, Osc2 and Osc3
+R.engine.poly_new("Filter", "MMFilter", 3) -- creates MMFilter modules Filter1, Filter2 and Filter3
+
+R.engine.poly_connect("Osc/Saw", "Filter/In", 3) -- connects Osc1/Saw to Filter1/In, Osc2/Saw to Filter2/In and Osc3/Saw to Filter3/In
+
+```
+
+3. Various utility functions.
+
+```
+R.util.split_ref("Osc.Frequency") -- returns {"Osc", "Frequency"}
+R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 ```
 
 ## Extending R
