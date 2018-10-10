@@ -293,7 +293,7 @@ local function add_controls()
 
   add_control {
     id="osc_detune",
-    name="Osc A-B Detune",
+    name="Detune",
     spec=ControlSpec.UNIPOLAR,
     formatter=Formatters.percentage,
     action=function (value)
@@ -304,14 +304,14 @@ local function add_controls()
 
   add_macro_control {
     id="lfo_frequency",
-    name="LFO Frequency",
+    name="PWM Rate",
     spec=R.specs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 
   add_control {
     id="lfo_to_osc_pwm",
-    name="LFO > Osc A-B PWM",
+    name="PWM Depth",
     spec=ControlSpec.UNIPOLAR,
     formatter=Formatters.percentage,
     action=function (value)
@@ -337,7 +337,7 @@ local function add_controls()
 
   add_macro_control {
     id="env_to_filter_fm",
-    name="Env > Filter FM",
+    name="Env > Filter Frequency",
     spec=R.specs.MMFilter.FM,
     formatter=Formatters.percentage
   }
@@ -360,7 +360,8 @@ local function add_controls()
     id="env_sustain",
     name="Env Sustain",
     ref="Env.Sustain",
-    spec=R.specs.ADSREnv.Sustain
+    spec=R.specs.ADSREnv.Sustain,
+    formatter=Formatters.percentage
   }
 
   add_macro_control {
