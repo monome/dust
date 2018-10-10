@@ -279,6 +279,7 @@ function key(n,z)
       y = math.random(6)
       selected[x][y] = 1
       mods[x][y] = 1 
+      carriers[x] = 1
       params:set("hz"..x.."_to_hz"..y,mods[x][y])
     end
   end
@@ -303,10 +304,10 @@ function redraw()
   end
   for m = 1,6 do
     screen.rect(80,m*9,9,9)
-    screen.move_rel(2, 6)
-    screen.text("0")
-    screen.move_rel(5,0)
+    screen.move_rel(12, 6)
     screen.text("out "..m)
+    screen.move_rel(-32,0)
+    screen.text(carriers[m])
     screen.stroke()    
   end
 
