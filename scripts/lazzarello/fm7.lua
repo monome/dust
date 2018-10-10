@@ -303,7 +303,9 @@ function redraw()
   end
   for m = 1,6 do
     screen.rect(80,m*9,9,9)
-    screen.move_rel(12,6)
+    screen.move_rel(2, 6)
+    screen.text("0")
+    screen.move_rel(5,0)
     screen.text("out "..m)
     screen.stroke()    
   end
