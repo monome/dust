@@ -37,7 +37,7 @@ Engine_FM7 : CroneEngine {
 	carrier1=1,carrier2=1,carrier3=0,carrier4=0,carrier5=0,carrier6=0;
 
         // declare some vars for this scope
-        var ctrls, mods, osc, snd, aenv, chans, chan_vec;
+        var ctrls, mods, osc, aenv, chans, chan_vec, osc_mix;
 
         // the 6 oscillators, their frequence, phase and amplitude
         ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
@@ -54,24 +54,12 @@ Engine_FM7 : CroneEngine {
                [hz4_to_hz1, hz4_to_hz2, hz4_to_hz3, hz4_to_hz4, hz4_to_hz5, hz4_to_hz6],
                [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
                [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
-	// This fails because all these args are OutputProxy objects, not Integers
-	//chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
-	// This works because the values are integers
-	//chan_vec = [0,1,0,0,1,0];
-	// this is gross but I don't know how to work with collections in supercollider too well.
-	chans = chan_vec.collect({|val, i|
-		[val,i];
-	});
-	chans = chans.select({|val, i|
-		val[0] == 1
-	});
-	chans = chans.collect({|val,i|
-		val.removeAt(1);
-	});
+
+        // returns a six channel array of OutputProxy objects
         osc = FM7.ar(ctrls,mods);
-	// This fails if chan_vec is filled with OutputProxy objects, succeeds if Integers
-        //osc = FM7.ar(ctrls,mods).slice(chans);
-        // Like a VCA
+
+        chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
+        osc_mix = Mix.new(chan_vec.collect({|v,i| osc[i]*v}));
         amp = Lag.ar(K2A.ar(amp), amplag);
         // an amplitude envelope with ADSR controls
         aenv = EnvGen.ar(
@@ -79,7 +67,7 @@ Engine_FM7 : CroneEngine {
                   gate, doneAction:2);
         // the output bus, is this multiplication the right way to do this?
         // oscilator times envelope times vca.
-        Out.ar(out, (osc * aenv * amp).dup);
+        Out.ar(out, (osc_mix * aenv * amp).dup);
       });
 
       // Tell Crone about our SynthDef
@@ -131,9 +119,6 @@ Engine_FM7 : CroneEngine {
       });
     });
     ctlBus.postln;
-
-    // set the amplitude to 0.2. Didn't we already set this somewhere else? 
-    ctlBus[\amp].setSynchronous( 0.2 );
 
     this.addCommand(\start, "if", { arg msg;
       this.addVoice(msg[1], msg[2], true);
