@@ -39,7 +39,7 @@ end
 
 -- utility function to create multiple modules suffixed 1..polyphony
 -- TODO: this is something to consider for R lua module
--- OR just implement new and support name_s_ and use a moduleref polyexpand variant in call to new
+-- OR just implement new and support name_s_ and use a moduleref poly_expand variant in call to new
 local function poly_new(name, kind, polyphony)
   for voicenum=1, polyphony do
     engine.new(name..voicenum, kind)
@@ -58,7 +58,7 @@ end
 
 -- utility function to expand a moduleparam ref to #polyphony ones suffixed with 1..polyphony
 -- TODO: this is something to refactor to R lua module
-local function polyexpand(moduleparam, polyphony)
+local function poly_expand(moduleparam, polyphony)
   local moduleref, paramref = split_ref(moduleparam)
   local expanded = ""
 
@@ -234,7 +234,7 @@ end
 -- without macros engine commands get delayed when there is extensive modulation of parameters
 local function create_macros()
   local function create_poly_macro(name, moduleparam)
-    engine.newmacro(name, polyexpand(moduleparam, POLYPHONY))
+    engine.newmacro(name, poly_expand(moduleparam, POLYPHONY))
   end
 
   create_poly_macro("osc_a_range", "OscA.Range")
