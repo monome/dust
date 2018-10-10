@@ -1,3 +1,5 @@
+-- IDEA: utilize 1OSC as a basis to build a polysynth but scramble Generators, Filters and all parameters on button click per voice
+--
 -- MOLN
 --
 -- 4 voice polyphonic
@@ -37,21 +39,20 @@ local function split_ref(ref)
   return words[1], words[2]
 end
 
--- utility function to create multiple modules suffixed 1..polyphony
+-- utility function to create multiple modules suffixed 1..POLYPHONY
 -- TODO: this is something to consider for R lua module
--- OR just implement new and support name_s_ and use a moduleref polyexpand variant in call to new
-local function poly_new(name, kind, polyphony)
-  for voicenum=1, polyphony do
+local function poly_new(name, kind)
+  for voicenum=1, POLYPHONY do
     engine.new(name..voicenum, kind)
   end
 end
 
 -- utility function to connect modules suffixed with 1..POLYPHONY
 -- TODO: this is something to consider for R lua module
-local function poly_connect(output, input, polyphony)
+local function poly_connect(output, input)
   local sourcemodule, outputref = split_ref(output)
   local destmodule, inputref = split_ref(input)
-  for voicenum=1, polyphony do
+  for voicenum=1, POLYPHONY do
     engine.connect(sourcemodule..voicenum.."/"..outputref, destmodule..voicenum.."/"..inputref)
   end
 end
@@ -202,28 +203,28 @@ end
 midi_device.event = midi_event
 
 local function create_modules()
-  poly_new("FreqGate", "FreqGate", POLYPHONY)
-  poly_new("LFO", "MultiLFO", POLYPHONY)
-  poly_new("Env", "ADSREnv", POLYPHONY)
-  poly_new("OscA", "PulseOsc", POLYPHONY)
-  poly_new("OscB", "PulseOsc", POLYPHONY)
-  poly_new("Filter", "LPFilter", POLYPHONY)
-  poly_new("Amp", "Amp", POLYPHONY)
+  poly_new("FreqGate", "FreqGate")
+  poly_new("LFO", "MultiLFO")
+  poly_new("Env", "ADSREnv")
+  poly_new("OscA", "PulseOsc")
+  poly_new("OscB", "PulseOsc")
+  poly_new("Filter", "LPFilter")
+  poly_new("Amp", "Amp")
 
   engine.new("SoundOut", "SoundOut")
 end
 
 local function connect_modules()
-  poly_connect("FreqGate/Frequency", "OscA/FM", POLYPHONY)
-  poly_connect("FreqGate/Frequency", "OscB/FM", POLYPHONY)
-  poly_connect("FreqGate/Gate", "Env/Gate", POLYPHONY)
-  poly_connect("LFO/Sine", "OscA/PWM", POLYPHONY)
-  poly_connect("LFO/Sine", "OscB/PWM", POLYPHONY)
-  poly_connect("Env/Out", "Amp/Lin", POLYPHONY)
-  poly_connect("Env/Out", "Filter/FM", POLYPHONY)
-  poly_connect("OscA/Out", "Filter/In", POLYPHONY)
-  poly_connect("OscB/Out", "Filter/In", POLYPHONY)
-  poly_connect("Filter/Out", "Amp/In", POLYPHONY)
+  poly_connect("FreqGate/Frequency", "OscA/FM")
+  poly_connect("FreqGate/Frequency", "OscB/FM")
+  poly_connect("FreqGate/Gate", "Env/Gate")
+  poly_connect("LFO/Sine", "OscA/PWM")
+  poly_connect("LFO/Sine", "OscB/PWM")
+  poly_connect("Env/Out", "Amp/Lin")
+  poly_connect("Env/Out", "Filter/FM")
+  poly_connect("OscA/Out", "Filter/In")
+  poly_connect("OscB/Out", "Filter/In")
+  poly_connect("Filter/Out", "Amp/In")
 
   for voicenum=1, POLYPHONY do
     engine.connect("Amp"..voicenum.."/Out", "SoundOut/Left")
@@ -256,7 +257,7 @@ local function create_macros()
 end
 
 local function init_static_module_params()
-  -- TODO: refactor polyset to R lua module, remove Engine_R poly dependency and use engine.set instead. (macro will cover for poly cases anyhow). remove polyset in Engine_R
+  -- TODO: refactor polyset to R lua module to remove Engine_R poly dependency
   engine.polyset("Filter.AudioLevel", 1, POLYPHONY)
   engine.polyset("OscA.FM", 1, POLYPHONY)
   engine.polyset("OscB.FM", 1, POLYPHONY)
