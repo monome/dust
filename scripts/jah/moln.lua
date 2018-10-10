@@ -12,7 +12,10 @@ local Scroll = require 'jah/scroll'
 local R = require 'jah/r'
 local Voice = require 'exp/voice'
 
-local DATA_DIR = "/home/we/dust/data" -- TODO: already in a global somewhere?
+local rengine = R.engine
+local rutil = R.util
+local rspecs = R.specs
+
 local PSET = "jah/moln.pset"
 
 local scroll = Scroll.new { screen_rows=5 }
@@ -30,54 +33,12 @@ local function file_exists(name)
    if f~=nil then io.close(f) return true else return false end
 end
 
--- TODO: this is something to consider for R lua module
-local function split_ref(ref)
-  local words = {}
-  for word in ref:gmatch("[a-zA-Z0-9]+") do table.insert(words, word) end
-  return words[1], words[2]
-end
-
--- utility function to create multiple modules suffixed 1..polyphony
--- TODO: this is something to consider for R lua module
--- OR just implement new and support name_s_ and use a moduleref poly_expand variant in call to new
-local function poly_new(name, kind, polyphony)
-  for voicenum=1, polyphony do
-    engine.new(name..voicenum, kind)
-  end
-end
-
--- utility function to connect modules suffixed with 1..POLYPHONY
--- TODO: this is something to consider for R lua module
-local function poly_connect(output, input, polyphony)
-  local sourcemodule, outputref = split_ref(output)
-  local destmodule, inputref = split_ref(input)
-  for voicenum=1, polyphony do
-    engine.connect(sourcemodule..voicenum.."/"..outputref, destmodule..voicenum.."/"..inputref)
-  end
-end
-
--- utility function to expand a moduleparam ref to #polyphony ones suffixed with 1..polyphony
--- TODO: this is something to refactor to R lua module
-local function poly_expand(moduleparam, polyphony)
-  local moduleref, paramref = split_ref(moduleparam)
-  local expanded = ""
-
-  for voicenum=1, polyphony do
-    expanded = expanded .. moduleref .. voicenum .. "." .. paramref
-    if voicenum ~= polyphony then
-      expanded = expanded .. " "
-    end
-  end
-
-  return expanded
-end
-
 -- utility function set one or more module parameters given a voice
 local function voice_bulkset(bundle, voicenum)
   local arg = ""
 
   for i=1, #bundle, 2 do
-    local moduleref, paramref = split_ref(bundle[i])
+    local moduleref, paramref = rutil.split_ref(bundle[i])
     local value = bundle[i+1]
 
     arg = arg .. moduleref .. voicenum .. "." .. paramref .. " " .. value
@@ -202,28 +163,28 @@ end
 midi_device.event = midi_event
 
 local function create_modules()
-  poly_new("FreqGate", "FreqGate", POLYPHONY)
-  poly_new("LFO", "MultiLFO", POLYPHONY)
-  poly_new("Env", "ADSREnv", POLYPHONY)
-  poly_new("OscA", "PulseOsc", POLYPHONY)
-  poly_new("OscB", "PulseOsc", POLYPHONY)
-  poly_new("Filter", "LPFilter", POLYPHONY)
-  poly_new("Amp", "Amp", POLYPHONY)
+  rengine.poly_new("FreqGate", "FreqGate", POLYPHONY)
+  rengine.poly_new("LFO", "SineLFO", POLYPHONY)
+  rengine.poly_new("Env", "ADSREnv", POLYPHONY)
+  rengine.poly_new("OscA", "PulseOsc", POLYPHONY)
+  rengine.poly_new("OscB", "PulseOsc", POLYPHONY)
+  rengine.poly_new("Filter", "LPFilter", POLYPHONY)
+  rengine.poly_new("Amp", "Amp", POLYPHONY)
 
   engine.new("SoundOut", "SoundOut")
 end
 
 local function connect_modules()
-  poly_connect("FreqGate/Frequency", "OscA/FM", POLYPHONY)
-  poly_connect("FreqGate/Frequency", "OscB/FM", POLYPHONY)
-  poly_connect("FreqGate/Gate", "Env/Gate", POLYPHONY)
-  poly_connect("LFO/Sine", "OscA/PWM", POLYPHONY)
-  poly_connect("LFO/Sine", "OscB/PWM", POLYPHONY)
-  poly_connect("Env/Out", "Amp/Lin", POLYPHONY)
-  poly_connect("Env/Out", "Filter/FM", POLYPHONY)
-  poly_connect("OscA/Out", "Filter/In", POLYPHONY)
-  poly_connect("OscB/Out", "Filter/In", POLYPHONY)
-  poly_connect("Filter/Out", "Amp/In", POLYPHONY)
+  rengine.poly_connect("FreqGate/Frequency", "OscA/FM", POLYPHONY)
+  rengine.poly_connect("FreqGate/Frequency", "OscB/FM", POLYPHONY)
+  rengine.poly_connect("FreqGate/Gate", "Env/Gate", POLYPHONY)
+  rengine.poly_connect("LFO/Out", "OscA/PWM", POLYPHONY)
+  rengine.poly_connect("LFO/Out", "OscB/PWM", POLYPHONY)
+  rengine.poly_connect("Env/Out", "Amp/Lin", POLYPHONY)
+  rengine.poly_connect("Env/Out", "Filter/FM", POLYPHONY)
+  rengine.poly_connect("OscA/Out", "Filter/In", POLYPHONY)
+  rengine.poly_connect("OscB/Out", "Filter/In", POLYPHONY)
+  rengine.poly_connect("Filter/Out", "Amp/In", POLYPHONY)
 
   for voicenum=1, POLYPHONY do
     engine.connect("Amp"..voicenum.."/Out", "SoundOut/Left")
@@ -234,7 +195,7 @@ end
 -- without macros engine commands get delayed when there is extensive modulation of parameters
 local function create_macros()
   local function create_poly_macro(name, moduleparam)
-    engine.newmacro(name, poly_expand(moduleparam, POLYPHONY))
+    engine.newmacro(name, rutil.poly_expand(moduleparam, POLYPHONY))
   end
 
   create_poly_macro("osc_a_range", "OscA.Range")
@@ -256,38 +217,37 @@ local function create_macros()
 end
 
 local function init_static_module_params()
-  -- TODO: refactor polyset to R lua module, remove Engine_R poly dependency and use engine.set instead. (macro will cover for poly cases anyhow). remove polyset in Engine_R
-  engine.polyset("Filter.AudioLevel", 1, POLYPHONY)
-  engine.polyset("OscA.FM", 1, POLYPHONY)
-  engine.polyset("OscB.FM", 1, POLYPHONY)
+  rengine.poly_set("Filter.AudioLevel", 1, POLYPHONY)
+  rengine.poly_set("OscA.FM", 1, POLYPHONY)
+  rengine.poly_set("OscB.FM", 1, POLYPHONY)
 end
 
 local function add_controls()
   add_macro_control {
     id="osc_a_range",
     name="Osc A Range",
-    spec=R.specs.PulseOsc.Range,
+    spec=rspecs.PulseOsc.Range,
     formatter=Formatters.round(1)
   }
 
   add_macro_control {
     id="osc_a_pulsewidth",
     name="Osc A PulseWidth",
-    spec=R.specs.PulseOsc.PulseWidth,
+    spec=rspecs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
   add_macro_control {
     id="osc_b_range",
     name="Osc B Range",
-    spec=R.specs.PulseOsc.Range,
+    spec=rspecs.PulseOsc.Range,
     formatter=Formatters.round(1)
   }
 
   add_macro_control {
     id="osc_b_pulsewidth",
     name="Osc B PulseWidth",
-    spec=R.specs.PulseOsc.PulseWidth,
+    spec=rspecs.PulseOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
@@ -305,7 +265,7 @@ local function add_controls()
   add_macro_control {
     id="lfo_frequency",
     name="PWM Rate",
-    spec=R.specs.MultiLFO.Frequency,
+    spec=rspecs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 
@@ -320,7 +280,7 @@ local function add_controls()
     end
   }
 
-  local filter_spec = R.specs.MMFilter.Frequency:copy()
+  local filter_spec = rspecs.MMFilter.Frequency:copy()
   filter_spec.maxval = 10000
   add_macro_control {
     id="filter_frequency",
@@ -331,14 +291,14 @@ local function add_controls()
   add_macro_control {
     id="filter_resonance",
     name="Filter Resonance",
-    spec=R.specs.MMFilter.Resonance,
+    spec=rspecs.MMFilter.Resonance,
     formatter=Formatters.percentage
   }
 
   add_macro_control {
     id="env_to_filter_fm",
     name="Env > Filter Frequency",
-    spec=R.specs.MMFilter.FM,
+    spec=rspecs.MMFilter.FM,
     formatter=Formatters.percentage
   }
 
@@ -346,21 +306,21 @@ local function add_controls()
     id="env_attack",
     name="Env Attack",
     ref="Env.Attack",
-    spec=R.specs.ADSREnv.Attack
+    spec=rspecs.ADSREnv.Attack
   }
 
   add_macro_control {
     id="env_decay",
     name="Env Decay",
     ref="Env.Decay",
-    spec=R.specs.ADSREnv.Decay
+    spec=rspecs.ADSREnv.Decay
   }
 
   add_macro_control {
     id="env_sustain",
     name="Env Sustain",
     ref="Env.Sustain",
-    spec=R.specs.ADSREnv.Sustain,
+    spec=rspecs.ADSREnv.Sustain,
     formatter=Formatters.percentage
   }
 
@@ -368,7 +328,7 @@ local function add_controls()
     id="env_release",
     name="Env Release",
     ref="Env.Release",
-    spec=R.specs.ADSREnv.Release
+    spec=rspecs.ADSREnv.Release
   }
 end
 
@@ -422,7 +382,7 @@ function init()
 
   scroll:push("") -- TODO: scroll bug
 
-  if file_exists(DATA_DIR.."/"..PSET) then
+  if file_exists(data_dir.."/"..PSET) then
     params:read(PSET)
   else
     set_default_script_params()

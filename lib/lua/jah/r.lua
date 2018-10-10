@@ -2,6 +2,8 @@ local R = {}
 
 local ControlSpec = require 'controlspec'
 
+local eng = {} -- NOTE: functions rely on engine global
+local util = {}
 local specs = {}
 
 specs['44Matrix'] = {
@@ -270,6 +272,11 @@ specs['SawOsc'] = {
 	FM = ControlSpec.UNIPOLAR
 }
 
+specs['SineLFO'] = {
+	Frequency = ControlSpec.new(0.01, 50, "exp", 0, 1, "Hz"),
+	Reset = ControlSpec.new(0, 1, "linear", 1, 0, "")
+}
+
 specs['SineOsc'] = {
 	Range = ControlSpec.new(-2, 2, "linear", 1, 0, ""),
 	Tune = ControlSpec.new(-600, 600, "linear", 0, 0, "cents"),
@@ -301,6 +308,70 @@ specs['XFader'] = {
 	Master = ControlSpec.new(-math.huge, 12, "db", 0, -math.huge, " dB")
 }
 
+-- utility function to create module, will validate kind lua side
+function eng.new(name, kind)
+  if specs[kind] then
+    engine.new(name..voicenum, kind)
+  else
+    error(kind.." - not a valid module type")
+  end
+end
+
+-- utility function to create multiple modules suffixed 1..polyphony
+function eng.poly_new(name, kind, polyphony)
+  if specs[kind] then
+    for voicenum=1, polyphony do
+      engine.new(name..voicenum, kind)
+    end
+  else
+    error(kind.." not a valid module type")
+  end
+end
+
+-- utility function to connect modules suffixed with 1..polyphony
+function eng.poly_connect(output, input, polyphony)
+  local sourcemodule, outputref = util.split_ref(output)
+  local destmodule, inputref = util.split_ref(input)
+  for voicenum=1, polyphony do
+    engine.connect(sourcemodule..voicenum.."/"..outputref, destmodule..voicenum.."/"..inputref)
+  end
+end
+
+-- utility function to set param of multiple modules suffixed 1..polyphony
+function eng.poly_set(ref, value, polyphony)
+  local module, param = util.split_ref(ref)
+  for voicenum=1, polyphony do
+    engine.set(util.param_voice_ref(module, param, voicenum), value)
+  end
+end
+
+-- utility function to expand a moduleparam ref to #polyphony ones suffixed with 1..polyphony
+function util.poly_expand(moduleparam, polyphony)
+  local module, param = util.split_ref(moduleparam)
+  local expanded = ""
+
+  for voicenum=1, polyphony do
+    expanded = expanded .. util.param_voice_ref(module, param, voicenum)
+    if voicenum ~= polyphony then
+      expanded = expanded .. " "
+    end
+  end
+
+  return expanded
+end
+
+function util.param_voice_ref(module, param, voicenum)
+  return module .. voicenum .. "." .. param
+end
+
+function util.split_ref(ref)
+  local words = {}
+  for word in ref:gmatch("[a-zA-Z0-9]+") do table.insert(words, word) end
+  return words[1], words[2]
+end
+
 R.specs = specs
+R.engine = eng
+R.util = util
 
 return R

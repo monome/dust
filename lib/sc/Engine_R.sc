@@ -1,26 +1,9 @@
 Engine_R : CroneEngine {
-	classvar testrout; // TODO: temporary
 	var <modules;
 	var <engineTopGroup;
 	var macros;
 	var polymacros;
 	var trace=false;
-
-	// TODO: temporary
-	*starttest {
-		testrout = fork {
-			inf.do {
-				NetAddr.localAddr.sendMsg("/command/bulkset", "FreqGate1.Gate 1");
-				0.5.wait;
-				NetAddr.localAddr.sendMsg("/command/bulkset", "FreqGate1.Gate 0");
-				0.5.wait;
-			}
-		}
-	}
-
-	*stoptest {
-		testrout.stop;
-	}
 
 	*new { |context, callback| ^super.new(context, callback) }
 
@@ -60,25 +43,11 @@ Engine_R : CroneEngine {
 			this.setCommand(msg[1], msg[2]);
 		};
 
-		this.addCommand('polyset', "sfi") { |msg|
-			if (trace) {
-				[SystemClock.seconds, \polysetCommand, (msg[1].asString + msg[2].asString + msg[3].asString)[0..20]].debug(\received);
-			};
-			this.polysetCommand(msg[1], msg[2], msg[3]);
-		};
-
 		this.addCommand('bulkset', "s") { |msg|
 			if (trace) {
 				[SystemClock.seconds, \bulksetCommand, msg[1].asString[0..20]].debug(\received);
 			};
 			this.bulksetCommand(msg[1]);
-		};
-
-		this.addCommand('bulkpolyset', "si") { |msg|
-			if (trace) {
-				[SystemClock.seconds, \bulkpolysetCommand, (msg[1].asString + msg[2].asString)[0..20]].debug(\received);
-			};
-			this.bulkpolysetCommand(msg[1], msg[2]);
 		};
 
 		this.addCommand('newmacro', "ss") { |msg|
@@ -284,20 +253,6 @@ Engine_R : CroneEngine {
 		}
 	}
 
-	polysetCommand { |moduleparam, value, polyphony|
-		this.prPolyset(moduleparam, value, polyphony, true);
-	}
-
-	bulkpolysetCommand { |bundle, polyphony|
-		context.server.makeBundle(nil) {
-			bundle.asString.split($ ).clump(2).do { |cmd, i|
-				var moduleparam = cmd[0];
-				var value = cmd[1];
-				this.prPolyset(moduleparam, value, polyphony, false);
-			}
-		}
-	}
-
 	newmacroCommand { |name, bundle|
 		var macro;
 		var bus = Bus.control;
@@ -307,20 +262,22 @@ Engine_R : CroneEngine {
 			bus: bus
 		);
 
-		macro[\moduleparams].do { |moduleparam|
-			var moduleRef, parameter, module, spec;
-			# moduleRef, parameter = moduleparam.asString.split($.);
+		context.server.makeBundle(nil) {
+			macro[\moduleparams].do { |moduleparam|
+				var moduleRef, parameter, module, spec;
+				# moduleRef, parameter = moduleparam.asString.split($.);
 
-			module = this.lookupModuleByName(moduleRef);
-			if (module.isNil) {
-				"module named % not found among modules %".format(moduleRef.quote, modules.collect { |module| module[\name].asString }.join(", ").quote).error;
-			} {
-				spec = this.getModuleSpec(module[\kind]);
-
-				if (spec[\parameters].includes(parameter.asSymbol)) {
-					module[\instance].map(parameter, bus);
+				module = this.lookupModuleByName(moduleRef);
+				if (module.isNil) {
+					"module named % not found among modules %".format(moduleRef.quote, modules.collect { |module| module[\name].asString }.join(", ").quote).error;
 				} {
-					"parameter % not valid for module named % (kind: %)".format(parameter.asString.quote, moduleRef.asString.quote, module[\kind].asString.quote).error;
+					spec = this.getModuleSpec(module[\kind]);
+
+					if (spec[\parameters].includes(parameter.asSymbol)) {
+						module[\instance].map(parameter, bus);
+					} {
+						"parameter % not valid for module named % (kind: %)".format(parameter.asString.quote, moduleRef.asString.quote, module[\kind].asString.quote).error;
+					}
 				}
 			}
 		};
@@ -331,70 +288,16 @@ Engine_R : CroneEngine {
 	deletemacroCommand { |name|
 		macros[name.asSymbol][\bus].free;
 		macros[name.asSymbol][\moduleparams].do {
-			// Reset to current bus value
+			// TODO: unmap control
+			// Reset to current bus value - or is this needed at all?
 		};
 		macros[name.asSymbol] = nil;
 	}
 
 	macrosetCommand { |name, value|
-/*
-		var moduleparams = macros[name.asSymbol]; // TODO: validate presence
-		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
-			moduleparams.do { |moduleparam|
-				this.setCommand(moduleparam, value);
-			};
-		}
-*/
 		// TODO: validate presence of macro
 		// TODO: controlSpecs are not checked here! only allow macro creation of params with same controlSpec in newmacro and constrain here?
 		macros[name.asSymbol][\bus].set(value);
-	}
-
-	newpolymacroCommand { |name, bundle|
-		polymacros[name.asSymbol] = bundle.asString.split($ );
-	}
-
-	deletepolymacroCommand { |name|
-		polymacros[name.asSymbol] = nil;
-	}
-
-	polymacrosetCommand { |name, value, polyphony|
-		var moduleparams = polymacros[name.asSymbol]; // TODO: validate presence
-		context.server.makeBundle(nil) { // TODO: udp package size limitations and bulksetCommand
-			moduleparams.do { |moduleparam|
-				this.prPolyset(moduleparam, value, polyphony, false);
-			}
-		}
-	}
-
-	prPolyset { |moduleparam, value, polyphony, bundle|
-		var moduleRef, parameter, module, spec;
-		var func;
-
-		# moduleRef, parameter = moduleparam.asString.split($.);
-
-		func = {
-			polyphony.do { |voicenum|
-				module = this.lookupModuleByName(moduleRef.asString++(voicenum+1)); // assumes polyphonic module adhere to 1-based indexing
-				if (module.isNil) {
-					"module named % not found among modules %".format(moduleRef.quote, modules.collect { |module| module[\name].asString }.join(", ").quote).error;
-				} {
-					spec = this.getModuleSpec(module[\kind]);
-
-					if (spec[\parameters].includes(parameter.asSymbol)) {
-						module[\instance].set(parameter, value);
-					} {
-						"parameter % not valid for module named % (kind: %)".format(parameter.asString.quote, moduleRef.asString.quote, module[\kind].asString.quote).error;
-					}
-				}
-			}
-		};
-
-		if (bundle) {
-			context.server.makeBundle(nil, func);
-		} {
-			func.value;
-		}
 	}
 
 	moduleHasOutputNamed { |module, name|
@@ -1103,10 +1006,10 @@ RMultiLFOModule : RModule {
 
 			var retrig = (Trig.ar(sig_Reset) + Trig.kr(param_Reset)) > 0; // TODO: remove param?
 
-			var invSawPhase = Phasor.ar(retrig, -1/SampleRate.ir*param_Frequency, 0.5, -0.5, 0.5);
+			var invSawPhase = Phasor.ar(retrig, -1/SampleRate.ir*param_Frequency, 0.5, -0.5, 0.5); // TODO: Retrig in middle of saw ramp?
 			var invSawSig = invSawPhase * 0.5; // +- 2.5V
 
-			var sawPhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency, -0.5, 0.5, -0.5);
+			var sawPhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency, -0.5, 0.5, -0.5); // TODO: Retrig in middle of saw ramp?
 			var sawSig = sawPhase * 0.5; // +- 2.5V
 
 			var sinePhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency);
@@ -1146,6 +1049,44 @@ RMultiLFOModule : RModule {
 	}
 }
 
+// Status: partly tested, TODO: test in_Reset together with param_Reset
+// Inspiration from A-145
+RSineLFOModule : RModule {
+	*shortName { ^'SineLFO' }
+
+	*params {
+		^[
+			'Frequency' -> (
+				Spec: ControlSpec(0.01, 50, 'exp', 0, 1, "Hz"),
+				LagTime: 0.01
+			),
+			'Reset' -> \unipolar.asSpec.copy.step_(1), // TODO
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_Reset,
+				out_Out,
+				param_Frequency,
+				param_Reset
+			|
+
+			var sig_Reset = In.ar(in_Reset);
+
+			var retrig = (Trig.ar(sig_Reset) + Trig.kr(param_Reset)) > 0; // TODO: remove param?
+
+			var sinePhase = Phasor.ar(retrig, 1/SampleRate.ir*param_Frequency);
+			var sineSig = SinOsc.ar(0, sinePhase.linlin(0, 1, 0, 2pi), 0.25); // +- 2.5V
+
+			Out.ar(
+				out_Out,
+				sineSig
+			);
+		}
+	}
+}
 // Status: tested
 RLinMixerModule : RModule {
 	*shortName { ^'LinMixer' }
