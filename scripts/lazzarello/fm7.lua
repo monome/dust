@@ -269,6 +269,7 @@ function key(n,z)
       for y = 1,6 do
         selected[x][y] = 0
         mods[x][y] = 0
+        carriers[x] = 0
         params:set("hz"..x.."_to_hz"..y,mods[x][y])
       end
     end
