@@ -12,15 +12,15 @@ General purpose audio patching engine
 
 ## Commands
 
-- `new ss` - creates module uniquely named `arg1` of type `arg2` (see section "Available Modules" below).
+- `new ss <ModuleName> <ModuleType>` - creates a uniquely named module of given type (see section "Available Modules" below).
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
-- `delete s` - removes module named `[arg1]`.
-	- Example: `delete Osc`
-- `connect ss` - send module output referenced in `[arg1]` (expressed as `[ModuleName]/[Output]`) to module input referenced in `[arg2]` (expressed as `[ModuleName]/[Input]`).
+- `connect ss <ModuleName/Output> <ModuleName/Input>` - connect a modules outputs and module inputs.
 	- Examples: `connect Osc/Pulse Out/Left`, `connect Osc/Pulse Out/Right`
-- `disconnect ss` - disconnect module output referenced in `[arg1]` (expressed as `[ModuleName]/[Output]`) from module input referenced in `[arg2]` (expressed as `[ModuleName]/[Input]`).
+- `disconnect ss <ModuleName/Output> <ModuleName/Input>` - disconnect module output from module input.
 	- Example: `disconnect Osc/Out Out/Left`
 - `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
+- `delete s <modulename>` - removes a module.
+	- Example: `delete Osc`
 	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 
 ### Bulk Commands
