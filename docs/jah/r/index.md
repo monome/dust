@@ -33,7 +33,7 @@ General purpose audio patching engine
 - `newmacro ss <macroname> <modulename.parameters...>` - creates a uniquely named macro for simultaneous control of a list of space delimited module parameters. All included parameters must adhere to the same spec.
 	- Example: given `SineOsc` and `PulseOsc` modules named `Osc1` and `Osc2` the command `newmacro Tune "Osc1.Tune Osc2.Tune"` defines a new macro controlling `Tune` parameter for both modules.
 - `macroset sf <macroname> <value>` - sets value for module parameters included in a macro. Controlling multiple parameters with a macro is more efficient than using multiple `set` commands. It is also faster than using `bulkset`. All value changes of parameters in a macro are performed at the same time.
-	- Example: given above `Tune` macro `macroset Tune 30` has the same effect as sending `set Osc1.Tune 30` and `set Osc2.Tune 30` commands.
+	- Example: given `Tune` macro above command `macroset Tune 30` has the same effect as commands `set Osc1.Tune 30` and `set Osc2.Tune 30`.
 - `deletemacro s <macroname>` - removes a macro.
 	- Example: `deletemacro Tune`.
 
