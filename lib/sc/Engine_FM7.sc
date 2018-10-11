@@ -65,8 +65,6 @@ Engine_FM7 : CroneEngine {
         aenv = EnvGen.ar(
                   Env.adsr( ampAtk, ampDec, ampSus, ampRel, 1.0, ampCurve),
                   gate, doneAction:2);
-        // the output bus, is this multiplication the right way to do this?
-        // oscilator times envelope times vca.
         Out.ar(out, (osc_mix * aenv * amp).dup);
       });
 
@@ -86,7 +84,8 @@ Engine_FM7 : CroneEngine {
         \hz3_to_hz1 -> 0, \hz3_to_hz2 -> 0, \hz3_to_hz3 -> 0, \hz3_to_hz4 -> 0, \hz3_to_hz5 -> 0, \hz3_to_hz6 -> 0,
         \hz4_to_hz1 -> 0, \hz4_to_hz2 -> 0, \hz4_to_hz3 -> 0, \hz4_to_hz4 -> 0, \hz4_to_hz5 -> 0, \hz4_to_hz6 -> 0,
         \hz5_to_hz1 -> 0, \hz5_to_hz2 -> 0, \hz5_to_hz3 -> 0, \hz5_to_hz4 -> 0, \hz5_to_hz5 -> 0, \hz5_to_hz6 -> 0,
-        \hz6_to_hz1 -> 0, \hz6_to_hz2 -> 0, \hz6_to_hz3 -> 0, \hz6_to_hz4 -> 0, \hz6_to_hz5 -> 0, \hz6_to_hz6 -> 0;       
+        \hz6_to_hz1 -> 0, \hz6_to_hz2 -> 0, \hz6_to_hz3 -> 0, \hz6_to_hz4 -> 0, \hz6_to_hz5 -> 0, \hz6_to_hz6 -> 0,       
+	\carrier1 -> 1,\carrier2 -> 1,\carrier3 -> 0,\carrier4 -> 0,\carrier5 -> 0,\carrier6 -> 0;
       );
     }
   }
