@@ -530,11 +530,11 @@ See tutorial scripts in `scripts/r_tutorial`, hacks in `scripts/r_hacks` and jah
 ## The R Lua Module
 
 The R Lua module contains:
-- Specs for all included modules.
+- Default specs for all included modules.
 - A number of convenience functions for working with the R engine (polyphonic set ups and more).
-- Various utility functions.
+- Other utility functions.
 
-Require the Ack module:
+Require the R module:
 
 ``` lua
 local R = require 'jah/r'
@@ -542,10 +542,18 @@ local R = require 'jah/r'
 
 ### Module Specs
 
-Ie:
+`R.specs` contains default specs for all modules, ie.:
 
 ``` lua
 R.specs.MultiOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
+```
+
+These can be copied and overriden, if needed:
+
+``` lua
+local my_testgen_spec = R.specs.TestGen.Frequency:copy() -- returns ControlSpec.WIDEFREQ
+my_testgen_spec.minval = 80
+my_testgen_spec.maxval = 8000
 ```
 
 ### Engine Functions
