@@ -5,10 +5,6 @@
 
 General purpose audio patching engine
 
-## Status
-
-- Beta-stage. Commands are fixed. Some modules are not well tested.
-
 ## Features
 
 - Arbitrarily create and connect audio generators and processors (_modules_).
@@ -624,3 +620,8 @@ Module documentation stubs may be generated using the `Engine_R.generateModulesD
 ### Gotchas
 
 If one of the parameters of a module has a `ControlSpec` not compatible with Lag (ie. the standard `db` `ControlSpec`) lag time should not be used for any of the parameters. This is a known SuperCollider issue. (TODO: decsribe workaround)
+
+## Status
+
+- Beta-stage. Commands are fixed. Some modules are not well tested.
+
