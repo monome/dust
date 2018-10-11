@@ -443,7 +443,7 @@ engine.set("Osc.PWM", 0.2)
 
 The R Lua module contains:
 - Specs for all included modules.
-- A number of convenience functions for working with polyphonic set ups using the R engine.
+- A number of convenience functions for working with the R engine (polyphonic set ups and more).
 - Various utility functions.
 
 Require the Ack module:
@@ -483,17 +483,17 @@ R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 
 ## Extending R
 
-Modules are written by way of subclassing the `RModule` class. A subclass supplies a unique module type name (by overriding `*shortName`), an array of specs for each module parameter (`*params`) and a SynthDef Ugen Graph function (`*ugenGraphFunc`) whose function arguments prefixed with `param_`, `in_` and `out_` are treated as parameter controls, and input and output busses.
+Modules are written by way of subclassing the `RModule` class. A subclass supplies a unique module type name (by overriding `*shortName`), an array of specs for each module parameter (`*params`) and a SynthDef Ugen Graph function (`*ugenGraphFunc`) whose function arguments prefixed with `param_`, `in_` and `out_` are treated as parameter controls and input and output busses. The R engine will introspect the ugenGraphFunc and together with the parameter specs provide scaffolding necessary to supply parameter values and interconnect modules.
 
-If a dictionary is supplied for a parameter in the `*params` array, its `Spec` key value will be used as spec and its `LagTime` value will be used as fixed lag rate for the parameter.
-
+Note: If a dictionary is supplied for a parameter in the `*params` array, its `Spec` key value will be used as spec and its `LagTime` value will be used as fixed lag rate for the parameter.
 Annotated example:
 
 ``` supercollider
-RTestModule : RModule {
-	*shortName { ^'Test' } // module type
+RTestModule : RModule { // subclassing RModule makes this a module
 
-	*params {
+	*shortName { ^'Test' } // module type used in engine new command
+
+	*params { // description of the module parameters
 		^[
 			'Frequency' -> \widefreq.asSpec, // first parameter
 			'FrequencyModulation' -> (
@@ -503,13 +503,13 @@ RTestModule : RModule {
 		]
 	}
 
-	*ugenGraphFunc {
+	*ugenGraphFunc { // regular SynthDef ugenGraphFunc function describing DSP
 		^{
 			|
-				in_FM, // will reference a bus for audio input
-				out_Out, // will reference a bus for audio output use
-				param_Frequency, // parameter 1 value
-				param_FrequencyModulation // parameter 2 value
+				in_FM, // will reference a bus to be used for audio input
+				out_Out, // will reference a bus to be used for audio output
+				param_Frequency, // refer to first parameter's value...
+				param_FrequencyModulation // ... and second parameter's value
 			|
 
 			var sig_FM = In.ar(in_FM);
@@ -517,15 +517,16 @@ RTestModule : RModule {
 			Out.ar(out_Out, sig);
 		}
 	}
+
 }
 ```
 
 ### Updating the R Lua module
 
-For a module to be usable with functions in the `R.engine` Lua module the module's metadata has to be included in the R Lua module.
+To be usable with functions in the R Lua module `R.engine` table module parameter metadata has to be included in the `R.specs` table. `R.specs` can be generated from RModule metadata using the `Engine_R.generateLuaSpecs` method.
 
-`R.specs` can be generated from RModule metadata using the `Engine_R.generateLuaSpecs` method. Likewise, module documentation stubs may be generated using the `Engine_R.generateModulesDocSection` method.
+Module documentation stubs may be generated using the `Engine_R.generateModulesDocSection` method.
 
 ### Gotchas
 
-If one of the parameters of a module has a `ControlSpec` not compatible with Lag (ie. the standard `db` `ControlSpec`) lag time should not be used for any of the parameters. (TODO: decsribe why and what happens)
+If one of the parameters of a module has a `ControlSpec` not compatible with Lag (ie. the standard `db` `ControlSpec`) lag time should not be used for any of the parameters. This is a known SuperCollider issue. (TODO: decsribe workaround)
