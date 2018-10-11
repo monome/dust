@@ -3,12 +3,12 @@
 
 # R
 
-Text based patching engine
+Patching engine
 
 ## Features
 
-- Freely patch audio generators and processors (_modules_).
-- Control module parameters from Lua scripting layer (_set_ and related commands).
+- Arbitrarily create and patch audio generators and processors (_modules_).
+- Control module parameters from Lua scripting layer using `set` and related commands.
 
 ## Commands
 
@@ -448,9 +448,9 @@ local R = require 'jah/r'
 ```
 
 The R Lua module contains:
-1. Specs for all included modules.
-2. A number of convenience engine functions for working with R and polyphonic modules.
-3. Various utility functions.
+- Specs for all included modules.
+-  A number of convenience engine functions for working with R and polyphonic modules.
+- Various utility functions.
 
 ### Module Specs
 
