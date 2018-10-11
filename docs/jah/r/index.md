@@ -508,26 +508,24 @@ Crossfader
 
 ``` lua
 -- Spawn three modules
-
 engine.new("LFO", "MultiLFO")
 engine.new("Osc", "PulseOsc")
 engine.new("SoundOut", "SoundOut")
 
--- Connect LFO to Osc to modulate its PulseWidth
-
+-- Modulate OSC pulse width by LFO sine wave
 engine.connect("LFO/Sine", "Osc/PWM")
 
--- Connect oscillator to audio outputs
-
+-- Hook up oscillator to audio outputs
 engine.connect("Osc/Out", "SoundOut/Left")
 engine.connect("Osc/Out", "SoundOut/Right")
 
 -- Set module parameter values
-
 engine.set("Osc.PulseWidth", 0.25)
 engine.set("LFO.Frequency", 0.5)
 engine.set("Osc.PWM", 0.2)
 ```
+
+See tutorial scripts in `scripts/r_tutorial`, hacks in `scripts/r_hacks` and jah scripts `moln`, `rymd`, `bob` and `shifty` for more elaborate examples.
 
 ## The R Lua Module
 
@@ -623,5 +621,5 @@ If one of the parameters of a module has a `ControlSpec` not compatible with Lag
 
 ## Status
 
-- Beta-stage. Commands are fixed. Some modules are not well tested.
+- Beta-stage. Commands are fixed. A few modules are not well tested.
 
