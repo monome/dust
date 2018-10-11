@@ -7,10 +7,12 @@
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
--- 1 3-7 toggle encoders into modulation modes
--- enc 1: frequency
--- enc 2: phase
--- enc 3: amplitude
+-- 1 3-7 toggle encoders to op 2-6
+-- enc 1: operator hz multiplier
+-- enc 2: operator phase
+-- enc 3: operator amplitude
+-- key 2: random modulation matrix
+-- key 3: play a random note
 
 local FM7 = require "lazzarello/fm7"
 local tab = require 'tabutil'
@@ -124,19 +126,19 @@ function enc(n,delta)
     local hz = (hz_position / 1024) * 5
     local mode = getEncoderMode()
     ctrl_functions[mode](hz)
-    print("hz" .. mode .. " multiple is " .. hz)
+    --print("hz" .. mode .. " multiple is " .. hz)
   elseif n == 2 then
     ph_position = (ph_position + delta) % 1024
     local phase = (ph_position / 1024)
     local mode = getEncoderMode()
     ctrl_functions[mode + 6](phase)
-    print("phase" .. mode .. " is " .. phase)
+    --print("phase" .. mode .. " is " .. phase)
   elseif n == 3 then
     amp_position = (amp_position + delta) % 1024
     local amp = (amp_position / 1024)
     local mode = getEncoderMode()
     ctrl_functions[mode + 6*2](amp)
-    print("amp" .. mode .. " is " .. amp)
+    --print("amp" .. mode .. " is " .. amp)
   end
 end
 
@@ -272,6 +274,7 @@ function key(n,z)
         carriers[x] = 0
         params:set("hz"..x.."_to_hz"..y,mods[x][y])
       end
+      params:set("carrier"..x,carriers[x])
     end
     
     -- choose new random mods
@@ -282,9 +285,24 @@ function key(n,z)
       mods[x][y] = 1 
       carriers[x] = 1
       params:set("hz"..x.."_to_hz"..y,mods[x][y])
+      params:set("carrier"..x,carriers[x])
     end
   end
   redraw()
+  if n == 3 then
+    local note = ((7-math.random(8))*5) + math.random(16)
+    if z == 1 then
+      if nvoices < MAX_NUM_VOICES then
+      --engine.start(id, getHz(x, y-1))
+      --print("grid > "..id.." "..note)
+        engine.start(0, getHzET(note))
+        nvoices = nvoices + 1
+      end
+    else
+      engine.stop(0)
+      nvoices = nvoices - 1
+    end
+  end
 end
 
 function redraw()
