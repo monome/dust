@@ -629,5 +629,5 @@ If one of the parameters of a module has a `ControlSpec` not compatible with Lag
 
 ## Status
 
-- Beta-stage. Commands are fixed. A few modules are not well tested.
+- Beta-stage. Engine commands are fixed. A few modules are not tested. Expect changes to module parameter/input/output ranges.
 
