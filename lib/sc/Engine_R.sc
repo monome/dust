@@ -1,8 +1,7 @@
 Engine_R : CroneEngine {
-	var <modules;
-	var <engineTopGroup;
+	var modules;
+	var engineTopGroup;
 	var macros;
-	var polymacros;
 	var trace=false;
 
 	*new { |context, callback| ^super.new(context, callback) }
@@ -2461,6 +2460,7 @@ R8x8MatrixModule : RModule {
 	}
 }
 
+// Status: not tested
 RFMVoiceModule : RModule {
 	classvar numOscs = 3;
 
