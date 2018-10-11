@@ -422,19 +422,23 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 ## Example Usage
 
 ``` lua
--- spawn modules
+-- Spawn three modules
+
 engine.new("LFO", "MultiLFO")
 engine.new("Osc", "PulseOsc")
 engine.new("SoundOut", "SoundOut")
 
--- connect LFO to Osc to modulate its PulseWidth
+-- Connect LFO to Osc to modulate its PulseWidth
+
 engine.connect("LFO/Sine", "Osc/PWM")
 
--- connect oscillator to audio outputs
+-- Connect oscillator to audio outputs
+
 engine.connect("Osc/Out", "SoundOut/Left")
 engine.connect("Osc/Out", "SoundOut/Right")
 
--- set some parameter values
+-- Set module parameter values
+
 engine.set("Osc.PulseWidth", 0.25)
 engine.set("LFO.Frequency", 0.5)
 engine.set("Osc.PWM", 0.2)
@@ -449,14 +453,17 @@ local R = require 'jah/r'
 ```
 
 The R Lua module contains:
-
 1. Specs for all included modules.
+2. A number of convenience engine functions for working with R and polyphonic modules.
+3. Various utility functions.
+
+### Module Specs
 
 ``` lua
 R.specs.PulseOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
 ```
 
-2. A number of convenience engine functions for working with R and polyphonic modules.
+### Engine Functions
 
 ``` lua
 R.engine.poly_new("Osc", "MultiOsc", 3) -- creates MultiOsc modules Osc1, Osc2 and Osc3
@@ -465,7 +472,7 @@ R.engine.poly_new("Filter", "MMFilter", 3) -- creates MMFilter modules Filter1, 
 R.engine.poly_connect("Osc/Saw", "Filter/In", 3) -- connects Osc1/Saw to Filter1/In, Osc2/Saw to Filter2/In and Osc3/Saw to Filter3/In
 ```
 
-3. Various utility functions.
+### Utility Functions
 
 ``` lua
 R.util.split_ref("Osc.Frequency") -- returns {"Osc", "Frequency"}
