@@ -3,7 +3,7 @@
 
 # R
 
-Patching engine
+General purpose audio patching engine
 
 ## Features
 
