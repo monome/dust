@@ -10,7 +10,7 @@ Text based patching engine
 - Freely patch audio generators and processors (_modules_).
 - Control module parameters from Lua scripting layer (_set_ and related commands).
 
-## Basic Commands
+## Commands
 
 - `new ss` - creates module named `[arg1]` of type `[arg2]`. See section "Available Modules" below.
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
@@ -23,12 +23,12 @@ Text based patching engine
 - `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
 	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 
-## Bulk Commands
+### Bulk Commands
 
 - `bulkset s` - sets module parameters in bulk serialized in a string.
 	- Example: `bulkset "Osc.Frequency 432 Osc.PulseWidth 0.5"` is the same thing as sending `set Osc.Frequency 432` and `set Osc.PulseWidth 0.5` TODO: floating point precision?
 
-## Macro Commands
+### Macro Commands
 
 - `newmacro ss` - creates a macro for a list of module parameters, in order to be able to set the list of parameters simultenously to the same value. This requires the parameters to refer to the same spec.
 	- Example: `newmacro A "Carrier.Frequency Operator.Frequency"`.
@@ -37,7 +37,7 @@ Text based patching engine
 - `deletemacro s` - removes a registered macro.
 	- Example: `deletemacro A`.
 
-## Debug Commands
+### Debug Commands
 
 - `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
 
