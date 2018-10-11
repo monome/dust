@@ -421,7 +421,7 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 
 ## Example Usage
 
-```
+``` lua
 -- spawn modules
 engine.new("LFO", "MultiLFO")
 engine.new("Osc", "PulseOsc")
@@ -452,13 +452,13 @@ The R Lua module contains:
 
 1. Specs for all included modules.
 
-```
+``` lua
 R.specs.PulseOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
 ```
 
 2. A number of convenience engine functions for working with R and polyphonic modules.
 
-```
+``` lua
 R.engine.poly_new("Osc", "MultiOsc", 3) -- creates MultiOsc modules Osc1, Osc2 and Osc3
 R.engine.poly_new("Filter", "MMFilter", 3) -- creates MMFilter modules Filter1, Filter2 and Filter3
 
@@ -467,7 +467,7 @@ R.engine.poly_connect("Osc/Saw", "Filter/In", 3) -- connects Osc1/Saw to Filter1
 
 3. Various utility functions.
 
-```
+``` lua
 R.util.split_ref("Osc.Frequency") -- returns {"Osc", "Frequency"}
 R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 ```
