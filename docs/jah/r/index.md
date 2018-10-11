@@ -5,6 +5,10 @@
 
 General purpose audio patching engine
 
+## Status
+
+- Beta-stage. Commands are fixed. Some modules are not well tested.
+
 ## Features
 
 - Arbitrarily create and connect audio generators and processors (_modules_).
