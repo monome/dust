@@ -12,36 +12,36 @@ General purpose audio patching engine
 
 ## Commands
 
-- `new ss <ModuleName> <ModuleType>` - creates a uniquely named module of given type (see section "Available Modules" below).
+- `new ss <modulename> <moduletype>` - creates a uniquely named module of given type (see section "Modules" below).
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
-- `connect ss <ModuleName/Output> <ModuleName/Input>` - connect a modules outputs and module inputs.
+- `connect ss <modulename/output> <modulename/input>` - connects a module output to a module input.
 	- Examples: `connect Osc/Pulse Out/Left`, `connect Osc/Pulse Out/Right`
-- `disconnect ss <ModuleName/Output> <ModuleName/Input>` - disconnect module output from module input.
+- `disconnect ss <modulename/output> <modulename/input>` - disconnects a module output from a module input.
 	- Example: `disconnect Osc/Out Out/Left`
-- `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
+- `set sf <modulename.parameter> <value>` - sets a module parameter to the given value.
+	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 - `delete s <modulename>` - removes a module.
 	- Example: `delete Osc`
-	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
 
 ### Bulk Commands
 
-- `bulkset s` - sets module parameters in bulk serialized in a string.
-	- Example: `bulkset "Osc.Tune -1 Osc.PulseWidth 0.7"` is the same thing as sending `set Osc.Range -1` and `set Osc.PulseWidth 0.7` TODO: floating point precision?
+- `bulkset s <bundle>` - sets module parameters to values based on a bundle of `modulename.parameter` `value` pairs serialized as a string.
+	- Example: `bulkset "Osc.Tune -1 Osc.PulseWidth 0.7"` has the same effect as sending `set Osc.Range -1` and `set Osc.PulseWidth 0.7`. All parameter value changes are guaranteed to be performed at the same time. TODO: floating point precision?
 
 ### Macro Commands
 
-- `newmacro ss` - creates a macro for simultanous control of a list of module parameters. A requirement for included parameters is  that they adhere to the same spec.
-	- Example: given two `MultiOsc` modules named `Carrier` and `Operator` `newmacro Tune "Carrier.Tune Operator.Tune"` defines a new macro controlling `Tune` parameter for both modules.
-- `macroset sf` - sets parameters for module parameters included in the macro. Controlling multiple parameters with a macro is more efficient than using multiple `set` commands.
-	- Example: given above `Tune` macro `macroset Tune 30` has the same effect as sending `set Carrier.Tune 30` and `set Operator.Tune 30` commands.
-- `deletemacro s` - removes a registered macro.
+- `newmacro ss <macroname> <modulename.parameter list>` - creates a uniquely named macro for simultanous control of a list of space delimited module parameters. All included parameters must adhere to the same spec.
+	- Example: given a `SineOsc` and a `PulseOsc` module named `Osc1` and `Osc2` `newmacro Tune "Osc1.Tune Osc2.Tune"` defines a new macro controlling `Tune` parameter for both modules.
+- `macroset sf <macroname> <value>` - sets value for all module parameters included in a macro. Controlling multiple parameters with a macro is more efficient than using multiple `set` commands.
+	- Example: given above `Tune` macro `macroset Tune 30` has the same effect as sending `set Osc1.Tune 30` and `set Osc2.Tune 30` commands.
+- `deletemacro s <macroname>` - removes a macro.
 	- Example: `deletemacro Tune`.
 
 ### Debug Commands
 
-- `trace i` - determines whether to post debug output in SCLang Post Window (1 means yes, 0 no)
+- `trace i <boolean>` - determines whether to post debug output in SCLang Post Window (`1` = yes, `0` = no)
 
-## Available Modules
+## Modules
 
 ### 44Matrix
 - Inputs: `1`, `2`, `3`, `4`
@@ -441,18 +441,20 @@ engine.set("Osc.PWM", 0.2)
 
 ## The R Lua Module
 
-Prerequisite:
+The R Lua module contains:
+- Specs for all included modules.
+- A number of convenience functions for working with polyphonic set ups using the R engine.
+- Various utility functions.
 
-```
+Require the Ack module:
+
+``` lua
 local R = require 'jah/r'
 ```
 
-The R Lua module contains:
-- Specs for all included modules.
--  A number of convenience engine functions for working with R and polyphonic modules.
-- Various utility functions.
-
 ### Module Specs
+
+Ie:
 
 ``` lua
 R.specs.MultiOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
@@ -477,15 +479,52 @@ R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 ## Considerations
 
 - Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
-- Shooting a lot of commands to R may cause messages to be delayed. Using macros or bulkset commands might help.
+- Shooting a lot of commands to too fast R may cause commands to be delayed. Setting parameter values using `macroset` instead of `set`might help.
 
 ## Extending R
 
-[TODO]
+Modules are written by way of subclassing the `RModule` class. A subclass supplies a unique module type name (by overriding `*shortName`), an array of specs for each module parameter (`*params`) and a SynthDef Ugen Graph function (`*ugenGraphFunc`) whose function arguments prefixed with `param_`, `in_` and `out_` are treated as parameter controls, and input and output busses.
+
+If a dictionary is supplied for a parameter in the `*params` array, its `Spec` key value will be used as spec and its `LagTime` value will be used as fixed lag rate for the parameter.
+
+Annotated example:
+
+``` supercollider
+RTestModule : RModule {
+	*shortName { ^'Test' } // module type
+
+	*params {
+		^[
+			'Frequency' -> \widefreq.asSpec, // first parameter
+			'FrequencyModulation' -> (
+				Spec: \unipolar.asSpec, // second parameter
+				LagTime: 0.05 // 50 ms lag
+			)
+		]
+	}
+
+	*ugenGraphFunc {
+		^{
+			|
+				in_FM, // will reference a bus for audio input
+				out_Out, // will reference a bus for audio output use
+				param_Frequency, // parameter 1 value
+				param_FrequencyModulation // parameter 2 value
+			|
+
+			var sig_FM = In.ar(in_FM);
+			var sig = SinOsc.ar(param_Frequency + (1000 * sig_FM * param_FrequencyModulation)); // linear FM
+			Out.ar(out_Out, sig);
+		}
+	}
+}
+```
 
 ### Updating the R Lua module
 
-For a module to be applicable and usable with the utility functions in the R Lua module the module's metadata has to be included in the R Lua module. `R.specs` can be generated from RModule metadata using the `Engine_R.generateLuaSpecs` method.
+For a module to be usable with functions in the `R.engine` Lua module the module's metadata has to be included in the R Lua module.
+
+`R.specs` can be generated from RModule metadata using the `Engine_R.generateLuaSpecs` method. Likewise, module documentation stubs may be generated using the `Engine_R.generateModulesDocSection` method.
 
 ### Gotchas
 
