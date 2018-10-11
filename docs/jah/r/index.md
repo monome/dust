@@ -455,7 +455,7 @@ The R Lua module contains:
 ### Module Specs
 
 ``` lua
-R.specs.PulseOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
+R.specs.MultiOsc.Tune -- returns ControlSpec.new(-600, 600, "linear", 0, 0, "cents")
 ```
 
 ### Engine Functions
