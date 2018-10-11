@@ -12,7 +12,7 @@ Patching engine
 
 ## Commands
 
-- `new ss` - creates module named `[arg1]` of type `[arg2]`. See section "Available Modules" below.
+- `new ss` - creates module uniquely named `arg1` of type `arg2` (see section "Available Modules" below).
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
 - `delete s` - removes module named `[arg1]`.
 	- Example: `delete Osc`
@@ -26,20 +26,20 @@ Patching engine
 ### Bulk Commands
 
 - `bulkset s` - sets module parameters in bulk serialized in a string.
-	- Example: `bulkset "Osc.Frequency 432 Osc.PulseWidth 0.5"` is the same thing as sending `set Osc.Frequency 432` and `set Osc.PulseWidth 0.5` TODO: floating point precision?
+	- Example: `bulkset "Osc.Tune -1 Osc.PulseWidth 0.7"` is the same thing as sending `set Osc.Range -1` and `set Osc.PulseWidth 0.7` TODO: floating point precision?
 
 ### Macro Commands
 
-- `newmacro ss` - creates a macro for a list of module parameters, in order to be able to set the list of parameters simultenously to the same value. This requires the parameters to refer to the same spec.
-	- Example: `newmacro A "Carrier.Frequency Operator.Frequency"`.
-- `macroset sf` - sets parameters for module parameters included in the macro
-	- Example: given above macro `macroset A 432` is the same thing as sending `set Carrier.Frequency 432` and `set Operator.Frequency 432`.
+- `newmacro ss` - creates a macro for simultanous control of a list of module parameters. A requirement for included parameters is  that they adhere to the same spec.
+	- Example: given two `MultiOsc` modules named `Carrier` and `Operator` `newmacro Tune "Carrier.Tune Operator.Tune"` defines a new macro controlling `Tune` parameter for both modules.
+- `macroset sf` - sets parameters for module parameters included in the macro. Controlling multiple parameters with a macro is more efficient than using multiple `set` commands.
+	- Example: given above `Tune` macro `macroset Tune 30` has the same effect as sending `set Carrier.Tune 30` and `set Operator.Tune 30` commands.
 - `deletemacro s` - removes a registered macro.
-	- Example: `deletemacro A`.
+	- Example: `deletemacro Tune`.
 
 ### Debug Commands
 
-- `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
+- `trace i` - determines whether to post debug output in SCLang Post Window (1 means yes, 0 no)
 
 ## Available Modules
 
