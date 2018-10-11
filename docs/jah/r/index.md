@@ -414,11 +414,6 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `TrimB`
 	- `Master`
 
-## Considerations
-
-- Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
-- Shooting a lot of commands to R may cause messages to be delayed. Using macros or bulkset commands might help.
-
 ## Example Usage
 
 ``` lua
@@ -478,6 +473,11 @@ R.engine.poly_connect("Osc/Saw", "Filter/In", 3) -- connects Osc1/Saw to Filter1
 R.util.split_ref("Osc.Frequency") -- returns {"Osc", "Frequency"}
 R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 ```
+
+## Considerations
+
+- Modules can be connected to feedback but a delay of one processing buffer (64 samples) is introduced. There is no single-sample feedback.
+- Shooting a lot of commands to R may cause messages to be delayed. Using macros or bulkset commands might help.
 
 ## Extending R
 
