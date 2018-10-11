@@ -7,6 +7,7 @@
 
 local ControlSpec = require 'controlspec'
 local Control = require 'params/control'
+local Option = require 'params/option'
 local Formatters = require 'jah/formatters'
 local Scroll = require 'jah/scroll'
 local R = require 'jah/r'
@@ -24,6 +25,7 @@ local function add_rcontrol(args)
 end
 
 function init()
+  engine.new("FreqGate", "FreqGate")
   engine.new("LFO", "MultiLFO")
   engine.new("Env", "ADSREnv")
   engine.new("FilterMod", "LinMixer")
@@ -32,6 +34,10 @@ function init()
   engine.new("Amp", "Amp")
   engine.new("SoundOut", "SoundOut")
 
+  engine.set("Osc.FM", 1)
+
+  engine.connect("FreqGate/Frequency", "Osc/FM")
+  engine.connect("FreqGate/Gate", "Env/Gate")
   engine.connect("LFO/Sine", "Osc/PWM")
   engine.connect("LFO/Sine", "FilterMod/In1")
   engine.connect("Env/Out", "FilterMod/In2")
@@ -46,12 +52,39 @@ function init()
   scroll:push("A monophonic synth voice")
   scroll:push("")
 
+  --[[
   add_rcontrol {
-    id="env_gate",
-    name="Env.Gate",
-    spec=ControlSpec.new(0, 1, 'lin', 1, 0),
-    formatter=Formatters.round(1)
+    id="note",
+    name="Note",
+    ref="FreqGate.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001),
   }
+  ]]
+
+  local midi_note_list = {}
+  for i=0,127 do
+    midi_note_list[i] = i
+  end
+
+  local note = Option.new("note", "Note", midi_note_list, 60)
+  note.action = function(value)
+    local function to_hz(note)
+      local exp = (note - 21) / 12
+      return 27.5 * 2^exp
+    end
+
+    engine.set("FreqGate.Frequency", to_hz(value))
+  end
+  scroll:push(note)
+  params:add { param=note }
+
+  local gate = Option.new("gate", "Gate", {0, 1})
+  gate.action = function(value)
+    engine.set("FreqGate.Gate", value-1)
+  end
+  scroll:push(gate)
+  params:add { param=gate }
 
   add_rcontrol {
     id="lfo_frequency",
@@ -60,6 +93,7 @@ function init()
     formatter=Formatters.round(0.001)
   }
 
+  --[[
   add_rcontrol {
     id="osc_range",
     name="Osc.Range",
@@ -71,6 +105,7 @@ function init()
     name="Osc.Tune",
     spec=R.specs.PulseOsc.Tune
   }
+  ]]
 
   add_rcontrol {
     id="osc_pulsewidth",
@@ -102,7 +137,8 @@ function init()
   add_rcontrol {
     id="env_sustain",
     name="Env.Sustain",
-    spec=R.specs.ADSREnv.Sustain
+    spec=R.specs.ADSREnv.Sustain,
+    formatter=Formatters.percentage
   }
 
   add_rcontrol {
@@ -182,9 +218,9 @@ end
 function key(n, z)
   if n == 3 then
     if z == 1 then
-      params:set("env_gate", 1)
+      params:set("gate", 2)
     else
-      params:set("env_gate", 0)
+      params:set("gate", 1)
     end
     redraw()
   end

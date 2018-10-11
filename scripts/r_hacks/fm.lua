@@ -23,47 +23,51 @@ local function add_rcontrol(args)
 end
 
 function init()
-  engine.new("Osc1", "MultiOsc")
-  engine.new("Osc2", "MultiOsc")
-  engine.new("Osc3", "MultiOsc")
+  engine.new("CarrierFG", "FreqGate")
+  engine.new("Carrier", "MultiOsc")
+  engine.new("OperatorFG", "FreqGate")
+  engine.new("Operator", "MultiOsc")
   engine.new("SoundOut", "SoundOut")
 
-  engine.connect("Osc1/Sine", "Osc2/FM")
-  engine.connect("Osc2/Sine", "SoundOut/Left")
-  engine.connect("Osc2/Sine", "SoundOut/Right")
+  engine.set("Carrier.FM", 1)
+
+  engine.connect("CarrierFG/Frequency", "Carrier/FM")
+  engine.connect("Carrier/Sine", "Operator/FM")
+  engine.connect("OperatorFG/Frequency", "Operator/FM")
+  engine.connect("Operator/Sine", "SoundOut/Left")
+  engine.connect("Operator/Sine", "SoundOut/Right")
 
   scroll:push("FM example")
   scroll:push("")
 
   add_rcontrol {
-    id="osc1_range",
-    name="Osc1.Range",
-    spec=R.specs.MultiOsc.Range
+    id="carrier_freq",
+    name="Carrier Freq",
+    ref="CarrierFG.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001)
   }
 
   add_rcontrol {
-    id="osc1_tune",
-    name="Osc1.Tune",
-    spec=R.specs.MultiOsc.Tune
-  }
-
-  add_rcontrol {
-    id="osc2_fm",
-    name="Osc2.FM",
+    id="fm_amount",
+    name="FM Amount",
+    ref="Operator.FM",
     spec=R.specs.MultiOsc.FM
   }
 
   add_rcontrol {
-    id="osc2_range",
-    name="Osc2.Range",
-    spec=R.specs.MultiOsc.Range
+    id="operator_freq",
+    name="Operator Freq",
+    ref="OperatorFG.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001)
   }
 
-  add_rcontrol {
-    id="osc2_tune",
-    name="Osc2.Tune",
-    spec=R.specs.MultiOsc.Tune
-  }
+  scroll:push("")
+  scroll:push("TODO:")
+  scroll:push("Separate Linear FM input")
+
+  params:set("fm_amount", 0.5)
 
   scroll:push("") -- TODO: Scroll bug
 

@@ -23,12 +23,19 @@ local function add_rcontrol(args)
 end
 
 function init()
+  engine.new("Osc1FG", "FreqGate")
   engine.new("Osc1", "MultiOsc")
+  engine.new("Osc2FG", "FreqGate")
   engine.new("Osc2", "MultiOsc")
   engine.new("RingMod", "RingMod")
   engine.new("SoundOut", "SoundOut")
 
+  engine.set("Osc1.FM", 1)
+  engine.set("Osc2.FM", 1)
+
+  engine.connect("Osc1FG/Frequency", "Osc1/FM")
   engine.connect("Osc1/Sine", "RingMod/In")
+  engine.connect("Osc2FG/Frequency", "Osc2/FM")
   engine.connect("Osc2/Sine", "RingMod/Carrier")
 
   engine.connect("RingMod/Out", "SoundOut/Left")
@@ -37,6 +44,23 @@ function init()
   scroll:push("Ring modulation example")
   scroll:push("")
 
+  add_rcontrol {
+    id="osc1_freq",
+    name="Osc1 Freq",
+    ref="Osc1FG.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001)
+  }
+
+  add_rcontrol {
+    id="osc2_freq",
+    name="Osc2 Freq",
+    ref="Osc2FG.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001)
+  }
+
+  --[[
   add_rcontrol {
     id="osc1_range",
     name="Osc1.Range",
@@ -60,11 +84,12 @@ function init()
     name="Osc2.Tune",
     spec=R.specs.MultiOsc.Tune
   }
+  ]]
 
   scroll:push("") -- TODO: Scroll bug
 
-  params:set("osc1_range", -1)
-  params:set("osc2_range", 1)
+  params:set("osc1_freq", 42)
+  params:set("osc2_freq", 704)
 
   params:bang()
 end

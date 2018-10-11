@@ -1,5 +1,7 @@
 -- 1OSC
 --
+-- Dynamic re-patching example
+--
 
 local ControlSpec = require 'controlspec'
 local Control = require 'params/control'
@@ -23,13 +25,17 @@ local function add_rcontrol(args)
 end
 
 function init()
+  engine.new("Base", "FreqGate")
   engine.new("LFO", "MultiLFO")
   engine.new("Osc", "MultiOsc")
   engine.new("Filter", "MMFilter")
   engine.new("SoundOut", "SoundOut")
 
-  scroll:push("Oscillator having pulse")
-  scroll:push("width and lowpass filter")
+  engine.connect("Base/Frequency", "Osc/FM")
+  engine.set("Osc.FM", 1)
+
+  scroll:push("Oscillator thru filter: pulse")
+  scroll:push("width and filter cutoff is ")
   scroll:push("modulated by an LFO.")
   scroll:push("")
 
@@ -58,12 +64,13 @@ function init()
 
   add_rcontrol {
     id="lfo_frequency",
-    name="LFO.Frequency",
+    name="LFO Frequency",
+    ref="LFO.Frequency",
     spec=R.specs.MultiLFO.Frequency,
     formatter=Formatters.round(0.001)
   }
 
-  local reset_trigger = Trigger.new("lfo_reset", "LFO.Reset")
+  local reset_trigger = Trigger.new("lfo_reset", "LFO Reset")
   reset_trigger.action = function()
     engine.set("LFO.Reset", 1)
     engine.set("LFO.Reset", 0)
@@ -96,27 +103,24 @@ function init()
   }
 
   add_rcontrol {
-    id="osc_range",
-    name="Osc.Range",
-    spec=R.specs.MultiOsc.Range
-  }
-
-  add_rcontrol {
-    id="osc_tune",
-    name="Osc.Tune",
-    spec=R.specs.MultiOsc.Tune
+    id="base_freq",
+    name="Osc Frequency",
+    ref="Base.Frequency",
+    spec=R.specs.FreqGate.Frequency,
+    formatter=Formatters.round(0.001)
   }
 
   add_rcontrol {
     id="osc_pulsewidth",
-    name="Osc.PulseWidth",
+    name="Osc PulseWidth",
+    ref="Osc.PulseWidth",
     spec=R.specs.MultiOsc.PulseWidth,
     formatter=Formatters.percentage
   }
 
   add_rcontrol {
     id="lfo_to_osc_pwm",
-    name="LFO > Osc.PWM",
+    name="LFO > Osc PWM",
     ref="Osc.PWM",
     spec=R.specs.MultiOsc.PWM,
     formatter=Formatters.percentage
@@ -147,20 +151,22 @@ function init()
 
   add_rcontrol {
     id="filter_frequency",
-    name="Filter.Frequency",
+    name="Filter Frequency",
+    ref="Filter.Frequency",
     spec=R.specs.MMFilter.Frequency
   }
 
   add_rcontrol {
     id="filter_resonance",
-    name="Filter.Resonance",
+    name="Filter Resonance",
+    ref="Filter.Resonance",
     spec=R.specs.MMFilter.Resonance,
     formatter=Formatters.percentage
   }
 
   add_rcontrol {
     id="lfo_to_filter_fm",
-    name="LFO > Filter.FM",
+    name="LFO > Filter FM",
     ref="Filter.FM",
     spec=R.specs.MMFilter.FM,
     formatter=Formatters.percentage
