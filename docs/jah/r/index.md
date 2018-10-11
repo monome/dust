@@ -8,7 +8,7 @@ General purpose audio patching engine
 ## Features
 
 - Arbitrarily create and patch audio generators and processors (_modules_).
-- Control module parameters from Lua scripting layer using `set` and related commands.
+- Control module parameters from Lua scripting layer.
 
 ## Commands
 
