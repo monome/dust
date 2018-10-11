@@ -13,10 +13,10 @@ local specs = {}
 local options = {}
 
 --options.ALGO = {"Fixed", "Manual"}
-specs.AMP_ATK = ControlSpec.new(0.01,10,"lin",0,0.05,"")
-specs.AMP_DEC = ControlSpec.new(0,2,"lin",0,0.1,"")
-specs.AMP_SUS = ControlSpec.new(0,1,"lin",0,1,"")
-specs.AMP_REL = ControlSpec.new(0.01,10,"lin",0,1,"")
+specs.AMP_ATK = ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.AMP_DEC = ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.AMP_SUS = ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.AMP_REL = ControlSpec.new(0.01,10,"lin",0,1,"ms")
 specs.HZ1 = ControlSpec.new(0,5, "lin",0,1,"")
 specs.HZ2 = ControlSpec.new(0,5, "lin",0,1,"")
 specs.HZ3 = ControlSpec.new(0,5, "lin",0,1,"")
@@ -71,11 +71,16 @@ specs.HZ6_TO_HZ3 = ControlSpec.new(0,2*math.pi,"lin",0,0,"rad")
 specs.HZ6_TO_HZ4 = ControlSpec.new(0,2*math.pi,"lin",0,0,"rad")
 specs.HZ6_TO_HZ5 = ControlSpec.new(0,2*math.pi,"lin",0,0,"rad")
 specs.HZ6_TO_HZ6 = ControlSpec.new(0,2*math.pi,"lin",0,0,"rad")
+specs.CARRIER1 = ControlSpec.new(0,1, "lin",0,1,"db")
+specs.CARRIER2 = ControlSpec.new(0,1, "lin",0,1,"db")
+specs.CARRIER3 = ControlSpec.new(0,1, "lin",0,1,"db")
+specs.CARRIER4 = ControlSpec.new(0,1, "lin",0,1,"db")
+specs.CARRIER5 = ControlSpec.new(0,1, "lin",0,1,"db")
+specs.CARRIER6 = ControlSpec.new(0,1, "lin",0,1,"db")
 
 FM7.specs = specs
 
 function FM7.add_params()
---  params:add{type = "option", id = "algo", name = "Fixed/Manual algorithms", options = options.ALGO, default = 1, action = function(x) engine.algo(x) end}
   params:add{type = "control", id = "ampAtk",name = "Amplitude Env Attack", controlspec = specs.AMP_ATK, action = engine.ampAtk}
   params:add{type = "control", id = "ampDec",name = "Amplitude Env Decay", controlspec = specs.AMP_DEC, action = engine.ampDec}
   params:add{type = "control", id = "ampSus",name = "Amplitude Env Sustain", controlspec = specs.AMP_SUS, action = engine.ampSus}
@@ -138,6 +143,13 @@ function FM7.add_params()
   params:add{type = "control", id = "hz6_to_hz4",name = "Osc6 Phase Mod Osc4", controlspec = specs.HZ6_TO_HZ4, action = engine.hz6_to_hz4}
   params:add{type = "control", id = "hz6_to_hz5",name = "Osc6 Phase Mod Osc5", controlspec = specs.HZ6_TO_HZ5, action = engine.hz6_to_hz5}
   params:add{type = "control", id = "hz6_to_hz6",name = "Osc6 Phase Mod Osc6", controlspec = specs.HZ6_TO_HZ6, action = engine.hz6_to_hz6}
+  params:add_separator()
+  params:add{type = "control", id = "carrier1",name = "Carrier 1 Amplitude", controlspec = specs.CARRIER1, action = engine.carrier1}
+  params:add{type = "control", id = "carrier2",name = "Carrier 2 Amplitude", controlspec = specs.CARRIER2, action = engine.carrier2}
+  params:add{type = "control", id = "carrier3",name = "Carrier 3 Amplitude", controlspec = specs.CARRIER3, action = engine.carrier3}
+  params:add{type = "control", id = "carrier4",name = "Carrier 4 Amplitude", controlspec = specs.CARRIER4, action = engine.carrier4}
+  params:add{type = "control", id = "carrier5",name = "Carrier 5 Amplitude", controlspec = specs.CARRIER5, action = engine.carrier5}
+  params:add{type = "control", id = "carrier6",name = "Carrier 6 Amplitude", controlspec = specs.CARRIER6, action = engine.carrier6}
   params:bang()
 
 end
