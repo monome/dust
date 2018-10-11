@@ -482,3 +482,11 @@ R.util.poly_expand("Osc", 3) -- returns "Osc1 Osc2 Osc3"
 ## Extending R
 
 [TODO]
+
+### Updating the R Lua module
+
+For a module to be applicable and usable with the utility functions in the R Lua module the module's metadata has to be included in the R Lua module. `R.specs` can be generated from RModule metadata using the `Engine_R.generateLuaSpecs` method.
+
+### Gotchas
+
+If one of the parameters of a module has a `ControlSpec` not compatible with Lag (ie. the standard `db` `ControlSpec`) lag time should not be used for any of the parameters. (TODO: decsribe why and what happens)
