@@ -28,10 +28,9 @@ function init()
   engine.new("Filter", "MMFilter")
   engine.new("SoundOut", "SoundOut")
 
-  scroll:push("Oscillator with")
-  scroll:push("pulse width and lowpass")
-  scroll:push("filter modulated by an")
-  scroll:push("LFO.")
+  scroll:push("Oscillator having pulse")
+  scroll:push("width and lowpass filter")
+  scroll:push("modulated by an LFO.")
   scroll:push("")
 
   local current_lfo_wave
