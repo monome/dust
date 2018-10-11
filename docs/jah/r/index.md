@@ -10,7 +10,7 @@ Text based patching engine
 - Freely patch audio generators and processors (_modules_).
 - Control module parameters from Lua scripting layer (_set_ and related commands).
 
-## Commands
+## Basic Commands
 
 - `new ss` - creates module named `[arg1]` of type `[arg2]`. See section "Available Modules" below.
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
@@ -22,15 +22,24 @@ Text based patching engine
 	- Example: `disconnect Osc/Out Out/Left`
 - `set sf` - sets module parameter referenced in `[arg1]` (expressed as `[ModuleName].[Parameter]`) to `[arg2]`.
 	- Examples: `set Osc.Tune -13`, `set Osc.PulseWidth 0.5`
-- `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
+
+## Bulk Commands
+
 - `bulkset s` - sets module parameters in bulk serialized in a string.
 	- Example: `bulkset "Osc.Frequency 432 Osc.PulseWidth 0.5"` is the same thing as sending `set Osc.Frequency 432` and `set Osc.PulseWidth 0.5` TODO: floating point precision?
+
+## Macro Commands
+
 - `newmacro ss` - creates a macro for a list of module parameters, in order to be able to set the list of parameters simultenously to the same value. This requires the parameters to refer to the same spec.
 	- Example: `newmacro A "Carrier.Frequency Operator.Frequency"`.
 - `macroset sf` - sets parameters for module parameters included in the macro
 	- Example: given above macro `macroset A 432` is the same thing as sending `set Carrier.Frequency 432` and `set Operator.Frequency 432`.
 - `deletemacro s` - removes a registered macro.
 	- Example: `deletemacro A`.
+
+## Debug Commands
+
+- `trace i` - determines whether to post debug output in sclang Post Window (1 means yes, 0 no)
 
 ## Available Modules
 
