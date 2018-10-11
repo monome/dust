@@ -7,12 +7,12 @@ General purpose audio patching engine
 
 ## Features
 
-- Arbitrarily create and patch audio generators and processors (_modules_).
+- Arbitrarily create and connect audio generators and processors (_modules_).
 - Control module parameters from Lua scripting layer.
 
 ## Commands
 
-- `new ss <modulename> <moduletype>` - creates a uniquely named module of given type (refer to section "Modules" for possible types).
+- `new ss <modulename> <moduletype>` - creates a uniquely named module of given type (refer to section "Modules" for available types).
 	- Examples: `new Osc MultiOsc`, `new Out SoundOut`
 - `connect ss <modulename/output> <modulename/input>` - connects a module output to a module input.
 	- Examples: `connect Osc/Pulse Out/Left`, `connect Osc/Pulse Out/Right`
@@ -30,7 +30,7 @@ General purpose audio patching engine
 
 ### Macro Commands
 
-- `newmacro ss <macroname> <modulename.parameters...>` - creates a uniquely named macro for simultaneous control of a list of space delimited module parameters. All included parameters must adhere to the same spec.
+- `newmacro ss <macroname> <modulename.parameters...>` - creates a uniquely named macro for simultaneous control of a list of space delimited module parameters. All included parameters should adhere to the same spec.
 	- Example: given `SineOsc` and `PulseOsc` modules named `Osc1` and `Osc2` the command `newmacro Tune "Osc1.Tune Osc2.Tune"` defines a new macro controlling `Tune` parameter for both modules.
 - `macroset sf <macroname> <value>` - sets value for module parameters included in a macro. Controlling multiple parameters with a macro is more efficient than using multiple `set` commands. It is also faster than using `bulkset`. All value changes of parameters in a macro are performed at the same time.
 	- Example: given `Tune` macro above command `macroset Tune 30` has the same effect as commands `set Osc1.Tune 30` and `set Osc2.Tune 30`.
@@ -44,6 +44,9 @@ General purpose audio patching engine
 ## Modules
 
 ### 44Matrix
+
+4x4 Matrix
+
 - Inputs: `1`, `2`, `3`, `4`
 - Outputs: `1`, `2`, `3`, `4`
 - Parameters:
@@ -66,6 +69,9 @@ General purpose audio patching engine
 	- `Gate_4_4`
 
 ### 88Matrix
+
+8x8 Matrix
+
 - Inputs: `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`
 - Outputs: `1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`
 - Parameters:
@@ -136,6 +142,9 @@ General purpose audio patching engine
 	- `Gate_8_8`
 
 ### ADSREnv
+
+ADSR Envelope.
+
 - Inputs: `Gate`
 - Outputs: `Out`
 - Parameters:
@@ -155,6 +164,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Level`
 
 ### Amp2
+
+Amplifier with two inputs, level parameter and variable exponential or linear gain modulation.
+
 - Inputs: `GainModulation`, `In1`, `In2`
 - Outputs: `Out`
 - Parameters:
@@ -166,6 +178,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mode`
 
 ### DbMixer
+
+Mixer suited for audio signals.
+
 - Inputs: `In1`, `In2`, `In3`, `In4`
 - Outputs: `Out`
 - Parameters:
@@ -176,6 +191,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Out`
 
 ### Delay
+
+Delay line.
+
 - Inputs: `In`, `DelayTimeModulation`
 - Outputs: `Out`
 - Parameters:
@@ -183,6 +201,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `DelayTimeModulation`
 
 ### FMVoice
+
+FM voice (TODO: untested)
+
 - Inputs: `Modulation`
 - Outputs: `Out`
 - Parameters:
@@ -223,6 +244,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mod_To_Osc3Freq`
 
 ### FShift
+
+Frequency shifter.
+
 - Inputs: `Left`, `Right`, `FM`
 - Outputs: `Left`, `Right`
 - Parameters:
@@ -230,6 +254,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `FM`
 
 ### FreqGate
+
+CV/Gate thing.
+
 - Inputs: None
 - Outputs: `Frequency`, `Gate`, `Trig`
 - Parameters:
@@ -237,6 +264,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Gate`
 
 ### LPFilter
+
+Lowpass SVF filter.
+
 - Inputs: `In`, `FM`, `ResonanceModulation`
 - Outputs: `Out`
 - Parameters:
@@ -247,6 +277,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `ResonanceModulation`
 
 ### LPLadder
+
+Lowpass ladder filter.
+
 - Inputs: `In`, `FM`, `ResonanceModulation`
 - Outputs: `Out`
 - Parameters:
@@ -256,6 +289,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `ResonanceModulation`
 
 ### LinMixer
+
+Mixer suited for control signals
+
 - Inputs: `In1`, `In2`, `In3`, `In4`
 - Outputs: `Out`
 - Parameters:
@@ -266,6 +302,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Out`
 
 ### MGain
+
+Audio fader with db gain control and mute.
+
 - Inputs: `In`
 - Outputs: `Out`
 - Parameters:
@@ -273,6 +312,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mute`
 
 ### MMFilter
+
+Multimode filter.
+
 - Inputs: `In`, `FM`, `ResonanceModulation`
 - Outputs: `Notch`, `Highpass`, `Bandpass`, `Lowpass`
 - Parameters:
@@ -283,6 +325,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `ResonanceModulation`
 
 ### MultiLFO
+
+LFO featuring multiple waveforms.
+
 - Inputs: `Reset`
 - Outputs: `InvSaw`, `Saw`, `Sine`, `Triangle`, `Pulse`
 - Parameters:
@@ -290,6 +335,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Reset`
 
 ### MultiOsc
+
+Oscillator featuring multiple waveforms.
+
 - Inputs: `FM`, `PWM`
 - Outputs: `Sine`, `Triangle`, `Saw`, `Pulse`
 - Parameters:
@@ -300,11 +348,17 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `PWM`
 
 ### Noise
+
+White noise generator.
+
 - Inputs: None
 - Outputs: `Out`
 - Parameters: None
 
 ### OGain
+
+8-in/8-out audio fader with db gain control and mute.
+
 - Inputs: `In1`, `In2`, `In3`, `In4`, `In5`, `In6`, `In7`, `In8`
 - Outputs: `Out1`, `Out2`, `Out3`, `Out4`, `Out5`, `Out6`, `Out7`, `Out8`
 - Parameters:
@@ -312,6 +366,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mute`
 
 ### PShift
+
+Pitch shifter.
+
 - Inputs: `Left`, `Right`, `PitchRatioModulation`, `PitchDispersionModulation`, `TimeDispersionModulation`
 - Outputs: `Left`, `Right`
 - Parameters:
@@ -323,6 +380,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `TimeDispersionModulation`
 
 ### PulseOsc
+
+Pulse/square oscillator with pulse width control.
+
 - Inputs: `FM`, `PWM`
 - Outputs: `Out`
 - Parameters:
@@ -333,6 +393,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `PWM`
 
 ### QGain
+
+4-in/4-out audio fader with db gain control and mute.
+
 - Inputs: `In1`, `In2`, `In3`, `In4`
 - Outputs: `Out1`, `Out2`, `Out3`, `Out4`
 - Parameters:
@@ -340,11 +403,17 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mute`
 
 ### RingMod
+
+Ring modulator.
+
 - Inputs: `In`, `Carrier`
 - Outputs: `Out`
 - Parameters: None
 
 ### SGain
+
+2-in/2-out audio fader with db gain control and mute.
+
 - Inputs: `Left`, `Right`
 - Outputs: `Left`, `Right`
 - Parameters:
@@ -352,11 +421,17 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Mute`
 
 ### SampHold
+
+Sample and hold module.
+
 - Inputs: `In`, `Trig`
 - Outputs: `Out`
 - Parameters: None
 
 ### SawOsc
+
+Sawtooth oscillator.
+
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -365,6 +440,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `FM`
 
 ### SineLFO
+
+Sine LFO.
+
 - Inputs: `Reset`
 - Outputs: `Out`
 - Parameters:
@@ -372,6 +450,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Reset`
 
 ### SineOsc
+
+Sine oscillator.
+
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -380,16 +461,19 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `FM`
 
 ### SoundIn
+
 - Inputs: None
 - Outputs: `Left`, `Right`
 - Parameters: None
 
 ### SoundOut
+
 - Inputs: `Left`, `Right`
 - Outputs: None
 - Parameters: None
 
 ### TestGen
+
 - Inputs: None
 - Outputs: `Out`
 - Parameters:
@@ -398,6 +482,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `Wave`
 
 ### TriOsc
+
+Triangle oscillator (non-bandlimited).
+
 - Inputs: `FM`
 - Outputs: `Out`
 - Parameters:
@@ -406,6 +493,9 @@ Simple amplifier with level parameter and exponential or linear gain modulation.
 	- `FM`
 
 ### XFader
+
+Crossfader
+
 - Inputs: `InALeft`, `InARight`, `InBLeft`, `InBRight`
 - Outputs: `Left`, `Right`
 - Parameters:
