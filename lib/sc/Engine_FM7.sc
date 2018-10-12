@@ -48,12 +48,12 @@ Engine_FM7 : CroneEngine {
                  [ Lag.kr(hz * hz6,0.01), phase6, Lag.kr(amp6,0.01) ]];
 
         // All the operaters modulation params, this is 36 params, which could be exposed and mapped to a Grid.
-        mods = [[hz1_to_hz1, hz1_to_hz2, hz1_to_hz3, hz1_to_hz4, hz1_to_hz5, hz1_to_hz6],
-               [hz2_to_hz1, hz2_to_hz2, hz2_to_hz3, hz2_to_hz4, hz2_to_hz5, hz2_to_hz6],
-               [hz3_to_hz1, hz3_to_hz2, hz3_to_hz3, hz3_to_hz4, hz3_to_hz5, hz3_to_hz6],
-               [hz4_to_hz1, hz4_to_hz2, hz4_to_hz3, hz4_to_hz4, hz4_to_hz5, hz4_to_hz6],
-               [hz5_to_hz1, hz5_to_hz2, hz5_to_hz3, hz5_to_hz4, hz5_to_hz5, hz5_to_hz6],
-               [hz6_to_hz1, hz6_to_hz2, hz6_to_hz3, hz6_to_hz4, hz6_to_hz5, hz6_to_hz6]];
+        mods = [[hz1_to_hz1, hz2_to_hz1, hz3_to_hz1, hz4_to_hz1, hz5_to_hz1, hz6_to_hz1],
+                [hz1_to_hz2, hz2_to_hz2, hz3_to_hz2, hz4_to_hz2, hz5_to_hz2, hz6_to_hz2],
+                [hz1_to_hz3, hz2_to_hz3, hz3_to_hz3, hz4_to_hz3, hz5_to_hz3, hz6_to_hz3],
+                [hz1_to_hz4, hz2_to_hz4, hz3_to_hz4, hz4_to_hz4, hz5_to_hz4, hz6_to_hz4],
+                [hz1_to_hz5, hz2_to_hz5, hz3_to_hz5, hz4_to_hz5, hz5_to_hz5, hz6_to_hz5],
+                [hz1_to_hz6, hz2_to_hz6, hz3_to_hz6, hz4_to_hz6, hz5_to_hz6, hz6_to_hz6]];
 
         // returns a six channel array of OutputProxy objects
         osc = FM7.ar(ctrls,mods);
