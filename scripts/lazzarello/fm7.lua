@@ -14,9 +14,10 @@
 -- key 2: random modulation matrix
 -- key 3: play a random note
 
-local FM7 = require "lazzarello/fm7"
+local FM7 = require 'lazzarello/fm7'
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
+local UI = require 'mark_eats/ui'
 
 local g = grid.connect()
 
@@ -118,28 +119,8 @@ function init()
   end
   light = 0
   number = 3
-end
-
-function enc(n,delta)
-  if n == 1 then
-    hz_position = (hz_position + delta) % 1024
-    local hz = (hz_position / 1024) * 5
-    local mode = getEncoderMode()
-    ctrl_functions[mode](hz)
-    --print("hz" .. mode .. " multiple is " .. hz)
-  elseif n == 2 then
-    ph_position = (ph_position + delta) % 1024
-    local phase = (ph_position / 1024)
-    local mode = getEncoderMode()
-    ctrl_functions[mode + 6](phase)
-    --print("phase" .. mode .. " is " .. phase)
-  elseif n == 3 then
-    amp_position = (amp_position + delta) % 1024
-    local amp = (amp_position / 1024)
-    local mode = getEncoderMode()
-    ctrl_functions[mode + 6*2](amp)
-    --print("amp" .. mode .. " is " .. amp)
-  end
+  
+  pages = UI.Pages.new(1, 33)
 end
 
 function g.event(x, y, z)
@@ -264,6 +245,23 @@ function gridredraw()
   g:refresh()
 end
 
+function enc(n,delta)
+  if n == 1 then
+    pages:set_index_delta(delta, true)
+    --print("set algo ".. (pages.index - 1))
+    if (pages.index - 1) < 10 then
+      params:read("lazzarello/fm7-0".. (pages.index - 1) .. ".pset")
+    else
+      params:read("lazzarello/fm7-".. (pages.index - 1) .. ".pset")
+    end
+  elseif n == 2 then
+    print("encoder 2")
+
+  elseif n == 3 then
+    print("encoder 3")
+  end
+end
+
 function key(n,z)
   if n == 2 and z== 1 then
     -- clear selected
@@ -305,8 +303,7 @@ function key(n,z)
   end
 end
 
-function redraw()
-  screen.clear()
+local function draw_matrix_outputs()
   for m = 1,6 do
     for n = 1,6 do
       screen.rect(m*9, n*9, 9, 9)
@@ -328,6 +325,24 @@ function redraw()
     screen.move_rel(-32,0)
     screen.text(carriers[m])
     screen.stroke()    
+  end  
+end
+
+local function draw_algo(num)
+    screen.move(64,16)
+    screen.text("algo "..num)
+    screen.rect(64,32,9,9)
+    screen.stroke()
+end
+
+function redraw()
+  screen.clear()
+  pages:redraw()
+  
+  if pages.index == 1 then
+    draw_matrix_outputs()
+  else
+    draw_algo(pages.index - 1)
   end
 
   screen.update()
