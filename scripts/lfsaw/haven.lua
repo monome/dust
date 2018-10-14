@@ -4,10 +4,10 @@
 
 engine.name = 'Haven'
 
-function init()
-  k1 = false
-  k2 = false
+local k1 = false
+local k2 = false
 
+function init()
   params:add{
     type="control",
     id="freq1",
@@ -74,19 +74,11 @@ function redraw()
 end
 
 
-function key(n,z)
+function key(n, z)
   if n == 2 then
-    if z == 1 then
-      k1 = true
-    else
-      k1 = false
-    end
-    elseif n == 3 then
-    if z == 1 then
-      k2 = true
-    else
-      k2 = false
-    end
+    k1 = z == 1
+  elseif n == 3 then
+    k2 = z == 1
   end
 end
 
