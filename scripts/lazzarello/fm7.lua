@@ -328,11 +328,96 @@ local function draw_matrix_outputs()
   end  
 end
 
-local function draw_algo(num)
-    screen.move(64,16)
+local function draw_algo_rel(num)
+    -- my first try was clever but not really intuitive.
+    -- keeping it for posterity.
+    screen.move(0,10)
     screen.text("algo "..num)
-    screen.rect(64,32,9,9)
+    local size = 9
+    local x = 32
+    local y = 5
+    local spacing = 16
+    local text_coords = {2,6}
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(6)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(5)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(4)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(3)
+    x = x - spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(1)
+    y = y - spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(2)
     screen.stroke()
+end
+local algo_box_coords = 
+  {
+--[[
+absolute coords for operator box positions
+ 5|
+21|
+37|
+53|__ __ __ __ __ ___
+   32 48 64 80 96 112
+--]]
+    {{48,53},{48,37},{64,53},{64,37},{64,21},{64,5}},
+    {{48,53},{48,37},{64,53},{64,37},{64,21},{64,5}},
+    {{48,53},{48,37},{48,21},{64,53},{64,37},{64,21}},
+    {{48,53},{48,37},{48,21},{64,53},{64,37},{64,21}},
+    {{48,53},{48,37},{64,53},{64,37},{80,53},{80,37}},
+    {{48,53},{48,37},{64,53},{64,37},{80,53},{80,37}},
+    {{48,53},{48,37},{64,53},{64,37},{80,37},{80,21}},
+    {{48,53},{48,37},{64,53},{64,37},{80,37},{80,21}},
+    {{48,53},{48,37},{64,53},{64,37},{80,37},{80,21}},
+    {{48,53},{48,37},{48,21},{64,53},{80,37},{64,37}},
+    {{48,53},{48,37},{48,21},{64,53},{80,37},{64,37}},
+    {{32,53},{32,37},{64,53},{48,37},{64,37},{80,37}},
+    {{32,53},{32,37},{64,53},{48,37},{64,37},{80,37}},
+    {{32,53},{32,37},{64,53},{64,37},{80,37},{64,21}},
+    {{32,53},{32,37},{64,53},{64,37},{80,21},{48,21}},
+    {{64,53},{48,37},{64,37},{64,21},{80,37},{80,21}},
+    {{64,53},{48,37},{64,37},{64,21},{80,37},{80,21}},
+    {{64,53},{48,37},{64,37},{80,37},{80,21},{80,5}},
+    {{48,53},{48,37},{48,21},{64,53},{80,53},{64,37}},
+    {{32,53},{48,53},{32,37},{80,53},{64,37},{80,37}},
+    {{32,53},{48,53},{32,37},{64,53},{80,53},{64,37}},
+    {{32,53},{32,37},{48,53},{64,53},{80,53},{64,37}},
+    {{32,53},{48,53},{48,37},{64,53},{80,53},{64,37}},
+    {{32,53},{48,53},{64,53},{80,53},{96,53},{80,37}},
+    {{32,53},{48,53},{64,53},{80,53},{96,53},{80,37}},
+    {{32,53},{48,53},{48,37},{80,53},{64,37},{80,37}},
+    {{32,53},{48,53},{48,37},{80,53},{64,37},{80,37}},
+    {{48,53},{48,37},{64,53},{64,37},{64,21},{80,53}},
+    {{32,53},{48,53},{64,53},{64,37},{80,53},{80,37}},
+    {{32,53},{48,53},{64,53},{64,37},{64,21},{80,53}},
+    {{32,53},{48,53},{64,53},{80,53},{96,53},{96,37}},
+    {{32,53},{48,53},{64,53},{80,53},{96,53},{112,53}}
+  }
+
+local function draw_algo(num)
+    screen.move(0,10)
+    screen.text("algo "..num)
+    local size = 9
+    local text_coords = {2,6}
+  for a = 1,6 do
+    screen.rect(algo_box_coords[num][a][1],algo_box_coords[num][a][2],size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(a)
+    screen.stroke()
+  end
 end
 
 function redraw()
