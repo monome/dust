@@ -2,16 +2,53 @@
 -- lots of feedback
 --
 
-local Haven = require 'lfsaw/haven'
-
 engine.name = 'Haven'
 
 function init()
   k1 = false
   k2 = false
-  Haven.add_params()
-  params:read("lfsaw/haven.pset")
-  screen.line_width(1.0)
+
+  params:add{
+    type="control",
+    id="freq1",
+    controlspec=controlspec.new(10, 200, "exp", 0, 20, "Hz"),
+    action=engine.freq1,
+  }
+
+  params:add{
+    type="control",
+    id="freq2",
+    controlspec=controlspec.new(1000, 12000, "exp", 0, 4000, "Hz"),
+    action=engine.freq2,
+  }
+
+  params:add{
+    type="control",
+    id="amp1",
+    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    action=engine.amp1,
+  }
+
+  params:add{
+    type="control",
+    id="amp2",
+    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    action=engine.amp2,
+  }
+
+  params:add{
+    type="control",
+    id="in_amp",
+    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    action=engine.inAmp,
+  }
+
+  params:add{
+    type="control",
+    id="fdbck",
+    controlspec=controlspec.new(-1, 1, "linear", 0, 0.03, ""),
+    action=engine.fdbck,
+  }
 end
 
 function redraw()
@@ -32,7 +69,7 @@ function redraw()
   screen.move(0, 40)
   screen.text("fdbck: "..params:string("fdbck"))
   screen.move(0, 48)
-  screen.text("in: "..params:string("inAmp"))
+  screen.text("in: "..params:string("in_amp"))
   screen.update()
 end
 
@@ -69,7 +106,7 @@ function enc(n, delta)
     if k1 then
       params:delta("freq2", delta)
     elseif k2 then
-      params:delta("inAmp", delta)
+      params:delta("in_amp", delta)
     else
       params:delta("amp2", delta)
     end
@@ -77,6 +114,3 @@ function enc(n, delta)
   end
 end
 
-function cleanup()
-  params:write("lfsaw/lfsaw.pset")
-end
