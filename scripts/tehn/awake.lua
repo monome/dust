@@ -1,4 +1,4 @@
--- awake: time changes 
+-- awake: time changes
 -- (grid optional)
 --
 -- top sequence plays.
@@ -23,9 +23,9 @@
 -- modify sound params in
 -- SYSTEM > AUDIO menu
 
-local cs = require 'controlspec'
-
 engine.name = 'PolyPerc'
+
+local g = grid.connect()
 
 local KEY3 = false
 local alt = false
@@ -50,72 +50,69 @@ local edit_pos = 1
 
 local BeatClock = require 'beatclock'
 local clk = BeatClock.new()
-
+local clk_midi = midi.connect()
+clk_midi.event = function(data)
+  clk:process_midi(data)
+end
 
 function build_scale()
   local n = 0
   for i=1,16 do
     notes[i] = n
-    n = n + scale_degrees[(params:get("scale mode") + i)%7 + 1]
+    n = n + scale_degrees[(params:get("scale_mode") + i)%7 + 1]
   end
   --tab.print(notes)
   for i=1,16 do freqs[i] = 110*2^((notes[i]+params:get("trans"))/12) end
-  --tab.print(freqs) 
-end 
+  --tab.print(freqs)
+end
 
 function init()
   print("grid/seek")
-  
+
   clk.on_step = step
   clk.on_select_internal = function() clk:start() end
   clk.on_select_external = reset_pattern
   clk:add_clock_params()
+  params:set("bpm",46)
   params:add_separator()
 
-  params:add_number("scale mode",1,7,3)
-  params:set_action("scale mode", function(n) 
-    build_scale()
-  end) 
-  params:add_number("trans",-12,24,0)
-  params:set_action("trans", function(n) 
-    build_scale()
-  end)
+  params:add{type="number",id="scale_mode",name="scale mode",
+    min=1,max=7,default=3,
+    action=function(n) build_scale() end}
+  params:add{type="number",id="trans",
+    min = -12, max = 24, default = 0,
+    action = function() build_scale() end}
   params:add_separator()
 
-  cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp",cs.AMP)
-  params:set_action("amp",
-  function(x) engine.amp(x) end) 
+  cs_AMP = controlspec.new(0,1,'lin',0,0.5,'')
+  params:add{type="control",id="amp",controlspec=cs_AMP,
+    action=function(x) engine.amp(x) end}
 
-  cs.PW = cs.new(0,100,'lin',0,50,'%')
-  params:add_control("pw",cs.PW)
-  params:set_action("pw",
-  function(x) engine.pw(x/100) end) 
+  cs_PW = controlspec.new(0,100,'lin',0,50,'%')
+  params:add{type="control",id="pw",controlspec=cs_PW,
+    action=function(x) engine.pw(x/100) end}
 
-  cs.REL = cs.new(0.1,3.2,'lin',0,1.2,'s') 
-  params:add_control("release",cs.REL)
-  params:set_action("release",
-  function(x) engine.release(x) end) 
+  cs_REL = controlspec.new(0.1,3.2,'lin',0,1.2,'s')
+  params:add{type="control",id="release",controlspec=cs_REL,
+    action=function(x) engine.release(x) end}
 
-  cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff",cs.CUT)
-  params:set_action("cutoff",
-  function(x) engine.cutoff(x) end) 
+  cs_CUT = controlspec.new(50,5000,'exp',0,555,'hz')
+  params:add{type="control",id="cutoff",controlspec=cs_CUT,
+    action=function(x) engine.cutoff(x) end}
 
-  cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain",cs.GAIN)
-  params:set_action("gain",
-  function(x) engine.gain(x) end) 
+  cs_GAIN = controlspec.new(0,4,'lin',0,1,'')
+  params:add{type="control",id="gain",controlspec=cs_GAIN,
+    action=function(x) engine.gain(x) end}
 
   params:read("tehn/awake.pset")
   params:bang()
-  
+
   clk:start()
-  
+
 end
- 
+
 function step()
-    
+
   one.pos = one.pos + 1
   if one.pos > one.length then one.pos = 1 end
   two.pos = two.pos + 1
@@ -134,7 +131,7 @@ function reset_pattern()
   clk:reset()
 end
 
-function gridkey(x, y, z)
+function g.event(x, y, z)
   if z > 0 then
     if edit_mode == 1 then
       if one.data[x] == 9-y then
@@ -147,62 +144,62 @@ function gridkey(x, y, z)
         two.data[x] = 0
       else
         two.data[x] = 9-y
-      end 
+      end
     end
     gridredraw()
     redraw()
-  end 
+  end
 end
 
 function gridredraw()
-  g:all(0) 
+  g.all(0)
   if edit_mode == 1 then
     for x = 1, 16 do
-      if one.data[x] > 0 then g:led(x, 9-one.data[x], 5) end
+      if one.data[x] > 0 then g.led(x, 9-one.data[x], 5) end
     end
     if one.data[one.pos] > 0 then
-      g:led(one.pos, 9-one.data[one.pos], 15)
+      g.led(one.pos, 9-one.data[one.pos], 15)
     else
-      g:led(one.pos, 1, 3)
+      g.led(one.pos, 1, 3)
     end
-  else 
+  else
     for x = 1, 16 do
-      if two.data[x] > 0 then g:led(x, 9-two.data[x], 5) end
+      if two.data[x] > 0 then g.led(x, 9-two.data[x], 5) end
     end
     if two.data[two.pos] > 0 then
-      g:led(two.pos, 9-two.data[two.pos], 15)
+      g.led(two.pos, 9-two.data[two.pos], 15)
     else
-      g:led(two.pos, 1, 3)
+      g.led(two.pos, 1, 3)
     end
-  end 
-  g:refresh()
+  end
+  g.refresh()
 end
 
 function enc(n, delta)
   if alt and n==1 then
-    params:delta("scale mode",delta)
+    params:delta("scale_mode", delta)
   elseif KEY3 and n==1 then
-    params:delta("trans",delta)
+    params:delta("trans", delta)
   elseif n == 1 then
-    params:delta("bpm",delta)
+    params:delta("bpm", delta)
   elseif alt and n == 2 then
-    params:delta("cutoff",delta)
+    params:delta("cutoff", delta)
   elseif alt and n == 3 then
-    params:delta("release",delta)
+    params:delta("release", delta)
   elseif KEY3 and n==2 then
     one.length = util.clamp(one.length+delta,1,16)
   elseif KEY3 and n==3 then
     two.length = util.clamp(two.length+delta,1,16)
   elseif n==3 then
     if edit_mode == 1 then
-      one.data[edit_pos] = util.clamp(one.data[edit_pos]+delta,0,8) 
+      one.data[edit_pos] = util.clamp(one.data[edit_pos]+delta,0,8)
     else
-      two.data[edit_pos] = util.clamp(two.data[edit_pos]+delta,0,8) 
+      two.data[edit_pos] = util.clamp(two.data[edit_pos]+delta,0,8)
     end
   elseif n==2 then
     local p = (edit_mode == 1) and one.length or two.length
-    edit_pos = util.clamp(edit_pos+delta,1,p) 
-  end 
+    edit_pos = util.clamp(edit_pos+delta,1,p)
+  end
   redraw()
 end
 
@@ -236,7 +233,7 @@ function key(n,z)
             two.data[i] = util.clamp(two.data[i]+math.floor(math.random()*3)-1,0,8)
           end
         end
-      end 
+      end
     end
   end
 end
@@ -275,26 +272,18 @@ function redraw()
   end
   screen.level((not alt and not KEY3) and 15 or 4)
   screen.move(0,10)
-  screen.text("TM:"..params:get("bpm"))
+  screen.text("bpm:"..params:get("bpm"))
   screen.level(alt and 15 or 4)
   screen.move(0,20)
-  screen.text("SM:"..params:get("scale mode"))
+  screen.text("sc:"..params:get("scale_mode"))
   screen.level(KEY3 and 15 or 4)
   screen.move(0,30)
-  screen.text("TR:"..params:get("trans"))
+  screen.text("tr:"..params:get("trans"))
 
   screen.level(4)
   screen.move(0,60)
-  if alt then screen.text("SND")
-  elseif KEY3 then screen.text("LOOP") end 
+  if alt then screen.text("cut/rel")
+  elseif KEY3 then screen.text("loop") end
   screen.update()
 end
 
-midi.add = function(dev)
-  print('awake: midi device added', dev.id, dev.name)
-  midi_device = dev
-end
-midi.remove = function(dev)
-  print('awake: midi device removed', dev.id, dev.name)
-  midi_device = nil
-end

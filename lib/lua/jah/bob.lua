@@ -12,8 +12,8 @@ specs.resonance = ControlSpec.UNIPOLAR
 Bob.specs = specs
 
 local function bind(paramname, id, formatter)
-  params:add_control(paramname, specs[id], formatter)
-  params:set_action(paramname, engine[id])
+  params:add_control(id, paramname, specs[id], formatter)
+  params:set_action(id, engine[id])
 end
 
 function Bob.add_params()
