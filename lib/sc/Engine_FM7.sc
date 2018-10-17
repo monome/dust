@@ -34,10 +34,16 @@ Engine_FM7 : CroneEngine {
         hz5_to_hz1=0, hz5_to_hz2=0, hz5_to_hz3=0, hz5_to_hz4=0, hz5_to_hz5=0, hz5_to_hz6=0,
         hz6_to_hz1=0, hz6_to_hz2=0, hz6_to_hz3=0, hz6_to_hz4=0, hz6_to_hz5=0, hz6_to_hz6=0,
 	// boolean if the carrier is output
-	carrier1=1,carrier2=1,carrier3=0,carrier4=0,carrier5=0,carrier6=0;
+	carrier1=1,carrier2=1,carrier3=0,carrier4=0,carrier5=0,carrier6=0,
+	opAmpA1=0.05, opAmpD1=0.1, opAmpS1=1.0, opAmpR1=1.0, opAmpCurve1= -1.0,
+	opAmpA2=0.05, opAmpD2=0.1, opAmpS2=1.0, opAmpR2=1.0, opAmpCurve2= -1.0,
+	opAmpA3=0.05, opAmpD3=0.1, opAmpS3=1.0, opAmpR3=1.0, opAmpCurve3= -1.0,
+	opAmpA4=0.05, opAmpD4=0.1, opAmpS4=1.0, opAmpR4=1.0, opAmpCurve4= -1.0,
+	opAmpA5=0.05, opAmpD5=0.1, opAmpS5=1.0, opAmpR5=1.0, opAmpCurve5= -1.0,
+	opAmpA6=0.05, opAmpD6=0.1, opAmpS6=1.0, opAmpR6=1.0, opAmpCurve6= -1.0;
 
         // declare some vars for this scope
-        var ctrls, mods, osc, aenv, chans, chan_vec, osc_mix;
+        var ctrls, mods, osc, op_env, aenv, chans, chan_vec, osc_mix, osc_env;
 
         // the 6 oscillators, their frequence, phase and amplitude
         ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) ],
@@ -57,9 +63,17 @@ Engine_FM7 : CroneEngine {
 
         // returns a six channel array of OutputProxy objects
         osc = FM7.ar(ctrls,mods);
+	op_env = [EnvGen.kr(Env.adsr(opAmpA1,opAmpD1,opAmpS1,opAmpR1,opAmpCurve1),gate,doneAction:2),
+		EnvGen.kr(Env.adsr(opAmpA2,opAmpD2,opAmpS2,opAmpR2,opAmpCurve2),gate,doneAction:2),
+		EnvGen.kr(Env.adsr(opAmpA3,opAmpD3,opAmpS3,opAmpR3,opAmpCurve3),gate,doneAction:2),
+		EnvGen.kr(Env.adsr(opAmpA4,opAmpD4,opAmpS4,opAmpR4,opAmpCurve4),gate,doneAction:2),
+		EnvGen.kr(Env.adsr(opAmpA5,opAmpD5,opAmpS5,opAmpR5,opAmpCurve5),gate,doneAction:2),
+		EnvGen.kr(Env.adsr(opAmpA6,opAmpD6,opAmpS6,opAmpR6,opAmpCurve6),gate,doneAction:2),
+	];
 
         chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
-        osc_mix = Mix.new(chan_vec.collect({|v,i| osc[i]*v}));
+	osc_env = osc.collect({|op,i| op * op_env[i]});
+        osc_mix = Mix.new(chan_vec.collect({|v,i| osc_env[i]*v}));
         amp = Lag.ar(K2A.ar(amp), amplag);
         // an amplitude envelope with ADSR controls
         aenv = EnvGen.ar(
@@ -85,7 +99,13 @@ Engine_FM7 : CroneEngine {
         \hz4_to_hz1 -> 0, \hz4_to_hz2 -> 0, \hz4_to_hz3 -> 0, \hz4_to_hz4 -> 0, \hz4_to_hz5 -> 0, \hz4_to_hz6 -> 0,
         \hz5_to_hz1 -> 0, \hz5_to_hz2 -> 0, \hz5_to_hz3 -> 0, \hz5_to_hz4 -> 0, \hz5_to_hz5 -> 0, \hz5_to_hz6 -> 0,
         \hz6_to_hz1 -> 0, \hz6_to_hz2 -> 0, \hz6_to_hz3 -> 0, \hz6_to_hz4 -> 0, \hz6_to_hz5 -> 0, \hz6_to_hz6 -> 0,       
-	\carrier1 -> 1,\carrier2 -> 1,\carrier3 -> 0,\carrier4 -> 0,\carrier5 -> 0,\carrier6 -> 0;
+	\carrier1 -> 1,\carrier2 -> 1,\carrier3 -> 0,\carrier4 -> 0,\carrier5 -> 0,\carrier6 -> 0,
+	\opAmpA1 -> 0.05, \opAmpD1 -> 0.1, \opAmpS1 -> 1.0, \opAmpR1 -> 1.0, \opAmpCurve1 ->  -1.0,
+	\opAmpA2 -> 0.05, \opAmpD2 -> 0.1, \opAmpS2 -> 1.0, \opAmpR2 -> 1.0, \opAmpCurve2 ->  -1.0,
+	\opAmpA3 -> 0.05, \opAmpD3 -> 0.1, \opAmpS3 -> 1.0, \opAmpR3 -> 1.0, \opAmpCurve3 ->  -1.0,
+	\opAmpA4 -> 0.05, \opAmpD4 -> 0.1, \opAmpS4 -> 1.0, \opAmpR4 -> 1.0, \opAmpCurve4 ->  -1.0,
+	\opAmpA5 -> 0.05, \opAmpD5 -> 0.1, \opAmpS5 -> 1.0, \opAmpR5 -> 1.0, \opAmpCurve5 ->  -1.0,
+	\opAmpA6 -> 0.05, \opAmpD6 -> 0.1, \opAmpS6 -> 1.0, \opAmpR6 -> 1.0, \opAmpCurve6 ->  -1.0;
       );
     }
   }
