@@ -71,7 +71,7 @@ Engine_FM7 : CroneEngine {
         chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
         osc_mix = Mix.new(chan_vec.collect({|v,i| osc[i]*v}));
         amp = Lag.ar(K2A.ar(amp), amplag);
-	FreeSelfWhenDone.kr(Line.kr(0, 1, 10));
+	//FreeSelfWhenDone.kr(Line.kr(0, 1, 10));
 	kilnod = DetectSilence.ar(osc_mix, 0.01, 0.2, doneAction:2);
         Out.ar(out, (osc_mix * amp).dup);
       });
