@@ -8,7 +8,7 @@
 local MusicUtil = require "mark_eats/musicutil"
 local MEFormatters = require "mark_eats/formatters"
 
-engine.name = nil
+engine.name = "TestSine"
 
 local SCREEN_FRAMERATE = 15
 local screen_dirty = true
@@ -47,6 +47,8 @@ end
 
 
 function init()
+  
+  engine.amp(0)
   
   -- Add params
   
@@ -110,7 +112,7 @@ function redraw()
     freq_x = util.explin(math.max(MusicUtil.note_num_to_freq(note_num - 0.5), 0.00001), MusicUtil.note_num_to_freq(note_num + 0.5), 0, 128, last_freq)
     freq_x = util.round(freq_x) + 0.5
   else
-    freq_x = 63.5
+    freq_x = 64.5
   end
   if current_freq > 0 then screen.level(15)
   else screen.level(3) end
