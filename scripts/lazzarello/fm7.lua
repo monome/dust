@@ -1,4 +1,4 @@
--- fmrthsea
+-- FM7
 --
 -- FM polysynth
 -- controlled by grid or MIDI
@@ -7,10 +7,7 @@
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
--- 1 3-7 toggle encoders to op 2-6
--- enc 1: operator hz multiplier
--- enc 2: operator phase
--- enc 3: operator amplitude
+-- enc 1: change presets
 -- key 2: random modulation matrix
 -- key 3: play a random note
 

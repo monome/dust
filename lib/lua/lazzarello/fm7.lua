@@ -12,39 +12,34 @@ local FM7 = {}
 local specs = {}
 local options = {}
 
-specs.AMP_ATK = ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
-specs.AMP_DEC = ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.AMP_SUS = ControlSpec.new(0,1,"lin",0,1,"ms")
-specs.AMP_REL = ControlSpec.new(0.01,10,"lin",0,1,"ms")
-
 specs.OPAMP_A1= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D1= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S1= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S1= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R1= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.OPAMP_A2= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D2= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S2= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S2= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R2= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.OPAMP_A3= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D3= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S3= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S3= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R3= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.OPAMP_A4= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D4= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S4= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S4= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R4= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.OPAMP_A5= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D5= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S5= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S5= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R5= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.OPAMP_A6= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
 specs.OPAMP_D6= ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.OPAMP_S6= ControlSpec.new(0,1,"lin",0,1,"ms")
+specs.OPAMP_S6= ControlSpec.new(0,1,"lin",0,1,"db")
 specs.OPAMP_R6= ControlSpec.new(0.01,10,"lin",0,1,"ms")
 
 specs.HZ1 = ControlSpec.new(0,5, "lin",0,1,"")
@@ -111,11 +106,6 @@ specs.CARRIER6 = ControlSpec.new(0,1, "lin",0,1,"db")
 FM7.specs = specs
 
 function FM7.add_params()
-  params:add{type = "control", id = "ampAtk",name = "Amplitude Env Attack", controlspec = specs.AMP_ATK, action = engine.ampAtk}
-  params:add{type = "control", id = "ampDec",name = "Amplitude Env Decay", controlspec = specs.AMP_DEC, action = engine.ampDec}
-  params:add{type = "control", id = "ampSus",name = "Amplitude Env Sustain", controlspec = specs.AMP_SUS, action = engine.ampSus}
-  params:add{type = "control", id = "ampRel",name = "Amplitude Env Release", controlspec = specs.AMP_REL, action = engine.ampRel}
-  params:add_separator()
   params:add{type = "control", id = "hz1",name = "Osc 1 Frequency Multiplier", controlspec = specs.HZ1, action = engine.hz1}
   params:add{type = "control", id = "hz2",name = "Osc 2 Frequency Multiplier", controlspec = specs.HZ2, action = engine.hz2}
   params:add{type = "control", id = "hz3",name = "Osc 3 Frequency Multiplier", controlspec = specs.HZ3, action = engine.hz3}
