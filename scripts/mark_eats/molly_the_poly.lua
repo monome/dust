@@ -18,6 +18,8 @@ local SCREEN_FRAMERATE = 15
 local screen_dirty = true
 
 local midi_in_device
+local bend_ranges = {2, 3, 12, 24, 48}
+
 
 local SUN_BASE_RADIUS = 5
 local sun_mod_radius = 0
@@ -157,7 +159,9 @@ local function midi_event(data)
     -- Pitch bend
     elseif msg.type == "pitchbend" then
       local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
-      set_pitch_bend(bend_st * 2) -- 2 Semitones of bend
+      local bend_range = bend_ranges[params:get("bend_range")]
+      print(bend_range)
+      set_pitch_bend(bend_st * bend_range)
       
     end
   
@@ -221,6 +225,8 @@ function init()
   local channels = {"All"}
   for i = 1, 16 do table.insert(channels, i) end
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
+
+  params:add{type = "option", id = "bend_range", name = "Bend Range", options = bend_ranges}
   
   params:add_separator()
   
