@@ -1,24 +1,21 @@
 // CroneEngine_FM7
-// A DX7 Frequency Modulation synth model
+// A Frequency Modulation synth model
 Engine_FM7 : CroneEngine {
   classvar <polyDef;
   classvar <paramDefaults;
   classvar <maxNumVoices;
 
   var <ctlBus;
-  // this is not used in the implementation here. Is this something needed by CroneEngine?
-  var <mixBus;
   var <gr;
   var <voices;
 
   *initClass {
     maxNumVoices = 16;
-    // StartUp registers functions to perform an action after the library has been compiled, and after the startup file has run.
     StartUp.add {
       polyDef = SynthDef.new(\polyFM7, {
         // args for whole instrument
         arg out, amp=0.2, amplag=0.02, gate=1, hz,
-        // operator frequencies. these can be partials or custom intervals
+        // operator frequency multiplier. these can be partials or custom intervals
         hz1=1, hz2=2, hz3=0, hz4=0, hz5=0, hz6=0,
         // operator amplitudes
         amp1=1,amp2=0.5,amp3=0.3,amp4=1,amp5=1,amp6=1,
@@ -41,15 +38,14 @@ Engine_FM7 : CroneEngine {
 	opAmpA5=0.05, opAmpD5=0.1, opAmpS5=1.0, opAmpR5=1.0, opAmpCurve5= -1.0,
 	opAmpA6=0.05, opAmpD6=0.1, opAmpS6=1.0, opAmpR6=1.0, opAmpCurve6= -1.0;
 
-        // declare some vars for this scope
         var ctrls, mods, osc, op_env, chans, chan_vec, osc_mix, opEnv1, opEnv2, opEnv3, opEnv4, opEnv5, opEnv6,kilnod;
-	//Env.adsr(0.05,0.34,0.5,4.11,1,-1).test.plot;
-	    opEnv1 = EnvGen.kr(Env.adsr(opAmpA1,opAmpD1,opAmpS1,opAmpR1,1.0, opAmpCurve1),gate,doneAction:0);
-		opEnv2 = EnvGen.kr(Env.adsr(opAmpA2,opAmpD2,opAmpS2,opAmpR2,1.0, opAmpCurve2),gate,doneAction:0);
-		opEnv3 = EnvGen.kr(Env.adsr(opAmpA3,opAmpD3,opAmpS3,opAmpR3,1.0, opAmpCurve3),gate,doneAction:0);
-		opEnv4 = EnvGen.kr(Env.adsr(opAmpA4,opAmpD4,opAmpS4,opAmpR4,1.0, opAmpCurve4),gate,doneAction:0);
-		opEnv5 = EnvGen.kr(Env.adsr(opAmpA5,opAmpD5,opAmpS5,opAmpR5,1.0, opAmpCurve5),gate,doneAction:0);
-		opEnv6 = EnvGen.kr(Env.adsr(opAmpA6,opAmpD6,opAmpS6,opAmpR6,1.0, opAmpCurve6),gate,doneAction:0);
+	opEnv1 = EnvGen.kr(Env.adsr(opAmpA1,opAmpD1,opAmpS1,opAmpR1,1.0, opAmpCurve1),gate,doneAction:0);
+	opEnv2 = EnvGen.kr(Env.adsr(opAmpA2,opAmpD2,opAmpS2,opAmpR2,1.0, opAmpCurve2),gate,doneAction:0);
+	opEnv3 = EnvGen.kr(Env.adsr(opAmpA3,opAmpD3,opAmpS3,opAmpR3,1.0, opAmpCurve3),gate,doneAction:0);
+	opEnv4 = EnvGen.kr(Env.adsr(opAmpA4,opAmpD4,opAmpS4,opAmpR4,1.0, opAmpCurve4),gate,doneAction:0);
+	opEnv5 = EnvGen.kr(Env.adsr(opAmpA5,opAmpD5,opAmpS5,opAmpR5,1.0, opAmpCurve5),gate,doneAction:0);
+	opEnv6 = EnvGen.kr(Env.adsr(opAmpA6,opAmpD6,opAmpS6,opAmpR6,1.0, opAmpCurve6),gate,doneAction:0);
+
         // the 6 oscillators, their frequence, phase and amplitude
 	ctrls = [[ Lag.kr(hz * hz1,0.01), phase1, Lag.kr(amp1,0.01) * opEnv1 ],
                  [ Lag.kr(hz * hz2,0.01), phase2, Lag.kr(amp2,0.01) * opEnv2 ],
@@ -58,7 +54,7 @@ Engine_FM7 : CroneEngine {
                  [ Lag.kr(hz * hz5,0.01), phase5, Lag.kr(amp5,0.01) * opEnv5 ],
                  [ Lag.kr(hz * hz6,0.01), phase6, Lag.kr(amp6,0.01) * opEnv6 ]];
 
-        // All the operaters modulation params, this is 36 params, which could be exposed and mapped to a Grid.
+        // All the operators phase modulation params
         mods = [[hz1_to_hz1, hz2_to_hz1, hz3_to_hz1, hz4_to_hz1, hz5_to_hz1, hz6_to_hz1],
                 [hz1_to_hz2, hz2_to_hz2, hz3_to_hz2, hz4_to_hz2, hz5_to_hz2, hz6_to_hz2],
                 [hz1_to_hz3, hz2_to_hz3, hz3_to_hz3, hz4_to_hz3, hz5_to_hz3, hz6_to_hz3],
@@ -68,10 +64,10 @@ Engine_FM7 : CroneEngine {
 
         // returns a six channel array of OutputProxy objects
         osc = FM7.ar(ctrls,mods);
+        // clever h4x to pick which operator is output to audio bus
         chan_vec = [carrier1,carrier2,carrier3,carrier4,carrier5,carrier6];
         osc_mix = Mix.new(chan_vec.collect({|v,i| osc[i]*v}));
         amp = Lag.ar(K2A.ar(amp), amplag);
-	//FreeSelfWhenDone.kr(Line.kr(0, 1, 10));
 	kilnod = DetectSilence.ar(osc_mix, 0.01, 0.2, doneAction:2);
         Out.ar(out, (osc_mix * amp).dup);
       });
@@ -79,8 +75,6 @@ Engine_FM7 : CroneEngine {
       // Tell Crone about our SynthDef
       CroneDefs.add(polyDef);
 
-      // set all the defaults. Why aren't these values the same as the the values for the SynthDef args?
-      // DRY it up?
       paramDefaults = Dictionary.with(
         \amp -> -12.dbamp, \amplag -> 0.02,
         \hz1 -> 1, \hz2 -> 2, \hz3 -> 0, \hz4 -> 0, \hz5 -> 0, \hz6 -> 0,
@@ -118,12 +112,10 @@ Engine_FM7 : CroneEngine {
     // put our control bus into a dictionary
     ctlBus = Dictionary.new;
 
-    // loop through all the control names (are these the args from the SynthDef?)
+    // loop through all the control names
     polyDef.allControlNames.do({ arg ctl;
       var name = ctl.name;
       postln("control name: " ++ name);
-      // weird logic here. These params are not in paramDefaults so why not loop through that collection?
-      // it looks like we're doing some kind of map filtering
       if((name != \gate) && (name != \hz) && (name != \out), {
         // add this control name to the Bus for the server context
         ctlBus.add(name -> Bus.control(context.server));
@@ -171,9 +163,9 @@ Engine_FM7 : CroneEngine {
           params.add(ctlBus[name].getSynchronous);
         });
         // add a new Synth from our SynthDef into the voices dictionary
-        // the doneAction:2 param for the envelope should free the synth implicitly
+        // the doneAction:2 param given to DetectSilence frees the synth implicitly
         voices.add(id -> Synth.new(\polyFM7, params, gr));
-        // NodeWatcher informs the client of the server state, so we get free voice information from there?
+        // NodeWatcher informs the client of the server state to get free voice information from there.
         NodeWatcher.register(voices[id]);
         voices[id].onFree({
           voices.removeAt(id);
