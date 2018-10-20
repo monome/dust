@@ -9,7 +9,7 @@
 --
 -- hold key1 for 1 sec to
 -- access step edit mode.
--- hold key1 again to return 
+-- hold key1 again to return
 -- to normal use.
 --
 -- hold key2 and turn an
@@ -27,6 +27,10 @@
 --
 -- 1,1 - play/stop
 -- 2,1 - rec
+-- 
+-- 6, 1 through 9, 1 select
+-- paths(tracks) 1-4.
+--
 -- 13, 1 - hold to clear sequence
 -- 15, 1 - load sequence
 -- 16, 1 - step edit mode
@@ -41,25 +45,40 @@
 -- current position on row 2 will
 -- input a rest.
 --
+-- ----------
+--
 -- if holding the sequence load
 -- button (15, 1), each of the 16
--- pads represent a sequence.
--- sequence loading happens on the
--- "next step" by default, but
--- can be configured to
--- "last step" in PARAMETERS.
+-- pads on row 4 represent a
+-- sequence. sequence loading 
+-- happens on the "next step"
+-- by default, but can be
+-- configured to "last step"
+-- in PARAMETERS.
 --
 -- ----------
 --
 -- row 3 and greater are an
 -- earthsea style keyboard.
 --
--- there is an option in 
+-- there is an option in
 -- PARAMETERS to enable keybed
 -- highlighting of the black keys.
 -- (thanks to @ypxkap)
 --
--- v1.1 justmat
+-- ----------
+--
+-- ---TODO---
+--
+-- midi output.
+-- change engine.
+-- pattern meta sequencing.
+-- saving/loading.
+-- proper docs.
+-- 
+-- ----------
+--
+-- v1.2 justmat
 
 engine.name = "PolyPerc"
 
@@ -75,11 +94,6 @@ clk_midi.event = function(data)
   clk:process_midi(data)
 end
 
-local current_seq = 1
-local current_step = 1
-local next_seq = nil
-
-local black_keys = {}
 local note_name = nil
 local last_note_name = nil
 local last_enc = nil
@@ -88,13 +102,18 @@ local clear_hold_time = 0
 local time_last_enc = 0
 
 local alt = false
-local playing = false
 local record_mode = false
 local enc_sel_mode = false
-local seq_load_mode = false
 local step_edit_mode = false
-local end_of_seq_change = false
+local black_keys_flag = false
 
+local current_enc1 = 1
+local current_enc2 = 4
+local current_enc3 = 3
+
+-- tables galore 
+
+local black_keys = {}
 
 local engine_enc_choices = {
   "amp",
@@ -104,28 +123,48 @@ local engine_enc_choices = {
   "gain"
 }
 
-local seq_enc_choices = {
+local pat_enc_choices = {
   "bpm",
-  "length"
-  -- swing
+  "steps"
 }
 
-local current_enc1 = 1
-local current_enc2 = 4
-local current_enc3 = 3
+local current_path = 1
 
-local seq_data = {}
-for j = 1, 16 do
-  seq_data[j] = {}
+local paths = {}
+for i = 1, 4 do
+  paths[i] = {
+    playing = false,
+    end_of_pat_change = false,
+    pat_load_mode = false,
+    current_pat = 1,
+    next_pat = nil,
+    current_step = 1
+  }
+end
+
+local patterns = {}
+for j = 1, 4 do
+  patterns[j] = {}
   for i = 1, 16 do
-    seq_data[j][i] = {
-    note_num = nil,
+    patterns[j][i] = {
+      has_data = false,
+      steps = 16
+    }
+  end
+end
+
+local steps = {}
+for j = 1, 4 do
+  steps[j] = {}
+  for i = 1, 16 do
+    steps[j][i] = {
+    note_number = nil,
     prob = 100
   }
   end
-  seq_data[j].steps = 16
 end
 
+-- helper functions
 
 local function note_from_grid(x, y)
   local note = ((7 - y) * 5) + x + 36
@@ -133,18 +172,25 @@ local function note_from_grid(x, y)
 end
 
 
-local function current_note_name()
-  local num = seq_data[current_seq][current_step].note_num
-  local name = music_util.note_num_to_name(num, 1)
-  return name
+local function trig(note)
+  for i = 1, 4 do
+    if paths[i].playing then
+      if math.random(100) <= steps[i][paths[i].current_step].prob then
+        engine.hz(music_util.note_num_to_freq(note))
+        last_note_name = music_util.note_num_to_name(note)
+      end
+    end
+  end
 end
 
 
-local function trig(note)
-  if math.random(100) <= seq_data[current_seq][current_step].prob then
-    engine.hz(music_util.note_num_to_freq(note))
-    last_note_name = music_util.note_num_to_name(note)
-  end
+local function get_current_step()
+  return steps[current_path][paths[current_path].current_step]
+end
+
+
+local function get_current_pat()
+  return patterns[current_path][paths[current_path].current_pat]
 end
 
 
@@ -161,6 +207,25 @@ local function keybed_leds()
 end
 
 
+local function reset_path(n)
+  paths[n].current_step = 1
+end
+
+
+local function pattern_clear(t)
+  if util.time() - t > 3.0 then
+    for i = 1, 16 do
+      get_current_step().note_num = nil
+      get_current_step().prob = 100
+    end
+    get_current_pat().steps = 16
+    paths[current_path].playing = false
+    reset_path(current_path)
+    get_current_pat().has_data = false
+  end
+end
+
+
 function init()
   screen.aa(0)
   screen.line_width(1)
@@ -171,7 +236,7 @@ function init()
   clk:add_clock_params()
   params:add_separator()
 
-  params:add_option("seq_change","seq change", {"next step", "last step"}, 1)
+  params:add_option("pat_change","pattern change", {"next step", "on one"}, 1)
   params:add_option("show_black_keys", "show black keys", {"no", "yes"}, 1)
   params:add_separator()
 
@@ -203,9 +268,7 @@ function init()
   
   black_keys = keybed_leds()
 
-  if playing then
-    clk:start()
-  else clk:stop() end
+  clk:start()
 
   params:read("justmat/paths.pset")
   params:bang()
@@ -213,18 +276,26 @@ end
 
 
 function step()
-  if current_step == seq_data[current_seq].steps and end_of_seq_change then
-    current_seq = next_seq
-    end_of_seq_change = false
+  if paths[current_path].current_step == 1 and paths[current_path].end_of_pat_change then
+    paths[current_path].current_pat = paths[current_path].next_pat
+    paths[current_path].end_of_pat_change = false
   end
 
-  if seq_data[current_seq][current_step].note_num then
-    trig(seq_data[current_seq][current_step].note_num)
+  for i = 1, 4 do
+    if patterns[i][paths[i].current_pat].has_data and paths[i].playing then
+      if steps[i][paths[i].current_step].note_num then
+        trig(steps[i][paths[i].current_step].note_num)
+      end
+    end
   end
-
-  current_step = current_step + 1
-  if current_step > seq_data[current_seq].steps then
-    current_step = 1
+  
+  for i = 1, 4 do
+    if paths[i].playing then
+      paths[i].current_step = paths[i].current_step + 1
+      if paths[i].current_step > patterns[i][paths[i].current_pat].steps then
+        reset_path(i)
+      end
+    end
   end
 end
 
@@ -232,7 +303,7 @@ end
 function key(n, z)
   if n == 1 and z == 1 then
     time_last = util.time()
-    if util.time() - time_last <= 1.0 then
+    if util.time() - time_last <= 1.0 and not paths[current_path].playing then
       step_edit_mode = not step_edit_mode
     end
   end
@@ -244,12 +315,10 @@ function key(n, z)
   end
 
   if n == 3 and z == 1 then
-    if not playing and not step_edit_mode then
-      clk:start()
-      playing = true
+    if not paths[current_path].playing and not step_edit_mode then
+      paths[current_path].playing = true
     else
-      clk:stop()
-      playing = false
+      paths[current_path].playing = false
     end
   end
 end
@@ -258,11 +327,11 @@ end
 function enc(n, d)
   if n == 1 then
     if step_edit_mode then
-      current_step = util.clamp(current_step + d, 1, seq_data[current_seq].steps)
+      paths[current_path].current_step = util.clamp(paths[current_path].current_step + d, 1, get_current_pat().steps)
     elseif enc_sel_mode then
       current_enc1 = util.clamp(current_enc1 + d, 1, 2)
     elseif current_enc1 == 2 then
-      seq_data[current_seq].steps = util.clamp(seq_data[current_seq].steps + d, 1, 16)
+      get_current_pat().steps = util.clamp(get_current_pat().steps + d, 1, 16)
     else
       params:delta("bpm", d)
     end
@@ -272,7 +341,7 @@ function enc(n, d)
 
   if n == 2 then
     if step_edit_mode then
-      seq_data[current_seq][current_step].prob = util.clamp(seq_data[current_seq][current_step].prob + d, 0, 100)
+      get_current_step().prob = util.clamp(get_current_step().prob + d, 0, 100)
     elseif enc_sel_mode then
       current_enc2 = util.clamp(current_enc2 + d, 1, 5)
     else
@@ -284,10 +353,10 @@ function enc(n, d)
 
   if n == 3 then
     if step_edit_mode then
-      if seq_data[current_seq][current_step].note_num then
-        seq_data[current_seq][current_step].note_num = util.clamp(seq_data[current_seq][current_step].note_num + d, 0, 127)
+      if get_current_step().note_num then
+        get_current_step().note_num = util.clamp(get_current_step().note_num + d, 0, 127)
       else
-        seq_data[current_seq][current_step].note_num = 0
+        get_current_step().note_num = 0
       end
     elseif enc_sel_mode then
       current_enc3 = util.clamp(current_enc3 + d, 1, 5)
@@ -301,54 +370,56 @@ end
 
 
 function g.event(x, y, z)
-  -- y = 1 is the control row
+  -- y = 1 is the control row 1,1 is start/stop
   if y == 1 then
     if x == 1 then
       if z == 1 then
-        if not playing and not step_edit_mode then
+        if not paths[current_path].playing and not step_edit_mode then
           if record_mode then
             record_mode = false
-            seq_data[current_seq].steps = util.clamp(current_step - 1, 1, 16)
+            get_current_pat().steps =  util.clamp(paths[current_path].current_step - 1, 1, 16)
           end
-          clk:start()
-          playing = true
+          paths[current_path].playing = true
         else
-          clk:stop()
-          playing = false
+          paths[current_path].playing = false
         end
       end
     -- record mode
     elseif x == 2 and z == 1 and not step_edit_mode then
       if record_mode then
         record_mode = false
-      else record_mode = true end
+      else
+        record_mode = true
+      end
+    -- path selection
+    elseif x >= 6 and x <= 9 and z == 1 then
+      current_path = x - 5
     -- clear sequence/ return to init state
     elseif x == 13 then
       if z == 1 then
         clear_hold_time = util.time()
       else
-        if util.time() - clear_hold_time > 3.0 then
-            for i = 1, 16 do
-              seq_data[current_seq][i].note_num = nil
-              seq_data[current_seq][i].prob = 100
-          end
-          seq_data[current_seq].steps = 16
-          clk:stop()
-          playing = false
-          current_step = 1
-        end
-      clear_hold_time = 0.0
+        pattern_clear(clear_hold_time)
+        clear_hold_time = 0.0
       end
     -- sequence load mode
     elseif x == 15 then
       if z == 1 then
-        seq_load_mode = true
+        paths[current_path].pat_load_mode = true
+        if params:get("show_black_keys") == 2 then
+          black_keys_flag = true
+          params:set("show_black_keys", 1)
+        end
       else
-        seq_load_mode = false
+        paths[current_path].pat_load_mode = false
+        if black_keys_flag then
+          params:set("show_black_keys", 2)
+          black_keys_flag = false
+        end
       end
     -- step edit mode
     elseif x == 16 and z == 1 then
-      if not playing and not record_mode then
+      if not paths[current_path].playing and not record_mode then
         if step_edit_mode then
           step_edit_mode = false
         else step_edit_mode = true end
@@ -357,38 +428,48 @@ function g.event(x, y, z)
   end
   -- y == 2 is the playbar
   if y == 2 and z == 1 then
-    if record_mode and not playing then
-      if x == current_step then
-        seq_data[current_seq][x].note_num = nil
-        current_step = current_step + 1
-        if current_step > seq_data[current_seq].steps then
-          current_step = 1
+    if record_mode and not paths[current_path].playing then
+      for i = 1, 4 do
+        if x == paths[current_path].current_step then
+          get_current_step().note_num = nil
+          paths[current_path].current_step = paths[current_path].current_step + 1
+          if paths[current_path].current_step > get_current_pat().steps then
+            reset_path(current_path)
+          end
         end
       end
     else
-      if seq_load_mode then
-        if params:get('seq_change') == 1 then
-          current_seq = x
-        else
-          end_of_seq_change = true
-          next_seq = x
-        end
-      else
-        current_step = x
-      end
+      paths[current_path].current_step = x
     end
   -- y == 3 or greater is the keybed
-  elseif y >= 3 then
+  elseif y >= 3 and not paths[current_path].pat_load_mode then
     if z == 1 and not step_edit_mode then
-      trig(note_from_grid(x, y))
+      engine.hz(music_util.note_num_to_freq(note_from_grid(x, y)))
+      last_note_name = music_util.note_num_to_name(note_from_grid(x, y))
       time_last = util.time()
       if record_mode then
-        seq_data[current_seq][current_step].note_num = note_from_grid(x, y)
+        get_current_step().note_num = note_from_grid(x, y)
+        get_current_pat().has_data = true
         if not playing  then
-          current_step = current_step + 1
+          paths[current_path].current_step = paths[current_path].current_step + 1
         end
-        if current_step > seq_data[current_seq].steps then current_step = 1 end
+        if paths[current_path].current_step > get_current_pat().steps then
+          reset_path(current_path)
+        end
       end
+    end
+  -- y == 4 is used for loading patterns
+  elseif y == 4 and paths[current_path].pat_load_mode then
+    if not paths[current_path].playing then
+      paths[current_path].current_pat = x
+      reset_path(current_path)
+    elseif params:get('pat_change') == 1 then
+      paths[current_path].current_pat = x
+    elseif params:get('pat_change') == 2 then
+      paths[current_path].end_of_pat_change = true
+      paths[current_path].next_pat = x
+    else
+      paths[current_path].current_step = x
     end
   end
 end
@@ -400,15 +481,15 @@ function redraw()
   screen.move(5, 9)
   screen.level(10)
   if step_edit_mode then
-    screen.text("step : " .. current_step )
+    screen.text("step : " .. paths[current_path].current_step)
     screen.move(85, 9)
-    screen.text("prob : " .. seq_data[current_seq][current_step].prob)
+    screen.text("prob : " .. get_current_step().prob)
   else
-    screen.text("bpm : " .. params:get("bpm"))
+    screen.text(params:get("bpm"))
     screen.move(123, 9)
     if last_enc == 1 and current_enc1 == 2 then
       if util.time() - time_last_enc < .6 then
-        screen.text_right(seq_data[current_seq].steps)
+        screen.text_right(get_current_pat().steps)
       end
     elseif last_enc == 2 then
       if util.time() - time_last_enc < .6 then
@@ -423,12 +504,11 @@ function redraw()
   screen.move(2, 13)
   screen.line(128, 13)
   screen.stroke()
-
   -- encoder function selection
   screen.move(84, 25)
   if step_edit_mode then
     screen.text("1. step")
-  else screen.text("1. " .. seq_enc_choices[current_enc1]) end
+  else screen.text("1. " .. pat_enc_choices[current_enc1]) end
 
   screen.move(84, 40)
   if step_edit_mode then
@@ -451,13 +531,17 @@ function redraw()
   screen.font_face(3)
   screen.level(10)
   if step_edit_mode then
-    if seq_data[current_seq][current_step].note_num then
-      screen.text(current_note_name())
+    if get_current_step().note_num then
+      local num = get_current_step().note_num
+      local name = music_util.note_num_to_name(num, 1)
+      screen.text(name)
     end
-  end
-  if playing then
-    if seq_data[current_seq][current_step].note_num then
-      screen.text(current_note_name())
+  
+  elseif paths[current_path].playing then
+    if get_current_step().note_num then
+      local num = get_current_step().note_num
+      local name = music_util.note_num_to_name(num, 1)
+      screen.text(name)
     end
   else
     if last_note_name and util.time() - time_last < 0.5 then
@@ -489,20 +573,35 @@ function grid_redraw()
     g.led(2, 1, 8)
   else g.led(2, 1, 3) end
 
+  for i = 1, 4 do
+    if i == current_path then
+      g.led(i + 5, 1, 8)
+    else g.led(i + 5, 1, 3) end
+  end
+  
   if clear_hold_time > 0.0 then
     g.led(13, 1, 8)
   else g.led(13, 1, 3) end
 
-  if seq_load_mode then
+  if paths[current_path].pat_load_mode then
     g.led(15, 1, 8)
+    for i = 1, 16 do
+      if i == paths[current_path].current_pat then
+        g.led(i, 4, 8)
+      elseif patterns[current_path][i].has_data then
+        g.led(i, 4, 4)
+      else
+        g.led(i, 4, 2)
+      end
+    end
   else g.led(15, 1, 3) end
 
   if step_edit_mode then
     g.led(16, 1, 8)
   else g.led(16, 1, 3) end
 
-  for i = 1, seq_data[current_seq].steps do
-    if i == current_step then
+  for i = 1, get_current_pat().steps do
+    if i == paths[current_path].current_step then
       g.led(i, 2, 8)
     else
       g.led(i, 2, 3)
