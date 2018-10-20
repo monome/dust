@@ -132,22 +132,24 @@ local current_path = 1
 
 local paths = {}
 for i = 1, 4 do
-  paths[i] = {}
-  paths[i].playing = false
-  paths[i].end_of_pat_change = false
-  paths[i].pat_load_mode = false
-  paths[i].current_pat = 1
-  paths[i].next_pat = nil
-  paths[i].current_step = 1
+  paths[i] = {
+    playing = false,
+    end_of_pat_change = false,
+    pat_load_mode = false,
+    current_pat = 1,
+    next_pat = nil,
+    current_step = 1
+  }
 end
 
 local patterns = {}
 for j = 1, 4 do
   patterns[j] = {}
   for i = 1, 16 do
-    patterns[j][i] = {}
-    patterns[j][i].has_data = false
-    patterns[j][i].steps = 16
+    patterns[j][i] = {
+      has_data = false,
+      steps = 16
+    }
   end
 end
 
@@ -158,7 +160,7 @@ for j = 1, 4 do
     steps[j][i] = {
     note_number = nil,
     prob = 100
-   }
+  }
   end
 end
 
@@ -179,6 +181,16 @@ local function trig(note)
       end
     end
   end
+end
+
+
+local function get_current_step()
+  return steps[current_path][paths[current_path].current_step]
+end
+
+
+local function get_current_pat()
+  return patterns[current_path][paths[current_path].current_pat]
 end
 
 
@@ -203,13 +215,13 @@ end
 local function pattern_clear(t)
   if util.time() - t > 3.0 then
     for i = 1, 16 do
-      steps[current_path][paths[current_path].current_step].note_num = nil
-      steps[current_path][paths[current_path].current_step].prob = 100
+      get_current_step().note_num = nil
+      get_current_step().prob = 100
     end
-    patterns[current_path][paths[current_path].current_pat].steps = 16
+    get_current_pat().steps = 16
     paths[current_path].playing = false
     reset_path(current_path)
-    patterns[current_path][paths[current_path].current_pat].has_data = false
+    get_current_pat().has_data = false
   end
 end
 
@@ -301,7 +313,7 @@ function key(n, z)
   else
     enc_sel_mode = false
   end
-  
+
   if n == 3 and z == 1 then
     if not paths[current_path].playing and not step_edit_mode then
       paths[current_path].playing = true
@@ -315,11 +327,11 @@ end
 function enc(n, d)
   if n == 1 then
     if step_edit_mode then
-      paths[current_path].current_step = util.clamp(paths[current_path].current_step + d, 1, patterns[current_path][paths[current_path].current_pat].steps)
+      paths[current_path].current_step = util.clamp(paths[current_path].current_step + d, 1, get_current_pat().steps)
     elseif enc_sel_mode then
       current_enc1 = util.clamp(current_enc1 + d, 1, 2)
     elseif current_enc1 == 2 then
-      patterns[current_path][paths[current_path].current_pat].steps = util.clamp(patterns[current_path][paths[current_path].current_pat].steps + d, 1, 16)
+      get_current_pat().steps = util.clamp(get_current_pat().steps + d, 1, 16)
     else
       params:delta("bpm", d)
     end
@@ -329,7 +341,7 @@ function enc(n, d)
 
   if n == 2 then
     if step_edit_mode then
-      steps[current_path][paths[current_path].current_step].prob = util.clamp(steps[current_path][paths[current_path].current_step].prob + d, 0, 100)
+      get_current_step().prob = util.clamp(get_current_step().prob + d, 0, 100)
     elseif enc_sel_mode then
       current_enc2 = util.clamp(current_enc2 + d, 1, 5)
     else
@@ -341,10 +353,10 @@ function enc(n, d)
 
   if n == 3 then
     if step_edit_mode then
-      if steps[current_path][paths[current_path].current_step].note_num then
-        steps[current_path][paths[current_path].current_step].note_num = util.clamp(steps[current_path][paths[current_path].current_step].note_num + d, 0, 127)
+      if get_current_step().note_num then
+        get_current_step().note_num = util.clamp(get_current_step().note_num + d, 0, 127)
       else
-        steps[current_path][paths[current_path].current_step].note_num = 0
+        get_current_step().note_num = 0
       end
     elseif enc_sel_mode then
       current_enc3 = util.clamp(current_enc3 + d, 1, 5)
@@ -365,7 +377,7 @@ function g.event(x, y, z)
         if not paths[current_path].playing and not step_edit_mode then
           if record_mode then
             record_mode = false
-            patterns[current_path][paths[current_path].current_pat].steps =  util.clamp(paths[current_path].current_step - 1, 1, 16)
+            get_current_pat().steps =  util.clamp(paths[current_path].current_step - 1, 1, 16)
           end
           paths[current_path].playing = true
         else
@@ -419,9 +431,9 @@ function g.event(x, y, z)
     if record_mode and not paths[current_path].playing then
       for i = 1, 4 do
         if x == paths[current_path].current_step then
-          steps[current_path][paths[current_path].current_step].note_num = nil
+          get_current_step().note_num = nil
           paths[current_path].current_step = paths[current_path].current_step + 1
-          if paths[current_path].current_step > patterns[current_path][paths[current_path].current_pat].steps then
+          if paths[current_path].current_step > get_current_pat().steps then
             reset_path(current_path)
           end
         end
@@ -436,12 +448,12 @@ function g.event(x, y, z)
       last_note_name = music_util.note_num_to_name(note_from_grid(x, y))
       time_last = util.time()
       if record_mode then
-        steps[current_path][paths[current_path].current_step].note_num = note_from_grid(x, y)
-        patterns[current_path][paths[current_path].current_pat].has_data = true
+        get_current_step().note_num = note_from_grid(x, y)
+        get_current_pat().has_data = true
         if not playing  then
           paths[current_path].current_step = paths[current_path].current_step + 1
         end
-        if paths[current_path].current_step > patterns[current_path][paths[current_path].current_pat].steps then
+        if paths[current_path].current_step > get_current_pat().steps then
           reset_path(current_path)
         end
       end
@@ -471,13 +483,13 @@ function redraw()
   if step_edit_mode then
     screen.text("step : " .. paths[current_path].current_step)
     screen.move(85, 9)
-    screen.text("prob : " .. steps[current_path][paths[current_path].current_step].prob)
+    screen.text("prob : " .. get_current_step().prob)
   else
     screen.text(params:get("bpm"))
     screen.move(123, 9)
     if last_enc == 1 and current_enc1 == 2 then
       if util.time() - time_last_enc < .6 then
-        screen.text_right(patterns[current_path][paths[current_path].current_pat].steps)
+        screen.text_right(get_current_pat().steps)
       end
     elseif last_enc == 2 then
       if util.time() - time_last_enc < .6 then
@@ -519,15 +531,15 @@ function redraw()
   screen.font_face(3)
   screen.level(10)
   if step_edit_mode then
-    if steps[current_path][paths[current_path].current_step].note_num then
-      local num = steps[current_path][paths[current_path].current_step].note_num
+    if get_current_step().note_num then
+      local num = get_current_step().note_num
       local name = music_util.note_num_to_name(num, 1)
       screen.text(name)
     end
   
   elseif paths[current_path].playing then
-    if steps[current_path][paths[current_path].current_step].note_num then
-      local num = steps[current_path][paths[current_path].current_step].note_num
+    if get_current_step().note_num then
+      local num = get_current_step().note_num
       local name = music_util.note_num_to_name(num, 1)
       screen.text(name)
     end
@@ -588,7 +600,7 @@ function grid_redraw()
     g.led(16, 1, 8)
   else g.led(16, 1, 3) end
 
-  for i = 1, patterns[current_path][paths[current_path].current_pat].steps do
+  for i = 1, get_current_pat().steps do
     if i == paths[current_path].current_step then
       g.led(i, 2, 8)
     else
