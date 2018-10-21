@@ -2,6 +2,8 @@
 --
 -- Responds to audio input.
 --
+-- ENC3 : Reference note
+--
 -- v1.0.1 Mark Eats
 --
 
