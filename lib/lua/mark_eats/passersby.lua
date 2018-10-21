@@ -34,10 +34,10 @@ function Passersby.add_params()
   params:add{type = "control", id = "wave_folds", name = "Wave Folds", controlspec = specs.WAVE_FOLDS, action = engine.waveFolds}
   params:add{type = "control", id = "fm_low_amount", name = "FM Low Amount", controlspec = specs.FM_LOW_AMOUNT, action = engine.fm1Amount}
   params:add{type = "control", id = "fm_high_amount", name = "FM High Amount", controlspec = specs.FM_HIGH_AMOUNT, action = engine.fm2Amount}
-  params:add{type = "control", id = "lpg_peak", name = "LPG Peak", controlspec = specs.LPG_PEAK, formatter = MEFormatters.format_freq, action = engine.lpgPeak}
-  params:add{type = "control", id = "lpg_decay", name = "LPG Decay", controlspec = specs.LPG_DECAY, formatter = MEFormatters.format_secs, action = engine.lpgDecay}
+  params:add{type = "control", id = "lpg_peak", name = "LPG Peak", controlspec = specs.LPG_PEAK, formatter = MEFormatters.format_freq_param, action = engine.lpgPeak}
+  params:add{type = "control", id = "lpg_decay", name = "LPG Decay", controlspec = specs.LPG_DECAY, formatter = MEFormatters.format_secs_param, action = engine.lpgDecay}
   params:add{type = "control", id = "reverb_mix", name = "Reverb Mix", controlspec = specs.REVERB_MIX, action = engine.reverbMix}
-  params:add{type = "control", id = "lfo_frequency", name = "LFO Frequency", controlspec = specs.LFO_FREQ, formatter = MEFormatters.format_freq, action = engine.lfoFreq}
+  params:add{type = "control", id = "lfo_frequency", name = "LFO Frequency", controlspec = specs.LFO_FREQ, formatter = MEFormatters.format_freq_param, action = engine.lfoFreq}
   params:add{type = "control", id = "lfo_amount", name = "LFO Amount", controlspec = specs.LFO_AMOUNT, action = engine.lfoAmount}
   for i = 1, 2 do
     params:add{type = "option", id = "lfo_destination_" .. i, name = "LFO Destination " .. i, options = Passersby.LFO_DESTINATIONS, action = function(value)
