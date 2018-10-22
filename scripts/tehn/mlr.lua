@@ -239,7 +239,7 @@ end
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 2 + (i-1)*30
+  clip[i].s = 2 + (i-1)*120 -- clips have 2 minute distance separation
   clip[i].name = "-"
   set_clip_length(i,4)
 end
@@ -757,9 +757,9 @@ function fileselect_callback(path)
   if path ~= "cancel" then
     if path:find(".aif") or path:find(".wav") then
       print("file > "..path.." "..clip[track[clip_sel].clip].s)
-      engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
       local ch, len = sound_file_inspect(path)
-      print("file length > "..len)
+      print("file length > "..len/48000)
+      engine.read(path, clip[track[clip_sel].clip].s, len/48000)
       set_clip_length(track[clip_sel].clip, len/48000)
       clip[track[clip_sel].clip].name = path:match("[^/]*$")
       set_clip(clip_sel,track[clip_sel].clip)
