@@ -1,6 +1,7 @@
 // CroneEngine_PolyPerc
 // sine with perc envelopes, triggered on freq
 Engine_PolyPerc : CroneEngine {
+	var pg;
     var amp=0.3;
     var release=0.5;
     var pw=0.5;
@@ -12,6 +13,7 @@ Engine_PolyPerc : CroneEngine {
 	}
 
 	alloc {
+		pg = ParGroup.tail(context.xg);
         SynthDef("PolyPerc", {
 			arg out, freq = 440, pw=pw, amp=amp, cutoff=cutoff, gain=gain, release=release;
 			var snd = Pulse.ar(freq, pw);
@@ -23,7 +25,7 @@ Engine_PolyPerc : CroneEngine {
 
 		this.addCommand("hz", "f", { arg msg;
 			var val = msg[1];
-            Synth("PolyPerc", [\out, context.out_b, \freq,val,\pw,pw,\amp,amp,\cutoff,cutoff,\gain,gain,\release,release], target:context.xg);
+            Synth("PolyPerc", [\out, context.out_b, \freq,val,\pw,pw,\amp,amp,\cutoff,cutoff,\gain,gain,\release,release], target:pg);
 		});
 
 		this.addCommand("amp", "f", { arg msg;

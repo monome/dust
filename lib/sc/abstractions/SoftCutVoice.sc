@@ -47,17 +47,14 @@ SoftCutVoice {
 					trig = InTrig.kr(trig_in);
 					sin = In.ar(in);
 
-					//pre = Lag.ar(K2A.ar(pre), preLag);
-					//rec = Lag.ar(K2A.ar(rec), recLag);
-
-					//pre = Lag.kr(pre, preLag);
-					//rec = Lag.kr(rec, recLag);
-
+					rec = Lag.ar(K2A.ar(rec), recLag);
+					pre = Lag.ar(K2A.ar(pre), preLag);
 					rate = Lag.ar(K2A.ar(rate), ratelag);
 
-					cutfade =  SoftCutHead.ar(buf, sin, trig,
-						rate * brs, start, end, pos, fade, loop,
-						rec, pre, fadeRec, fadePre, recRun, offset);
+					cutfade =  SoftCutHead.ar(buf,
+						sin, rec, pre, rate * brs,
+						pos, trig,  start, end, fade, loop,
+						fadeRec, fadePre, recRun, offset);
 
 					phase = cutfade[0];
 					tr = cutfade[1];

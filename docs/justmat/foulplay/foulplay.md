@@ -3,7 +3,7 @@
 
 # foulplay
 
-a euclidean sample instrument with trigger conditions.
+a euclidean instrument with trigger conditions.
 based on tehn/playfair.
 
 samples can be loaded via PARAMETERS in the main menu.
@@ -30,9 +30,13 @@ while **home**, KEY3 is ALT.
 
 ## track edit
 
-holding KEY1 will bring up the **track edit** screen, releasing KEY1 will return **home**.
+each track can be configured to either send midi or trigger a sample.
+please see the PARAMETERS menu for configuration.
 
-**track edit** is where you will find trigger conditions and probability settings, as well as various track specific parameters.
+holding KEY1 will bring up the **track edit** screen, releasing KEY1 will return **home**.
+ 
+**track edit** is where you will find trigger conditions and probability settings, as well as various sample specific parameters. 
+if sending midi, **track edit** will contain shortcuts for setting the midi channel and note.
 
 in **track edit** parameters 1-3 are tied to their respective encoders.
 

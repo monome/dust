@@ -1,8 +1,8 @@
 // a sample capture / playback matrix
 Engine_SoftCut : CroneEngine {
-	classvar nvoices = 4; // total number of voices
-	classvar bufdur = 256;
-
+	classvar nvoices = 6; // total number of voices
+	classvar bufDur = 420; // 7 minutes +
+	
 	classvar commands;
 
 	var <bus; // busses
@@ -42,8 +42,9 @@ Engine_SoftCut : CroneEngine {
 		var bus_rec_idx;
 		var bufcon;
 		var s = context.server;
-		var start_stride = (bufdur - 2.0) / nvoices;
-
+		var start_stride = (bufDur - 2.0) / nvoices;
+		var bufFrames;
+		
 		postln("SoftCut: init routine");
 
 		//--- groups
@@ -54,8 +55,12 @@ Engine_SoftCut : CroneEngine {
 
 		s.sync;
 
-		//--- buffers
-		buf = Buffer.alloc(s, (s.sampleRate * bufdur).nextPowerOfTwo, 1);
+		//--- buffers		
+		bufFrames = (s.sampleRate * bufDur).nextPowerOfTwo;
+		bufDur = bufFrames / s.sampleRate;
+		postln("bufFrames: " ++ bufFrames);
+		postln("bufDur: " ++ bufDur);
+		buf = Buffer.alloc(s, bufFrames, 1);
 
 		s.sync;
 
@@ -157,7 +162,6 @@ Engine_SoftCut : CroneEngine {
 		// ADC/DAC busses belong to the context; don't free them!
 		bus.rec.do({ arg b; b.free; });
 		bus.pb.do({ arg b; b.free; });
-
 		pm.do({ arg p; p.free; });
 	}
 
@@ -176,33 +180,6 @@ Engine_SoftCut : CroneEngine {
 		buf.normalize(x);
 	}
 
-	// // destructive trim
-	// trimBuf { arg i, start, end;
-	// 	BufUtil.trim (buf[i], start, end, {
-	// 		arg newbuf;
-	// 		voices.do({ arg v;
-	// 			if(v.buf == buf[i], {
-	// 				v.buf = newbuf;
-	// 			});
-	// 		});
-	// 		buf[i] = newbuf;
-	// 	});
-	// }
-
-	/*// disk read (replacing)
-	replaceBuf { path;
-		if(buf[i].notNil, {
-			BufUtil.readChannel(buf, path, {
-				arg newbuf;
-				voices.do({ arg v;
-					if(v.buf == buf[i], {
-						v.buf = newbuf;
-					});
-				});
-				buf[i].free;
-			});
-		});
-	}*/
 
 	// disk read to (copying over current contents)
 	readBuf { arg path, start, dur;
@@ -255,10 +232,10 @@ Engine_SoftCut : CroneEngine {
 			[\sync, \iif, {|msg| syncVoice(msg[1]-1, msg[2]-1, msg[3]); }],
 
 			// set the quantization (rounding) interval for phase reporting on given voice
-			// FIXME: clamp this to something reasonable instaed of msec?
+			// FIXME: clamp this to something reasonable instead of msec?
 			[\quant, \if, {|msg| trigsyn[msg[1]-1].set(\quant, msg[2].max(0.001)); }],
 
-      // set offset for quantization calculation
+			// set offset for quantization calculation
 			[\quant_offset, \if, {|msg| trigsyn[msg[1]-1].set(\offset, msg[2]); }],
 
 			//-- direct control of synth params
@@ -336,9 +313,6 @@ Engine_SoftCut : CroneEngine {
 			[\clear, '', { |msg| this.clearBuf }],
 
 			// TODO: clear range in buffer
-
-			// detructively trim to new start and end
-			//[\trim, \ff, { |msg| this.trimBuf(msg[1]-1, msg[2], msg[3]) }],
 
 			// normalize buffer to given maximum level
 			[\norm, \f, { |msg| this.normalizeBuf(msg[1]) }]
