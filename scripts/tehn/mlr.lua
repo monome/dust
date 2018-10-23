@@ -28,7 +28,7 @@ local g = grid.connect()
 
 local pattern_time = require 'pattern_time'
 
-local TRACKS = 6
+local TRACKS = 4
 local FADE = 0.01
 
 local vREC = 1

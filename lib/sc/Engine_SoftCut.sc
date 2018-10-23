@@ -1,7 +1,7 @@
 // a sample capture / playback matrix
 Engine_SoftCut : CroneEngine {
-	classvar nvoices = 6; // total number of voices
-	classvar bufDur = 720; // 12 minutes +
+	classvar nvoices = 4; // total number of voices
+	classvar bufDur = 480; // 8 minutes +
 	
 	classvar commands;
 
