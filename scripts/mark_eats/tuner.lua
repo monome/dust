@@ -2,9 +2,12 @@
 --
 -- Responds to audio input.
 --
--- v1.0.0 Mark Eats
+-- ENC3 : Reference note
+--
+-- v1.0.1 Mark Eats
 --
 
+local ControlSpec = require "controlspec"
 local MusicUtil = require "mark_eats/musicutil"
 local MEFormatters = require "mark_eats/formatters"
 
@@ -23,7 +26,7 @@ function enc(n, delta)
   if n == 2 then
           
   elseif n == 3 then
-    
+    params:delta("note_vol", delta)
   end
 end
 
@@ -53,6 +56,16 @@ function init()
   -- Add params
   
   params:add{type = "option", id = "in_channel", name = "In Channel", options = {"Left", "Right"}}
+  params:add{type = "option", id = "note", name = "Note", options = MusicUtil.NOTE_NAMES, default = 10, action = function(value)
+    engine.hz(MusicUtil.note_num_to_freq(59 + value))
+    screen_dirty = true
+  end}
+  params:add{type = "control", id = "note_vol", name = "Note Volume", controlspec = ControlSpec.UNIPOLAR, action = function(value)
+    engine.amp(value)
+    screen_dirty = true
+  end}
+  
+  params:bang()
   
   -- Polls
   
@@ -136,6 +149,12 @@ function redraw()
     else screen.level(1) end
     screen.text_center(MEFormatters.format_freq(last_freq))
   end
+  
+  -- Draw ref note
+  
+  screen.move(128, 8)
+  screen.level(util.round(params:get("note_vol") * 15))
+  screen.text_right(params:string("note"))
   
   screen.fill()
   
