@@ -31,6 +31,8 @@ local pattern_time = require 'pattern_time'
 local TRACKS = 4
 local FADE = 0.01
 
+local CLIP_LEN_SEC = 120
+
 local vREC = 1
 local vCUT = 2
 local vCLIP = 3
@@ -239,7 +241,7 @@ end
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 2 + (i-1)*120 -- clips have 2 minute distance separation
+  clip[i].s = 2 + (i-1)*CLIP_LEN_SEC
   clip[i].name = "-"
   set_clip_length(i,4)
 end
@@ -750,6 +752,7 @@ end
 
 --------------------CLIP
 
+clip_action = "load"
 clip_sel = 1
 clip_clear_mult = 3
 
@@ -775,7 +778,16 @@ end
 
 v.key[vCLIP] = function(n,z)
   if n==2 and z==0 then
-    fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    if clip_action == "load" then
+      fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    elseif clip_action == "clear" then
+      local c_start = clip[track[clip_sel].clip].s * 48000
+      print("clear_start: " .. c_start)
+      engine.clear_range(c_start, CLIP_LEN_SEC * 48000) -- two minutes
+      -- ADJUST LENGTH?? or just use resize
+      clip[track[clip_sel].clip].name = '-'
+      redraw()
+    end
   elseif n==3 and z==1 then
     clip_reset(clip_sel,60/params:get("tempo")*(2^(clip_clear_mult-2)))
     set_clip(clip_sel,track[clip_sel].clip)
@@ -785,7 +797,8 @@ end
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel-d,1,TRACKS)
+    if d>0 then clip_action = "clear"
+    else clip_action = "load" end
   elseif n==3 then
     clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end
@@ -812,14 +825,14 @@ end
 v.redraw[vCLIP] = function()
   screen.clear()
   screen.level(15)
-  screen.move(10,30)
-  screen.text("CLIP > "..clip_sel)
+  screen.move(10,16)
+  screen.text("CLIP > TRACK "..clip_sel)
 
   screen.move(10,50)
   screen.text(truncateMiddle(clip[track[clip_sel].clip].name, 18))
   screen.level(3)
   screen.move(10,60)
-  screen.text("name "..track[clip_sel].clip)
+  screen.text("clip "..track[clip_sel].clip .. " " .. clip_action)
 
   screen.move(100,50)
   screen.text(2^(clip_clear_mult-2))
