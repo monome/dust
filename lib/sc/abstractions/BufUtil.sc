@@ -62,7 +62,7 @@ BufUtil {
 	*write { arg buf, path, start, dur;
 		var numfr = dur * buf.sampleRate;
 		var frstart = start * buf.sampleRate;
-		buf.write(path, "wav", "float", numfr, frstart);
+		buf.write(path, "wav", "float", numfr.asInt, frstart.asInt);
 	}
 
 
