@@ -39,7 +39,6 @@ options.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
 
 local DATA_FOLDER_PATH = data_dir .. "mark_eats/"
 local DATA_FILE_PATH = DATA_FOLDER_PATH .. "loom.data"
-local data_folder_exists = false
 
 local SCREEN_FRAMERATE = 15
 local screen_dirty = true
@@ -123,7 +122,6 @@ end
 local function read_data()
   local disk_data = tab.load(DATA_FILE_PATH)
   if disk_data then
-    data_folder_exists = true
     if disk_data.version then
       if disk_data.version == 1 then
         save_data = disk_data
@@ -131,16 +129,13 @@ local function read_data()
         print("Unrecognized data, version " .. disk_data.version)
       end
     end
+  else
+    os.execute("mkdir " .. DATA_FOLDER_PATH)
   end
   update_save_slot_list()
 end
 
 local function write_data()
-  if not data_folder_exists then
-    print("Making data folder: " .. DATA_FOLDER_PATH)
-    os.execute("mkdir " .. DATA_FOLDER_PATH)
-    data_folder_exists = true
-  end
   tab.save(save_data, DATA_FILE_PATH)
 end
 
@@ -840,6 +835,7 @@ function init()
     grid_leds[x] = {}
     trails[x] = {}
     for y = 1, 16 do
+      grid_leds[x][y] = 0
       trails[x][y] = 0
     end
   end
