@@ -31,6 +31,8 @@ local pattern_time = require 'pattern_time'
 local TRACKS = 4
 local FADE = 0.01
 
+local CLIP_LEN_SEC = 120
+
 local vREC = 1
 local vCUT = 2
 local vCLIP = 3
@@ -239,7 +241,7 @@ end
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 2 + (i-1)*120 -- clips have 2 minute distance separation
+  clip[i].s = 2 + (i-1)*CLIP_LEN_SEC
   clip[i].name = "-"
   set_clip_length(i,4)
 end
@@ -750,6 +752,8 @@ end
 
 --------------------CLIP
 
+clip_actions = {"load","clear","save"}
+clip_action = 1
 clip_sel = 1
 clip_clear_mult = 3
 
@@ -762,6 +766,7 @@ function fileselect_callback(path)
       engine.read(path, clip[track[clip_sel].clip].s, len/48000)
       set_clip_length(track[clip_sel].clip, len/48000)
       clip[track[clip_sel].clip].name = path:match("[^/]*$")
+      -- TODO: STRIP extension
       set_clip(clip_sel,track[clip_sel].clip)
       update_rate(clip_sel)
     else
@@ -773,9 +778,32 @@ function fileselect_callback(path)
   end
 end
 
+function textentry_callback(txt)
+  if txt then
+    local c_start = clip[track[clip_sel].clip].s
+    local c_len = clip[track[clip_sel].clip].l
+    print("SAVE " .. audio_dir .. txt .. ".aif", c_start, c_len)
+    engine.write(audio_dir..txt..".aif",c_start,c_len)
+    clip[track[clip_sel].clip].name = txt
+  else
+    print("save cancel")
+  end
+  redraw()
+end
+
 v.key[vCLIP] = function(n,z)
   if n==2 and z==0 then
-    fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    if clip_actions[clip_action] == "load" then
+      fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    elseif clip_actions[clip_action] == "clear" then
+      local c_start = clip[track[clip_sel].clip].s * 48000
+      print("clear_start: " .. c_start)
+      engine.clear_range(c_start, CLIP_LEN_SEC * 48000) -- two minutes
+      clip[track[clip_sel].clip].name = '-'
+      redraw()
+    elseif clip_actions[clip_action] == "save" then
+      textentry.enter(textentry_callback, "mlr-" .. (math.random(9000)+1000))
+    end
   elseif n==3 and z==1 then
     clip_reset(clip_sel,60/params:get("tempo")*(2^(clip_clear_mult-2)))
     set_clip(clip_sel,track[clip_sel].clip)
@@ -785,7 +813,7 @@ end
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel-d,1,TRACKS)
+    clip_action = util.clamp(clip_action + d, 1, 3)
   elseif n==3 then
     clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end
@@ -812,16 +840,16 @@ end
 v.redraw[vCLIP] = function()
   screen.clear()
   screen.level(15)
-  screen.move(10,30)
-  screen.text("CLIP > "..clip_sel)
+  screen.move(10,16)
+  screen.text("CLIP > TRACK "..clip_sel)
 
-  screen.move(10,50)
+  screen.move(10,52)
   screen.text(truncateMiddle(clip[track[clip_sel].clip].name, 18))
   screen.level(3)
   screen.move(10,60)
-  screen.text("name "..track[clip_sel].clip)
+  screen.text("clip "..track[clip_sel].clip .. " " .. clip_actions[clip_action])
 
-  screen.move(100,50)
+  screen.move(100,52)
   screen.text(2^(clip_clear_mult-2))
   screen.level(3)
   screen.move(100,60)
