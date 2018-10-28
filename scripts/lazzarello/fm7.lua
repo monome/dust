@@ -1,4 +1,4 @@
--- fmrthsea
+-- FM7
 --
 -- FM polysynth
 -- controlled by grid or MIDI
@@ -7,16 +7,14 @@
 -- 1 1 record toggle
 -- 1 2 play toggle
 -- 1 8 transpose mode
--- 1 3-7 toggle encoders to op 2-6
--- enc 1: operator hz multiplier
--- enc 2: operator phase
--- enc 3: operator amplitude
+-- enc 1: change presets
 -- key 2: random modulation matrix
 -- key 3: play a random note
 
-local FM7 = require "lazzarello/fm7"
+local FM7 = require 'lazzarello/fm7'
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
+local UI = require 'mark_eats/ui'
 
 local g = grid.connect()
 
@@ -118,28 +116,8 @@ function init()
   end
   light = 0
   number = 3
-end
-
-function enc(n,delta)
-  if n == 1 then
-    hz_position = (hz_position + delta) % 1024
-    local hz = (hz_position / 1024) * 5
-    local mode = getEncoderMode()
-    ctrl_functions[mode](hz)
-    --print("hz" .. mode .. " multiple is " .. hz)
-  elseif n == 2 then
-    ph_position = (ph_position + delta) % 1024
-    local phase = (ph_position / 1024)
-    local mode = getEncoderMode()
-    ctrl_functions[mode + 6](phase)
-    --print("phase" .. mode .. " is " .. phase)
-  elseif n == 3 then
-    amp_position = (amp_position + delta) % 1024
-    local amp = (amp_position / 1024)
-    local mode = getEncoderMode()
-    ctrl_functions[mode + 6*2](amp)
-    --print("amp" .. mode .. " is " .. amp)
-  end
+  
+  pages = UI.Pages.new(1, 33)
 end
 
 function g.event(x, y, z)
@@ -264,6 +242,23 @@ function gridredraw()
   g:refresh()
 end
 
+function enc(n,delta)
+  if n == 1 then
+    pages:set_index_delta(delta, true)
+    --print("set algo ".. (pages.index - 1))
+    if (pages.index - 1) < 10 then
+      params:read("lazzarello/fm7-0".. (pages.index - 1) .. ".pset")
+    else
+      params:read("lazzarello/fm7-".. (pages.index - 1) .. ".pset")
+    end
+  elseif n == 2 then
+    print("encoder 2")
+
+  elseif n == 3 then
+    print("encoder 3")
+  end
+end
+
 function key(n,z)
   if n == 2 and z== 1 then
     -- clear selected
@@ -305,8 +300,7 @@ function key(n,z)
   end
 end
 
-function redraw()
-  screen.clear()
+local function draw_matrix_outputs()
   for m = 1,6 do
     for n = 1,6 do
       screen.rect(m*9, n*9, 9, 9)
@@ -328,6 +322,124 @@ function redraw()
     screen.move_rel(-32,0)
     screen.text(carriers[m])
     screen.stroke()    
+  end  
+end
+
+local function draw_algo_rel(num)
+    -- my first try was clever but not really intuitive.
+    -- keeping it for posterity.
+    screen.move(0,10)
+    screen.text("algo "..num)
+    local size = 9
+    local x = 32
+    local y = 5
+    local spacing = 16
+    local text_coords = {2,6}
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(6)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(5)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(4)
+    y = y + spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(3)
+    x = x - spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(1)
+    y = y - spacing
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(2)
+    screen.stroke()
+end
+local algo_box_coords = 
+  {
+--[[
+absolute coords for operator box positions
+ 5|
+21|
+37|
+53|__ __ __ __ __ ___
+   32 48 64 80 96 112
+   
+    tuples in table are {x coord, y coord, connection_index,feedback_index}
+--]]
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,0},{64,21,4,0},{64,5,5,6}},
+    {{48,53,0,0},{48,37,1,2},{64,53,0,0},{64,37,3,0},{64,21,4,0},{64,5,5,0}},
+    {{48,53,0,0},{48,37,1,0},{48,21,2,0},{64,53,0,0},{64,37,4,0},{64,21,5,6}},
+    {{48,53,0,0},{48,37,1,0},{48,21,2,0},{64,53,0,6},{64,37,4,0},{64,21,5,0}},
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,0},{80,53,0,0},{80,37,5,6}},
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,0},{80,53,0,6},{80,37,5,0}},
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,0},{80,37,3,0},{80,21,5,6}},
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,4},{80,37,3,0},{80,21,5,0}},
+    {{48,53,0,0},{48,37,1,2},{64,53,0,0},{64,37,3,0},{80,37,3,0},{80,21,5,0}},
+    {{48,53,0,0},{48,37,1,0},{48,21,2,3},{64,53,0,0},{80,37,4,0},{64,37,4,0}},
+    {{48,53,0,0},{48,37,1,0},{48,21,2,0},{64,53,0,0},{80,37,4,0},{64,37,4,6}},
+    {{32,53,0,0},{32,37,1,2},{64,53,0,0},{48,37,3,0},{64,37,3,0},{80,37,3,0}},
+    {{32,53,0,0},{32,37,1,0},{64,53,0,0},{48,37,3,0},{64,37,3,0},{80,37,3,6}},
+    {{32,53,0,0},{32,37,1,0},{64,53,0,0},{64,37,3,0},{80,37,4,0},{64,21,4,6}},
+    {{32,53,0,0},{32,37,1,2},{64,53,0,0},{64,37,3,0},{80,37,4,0},{64,21,4,0}},
+    {{64,53,0,0},{48,37,1,0},{64,37,1,0},{64,21,3,0},{80,37,1,0},{80,21,5,6}},
+    {{64,53,0,0},{48,37,1,2},{64,37,1,0},{64,21,3,0},{80,37,1,0},{80,21,5,0}},
+    {{64,53,0,0},{48,37,1,0},{64,37,1,3},{80,37,1,0},{80,21,4,0},{80,5,5,0}},
+    {{48,53,0,0},{48,37,1,0},{48,21,2,0},{64,53,0,0},{80,53,0,0},{64,37,{4,5},6}},
+    {{32,53,0,0},{48,53,0,0},{32,37,{1,2},3},{80,53,0,0},{64,37,4,0},{80,37,4,0}},
+    {{32,53,0,0},{48,53,0,0},{32,37,{1,2},3},{64,53,0,0},{80,53,0,0},{64,37,{4,5},0}},
+    {{32,53,0,0},{32,37,1,0},{48,53,0,0},{64,53,0,0},{80,53,0,0},{64,37,{3,4,5},6}},
+    {{32,53,0,0},{48,53,0,0},{48,37,3,0},{64,53,0,0},{80,53,0,0},{64,37,{4,5},6}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{80,53,0,0},{96,53,0,0},{80,37,{3,4,5},6}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{80,53,0,0},{96,53,0,0},{80,37,{4,5},6}},
+    {{32,53,0,0},{48,53,0,0},{48,37,2,3},{80,53,0,0},{64,37,4,0},{80,37,4,0}},
+    {{32,53,0,0},{48,53,0,0},{48,37,2,3},{80,53,0,0},{64,37,4,0},{80,37,4,0}},
+    {{48,53,0,0},{48,37,1,0},{64,53,0,0},{64,37,3,0},{64,21,4,5},{80,53,0,0}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{64,37,3,0},{80,53,0,0},{80,37,5,6}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{64,37,3,0},{64,21,4,5},{80,53,0,0}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{80,53,0,0},{96,53,0,0},{96,37,5,6}},
+    {{32,53,0,0},{48,53,0,0},{64,53,0,0},{80,53,0,0},{96,53,0,0},{112,53,0,6}}
+  }
+
+local function draw_algo(num)
+    screen.move(0,10)
+    screen.text("algo "..num)
+    local size = 9
+    local text_coords = {2,6}
+  for a = 1,6 do
+    local x = algo_box_coords[num][a][1]
+    local y = algo_box_coords[num][a][2]
+    local conn = algo_box_coords[num][a][3]
+    local fb = algo_box_coords[num][a][4]
+    if type(conn) == "number" then
+      if conn > 0 then
+        -- this is a line going down to the next box
+        -- need a line going across to the next box
+        -- and a line feedbacking to an arbitrary box
+        screen.move(x+size/2,y+size)
+        screen.line(x+size/2,y+16)
+      end
+    end
+    screen.rect(x,y,size,size)
+    screen.move_rel(text_coords[1], text_coords[2])
+    screen.text(a)
+    screen.stroke()
+  end
+end
+
+function redraw()
+  screen.clear()
+  pages:redraw()
+  
+  if pages.index == 1 then
+    draw_matrix_outputs()
+  else
+    draw_algo(pages.index - 1)
   end
 
   screen.update()
