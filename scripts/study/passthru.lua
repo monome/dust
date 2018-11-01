@@ -24,3 +24,8 @@ function key(n,z)
    end
 end
 
+function redraw()
+  screen.clear()
+  screen.update()
+end
+
