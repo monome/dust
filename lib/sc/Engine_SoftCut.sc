@@ -202,7 +202,7 @@ Engine_SoftCut : CroneEngine {
 
 	// disk write
 	writeBuf { arg path, start, dur;
-			BufUtil.write(buf, path, start:start, dur:dur);
+			BufUtil.write(buf, path, start, dur);
 	}
 
 	syncVoice { arg src, dst, offset;

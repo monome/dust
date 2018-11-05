@@ -752,7 +752,8 @@ end
 
 --------------------CLIP
 
-clip_action = "load"
+clip_actions = {"load","clear","save"}
+clip_action = 1
 clip_sel = 1
 clip_clear_mult = 3
 
@@ -765,6 +766,7 @@ function fileselect_callback(path)
       engine.read(path, clip[track[clip_sel].clip].s, len/48000)
       set_clip_length(track[clip_sel].clip, len/48000)
       clip[track[clip_sel].clip].name = path:match("[^/]*$")
+      -- TODO: STRIP extension
       set_clip(clip_sel,track[clip_sel].clip)
       update_rate(clip_sel)
     else
@@ -776,17 +778,31 @@ function fileselect_callback(path)
   end
 end
 
+function textentry_callback(txt)
+  if txt then
+    local c_start = clip[track[clip_sel].clip].s
+    local c_len = clip[track[clip_sel].clip].l
+    print("SAVE " .. audio_dir .. txt .. ".aif", c_start, c_len)
+    engine.write(audio_dir..txt..".aif",c_start,c_len)
+    clip[track[clip_sel].clip].name = txt
+  else
+    print("save cancel")
+  end
+  redraw()
+end
+
 v.key[vCLIP] = function(n,z)
   if n==2 and z==0 then
-    if clip_action == "load" then
+    if clip_actions[clip_action] == "load" then
       fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
-    elseif clip_action == "clear" then
+    elseif clip_actions[clip_action] == "clear" then
       local c_start = clip[track[clip_sel].clip].s * 48000
       print("clear_start: " .. c_start)
       engine.clear_range(c_start, CLIP_LEN_SEC * 48000) -- two minutes
-      -- ADJUST LENGTH?? or just use resize
       clip[track[clip_sel].clip].name = '-'
       redraw()
+    elseif clip_actions[clip_action] == "save" then
+      textentry.enter(textentry_callback, "mlr-" .. (math.random(9000)+1000))
     end
   elseif n==3 and z==1 then
     clip_reset(clip_sel,60/params:get("tempo")*(2^(clip_clear_mult-2)))
@@ -797,8 +813,7 @@ end
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    if d>0 then clip_action = "clear"
-    else clip_action = "load" end
+    clip_action = util.clamp(clip_action + d, 1, 3)
   elseif n==3 then
     clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end
@@ -828,13 +843,13 @@ v.redraw[vCLIP] = function()
   screen.move(10,16)
   screen.text("CLIP > TRACK "..clip_sel)
 
-  screen.move(10,50)
+  screen.move(10,52)
   screen.text(truncateMiddle(clip[track[clip_sel].clip].name, 18))
   screen.level(3)
   screen.move(10,60)
-  screen.text("clip "..track[clip_sel].clip .. " " .. clip_action)
+  screen.text("clip "..track[clip_sel].clip .. " " .. clip_actions[clip_action])
 
-  screen.move(100,50)
+  screen.move(100,52)
   screen.text(2^(clip_clear_mult-2))
   screen.level(3)
   screen.move(100,60)
