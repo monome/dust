@@ -20,7 +20,7 @@
 -- PAGE 3:
 --  Load/Save/Delete
 --
--- v1.0.1
+-- v1.0.2
 -- Concept Jay Gilligan
 -- Code Mark Eats
 --
@@ -239,7 +239,7 @@ local function note_off(note_num)
   
 end
 
-local function all_notes_off()
+local function all_notes_kill()
   
   -- Audio engine out
   engine.noteKillAll()
@@ -440,6 +440,7 @@ local function advance_step()
       if tx <= grid_w then trails[tx][t.position] = TRAIL_ANI_LENGTH end
     end
     
+    grid_dirty = true
   end
   
   for _, n in pairs(notes) do
@@ -501,6 +502,8 @@ local function advance_step()
         end
       end
     end
+    
+    grid_dirty = true
   end
   
   -- Work out which need noteOffs
@@ -526,7 +529,10 @@ local function advance_step()
   end
   
   screen_dirty = true
-  grid_dirty = true
+end
+
+local function stop()
+  all_notes_kill()
 end
 
 local function reset_step()
@@ -694,7 +700,6 @@ function key(n, z)
           if not beat_clock.external then
             if beat_clock.playing then
               beat_clock:stop()
-              all_notes_off()
             else
               beat_clock:start()
             end
@@ -854,6 +859,7 @@ function init()
   beat_clock = BeatClock.new()
   
   beat_clock.on_step = advance_step
+  beat_clock.on_stop = stop
   beat_clock.on_select_internal = function()
     beat_clock:start()
     screen_dirty = true
@@ -901,44 +907,60 @@ function init()
     grid_device:reconnect(value)
   end}
   
-  params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_off}
+  params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_kill}
   
-  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1, action = function(value)
-    midi_out_device:reconnect(value)
-  end}
+  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      midi_out_device:reconnect(value)
+    end}
   
-  params:add{type = "number", id = "midi_out_channel", name = "MIDI Out Channel", min = 1, max = 16, default = 1, action = function(value)
-    all_notes_off()
-    midi_out_channel = value
-  end}
+  params:add{type = "number", id = "midi_out_channel", name = "MIDI Out Channel", min = 1, max = 16, default = 1,
+    action = function(value)
+      all_notes_kill()
+      midi_out_channel = value
+    end}
   
-  params:add{type = "option", id = "clock", name = "Clock", options = {"Internal", "External"}, default = beat_clock.external or 2 and 1, action = function(value)
-    beat_clock:clock_source_change(value)
-  end}
+  params:add{type = "option", id = "clock", name = "Clock", options = {"Internal", "External"}, default = beat_clock.external or 2 and 1,
+    action = function(value)
+      beat_clock:clock_source_change(value)
+    end}
   
-  params:add{type = "number", id = "clock_midi_in_device", name = "Clock MIDI In Device", min = 1, max = 4, default = 1, action = function(value)
-    midi_in_device:reconnect(value)
-  end}
+  params:add{type = "number", id = "clock_midi_in_device", name = "Clock MIDI In Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      midi_in_device:reconnect(value)
+    end}
   
-  params:add{type = "option", id = "clock_out", name = "Clock Out", options = {"Off", "On"}, default = beat_clock.send or 2 and 1, action = function(value)
-    if value == 1 then beat_clock.send = false
-    else beat_clock.send = true end
-  end}
+  params:add{type = "option", id = "clock_out", name = "Clock Out", options = {"Off", "On"}, default = beat_clock.send or 2 and 1,
+    action = function(value)
+      if value == 1 then beat_clock.send = false
+      else beat_clock.send = true end
+    end}
   
   params:add_separator()
   
-  params:add{type = "number", id = "bpm", name = "BPM", min = 1, max = 480, default = beat_clock.bpm, action = function(value)
-    beat_clock:bpm_change(value)
-    screen_dirty = true
-  end}
+  params:add{type = "number", id = "bpm", name = "BPM", min = 1, max = 240, default = beat_clock.bpm,
+    action = function(value)
+      beat_clock:bpm_change(value)
+      screen_dirty = true
+    end}
   
-  params:add{type = "option", id = "step_length", name = "Step Length", options = options.STEP_LENGTH_NAMES, default = 10, action = function(value)
-    beat_clock.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
-    beat_clock:bpm_change(beat_clock.bpm)
-  end}
+  params:add{type = "option", id = "step_length", name = "Step Length", options = options.STEP_LENGTH_NAMES, default = 10,
+    action = function(value)
+      beat_clock.ticks_per_step = 96 / options.STEP_LENGTH_DIVIDERS[value]
+      beat_clock.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
+      beat_clock:bpm_change(beat_clock.bpm)
+    end}
   
-  params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 8, max = 64, default = 16}
-  params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 8, max = 64, default = 16}
+  params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 4, max = 64, default = 16,
+    action = function()
+      grid_dirty = true
+    end
+  }
+  params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 4, max = 64, default = 16,
+    action = function()
+      grid_dirty = true
+    end
+  }
   
   params:add{type = "number", id = "min_velocity", name = "Min Velocity", min = 1, max = 127, default = 80}
   params:add{type = "number", id = "max_velocity", name = "Max Velocity", min = 1, max = 127, default = 100}
