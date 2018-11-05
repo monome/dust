@@ -52,8 +52,8 @@ Engine_SoftCut : CroneEngine {
 		gr = Event.new;
 		gr.pb = Group.new(context.xg, addAction:\addToTail);
 		gr.rec = Group.after(context.ig);
-		gr.adc = Group.before(gr.rec):
-		gr.dac = Group.after(gr.pb):
+		gr.adc = Group.before(gr.rec);
+		gr.dac = Group.after(gr.pb);
 		gr.voices = ParGroup.new(context.xg, addAction:\addToHead);
 
 		s.sync;
@@ -72,7 +72,7 @@ Engine_SoftCut : CroneEngine {
 		//--- busses
 		postln("busses...");
 		bus = Event.new;	
-		bus.adc 
+		bus.adc = Array.fill(2, { Bus.audio(s, 1) });
 		bus.dac = Array.fill(2, { Bus.audio(s, 1) });
 		bus.rec = Array.fill(nvoices, { Bus.audio(s, 1); });
 		bus.pb = Array.fill(nvoices, { Bus.audio(s, 1); });
@@ -132,12 +132,14 @@ Engine_SoftCut : CroneEngine {
 		);
 
 		// make our own I/O busses and synths... shouldn't be necessary but weird things seem to happen otherwise.
+		postln("adc synths");
 		adc_s = Array.fill(2, { |i|
 			Synth.new(\patch_mono, [\in, context.in_b[i].index, \out, bus.adc[i].index], gr.adc);
 		});
 
+		postln("dac synths");
 		dac_s = Array.fill(2, { |i|
-			Synth.new(\patch_mono, [\in, bus.out[i].index, \out, context.out_b.index + i], gr.dac);
+			Synth.new(\patch_mono, [\in, bus.dac[i].index, \out, context.out_b.index + i], gr.dac);
 		});
 
 		this.addCommands;
