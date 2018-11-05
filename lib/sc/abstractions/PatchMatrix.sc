@@ -4,7 +4,6 @@
 */
 
 PatchMatrix {
-	var <bus; // collection of busses
 	var <gr; // collection of groups
 	var <syn; // collection of synths
 	var <numInputs;
@@ -48,8 +47,7 @@ PatchMatrix {
 	}
 
 	free {
-		gr.free; // frees all synths
-		bus.do({ |b| b.free; });
+		gr.free; // frees all synth
 	}
 
 	init { arg srv, in, out, fb, target, action;
