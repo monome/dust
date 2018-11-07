@@ -19,11 +19,19 @@
 -- ALT+ENC1 = scale mode
 -- ALT+ENC2 = filter
 -- ALT+ENC3 = release
+-- ALT+KEY2 = play/pause
 --
 -- modify sound params in
 -- SYSTEM > AUDIO menu
 
 engine.name = 'PolyPerc'
+
+local MusicUtil = require "mark_eats/musicutil"
+
+local options = {}
+options.OUTPUT = {"audio", "midi", "audio + midi"}
+options.STEP_LENGTH_NAMES = {"1 bar", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/48", "1/64"}
+options.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
 
 local g = grid.connect()
 
@@ -41,9 +49,12 @@ local two = {
   data = {6,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 }
 
-local scale_degrees = {2,1,2,2,2,1,2}
+local midi_out_device
+local midi_out_channel
+
+local scale_names = {}
 local notes = {}
-local freqs = {}
+local active_notes = {}
 
 local edit_mode = 1
 local edit_pos = 1
@@ -55,32 +66,119 @@ clk_midi.event = function(data)
   clk:process_midi(data)
 end
 
-function build_scale()
-  local n = 0
-  for i=1,16 do
-    notes[i] = n
-    n = n + scale_degrees[(params:get("scale_mode") + i)%7 + 1]
+local notes_off_metro = metro.alloc()
+
+local function build_scale()
+  notes = MusicUtil.generate_scale_of_length(params:get("root_note"), params:get("scale_mode"), 16)
+  local num_to_add = 16 - #notes
+  for i = 1, num_to_add do
+    table.insert(notes, notes[16 - num_to_add])
   end
-  --tab.print(notes)
-  for i=1,16 do freqs[i] = 110*2^((notes[i]+params:get("trans"))/12) end
-  --tab.print(freqs)
+end
+
+local function all_notes_off()
+  if (params:get("output") == 2 or params:get("output") == 3) then
+    for _, a in pairs(active_notes) do
+      midi_out_device.note_off(a, nil, midi_out_channel)
+    end
+  end
+  active_notes = {}
+end
+
+local function step()
+  
+  all_notes_off()
+  
+  one.pos = one.pos + 1
+  if one.pos > one.length then one.pos = 1 end
+  two.pos = two.pos + 1
+  if two.pos > two.length then two.pos = 1 end
+  
+  if one.data[one.pos] > 0 then
+    local note_num = notes[one.data[one.pos]+two.data[two.pos]]
+    local freq = MusicUtil.note_num_to_freq(note_num)
+    
+    -- Audio engine out
+    if params:get("output") == 1 or params:get("output") == 3 then
+      engine.hz(freq)
+    end
+    
+    -- MIDI out
+    if (params:get("output") == 2 or params:get("output") == 3) then
+      midi_out_device.note_on(note_num, 96, midi_out_channel)
+      table.insert(active_notes, note_num)
+    end
+    
+    -- Note off timeout
+    if params:get("note_length") < 4 then
+      notes_off_metro:start((60 / clk.bpm / clk.steps_per_beat / 4) * params:get("note_length"), 1)
+    end
+  end
+  
+  if g then
+    gridredraw()
+  end
+  redraw()
+  
+end
+
+local function stop()
+  all_notes_off()
+end
+
+local function reset_pattern()
+  one.pos = 0
+  two.pos = 0
+  clk:reset()
 end
 
 function init()
-  print("grid/seek")
-
+  
+  for i = 1, #MusicUtil.SCALES do
+    table.insert(scale_names, string.lower(MusicUtil.SCALES[i].name))
+  end
+  
+  midi_out_device = midi.connect(1)
+  midi_out_device.event = function() end
+  
   clk.on_step = step
+  clk.on_stop = stop
   clk.on_select_internal = function() clk:start() end
   clk.on_select_external = reset_pattern
   clk:add_clock_params()
-  params:set("bpm",46)
+  params:set("bpm", 92)
+  
+  notes_off_metro.callback = all_notes_off
+  
+  params:add{type = "option", id = "output", name = "output",
+    options = options.OUTPUT,
+    action = all_notes_off}
+  params:add{type = "number", id = "midi_out_device", name = "midi out device",
+    min = 1, max = 4, default = 1,
+    action = function(value) midi_out_device:reconnect(value) end}
+  params:add{type = "number", id = "midi_out_channel", name = "midi out channel",
+    min = 1, max = 16, default = 1,
+    action = function(value)
+      all_notes_off()
+      midi_out_channel = value
+    end}
   params:add_separator()
-
-  params:add{type="number",id="scale_mode",name="scale mode",
-    min=1,max=7,default=3,
-    action=function(n) build_scale() end}
-  params:add{type="number",id="trans",
-    min = -12, max = 24, default = 0,
+  
+  params:add{type = "option", id = "step_length", name = "step length", options = options.STEP_LENGTH_NAMES, default = 6,
+    action = function(value)
+      clk.ticks_per_step = 96 / options.STEP_LENGTH_DIVIDERS[value]
+      clk.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
+      clk:bpm_change(clk.bpm)
+    end}
+  params:add{type = "option", id = "note_length", name = "note length",
+    options = {"25%", "50%", "75%", "100%"},
+    default = 4}
+  
+  params:add{type = "option", id = "scale_mode", name = "scale mode",
+    options = scale_names, default = 1,
+    action = function() build_scale() end}
+  params:add{type = "number", id = "root_note", name = "root note",
+    min = 0, max = 127, default = 45, formatter = function(param) return MusicUtil.note_num_to_name(param:get(), true) end,
     action = function() build_scale() end}
   params:add_separator()
 
@@ -111,35 +209,18 @@ function init()
 
 end
 
-function step()
-
-  one.pos = one.pos + 1
-  if one.pos > one.length then one.pos = 1 end
-  two.pos = two.pos + 1
-  if two.pos > two.length then two.pos = 1 end
-
-  if one.data[one.pos] > 0 then engine.hz(freqs[one.data[one.pos]+two.data[two.pos]]) end
-  if g then
-    gridredraw()
-  end
-  redraw()
-end
-
-function reset_pattern()
-  one.pos = 0
-  two.pos = 0
-  clk:reset()
-end
-
 function g.event(x, y, z)
+  local grid_h = g.rows()
   if z > 0 then
-    if edit_mode == 1 then
+    if (grid_h == 8 and edit_mode == 1) or (grid_h == 16 and y <= 8) then
       if one.data[x] == 9-y then
         one.data[x] = 0
       else
         one.data[x] = 9-y
       end
-    else
+    end
+    if (grid_h == 8 and edit_mode == 2) or (grid_h == 16 and y > 8) then
+      if grid_h == 16 then y = y - 8 end
       if two.data[x] == 9-y then
         two.data[x] = 0
       else
@@ -152,24 +233,28 @@ function g.event(x, y, z)
 end
 
 function gridredraw()
+  local grid_h = g.rows()
   g.all(0)
-  if edit_mode == 1 then
+  if edit_mode == 1 or grid_h == 16 then
     for x = 1, 16 do
       if one.data[x] > 0 then g.led(x, 9-one.data[x], 5) end
     end
-    if one.data[one.pos] > 0 then
+    if one.pos > 0 and one.data[one.pos] > 0 then
       g.led(one.pos, 9-one.data[one.pos], 15)
     else
       g.led(one.pos, 1, 3)
     end
-  else
+  end
+  if edit_mode == 2 or grid_h == 16 then
+    local y_offset = 0
+    if grid_h == 16 then y_offset = 8 end
     for x = 1, 16 do
-      if two.data[x] > 0 then g.led(x, 9-two.data[x], 5) end
+      if two.data[x] > 0 then g.led(x, 9-two.data[x] + y_offset, 5) end
     end
-    if two.data[two.pos] > 0 then
-      g.led(two.pos, 9-two.data[two.pos], 15)
+    if two.pos > 0 and two.data[two.pos] > 0 then
+      g.led(two.pos, 9-two.data[two.pos] + y_offset, 15)
     else
-      g.led(two.pos, 1, 3)
+      g.led(two.pos, 1 + y_offset, 3)
     end
   end
   g.refresh()
@@ -179,7 +264,7 @@ function enc(n, delta)
   if alt and n==1 then
     params:delta("scale_mode", delta)
   elseif KEY3 and n==1 then
-    params:delta("trans", delta)
+    params:delta("root_note", delta)
   elseif n == 1 then
     params:delta("bpm", delta)
   elseif alt and n == 2 then
@@ -220,6 +305,15 @@ function key(n,z)
   elseif n == 2 and z == 1 then
     if KEY3 then
       reset_pattern()
+      gridredraw()
+    elseif alt then
+      if not clk.external then
+        if clk.playing then
+          clk:stop()
+        else
+          clk:start()
+        end
+      end
     else
       if edit_mode == 1 then
         for i=1,one.length do
@@ -234,8 +328,10 @@ function key(n,z)
           end
         end
       end
+      gridredraw()
     end
   end
+  redraw()
 end
 
 function redraw()
@@ -278,7 +374,7 @@ function redraw()
   screen.text("sc:"..params:get("scale_mode"))
   screen.level(KEY3 and 15 or 4)
   screen.move(0,30)
-  screen.text("tr:"..params:get("trans"))
+  screen.text("rt:"..MusicUtil.note_num_to_name(params:get("root_note"), true))
 
   screen.level(4)
   screen.move(0,60)
@@ -287,3 +383,6 @@ function redraw()
   screen.update()
 end
 
+function cleanup ()
+  clk:stop()
+end
