@@ -901,11 +901,12 @@ function init()
   
   -- Add params
   
-  params:add{type = "number", id = "grid_device", name = "Grid Device", min = 1, max = 4, default = 1, action = function(value)
-    grid_device.all(0)
-    grid_device.refresh()
-    grid_device:reconnect(value)
-  end}
+  params:add{type = "number", id = "grid_device", name = "Grid Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      grid_device.all(0)
+      grid_device.refresh()
+      grid_device:reconnect(value)
+    end}
   
   params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_kill}
   
@@ -954,13 +955,11 @@ function init()
   params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 4, max = 64, default = 16,
     action = function()
       grid_dirty = true
-    end
-  }
+    end}
   params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 4, max = 64, default = 16,
     action = function()
       grid_dirty = true
-    end
-  }
+    end}
   
   params:add{type = "number", id = "min_velocity", name = "Min Velocity", min = 1, max = 127, default = 80}
   params:add{type = "number", id = "max_velocity", name = "Max Velocity", min = 1, max = 127, default = 100}
