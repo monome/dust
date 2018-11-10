@@ -4,18 +4,22 @@
 -- vector based life chain
 -- drone machine
 --
--- wurm eats glorbs
--- glorb eats brids
--- brid scares away wurms
+-- wurms devour glorbs
+-- glorbs dance with brids
+-- brid displace wurms
 --
 -- engine mollythepolly by mark_eats
+--
+-- drift will let glorbs, 
+-- wurms, and brids move or
+-- stay in place
 --
 -- key1 shift^
 -- key2  add glorb
 -- key2^ add wurm
 -- key3  add brid
 -- key3^ clear screen
--- enc1  drift
+-- enc1  drift 
 -- enc1^ resonance
 -- enc2  push/pull
 -- enc2^ lp filter
@@ -220,7 +224,7 @@ function init()
   shift = 0
 
   -- drift
-  params:add_control("drift", "drift", controlspec.new(0,1,"lin",0,0,""))
+  params:add_control("drift", "drift", controlspec.new(0,1,"lin",0,0.5,""))
 
   params:add_separator()
 
