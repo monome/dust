@@ -5,8 +5,8 @@
 -- drone machine
 --
 -- wurms devour glorbs
--- glorbs dance with brids
--- brid displace wurms
+-- glorbs translocate brids
+-- brids displace wurms
 --
 -- engine mollythepolly by mark_eats
 --
