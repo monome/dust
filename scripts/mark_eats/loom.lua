@@ -20,7 +20,7 @@
 -- PAGE 3:
 --  Load/Save/Delete
 --
--- v1.0.2
+-- v1.0.3
 -- Concept Jay Gilligan
 -- Code Mark Eats
 --
@@ -81,7 +81,6 @@ local INACTIVE_BRIGHTNESS = 10
 local ACTIVE_BRIGHTNESS = 15
 
 local pages
-local tabs
 local playback_icon
 local add_remove_animations = {}
 local ADD_REMOVE_ANI_LENGTH = 0.2
@@ -974,8 +973,7 @@ function init()
   
   -- UI
   
-  pages = UI.Pages.new(page_id, 3)
-  tabs = UI.Tabs.new()
+  pages = UI.Pages.new(1, 3)
   save_slot_list = UI.ScrollingList.new(5, 14, 1, {})
   save_menu_list = UI.List.new(92, 25, 1, save_menu_items)
   playback_icon = UI.PlaybackIcon.new(121, 1)
