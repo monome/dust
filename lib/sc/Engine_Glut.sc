@@ -2,6 +2,7 @@
 Engine_Glut : CroneEngine {
 	classvar nvoices = 7;
 
+	var pg;
 	var effect;
 	var <buffers;
 	var <voices;
@@ -94,10 +95,12 @@ Engine_Glut : CroneEngine {
 		// mix bus for all synth outputs
 		mixBus =  Bus.audio(context.server, 2);
 
-		effect = Synth.new(\effect, [\in, mixBus.index, \out, context.out_b.index]);
+		effect = Synth.new(\effect, [\in, mixBus.index, \out, context.out_b.index], target: context.xg);
 
 		phases = Array.fill(nvoices, { arg i; Bus.control(context.server); });
 		levels = Array.fill(nvoices, { arg i; Bus.control(context.server); });
+
+		pg = ParGroup.head(context.xg);
 
 		voices = Array.fill(nvoices, { arg i;
 			Synth.new(\synth, [
@@ -105,7 +108,7 @@ Engine_Glut : CroneEngine {
 				\phase_out, phases[i].index,
 				\level_out, levels[i].index,
 				\buf, buffers[i],
-			]);
+			], target: pg);
 		});
 
 		context.server.sync;

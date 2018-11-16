@@ -11,3 +11,6 @@
 # settings
 data/system.lua
 data/system.pset
+
+# MacOS
+.DS_Store

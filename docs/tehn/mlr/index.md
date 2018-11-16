@@ -33,7 +33,7 @@ each track shows playback position. push a position to jump there. hold a positi
 
 lets you select which sound clip (1-16) is being used for the track. you can select which clip is being used per track on the grid interface.
 
-scroll with ENC2 to select and KEY3 to load a file. KEY2 lets you resize the clip (according to the multiplier set by ENC3 and the current tempo).
+scroll with ENC2 to select and KEY2 to load a file. KEY3 lets you resize the clip (according to the multiplier set by ENC3 and the current tempo).
 
 ### PATTERNS
 

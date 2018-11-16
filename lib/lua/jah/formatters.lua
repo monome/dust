@@ -42,6 +42,10 @@ function Formatters.default(param)
   return Formatters.round(0.01)(param)
 end
 
+function Formatters.percentage(param)
+  return format(param, util.round(param:get()*100), "%")
+end
+
 function Formatters.unipolar_as_percentage(param)
   return format(param, util.round(param:get()*100), "%")
 end

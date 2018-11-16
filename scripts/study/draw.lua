@@ -4,10 +4,11 @@
 -- drawing functions
 
 -- specify dsp engine to load:
-engine.name = 'TestSine'
+--engine.name = 'TestSine'
 
 function init()
-  engine.amp(0)
+  -- enable anti-alasing
+  screen.aa(1)
 end
 
 -- screen redraw function
@@ -16,8 +17,6 @@ function redraw()
   screen.clear()
   -- set pixel brightness (0-15)
   screen.level(15)
-  -- enable anti-alasing
-  screen.aa(1)
   -- set line width
   screen.line_width(1.0)
   -- move position

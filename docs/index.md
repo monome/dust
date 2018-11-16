@@ -7,12 +7,15 @@
 
 * [tehn/awake](tehn/awake)
 * [tehn/mlr](tehn/mlr)
+* [jah/hello_ack](jah/hello_ack)
+* [jah/step](jah/step)
+* [justmat/foulplay](justmat/foulplay/foulplay.md)
 
 ## engines
 
 * polysub
 * softcut
-* ack
+* [jah/ack](jah/ack)
 
 
 ## contributing
