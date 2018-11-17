@@ -24,7 +24,7 @@
 -- -------------------------------------------
 --
 -- norns controls
--- -------------------------------------------
+-- ------------------------------------------
 -- enc1: bpm
 -- enc2: select pattern
 -- enc3: filter cutoff
@@ -33,6 +33,19 @@
 -- key2: load pattern
 -- key3: stop clock
 -- ---------------------------------------------
+--
+-- *NEW:* RANDOM MODE
+-- -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+-- randomly change a handful
+-- of parameters on each
+-- sample triggered.
+--
+-- In the parameter menu...
+-- 
+-- mode 0: none/off
+-- mode 1: total random
+-- mode 2: step-based random
+-- (like Drunk Obj. in Max/MSP)
 
 engine.name = 'Ack'
 
@@ -41,16 +54,11 @@ local ack = require 'jah/ack'
 local g = grid.connect()
 
 --[[whats next?:
-                - enc3 meter
                 - patterns display on screen before loading for a set amount of time,
                   then returns to displaying current grid pattern
                 - continue optimizing
-                - beatclock integration for midi sync
+                - midi sync
 ]]--
-
---[[current issues:
-                  - are rhythms totally accurate?
---]]
 
 
 
@@ -120,11 +128,15 @@ function init()
 
   -- parameters
   params:add_number("bpm", "bpm", 15, 400, 60)
-
+  params:add_number("random_mode", "random mode:", 0, 2, 0)
+  params:add_number("drunk_step", "mode 2 step size:", 1, 10, 1)
+  params:add_separator()
   ack.add_effects_params()
-
+  params:add_separator()
+  
   for channel=1,4 do
     ack.add_channel_params(channel)
+    params:add_separator()
   end
 
   params:read("tyler/ekombi.pset")
@@ -250,8 +262,7 @@ function enc(n,d)
 
   if n == 3 then
     for i=1, 4 do
-      params:delta(i..": filter cutoff", d)
-      --print(d, params:get(i..": filter cutoff"))
+      params:delta(i.."_filter_cutoff", d)
     end
     --meter_display = util.clamp(meter_display + d/100, 0, 47)
   end
@@ -330,7 +341,31 @@ function count(c)
         for n=1, cnt do
           if position / ( ppq // (tab.count(track[pending[i]][cnt]))) == n-1 then
             if track[pending[i]][cnt][n] == 1 then
+              
               engine.trig(pending[i]//2) -- samples are only 0-3
+                                                                       -- random modes affect after trigger
+              if params:get("random_mode") == 1 then                   -- mode 1:total random
+                params:set(i.."_start_pos", math.random())
+                --params:set(i.."_speed", math.random())
+                params:set(i.."_pan", math.random(-1,1)*math.random()) -- -1 or 1 * random float, to fit -1 through 1 panning range
+                params:set(i.."_filter_cutoff", math.random(20,20000))
+                params:set(i.."_filter_res", math.random())
+                params:set(i.."_filter_env_atk", math.random())
+                params:set(i.."_filter_env_rel", math.random())
+                params:set(i.."_filter_env_mod", math.random())
+                params:set(i.."_dist", math.random())
+              elseif params:get("random_mode") == 2 then              -- mode 2: step-based (like drunk from Max) random
+                size = params:get("drunk_step")
+                params:delta(i.."_start_pos", (math.random(-10,10)/100)*size)
+                --params:delta(i.."_speed", (math.random(-10,10)/100)*size)
+                params:delta(i.."_pan", (math.random(-10,10)/100)*size)  -- -1 or 1 * random float, to fit -1 through 1 panning range
+                params:delta(i.."_filter_cutoff", math.random(-100*size,100*size))
+                params:delta(i.."_filter_res", (math.random(-10,10)/100)*size)
+                params:delta(i.."_filter_env_atk", (math.random(-10,10)/100)*size)
+                params:delta(i.."_filter_env_rel", (math.random(-10,10)/100)*size)
+                params:delta(i.."_filter_env_mod", (math.random(-10,10)/100)*size)
+                params:delta(i.."_dist", (math.random(-10,10)/100)*size)
+              end
             end
           end
         end
@@ -368,10 +403,6 @@ function redraw()
       end
     end
 
-    -- meter display
-    --screen.rect(124,56,3,-meter_display)
-    --screen.fill()
-
     -- param display
     screen.move(0,5)
     screen.text("bpm:"..params:get("bpm"))
@@ -395,15 +426,6 @@ function redraw()
     -- currently selected pattern
     screen.move(128,5)
     screen.text_right(pattern_display)
-
-    --[[ meter outline
-    screen.rect(124, 9, 4, 47)
-    screen.move(124, 32)
-    screen.line_rel(3,0)
-    screen.move(124, 33)
-    screen.line_rel(3,0)
-    screen.stroke()
-    --]]
 
 screen.update()
 end
