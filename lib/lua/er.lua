@@ -1,9 +1,8 @@
-
-
+er = {}
 -- Euclidean rhythm (http://en.wikipedia.org/wiki/Euclidean_Rhythm)
 -- @param k : number of pulses
 -- @param n : total number of steps
-function er(k, n)
+function er.gen(k, n)
    -- results array, intially all zero
    local r = {}
    for i=1,n do r[i] = false end
@@ -16,8 +15,10 @@ function er(k, n)
       if b >= n then
 	 b = b - n
 	 r[i] = true
-      end      
+      end
       b = b + k
-   end   
-   return r   
+   end
+   return r
 end
+
+return er

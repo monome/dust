@@ -34,15 +34,13 @@ local function init_scale()
 end
 
 local function advance_step()
-  if step > scale_len then
+  if step >= scale_len then
     step = scale_len
     step_increment = -1
-  else
-    step = step + step_increment
-    if step == 1 or step == scale_len then
-      step_increment = step_increment * -1
-    end
+  elseif step == 1 then
+    step_increment = 1
   end
+  step = step + step_increment
   engine.hz(MusicUtil.note_num_to_freq(scale_notes[step]))
   redraw()
 end
@@ -67,6 +65,7 @@ function init()
   step_metro.callback = advance_step
   start_stop_metro()
   
+  screen.aa(1)
   redraw()
 end
 
@@ -117,7 +116,6 @@ end
 
 function redraw()
   screen.clear()
-  screen.aa(1)
 
   screen.level(15)
   

@@ -9,7 +9,7 @@
 -- key1 = ALT
 -- ALT-enc1 = bpm
 
-require 'er'
+er = require 'er'
 
 engine.name = 'Ack'
 
@@ -56,7 +56,7 @@ local function reer(i)
   if track[i].k == 0 then
     for n=1,32 do track[i].s[n] = false end
   else
-    track[i].s = er(track[i].k,track[i].n)
+    track[i].s = er.gen(track[i].k,track[i].n)
   end
 end
 
@@ -126,7 +126,7 @@ end
 function enc(n,d)
   if n==1 then
     if alt==1 then
-      params:delta("bpm",d)
+      params:delta("bpm", d)
     else
       track_edit = util.clamp(track_edit+d,1,4)
     end

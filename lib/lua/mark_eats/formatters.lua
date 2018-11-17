@@ -1,7 +1,6 @@
 local MEFormatters = {}
 
-function MEFormatters.format_freq(param)
-  local freq = param:get()
+function MEFormatters.format_freq(freq)
   if freq < 0.1 then
     freq = util.round(freq, 0.001) .. " Hz"
   elseif freq < 100 then
@@ -14,8 +13,12 @@ function MEFormatters.format_freq(param)
   return freq
 end
 
-function MEFormatters.format_secs(param)
-  local secs = param:get()
+function MEFormatters.format_freq_param(param)
+  local value = param:get()
+  return MEFormatters.format_freq(value)
+end
+
+function MEFormatters.format_secs(secs)
   if util.round(secs, 0.01) >= 1 then
     secs = util.round(secs, 0.1)
   else
@@ -23,6 +26,11 @@ function MEFormatters.format_secs(param)
     if string.len(secs) < 4 then secs = secs .. "0" end
   end
   return secs .. " s"
+end
+
+function MEFormatters.format_secs_param(param)
+  local value = param:get()
+  return MEFormatters.format_secs(value)
 end
 
 return MEFormatters

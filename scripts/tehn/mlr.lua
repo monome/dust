@@ -3,13 +3,6 @@
 -- http://monome.org/
 --   docs/norns/dust/tehn/mlr
 --
--- new/180828
---
--- - 6 channels
--- - improved sound engine
--- - alt+REC clears buffer
--- - panning
---
 -- /////////
 -- ////
 -- ////////////
@@ -35,8 +28,10 @@ local g = grid.connect()
 
 local pattern_time = require 'pattern_time'
 
-local TRACKS = 6
+local TRACKS = 4
 local FADE = 0.01
+
+local CLIP_LEN_SEC = 120
 
 local vREC = 1
 local vCUT = 2
@@ -78,6 +73,7 @@ function event(e)
     for i=1,4 do
       pattern[i]:watch(e)
     end
+    recall_watch(e)
     event_exec(e)
   end
 end
@@ -94,6 +90,7 @@ function event_q_clock()
       for i=1,4 do
         pattern[i]:watch(e)
       end
+      recall_watch(e)
       event_exec(e)
     end
     quantize_events = {}
@@ -156,9 +153,35 @@ end
 
 ------ patterns
 pattern = {}
-for i=1,TRACKS do
+for i=1,4 do
   pattern[i] = pattern_time.new()
   pattern[i].process = event_exec
+end
+
+------ recalls
+recall = {}
+for i=1,4 do
+  recall[i] = {}
+  recall[i].recording = false
+  recall[i].has_data = false
+  recall[i].active = false
+  recall[i].event = {}
+end
+
+function recall_watch(e)
+  for i=1,4 do
+    if recall[i].recording == true then
+      --print("recall: event rec")
+      table.insert(recall[i].event, e)
+      recall[i].has_data = true
+    end
+  end
+end
+
+function recall_exec(i)
+  for _,e in pairs(recall[i].event) do
+    event_exec(e)
+  end
 end
 
 view = vREC
@@ -218,7 +241,7 @@ end
 clip = {}
 for i=1,16 do
   clip[i] = {}
-  clip[i].s = 2 + (i-1)*30
+  clip[i].s = 2 + (i-1)*CLIP_LEN_SEC
   clip[i].name = "-"
   set_clip_length(i,4)
 end
@@ -315,10 +338,10 @@ BI1 = controlspec.new(-1, 1, 'lin', 0, 0, "")
 
 -------------------- init
 init = function()
-  params:add_option("midi_sync",{"off","on"})
-  params:add_number("tempo",40,240,92)
+  params:add_option("midi_sync", "midi_sync", {"off", "on"})
+  params:add_number("tempo", "tempo", 40, 240, 92)
   params:set_action("tempo", function() update_tempo() end)
-  params:add_number("quant_div",1,32,4)
+  params:add_number("quant_div", "quant_div", 1, 32, 4)
   params:set_action("quant_div",function() update_tempo() end)
   p = {}
   for i=1,TRACKS do
@@ -352,7 +375,7 @@ init = function()
     p[i] = poll.set("phase_quant_"..i, function(x) phase(i,x) end)
     p[i]:start()
 
-    params:add_control(i.."vol",UP1)
+    params:add_control(i.."vol", i.."vol", UP1)
     params:set_action(i.."vol", function(x) engine.amp(i,x) end)
     --params:add_control(i.."pan",BI1)
     --params:set_action(i.."pan",
@@ -360,19 +383,19 @@ init = function()
         --engine.play_dac(i,1,math.min(1,1+x))
         --engine.play_dac(i,2,math.min(1,1-x))
       --end)
-    params:add_control(i.."rec",UP1)
+    params:add_control(i.."rec", i.."rec", UP1)
     params:set_action(i.."rec",
       function(x)
         track[i].rec_level = x
         set_rec(i)
       end)
-    params:add_control(i.."pre",controlspec.UNIPOLAR)
+    params:add_control(i.."pre", i.."pre", controlspec.UNIPOLAR)
     params:set_action(i.."pre",
       function(x)
         track[i].pre_level = x
         set_rec(i)
       end)
-    params:add_control(i.."speed_mod", controlspec.BIPOLAR)
+    params:add_control(i.."speed_mod", i.."speed_mod", controlspec.BIPOLAR)
     params:set_action(i.."speed_mod", function() update_rate(i) end)
   end
 
@@ -387,7 +410,7 @@ init = function()
   midiclocktimer = metro.alloc()
   midiclocktimer.count = -1
   midiclocktimer.callback = function()
-    if midi_device and params:get("midi_sync")==2 then midi_device.send({248}) end
+    if midi_device and params:get("midi_sync") == 2 then midi_device.send({248}) end
   end
   update_tempo()
   midiclocktimer:start()
@@ -433,8 +456,8 @@ gridkey_nav = function(x,z)
       set_view(vREC)
     elseif x==2 then set_view(vCUT)
     elseif x==3 then set_view(vCLIP)
-    elseif x>4 and x <9 then
-      i = x - 4
+    elseif x>4 and x<9 then
+      local i = x - 4
       if alt == 1 then
         pattern[i]:rec_stop()
         pattern[i]:stop()
@@ -448,6 +471,25 @@ gridkey_nav = function(x,z)
         pattern[i]:stop()
       else pattern[i]:start()
       end
+    elseif x>8 and x<13 then
+      local i = x-8
+      if alt == 1 then
+        --print("recall: clear "..i)
+        recall[i].event = {}
+        recall[i].recording = false
+        recall[i].has_data = false
+        recall[i].active = false
+      elseif recall[i].recording == true then
+        --print("recall: stop")
+        recall[i].recording = false
+      elseif recall[i].has_data == false then
+        --print("recall: rec")
+        recall[i].recording = true
+      elseif recall[i].has_data == true then
+        --print("recall: exec")
+        recall_exec(i)
+        recall[i].active = true
+      end
     elseif x==15 and alt == 0 then
       quantize = 1 - quantize
       if quantize == 0 then quantizer:stop()
@@ -458,8 +500,9 @@ gridkey_nav = function(x,z)
     elseif x==16 then alt = 1
     end
   elseif z==0 then
-    if x==16 then alt = 0 end
-    if x==15 and view == vTIME then set_view(-1) end
+    if x==16 then alt = 0
+    elseif x==15 and view == vTIME then set_view(-1)
+    elseif x>8 and x<13 then recall[x-8].active = false end
   end
   dirtygrid=true
 end
@@ -470,10 +513,17 @@ gridredraw_nav = function()
   if alt==1 then g.led(16,1,9) end
   if quantize==1 then g.led(15,1,9) end
   for i=1,4 do
+    -- patterns
     if pattern[i].rec == 1 then g.led(i+4,1,15)
     elseif pattern[i].play == 1 then g.led(i+4,1,9)
     elseif pattern[i].count > 0 then g.led(i+4,1,5)
     else g.led(i+4,1,3) end
+    -- recalls
+    local b = 2
+    if recall[i].recording == true then b=15
+    elseif recall[i].active == true then b=11
+    elseif recall[i].has_data == true then b=5 end
+    g.led(i+8,1,b)
   end
 end
 
@@ -702,6 +752,8 @@ end
 
 --------------------CLIP
 
+clip_actions = {"load","clear","save"}
+clip_action = 1
 clip_sel = 1
 clip_clear_mult = 3
 
@@ -709,11 +761,12 @@ function fileselect_callback(path)
   if path ~= "cancel" then
     if path:find(".aif") or path:find(".wav") then
       print("file > "..path.." "..clip[track[clip_sel].clip].s)
-      engine.read(path, clip[track[clip_sel].clip].s, 16) -- FIXME 16 seconds to load
       local ch, len = sound_file_inspect(path)
-      print("file length > "..len)
+      print("file length > "..len/48000)
+      engine.read(path, clip[track[clip_sel].clip].s, len/48000)
       set_clip_length(track[clip_sel].clip, len/48000)
       clip[track[clip_sel].clip].name = path:match("[^/]*$")
+      -- TODO: STRIP extension
       set_clip(clip_sel,track[clip_sel].clip)
       update_rate(clip_sel)
     else
@@ -725,9 +778,32 @@ function fileselect_callback(path)
   end
 end
 
+function textentry_callback(txt)
+  if txt then
+    local c_start = clip[track[clip_sel].clip].s
+    local c_len = clip[track[clip_sel].clip].l
+    print("SAVE " .. audio_dir .. txt .. ".aif", c_start, c_len)
+    engine.write(audio_dir..txt..".aif",c_start,c_len)
+    clip[track[clip_sel].clip].name = txt
+  else
+    print("save cancel")
+  end
+  redraw()
+end
+
 v.key[vCLIP] = function(n,z)
   if n==2 and z==0 then
-    fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    if clip_actions[clip_action] == "load" then
+      fileselect.enter(os.getenv("HOME").."/dust/audio", fileselect_callback)
+    elseif clip_actions[clip_action] == "clear" then
+      local c_start = clip[track[clip_sel].clip].s * 48000
+      print("clear_start: " .. c_start)
+      engine.clear_range(c_start, CLIP_LEN_SEC * 48000) -- two minutes
+      clip[track[clip_sel].clip].name = '-'
+      redraw()
+    elseif clip_actions[clip_action] == "save" then
+      textentry.enter(textentry_callback, "mlr-" .. (math.random(9000)+1000))
+    end
   elseif n==3 and z==1 then
     clip_reset(clip_sel,60/params:get("tempo")*(2^(clip_clear_mult-2)))
     set_clip(clip_sel,track[clip_sel].clip)
@@ -737,7 +813,7 @@ end
 
 v.enc[vCLIP] = function(n,d)
   if n==2 then
-    clip_sel = util.clamp(clip_sel-d,1,TRACKS)
+    clip_action = util.clamp(clip_action + d, 1, 3)
   elseif n==3 then
     clip_clear_mult = util.clamp(clip_clear_mult+d,1,6)
   end
@@ -764,16 +840,16 @@ end
 v.redraw[vCLIP] = function()
   screen.clear()
   screen.level(15)
-  screen.move(10,30)
-  screen.text("CLIP > "..clip_sel)
+  screen.move(10,16)
+  screen.text("CLIP > TRACK "..clip_sel)
 
-  screen.move(10,50)
+  screen.move(10,52)
   screen.text(truncateMiddle(clip[track[clip_sel].clip].name, 18))
   screen.level(3)
   screen.move(10,60)
-  screen.text("name "..track[clip_sel].clip)
+  screen.text("clip "..track[clip_sel].clip .. " " .. clip_actions[clip_action])
 
-  screen.move(100,50)
+  screen.move(100,52)
   screen.text(2^(clip_clear_mult-2))
   screen.level(3)
   screen.move(100,60)

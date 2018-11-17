@@ -1,79 +1,89 @@
+"clock": 1
 "bpm": 110
-"1: sample": /home/we/dust/audio/common/606/606-BD.wav
-"1: start pos": 0
-"1: end pos": 1
-"1: loop": 1
-"1: loop point": 0
-"1: speed": 0.6535
-"1: vol": -1.6
-"1: vol env atk": 0.001
-"1: vol env rel": 3
-"1: pan": 0.0
-"1: filter cutoff": 1448.87192015
-"1: filter res": 0
-"1: filter mode": 1
-"1: filter env atk": 0.001
-"1: filter env rel": 0.25
-"1: filter env mod": 0
-"1: delay send": -60
-"1: reverb send": -29.4
-"2: sample": /home/we/dust/audio/common/606/606-CH.wav
-"2: start pos": 0
-"2: end pos": 1
-"2: loop": 1
-"2: loop point": 0
-"2: speed": 1.0
-"2: vol": -10.0
-"2: vol env atk": 0.001
-"2: vol env rel": 3
-"2: pan": 0.0
-"2: filter cutoff": 20000
-"2: filter res": 0
-"2: filter mode": 1
-"2: filter env atk": 0.001
-"2: filter env rel": 0.25
-"2: filter env mod": 0
-"2: delay send": -60
-"2: reverb send": -4.2
-"3: sample": /home/we/dust/audio/common/606/606-OH.wav
-"3: start pos": 0
-"3: end pos": 1
-"3: loop": 1
-"3: loop point": 0
-"3: speed": 0.901
-"3: vol": -10.0
-"3: vol env atk": 0.001
-"3: vol env rel": 3
-"3: pan": 0.0
-"3: filter cutoff": 20000
-"3: filter res": 0
-"3: filter mode": 1
-"3: filter env atk": 0.001
-"3: filter env rel": 0.25
-"3: filter env mod": 0
-"3: delay send": -60
-"3: reverb send": -60
-"4: sample": /home/we/dust/audio/common/606/606-CY.wav
-"4: start pos": 0
-"4: end pos": 1
-"4: loop": 1
-"4: loop point": 0
-"4: speed": 0.901
-"4: vol": -10.0
-"4: vol env atk": 0.001
-"4: vol env rel": 3
-"4: pan": 0.0
-"4: filter cutoff": 20000
-"4: filter res": 0
-"4: filter mode": 1
-"4: filter env atk": 0.001
-"4: filter env rel": 0.25
-"4: filter env mod": 0
-"4: delay send": -60
-"4: reverb send": -60
-"delay time": 0.1
-"delay feedback": 0.5
-"delay level": -10.0
-"reverb room": 0.95
-"reverb damp": 0.59
-"reverb level": -10.0
+"clock_out": 1
+"1_sample": /home/we/dust/audio/common/606/606-BD.wav
+"1_start_pos": 0
+"1_end_pos": 1
+"1_loop": 1
+"1_loop_point": 0
+"1_speed": 0.8515
+"1_vol": 0.0
+"1_vol_env_atk": 0.001
+"1_vol_env_rel": 3
+"1_pan": 0.0
+"1_filter_mode": 1
+"1_filter_cutoff": 1782.5018762675
+"1_filter_res": 0
+"1_filter_env_atk": 0.001
+"1_filter_env_rel": 0
+"1_filter_env_mod": 0.0
+"1_dist": 0
+"1_in_mutegroup": 1
+"1_delay_send": -60.0
+"1_reverb_send": -60.0
+"2_sample": /home/we/dust/audio/common/606/606-CH.wav
+"2_start_pos": 0
+"2_end_pos": 1
+"2_loop": 1
+"2_loop_point": 0
+"2_speed": 1.0
+"2_vol": -10.0
+"2_vol_env_atk": 0.001
+"2_vol_env_rel": 3
+"2_pan": 0.0
+"2_filter_mode": 1
+"2_filter_cutoff": 20000
+"2_filter_res": 0
+"2_filter_env_atk": 0.001
+"2_filter_env_rel": 0
+"2_filter_env_mod": 0.0
+"2_dist": 0
+"2_in_mutegroup": 1
+"2_delay_send": -60.0
+"2_reverb_send": -60.0
+"3_sample": /home/we/dust/audio/common/606/606-CY.wav
+"3_start_pos": 0
+"3_end_pos": 1
+"3_loop": 1
+"3_loop_point": 0
+"3_speed": 1.0
+"3_vol": -10.0
+"3_vol_env_atk": 0.001
+"3_vol_env_rel": 3
+"3_pan": 0.0
+"3_filter_mode": 1
+"3_filter_cutoff": 20000
+"3_filter_res": 0
+"3_filter_env_atk": 0.001
+"3_filter_env_rel": 0
+"3_filter_env_mod": 0.0
+"3_dist": 0
+"3_in_mutegroup": 1
+"3_delay_send": -60.0
+"3_reverb_send": -60.0
+"4_sample": /home/we/dust/audio/common/606/606-OH.wav
+"4_start_pos": 0
+"4_end_pos": 1
+"4_loop": 1
+"4_loop_point": 0
+"4_speed": 1.0
+"4_vol": -10.0
+"4_vol_env_atk": 0.001
+"4_vol_env_rel": 3
+"4_pan": 0.0
+"4_filter_mode": 1
+"4_filter_cutoff": 20000
+"4_filter_res": 0
+"4_filter_env_atk": 0.001
+"4_filter_env_rel": 0
+"4_filter_env_mod": 0.0
+"4_dist": 0
+"4_in_mutegroup": 1
+"4_delay_send": -60.0
+"4_reverb_send": -60.0
+"delay_time": 0.1
+"delay_feedback": 0.5
+"delay_level": -10.0
+"reverb_room_size": 0.5
+"reverb_damp": 0.5
+"reverb_level": -10.0

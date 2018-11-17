@@ -2,7 +2,7 @@
 --
 --  polyrhythmic sampler
 --
--- 
+--
 -- 4, two-track channels
 -- ------------------------------------------
 -- trackA: sets the length
@@ -42,7 +42,7 @@ local g = grid.connect()
 
 --[[whats next?:
                 - enc3 meter
-                - patterns display on screen before loading for a set amount of time, 
+                - patterns display on screen before loading for a set amount of time,
                   then returns to displaying current grid pattern
                 - continue optimizing
                 - beatclock integration for midi sync
@@ -119,7 +119,7 @@ end
 function init()
 
   -- parameters
-  params:add_number("bpm", 15, 400, 60)
+  params:add_number("bpm", "bpm", 15, 400, 60)
 
   ack.add_effects_params()
 
@@ -225,7 +225,7 @@ function gridkeyhold(x, y, z)
       end
     end
   end
-  
+
   redraw()
   gridredraw()
 end
@@ -242,36 +242,36 @@ function enc(n,d)
   if n == 1 then
     params:delta("bpm",d)
   end
-  
+
   if n == 2 then
     pattern_select = util.clamp(pattern_select + d, 1, 16)
     print("pattern:"..pattern_select)
   end
-  
+
   if n == 3 then
     for i=1, 4 do
       params:delta(i..": filter cutoff", d)
-      print(d, params:get(i..": filter cutoff"))
+      --print(d, params:get(i..": filter cutoff"))
     end
     --meter_display = util.clamp(meter_display + d/100, 0, 47)
   end
-  
+
 redraw()
 end
 
 function key(n,z)
 
   if z == 1 then
-    
+
     if n == 1 then
       save_pattern()
     end
-    
+
     if n == 2 then
       load_pattern()
       pattern_display = pattern_select
     end
-    
+
     if n == 3 then
       if running then
         counter:stop()
@@ -282,7 +282,7 @@ function key(n,z)
         running = true
       end
     end
-    
+
   end
 
 gridredraw()
@@ -320,7 +320,7 @@ function count(c)
       end
     end
   end
-  
+
   if tab.count(pending) > 0 then
     for i=1, tab.count(pending) do
       cnt = tab.count(track[pending[i]])
@@ -349,7 +349,7 @@ end
 function redraw()
   screen.clear()
   screen.aa(0)
-  
+
   screen.level(15)
     -- grid pattern preset display
     for i=1, 8 do
@@ -367,18 +367,18 @@ function redraw()
         end
       end
     end
-  
+
     -- meter display
     --screen.rect(124,56,3,-meter_display)
     --screen.fill()
-  
+
     -- param display
     screen.move(0,5)
     screen.text("bpm:"..params:get("bpm"))
     screen.move(64,5)
     screen.level(15)
     screen.text_center("pattern:"..pattern_select)
-    
+
     -- pause/play icon
     if not running then
       screen.rect(123,57,2,6)
@@ -390,12 +390,12 @@ function redraw()
       screen.line_rel(-6,3)
       screen.fill()
     end
-  
+
   screen.level(1)
     -- currently selected pattern
     screen.move(128,5)
     screen.text_right(pattern_display)
-    
+
     --[[ meter outline
     screen.rect(124, 9, 4, 47)
     screen.move(124, 32)
@@ -404,8 +404,8 @@ function redraw()
     screen.line_rel(3,0)
     screen.stroke()
     --]]
-  
-screen.update()  
+
+screen.update()
 end
 
 function gridredraw()
@@ -478,14 +478,14 @@ function save_pattern()
   local count = 0
   local file = io.open(data_dir .. "tyler/ekombi.data", "r+")
   io.output(file)
-  for l=1, ((pattern_select - 1) * 136) do 
+  for l=1, ((pattern_select - 1) * 136) do
       file:read("*line")
   end
     for i = 1, 8 do
       count = tab.count(track[i])
       if count == nil then
         io.close(file)
-        return 
+        return
       end
       io.write(count .. "\n")
       for n=1, count do

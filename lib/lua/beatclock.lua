@@ -23,6 +23,8 @@ function BeatClock.new(name)
   i:bpm_change(110)
 
   i.on_step = function(e) print("BeatClock executing step") end
+  i.on_start = function(e) end
+  i.on_stop = function(e) end
   i.on_select_internal = function(e) print("BeatClock using internal clock") end
   i.on_select_external = function(e) print("BeatClock using external clock") end
   
@@ -44,6 +46,7 @@ function BeatClock:start(dev_id)
       end
     end
   end
+  self.on_start()
 end
 
 function BeatClock:stop(dev_id)
@@ -56,6 +59,7 @@ function BeatClock:stop(dev_id)
       end
     end
   end
+  self.on_stop()
 end
 
 function BeatClock:advance_step()
@@ -118,12 +122,12 @@ function BeatClock:bpm_change(bpm)
 end
 
 function BeatClock:add_clock_params()
-  params:add_option("clock", {"internal", "external"}, self.external or 2 and 1)
+  params:add_option("clock", "clock", {"internal", "external"}, self.external or 2 and 1)
   params:set_action("clock", function(x) self:clock_source_change(x) end)
-  params:add_number("bpm", 1, 480, self.bpm)
+  params:add_number("bpm", "bpm", 1, 480, self.bpm)
   params:set_action("bpm", function(x) self:bpm_change(x) end)
-  params:add_option("clock out", { "no", "yes" }, self.send or 2 and 1)
-  params:set_action("clock out", function(x) if x == 1 then self.send = false else self.send = true end end)
+  params:add_option("clock_out", "clock out", { "no", "yes" }, self.send or 2 and 1)
+  params:set_action("clock_out", function(x) if x == 1 then self.send = false else self.send = true end end)
 end
 
 function BeatClock:enable_midi()
