@@ -47,20 +47,18 @@ function init()
   engine.rec_on(1,1)
   engine.rec(1,1)
   engine.adc_rec(1,1,1)
-  engine.adc_rec(1,2,1)
+  engine.adc_rec(2,2,1)
   engine.play_dac(1,1,1)
   engine.play_dac(1,2,1)
   engine.rate(1,1)
   engine.rate_lag(1,0.6)
   engine.reset(1)
 
-  engine.play_rec(1, 2, 1)
   engine.play_dac(2, 1, 1)
   engine.play_dac(2, 2, 1)
   engine.rec(2, 0)
-  engine.pre(2, 1)
   engine.amp(2, 1)
-  engine.rec_on(2, 1)
+  engine.rec_on(2, 0)
   engine.loop_on(2, 1)
   engine.loop_start(2, 0)
   engine.loop_end(2, 60)
@@ -75,9 +73,13 @@ function init()
   params:add_option("speed_voice_1","speed voice 1", speedlist)
   params:set("speed_voice_1", 3)
   params:set_action("speed_voice_1", function(x) engine.rate(1, speedlist[params:get("speed_voice_1")]) end)
-  params:add_option("speed_voice_2","speed voice 2", speedlist)
-  params:set_action("speed_voice_2", function(x) engine.rate(2, speedlist[params:get("speed_voice_2")]) end)
-  params:set("speed_voice_2", 3)
+  params:add_option("speed_voice_2","speed voice 2", speedlist_2)
+  params:set_action("speed_voice_2",
+    function(x)
+      engine.rate(2, speedlist_2[params:get("speed_voice_2")])
+      is_speed_negative()
+    end)
+  params:set("speed_voice_2", 7)
   params:add_control("vol_1","vol voice 1",controlspec.new(0,1,'lin',0,1,''))
   params:set_action("vol_1", function(x) engine.amp(1, x) end)
   params:add_control("vol_2","vol voice 2",controlspec.new(0,1,'lin',0,1,''))
@@ -93,6 +95,24 @@ function init()
   KEY3_hold = false
   KEY1_hold = false
   local edit_mode = 2
+end
+
+function is_speed_negative()
+  if params:get("speed_voice_2") < 5 then
+    neg_start = 0.2
+    neg_end = 0.4
+    if start_point_2 < 0.2 then
+      start_point_2 = 0.2
+      engine.loop_start(2,0.2)
+    end
+    if end_point_2 < 0.5 then
+      end_point_2 = 0.5
+      engine.loop_end(2,0.5)
+    end
+  else
+    neg_start = 0.0
+    neg_end = 0.0
+  end
 end
 
 function warble()
@@ -175,6 +195,7 @@ end
 down_time = 0
 hold_time = 0
 speedlist = {0.25, 0.5, 1.0, 2.0}
+speedlist_2 = {-2.0, -1.0, -0.5, -0.25, 0.25, 0.5, 1.0, 2.0, 4.0}
 start_point_1 = 0
 start_point_2 = 0
 end_point_1 = 60
@@ -186,6 +207,7 @@ KEY3 = 0
 crane_redraw = 0
 crane2_redraw = 0
 c2 = math.random(4,12)
+downnn = 0.2
 
 -- key hardware interaction
 function key(n,z)
@@ -196,10 +218,11 @@ function key(n,z)
         -- main recording will enable
         if rec % 2 == 1 and clear == 1 then
           engine.clear()
+          engine.start(1)
           engine.reset(1)
           engine.rec_on(1,1)
-          engine.start(1)
           engine.start(2)
+          engine.reset(2)
           crane_redraw = 1
           redraw()
           counter:start()
@@ -208,13 +231,23 @@ function key(n,z)
         elseif rec % 2 == 0 and clear == 1 then
           clear = 0
           engine.reset(1)
+          engine.reset(2)
           engine.rec_on(1,0)
           counter:stop()
           print("loop length: "..rec_time)
           end_point_1 = rec_time
-          end_point_2 = end_point_1
           engine.loop_end(1,end_point_1)
-          engine.loop_end(2,end_point_1)
+          -- voice 2's end point needs to adapt to the buffer size to avoid BOOM
+            if end_point_1 > 0.5 then
+              end_point_2 = end_point_1
+            elseif end_point_1 > 0.25 then
+              end_point_2 = 0.2 + end_point_1
+            else
+              end_point_2 = 0.3 + end_point_1
+            end
+          engine.loop_end(2,end_point_2)
+          engine.loop_start(2,0.2)
+          start_point_2 = 0.2
           crane_redraw = 0
           redraw()
           rec_time = 0
@@ -286,14 +319,16 @@ function enc(n,d)
     engine.loop_start(1,start_point_1)
     redraw()
 
+-- encoder 3 w/ hold KEY 1: voice 2's loop end point
   elseif n == 3 and KEY1_hold == true then
-    end_point_2 = util.clamp((end_point_2 + d/100),0.0,60.0)
+    end_point_2 = util.clamp((end_point_2 + d/100),neg_end,60.0)
     print("voice 2 loop end "..end_point_2)
     engine.loop_end(2,end_point_2)
     redraw()
 
+-- encoder 2 w/ hold KEY 1: voice 2's loop start point
   elseif n == 2 and KEY1_hold == true then
-    start_point_2 = util.clamp((start_point_2 + d/100),0.0,60.0)
+    start_point_2 = util.clamp((start_point_2 + d/100),neg_start,60.0)
     print("voice 2 loop start "..start_point_2)
     engine.loop_start(2,start_point_2)
     redraw()
