@@ -10,13 +10,6 @@
 -- v1.1.0 Mark Eats
 --
 
-function unrequire(name)
-  package.loaded[name] = nil
-  _G[name] = nil
-end
-unrequire("mark_eats/passersby")
-unrequire("mark_eats/ui")
-
 local MusicUtil = require "mark_eats/musicutil"
 local UI = require "mark_eats/ui"
 local Graph = require "mark_eats/graph"
