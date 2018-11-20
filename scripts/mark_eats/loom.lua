@@ -974,8 +974,8 @@ function init()
   -- UI
   
   pages = UI.Pages.new(1, 3)
-  save_slot_list = UI.ScrollingList.new(5, 14, 1, {})
-  save_menu_list = UI.List.new(92, 25, 1, save_menu_items)
+  save_slot_list = UI.ScrollingList.new(5, 9, 1, {})
+  save_menu_list = UI.List.new(92, 20, 1, save_menu_items)
   playback_icon = UI.PlaybackIcon.new(121, 1)
   
   screen.aa(1)
