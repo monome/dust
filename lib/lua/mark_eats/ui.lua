@@ -112,6 +112,7 @@ function UI.Tabs:redraw()
     screen.move(MARGIN + col_width * 0.5 + ((col_width + GUTTER) * (i - 1)), 6)
     screen.text_center(self.titles[i])
   end
+  screen.fill()
 end
 
 
@@ -164,7 +165,7 @@ function UI.List:redraw()
   for i = 1, #self.entries do
     if self.active and i == self.index then screen.level(15)
     else screen.level(3) end
-    screen.move(self.x, self.y + (i - 1) * 11)
+    screen.move(self.x, self.y + 5 + (i - 1) * 11)
     local entry = self.entries[i] or ""
     if self.text_align == "center" then
       screen.text_center(entry)
@@ -174,6 +175,7 @@ function UI.List:redraw()
       screen.text(entry)
     end
   end
+  screen.fill()
 end
 
 
@@ -228,12 +230,12 @@ function UI.ScrollingList:redraw()
   
   local num_entries = #self.entries
   local scroll_offset = self.index - 1 - math.max(self.index - (num_entries - 2), 0)
-  scroll_offset = scroll_offset - util.linlin(num_entries - self.num_above_selected, num_entries, self.num_above_selected, 0, self.index) -- For end of list
+  scroll_offset = scroll_offset - util.linlin(num_entries - self.num_above_selected, num_entries, self.num_above_selected, 0, self.index - 1) -- For end of list
   
   for i = 1, self.num_visible do
     if self.active and self.index == i + scroll_offset then screen.level(15)
     else screen.level(3) end
-    screen.move(self.x, self.y + (i - 1) * 11)
+    screen.move(self.x, self.y + 5 + (i - 1) * 11)
     local entry = self.entries[i + scroll_offset] or ""
     if self.text_align == "center" then
       screen.text_center(entry)
@@ -243,6 +245,7 @@ function UI.ScrollingList:redraw()
       screen.text(entry)
     end
   end
+  screen.fill()
 end
 
 
@@ -276,6 +279,7 @@ function UI.Message:redraw()
     screen.text_center(self.text[i])
     y = y + 11
   end
+  screen.fill()
 end
 
 
@@ -314,7 +318,13 @@ end
 --- Set value.
 -- @param value Value number.
 function UI.Slider:set_value(number)
-  self.value = util.clamp(value, self.min_value, self.max_value)
+  self.value = util.clamp(number, self.min_value, self.max_value)
+end
+
+--- Set value using delta.
+-- @param delta Number.
+function UI.Slider:set_value_delta(delta)
+  self:set_value(self.value + delta)
 end
 
 --- Set marker position.
@@ -376,7 +386,13 @@ end
 --- Set value.
 -- @param value Value number.
 function UI.Dial:set_value(number)
-  self.value = util.clamp(value, self.min_value, self.max_value)
+  self.value = util.clamp(number, self.min_value, self.max_value)
+end
+
+--- Set value using delta.
+-- @param delta Number.
+function UI.Dial:set_value_delta(delta)
+  self:set_value(self.value + delta)
 end
 
 --- Redraw Dial.
