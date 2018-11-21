@@ -720,12 +720,12 @@ function init()
   
   reverb_slider = UI.Slider.new(102, 22, 3, 36, reverb_mix.actual, 0, 1, {0.5})
   
-  lfo_destinations_list = UI.ScrollingList.new(71, 23, 1, {"Freq", "Shape", "Folds", "FM Low", "FM High", "Attack", "Peak", "Decay", "Reverb"})
+  lfo_destinations_list = UI.ScrollingList.new(71, 18, 1, {"Freq", "Shape", "Folds", "FM Low", "FM High", "Attack", "Peak", "Decay", "Reverb"})
   lfo_destinations_list.num_visible = 4
   lfo_destinations_list.num_above_selected = 0
   lfo_destinations_list.active = false
   
-  lfo_amounts_list = UI.ScrollingList.new(120, 23)
+  lfo_amounts_list = UI.ScrollingList.new(120, 18)
   lfo_amounts_list.num_visible = 4
   lfo_amounts_list.num_above_selected = 0
   lfo_amounts_list.text_align = "right"
