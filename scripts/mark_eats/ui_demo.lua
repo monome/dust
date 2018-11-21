@@ -23,8 +23,10 @@ local dial_r
 local slider_l
 local slider_r
 local scrolling_list
+local message
 
 local list_content = {"The Genesis", "N.Y. State of Mind", "Life's a Bitch", "The World Is Yours", "Halftime", "Memory Lane (Sittin' in...)", "One Love", "One Time 4 Your Mind", "Represent", "It Ain't Hard to Tell"}
+local message_result = ""
 
 
 -- Init
@@ -33,14 +35,14 @@ function init()
   screen.aa(1)
   
   -- Init UI
-  pages = UI.Pages.new(1, 2)
+  pages = UI.Pages.new(1, 3)
   tabs = UI.Tabs.new(1, {"Tab A", "Tab B"})
   
   dial_l = UI.Dial.new(9, 19, 22, 25, 0, 100, 1)
   dial_r = UI.Dial.new(34, 34, 22, 0.3, 0, 2, 0.01)
   
-  slider_l = UI.Slider.new(86, 18, 3, 44, 0.25, 0, 1, {0.5})
-  slider_r = UI.Slider.new(102, 18, 3, 44, 0.25, 0, 1, {0.5})
+  slider_l = UI.Slider.new(86, 18, 3, 44, 0.25, 0, 1, {0.84})
+  slider_r = UI.Slider.new(102, 18, 3, 44, 0.25, 0, 1, {0.84})
   slider_l.active = false
   slider_r.active = false
   
@@ -99,15 +101,30 @@ function key(n, z)
   if z == 1 then
     
     if n == 2 then
-      pages:set_index_delta(1, true)
+      
+      if message then
+        message = nil
+        message_result = "Cancelled."
+        
+      else
+        pages:set_index_delta(1, true)
+      end
       
     elseif n == 3 then
-      if pages.index == 1 then
+      
+      if message then
+        message = nil
+        message_result = "Confirmed!"
+      
+      elseif pages.index == 1 then
         tabs:set_index_delta(1, true)
         dial_l.active = tabs.index == 1
         dial_r.active = tabs.index == 1
         slider_l.active = tabs.index == 2
         slider_r.active = tabs.index == 2
+        
+      elseif pages.index == 3 then
+        message = UI.Message.new({"This is a message.", "", "KEY2 to cancel", "KEY3 to confirm"})
       end
       
     end
@@ -121,17 +138,35 @@ end
 function redraw()
   screen.clear()
   
-  pages:redraw()
-  
-  if pages.index == 1 then
-    tabs:redraw()
-    dial_l:redraw()
-    dial_r:redraw()
-    slider_l:redraw()
-    slider_r:redraw()
+  if message then
+    message:redraw()
+      
+  else
     
-  elseif pages.index == 2 then
-    scrolling_list:redraw()
+    pages:redraw()
+    
+    if pages.index == 1 then
+      tabs:redraw()
+      dial_l:redraw()
+      dial_r:redraw()
+      slider_l:redraw()
+      slider_r:redraw()
+      
+    elseif pages.index == 2 then
+      scrolling_list:redraw()
+      
+    elseif pages.index == 3 then
+      screen.move(8, 24)
+      screen.level(15)
+      screen.text("Press KEY3 to")
+      screen.move(8, 35)
+      screen.text("display a message.")
+      screen.move(8, 50)
+      screen.level(3)
+      screen.text(message_result)
+      screen.fill()
+      
+    end
     
   end
   
