@@ -481,7 +481,7 @@ NornsSway : Singleton {
 	//change panning to stereo analysis controlled
 	panstereo {
 		output.source = { Pan2.ar(processing.ar(1), panpos.kr(1)*pansign.kr(1)); };
-		(this.name++": Center Pan").postln;
+		(this.name++": Stereo Pan").postln;
 	}
 
 	//execute change in processing type
