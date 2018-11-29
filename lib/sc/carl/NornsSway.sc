@@ -17,7 +17,7 @@ NornsSway : Singleton {
 		fftbuffer = Buffer.alloc(Server.default, 1024);
 
 		//delaybuffer
-		delaybuffer = Buffer.alloc(Server.default, 10*48000, 1);
+		delaybuffer = Buffer.alloc(Server.default, 15*48000, 1);
 
 		//audio recorder
 		buffer = Buffer.alloc(Server.default, long_win*48000, 1);
@@ -40,8 +40,9 @@ NornsSway : Singleton {
 
 		//Build the analysis modules
 		this.build_analysis;
-		//Begin with an initial nonpolarity mapping of parameters
+		//Begin with an initial mapping of parameters
 		this.nonpolarity_map;
+		//this.polarity_map;
 
 		//audio output to listen and change channel
 		output = NodeProxy.audio(Server.default, 2)
@@ -51,6 +52,7 @@ NornsSway : Singleton {
 		analysis_loop = TaskProxy.new({ loop {
 			//if analysis on flag is set to true then do analysis
 			if(analysis_on==true, {
+				//(this.name++": analysis on").postln;
 			//if verbose is on report values
 			if(verbose==true,{
 			flatness.bus.get({|val|
@@ -70,6 +72,7 @@ NornsSway : Singleton {
 					above_amp_thresh=true;
 					if(verbose==true,{(this.name++" amp threshold reached").postln});
 					clarity.bus.get({|val|
+						//if(verbose==true,{(this.name++" clarity: "++val[1]).postln});
 						if( val[1] > clarity_thresh,
 							{above_clarity_thresh=true;
 							xy[0]=(xy[0]+step).clip(0,1)},
@@ -77,12 +80,14 @@ NornsSway : Singleton {
 							xy[0]=(xy[0]-step).clip(0,1)});
 					});
 					onsets.bus.get({|val|
+						//if(verbose==true,{(this.name++" onsets: "++val[1]).postln});
 						if( val[1] > density_thresh,
 							{above_density_thresh=true;
 							xy[1]=(xy[1]+step).clip(0,1)},
 							{above_density_thresh=false;
 							xy[1]=(xy[1]-step).clip(0,1)});
 					});
+					//("analysis movement: "++xy).postln;
 				}, {
 			//else if below threshold drift to center
 					above_amp_thresh=false;
@@ -93,6 +98,7 @@ NornsSway : Singleton {
 					if(xy[1] > 0.5, {
 						(xy[1]=xy[1]-gravity).clip(0,0.5)},{
 						(xy[1]=xy[1]+gravity).clip(0,0.5)});
+					//("drift to center: "++xy).postln;
 				});
 			});
 		this.assign_quadrant(xy[0], xy[1]);
@@ -113,7 +119,14 @@ NornsSway : Singleton {
 					quadrant_flag=true;
 					tracker[tracker.detectIndex({|i|i>timelimit})]=0;
 					//Change polarity for the hell of it
-					this.change_polarity;
+					if(polarity==false, {
+						this.polarity_map;polarity=true;
+						(this.name++": polarity mapping set").postln;
+					},{
+						this.nonpolarity_map;polarity=false;
+						(this.name++": non-polarity mapping set").postln;
+
+					});
 				},{});
 				});
 			});
@@ -179,6 +192,15 @@ NornsSway : Singleton {
 		//pitch bend
 		pbbend = NodeProxy.control(Server.default, 1).fadeTime_(fade);
 		pbtime = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		//grains
+		graintrig = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		grainfreq = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		grainpos = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		grainsize = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		//granular
+		granrate = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		granpos = NodeProxy.control(Server.default, 1).fadeTime_(fade);
+		granenvspeed = NodeProxy.control(Server.default, 1).fadeTime_(fade);
 		//filter
 		filtfreq = NodeProxy.control(Server.default, 1).fadeTime_(fade);
 		filtrq = NodeProxy.control(Server.default, 1).fadeTime_(fade);
@@ -210,6 +232,15 @@ NornsSway : Singleton {
 		//pitch bend
 		pbtime.source = { onsets.kr(1,0).linlin(0,6,0.1,1) };
 		pbbend.source = { amplitude.kr(1,0).linlin(0,10,0.75,1.5) };
+		//grains
+		graintrig.source = { clarity.kr(1,0).linlin(0,1,1,0) };
+		grainfreq.source = { onsets.kr(1,0).linlin(0,6,20,4) };
+		grainsize.source = { onsets.kr(1,0).linlin(0,6,0.01,2) };
+		grainpos.source = { flatness.kr(1,0).linlin(0,1,1,0) };
+		//granular
+		granrate.source = { onsets.kr(1,0).linlin(0,6,0.7,1.3) };
+		granpos.source = { clarity.kr(1,0).linlin(0,1,0.2,0.8) };
+		granenvspeed.source = { onsets.kr(1,0).linlin(0,6,(1/6),4) };
 		//filter
 		filtfreq.source = { onsets.kr(1,0).linlin(0,6,500,5000) };
 		filtrq.source = { amplitude.kr(1,0).linlin(0,10,0.3,0.8) };
@@ -243,6 +274,15 @@ NornsSway : Singleton {
 		//pitch bend
 		pbtime.source = { onsets.kr(1,0).linlin(0,6,1,1.1) };
 		pbbend.source = { amplitude.kr(1,0).linlin(0,10,1.5,0.75) };
+		//grains
+		graintrig.source = { clarity.kr(1,0).linlin(0,1,0,1) };
+		grainfreq.source = { onsets.kr(1,0).linlin(0,6,20,4) };
+		grainsize.source = { onsets.kr(1,0).linlin(0,6,2,0.01) };
+		grainpos.source = { flatness.kr(1,0).linlin(0,1,0,1) };
+		//granular
+		granrate.source = { onsets.kr(1,0).linlin(0,6,1.3,0.7) };
+		granpos.source = { clarity.kr(1,0).linlin(0,1,0.8,0.2) };
+		granenvspeed.source = { onsets.kr(1,0).linlin(0,6,4,(1/6)) };
 		//filter
 		filtfreq.source = { onsets.kr(1,0).linlin(0,6,5000,500) };
 		filtrq.source = { amplitude.kr(1,0).linlin(0,10,0.9,0.3) };
@@ -254,7 +294,8 @@ NornsSway : Singleton {
 		pansign.source = { onsets.kr(1,0).linlin(0,6,1,(-1)) };
 	}
 
-	//TO DO: Here is where the different types of processing are defined. I'm wondering if I should separate these out into sub-classes. Would that make it easier to extend it and add processing?
+	//TO DO: I'm wondering if I should completely separate out the processing from the analysis into a separate class. I wonder if it might make it easier in the future to create different results from the Sway analysis. Like Sway analysis controls audio processing or lighting or both. But if I put in audio processing in the main class then I won't have a chance to easily just have lighting control. Or perhaps I'd want only lighting for the first half of the show and then start the audio processing mid-way.
+
 	//Change processing to amplitude modulation
 	ampmod {
 		//control mapping:
@@ -346,7 +387,72 @@ NornsSway : Singleton {
 		(this.name++": Filter").postln;
 	}
 
-	//change processing to cascading playback
+	//Change processing to granular (from Sway 0.2)
+	granular {
+		processing.source = {
+			//control mapping:
+			//onsets -> granular rate
+			//clarity -> granular position
+			//onsets -> granular envelope speed
+			var rate = granrate.kr(1);
+			var envspeed = granenvspeed.kr(1);
+			var pos = granpos.kr(1);
+			var lfo = LFNoise1.kr({rate!6}).unipolar;
+			var env = VarSaw.kr(envspeed, [0,1/6,2/6,3/6,4/6,5/6], 0.5, 0.6);
+			var sound = Mix.new(Warp1.ar(1, buffer.bufnum, lfo, rate)*env);
+			sound;
+		};
+		(this.name++": Granular").postln;
+	}
+
+	//Change processing to grains
+	grains {
+		//control mapping:
+		//pitch -> trig
+		//onsets -> size
+		//onsets -> position
+		processing.source = {
+			var trigselect = graintrig.kr(1);
+			var freq = grainfreq.kr(1);
+			var posselect = grainpos.kr(1);
+			var gSize = grainsize.kr(1);
+		    var trig = SelectX.kr(trigselect, [Impulse.kr(freq), GaussTrig.kr(freq)]);
+			//var pos = SelectX.kr(posselect, [LFSaw.kr(freq).unipolar, LFNoise2.kr(freq).unipolar]);
+			var pos = SinOsc.ar(freq).unipolar*0.9;
+		    var sound = GrainBuf.ar(1, trig, gSize, buffer.bufnum, 1, pos);
+			sound = FreeVerb.ar(sound, rvmix.kr(1), rvsize.kr(1));
+		    sound;
+	    };
+		(this.name++": Grains").postln;
+	}
+
+	//TO DO: Work on this grain processing, perhaps change it to a PatternProxy running the texturestretch synthdef??
+
+	//Change processing to grains
+	grainer {
+		//Silence NodeProxy
+		processing.source = { Silent.ar(1) };
+		PatternProxy.new()
+		.source =
+		//control mapping:
+		//pitch -> trig
+		//onsets -> size
+		//onsets -> position
+		processing.source = {
+			var trigselect = graintrig.kr(1);
+			var freq = grainfreq.kr(1);
+			var posselect = grainpos.kr(1);
+			var gSize = grainsize.kr(1);
+		    var trig = SelectX.kr(trigselect, [Impulse.kr(freq), GaussTrig.kr(freq)]);
+			var pos = SelectX.kr(posselect, [LFSaw.kr(freq).unipolar, LFNoise2.kr(freq).unipolar]);
+		    var sound = GrainBuf.ar(1, trig, gSize, buffer.bufnum, 1, pos);
+			sound = FreeVerb.ar(sound, rvmix.kr(1), rvsize.kr(1));
+		    sound;
+	    };
+		(this.name++": Grainer").postln;
+	}
+
+	//change processing to cascade
 	cascade {
 		processing.source = {
 			//TO DO: analysis control not implemented
@@ -364,6 +470,18 @@ NornsSway : Singleton {
 	silence {
 		processing.source = { Silent.ar(1) };
 		(this.name++": Silence").postln;
+	}
+	
+	//change panning to center
+	pancenter {
+		output.source = { Pan2.ar(processing.ar(1), 0);};
+		(this.name++": Center Pan").postln;
+	}
+	
+	//change panning to stereo analysis controlled
+	panstereo {
+		output.source = { Pan2.ar(processing.ar(1), panpos.kr(1)*pansign.kr(1)); };
+		(this.name++": Center Pan").postln;
 	}
 
 	//execute change in processing type
@@ -425,6 +543,15 @@ NornsSway : Singleton {
 		//pitch bend
 		pbbend.fadeTime = time;
 		pbtime.fadeTime = time;
+		//grains
+		graintrig.fadeTime = time;
+		grainfreq.fadeTime = time;
+		grainpos.fadeTime = time;
+		grainsize.fadeTime = time;
+		//granular
+		granrate.fadeTime = time;
+		granpos.fadeTime = time;
+		granenvspeed.fadeTime = time;
 		//filter
 		filtfreq.fadeTime = time;
 		filtrq.fadeTime = time;
@@ -432,6 +559,7 @@ NornsSway : Singleton {
 		freezefreq.fadeTime = time;
 		freezefade.fadeTime = time;
 		//output pan
+		output.fadeTime = time;
 		panpos.fadeTime = time;
 		pansign.fadeTime = time;
 	}
@@ -465,30 +593,34 @@ NornsSway : Singleton {
 		quadrant_map = Array.newClear(5);
 		//change the initial mapping setup here:
 		quadrant_names = Array.newClear(5);
-		quadrant_names.put(0,1);
-		quadrant_names.put(1,2);
-		quadrant_names.put(2,8);
-		quadrant_names.put(3,3);
-		quadrant_names.put(4,4);
+		quadrant_names.put(0,99);
+		quadrant_names.put(1,98);
+		quadrant_names.put(2,95);
+		quadrant_names.put(3,97);
+		quadrant_names.put(4,96);
 		all_processing = Dictionary.new;
-		all_processing.put(1, {this.silence});
-		all_processing.put(2, {this.delay});
-		all_processing.put(3, {this.reverb});
-		all_processing.put(4, {this.ampmod});
-		all_processing.put(5, {this.pitchbend});
-		all_processing.put(6, {this.cascade});
-		all_processing.put(7, {this.filter});
-		all_processing.put(8, {this.freeze});
+		all_processing.put(99, {this.silence});
+		all_processing.put(98, {this.delay});
+		all_processing.put(97, {this.reverb});
+		all_processing.put(96, {this.ampmod});
+		all_processing.put(95, {this.granular});
+		all_processing.put(94, {this.grains});
+		all_processing.put(93, {this.pitchbend});
+		all_processing.put(92, {this.cascade});
+		all_processing.put(91, {this.filter});
+		all_processing.put(90, {this.freeze});
 		//make all processing currently available
 		available_processing = Dictionary.new;
-		available_processing.put(1, {this.silence});
-		available_processing.put(2, {this.delay});
-		available_processing.put(3, {this.reverb});
-		available_processing.put(4, {this.ampmod});
-		available_processing.put(5, {this.pitchbend});
-		available_processing.put(6, {this.cascade});
-		available_processing.put(7, {this.filter});
-		available_processing.put(8, {this.freeze});
+		available_processing.put(99, {this.silence});
+		available_processing.put(98, {this.delay});
+		available_processing.put(97, {this.reverb});
+		available_processing.put(96, {this.ampmod});
+		available_processing.put(95, {this.granular});
+		available_processing.put(94, {this.grains});
+		available_processing.put(93, {this.pitchbend});
+		available_processing.put(92, {this.cascade});
+		available_processing.put(91, {this.filter});
+		available_processing.put(90, {this.freeze});
 		this.assign_quadrant(xy[0], xy[1]);
 		this.map_quadrants(quadrant_names);
 		polarity=false;
@@ -522,15 +654,13 @@ NornsSway : Singleton {
 		grainfreq.free(1);
 		grainpos.free(1);
 		grainsize.free(1);
-		granrate.free(1);
 		granpos.free(1);
 		granenvspeed.free(1);
+		granrate.free(1);
 		filtfreq.free(1);
 		filtrq.free(1);
 		freezefreq.free(1);
 		freezefade.free(1);
-		panpos.free(1);
-		pansign.free(1);
 		analysis_loop.stop;
 		this.clear;
 		//Server.freeAll;
