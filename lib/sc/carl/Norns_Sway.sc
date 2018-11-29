@@ -1,4 +1,4 @@
-NornsSway : Singleton {
+Norns_Sway : Singleton {
 	//Carl Testa 2018
 	//Special Thanks to Brian Heim, Joshua Parmenter, Chris McDonald, Scott Carver
 	classvar <>short_win=1, <>long_win=30, <>refresh_rate=1.0, <>gravity=0.01, <>step=0.05;
@@ -30,7 +30,7 @@ NornsSway : Singleton {
 			RecordBuf.ar(out, buffer, loop: 1, run: on);
 		};
 
-		//this is the placeholder for audio procesing
+		//this is the placeholder for audio processing
 		processing = NodeProxy.audio(Server.default, 1).fadeTime_(fade)
 		.source = { Silent.ar(1) };
 
@@ -44,7 +44,7 @@ NornsSway : Singleton {
 		this.nonpolarity_map;
 
 		//audio output to listen and change channel
-		output = NodeProxy.audio(Server.default, 2)
+		output = NodeProxy.audio(Server.default, 2).fadeTime_(fade)
 		.source = { Pan2.ar(processing.ar(1), panpos.kr(1)*pansign.kr(1)); };
 
 		//Longer term analysis controlling placement on processing grid
@@ -366,6 +366,17 @@ NornsSway : Singleton {
 		(this.name++": Silence").postln;
 	}
 
+	pancenter {
+		output.source = { Pan2.ar(processing.ar(1), 0);};
+		(this.name++": Center Pan").postln;
+	}
+	
+	//change panning to stereo analysis controlled
+	panstereo {
+		output.source = { Pan2.ar(processing.ar(1), panpos.kr(1)*pansign.kr(1)); };
+		(this.name++": Stereo Pan").postln;
+	}
+
 	//execute change in processing type
 	change_processing {
 		(quadrant_map[quadrant[0]]).value;
@@ -432,6 +443,7 @@ NornsSway : Singleton {
 		freezefreq.fadeTime = time;
 		freezefade.fadeTime = time;
 		//output pan
+		output.fadeTime = time;
 		panpos.fadeTime = time;
 		pansign.fadeTime = time;
 	}
