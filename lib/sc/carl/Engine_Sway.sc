@@ -10,6 +10,7 @@ Engine_Sway : CroneEngine {
 		NornsSway(\sway).analysis_input.set(\chan, context.in_b[0].index);
 		NornsSway(\sway).output.play(context.out_b.index, 2, context.xg, addAction: \addToHead);
 		NornsSway(\sway).verbose = false;
+		//NornsSway(\sway).analysis_on = true;
 		
 		this.addCommand("amp_thresh", "f", {|msg|
 			NornsSway(\sway).amp_thresh = msg[1];
@@ -69,6 +70,14 @@ Engine_Sway : CroneEngine {
 			});
 		});
 		
+		this.addCommand("panning_on", "i", {|msg|
+			if(msg[1] == 1, {
+			NornsSway(\sway).panstereo;
+			}, {
+			NornsSway(\sway).pancenter;
+			});
+		});
+		
 		this.addCommand("silence", "i", {|msg|
 			NornsSway(\sway).silence;
 		});
@@ -81,8 +90,16 @@ Engine_Sway : CroneEngine {
 			NornsSway(\sway).ampmod;
 		});
 
+		this.addCommand("grains", "i", {|msg|
+			NornsSway(\sway).grains;
+		});
+
 		this.addCommand("delay", "i", {|msg|
 			NornsSway(\sway).delay;
+		});
+		
+		this.addCommand("granular", "i", {|msg|
+			NornsSway(\sway).granular;
 		});
 
 		this.addCommand("filter", "i", {|msg|
