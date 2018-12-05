@@ -18,7 +18,7 @@
 -- /
 
 -- specify dsp engine to load:
-engine.name = 'TestSine'
+engine.name = 'TestFilter'
 
 -- make a variable
 local t = 0
@@ -49,8 +49,7 @@ function init()
   -- show engine commands available
   engine.list_commands()
   -- set engine params
-  engine.hz(100)
-  engine.amp(0.125)
+  engine.hz(700)
   -- start timer
   c:start()
 end

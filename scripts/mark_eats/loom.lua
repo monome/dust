@@ -20,7 +20,7 @@
 -- PAGE 3:
 --  Load/Save/Delete
 --
--- v1.0.0
+-- v1.0.3
 -- Concept Jay Gilligan
 -- Code Mark Eats
 --
@@ -37,7 +37,8 @@ options.OUTPUT = {"Audio", "MIDI", "Audio + MIDI"}
 options.STEP_LENGTH_NAMES = {"1 bar", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/48", "1/64"}
 options.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
 
-local DATA_FILE_PATH = data_dir .. "mark_eats/loom.data"
+local DATA_FOLDER_PATH = data_dir .. "mark_eats/"
+local DATA_FILE_PATH = DATA_FOLDER_PATH .. "loom.data"
 
 local SCREEN_FRAMERATE = 15
 local screen_dirty = true
@@ -73,8 +74,13 @@ local DOWN_ANI_LENGTH = 0.2
 local REMOVE_ANI_LENGTH = 0.4
 local TRAIL_ANI_LENGTH = 6.0
 
+local DOWN_BRIGHTNESS = 3
+local TRAIL_BRIGHTNESS = 3
+local OUTSIDE_BRIGHTNESS = 3
+local INACTIVE_BRIGHTNESS = 10
+local ACTIVE_BRIGHTNESS = 15
+
 local pages
-local tabs
 local playback_icon
 local add_remove_animations = {}
 local ADD_REMOVE_ANI_LENGTH = 0.2
@@ -114,12 +120,16 @@ end
 
 local function read_data()
   local disk_data = tab.load(DATA_FILE_PATH)
-  if disk_data and disk_data.version then
-    if disk_data.version == 1 then
-      save_data = disk_data
-    else
-      print("Unrecognized data, version " .. disk_data.version)
+  if disk_data then
+    if disk_data.version then
+      if disk_data.version == 1 then
+        save_data = disk_data
+      else
+        print("Unrecognized data, version " .. disk_data.version)
+      end
     end
+  else
+    os.execute("mkdir " .. DATA_FOLDER_PATH)
   end
   update_save_slot_list()
 end
@@ -228,7 +238,7 @@ local function note_off(note_num)
   
 end
 
-local function all_notes_off()
+local function all_notes_kill()
   
   -- Audio engine out
   engine.noteKillAll()
@@ -408,21 +418,11 @@ local function advance_step()
     if grid_h ~= 8 and grid_h ~= 16 then grid_h = 8 end
   end
   
-  for _, n in pairs(notes) do
-    n.advance_countdown = n.advance_countdown - 1
-    if n.advance_countdown == 0 then
-      n.advance_countdown = n.length
-      if n.direction > 0 then n.head = n.head % params:get("pattern_height") + 1
-      else n.head = (n.head + params:get("pattern_height") - 2) % params:get("pattern_height") + 1 end
-    end
-    n.active = false
-  end
-  
   local active_notes_this_step = {}
   
   for _, t in pairs(triggers) do
     
-    -- Progress
+    -- Move triggers
     t.advance_countdown = t.advance_countdown - 1
     if t.advance_countdown == 0 then
       t.advance_countdown = t.length
@@ -431,41 +431,78 @@ local function advance_step()
     end
     t.active = false
     
-    -- Check for intersections and generate trails
+    -- Generate trigger trails
     local tx
     for ti = 0, t.length - 1 do
       tx = t.head + (ti * t.direction * -1)
       tx = (tx - 1) % params:get("pattern_width") + 1
       if tx <= grid_w then trails[tx][t.position] = TRAIL_ANI_LENGTH end
-      for _, n in pairs(notes) do
-        local ny
-        for ni = 0, n.length - 1 do
-          ny = n.head + (ni * n.direction * -1)
-          ny = (ny - 1) % params:get("pattern_height") + 1
-          if ny <= grid_h then trails[n.position][ny] = TRAIL_ANI_LENGTH end
-          if tx == n.position and t.position == ny then
-            if not n.active then
-              table.insert(active_notes_this_step, scale_notes[n.position])
-            end
-            n.active = true
-            t.active = true
-            break
-          end
+    end
+    
+    grid_dirty = true
+  end
+  
+  for _, n in pairs(notes) do
+    
+    -- Move notes
+    n.advance_countdown = n.advance_countdown - 1
+    if n.advance_countdown == 0 then
+      n.advance_countdown = n.length
+      if n.direction > 0 then n.head = n.head % params:get("pattern_height") + 1
+      else n.head = (n.head + params:get("pattern_height") - 2) % params:get("pattern_height") + 1 end
+    end
+    n.active = false
+    
+    -- Generate note trails
+    local ny
+    for ni = 0, n.length - 1 do
+      ny = n.head + (ni * n.direction * -1)
+      ny = (ny - 1) % params:get("pattern_height") + 1
+      if ny <= grid_h then trails[n.position][ny] = TRAIL_ANI_LENGTH end
+    end
+    
+    -- Check for intersections
+    
+    local n_top, n_bottom
+    if n.direction > 0 then
+      n_top = n.head - n.length + 1
+      n_bottom = n.head
+    else
+      n_top = n.head
+      n_bottom = n.head + n.length - 1
+    end
+    n_top = (n_top - 1) % params:get("pattern_height") + 1
+    n_bottom = (n_bottom - 1) % params:get("pattern_height") + 1
+    
+    for _, t in pairs(triggers) do
+      
+      -- Is the note on a trigger row?
+      if (n_top <= n_bottom and (t.position >= n_top and t.position <= n_bottom))
+      or (n_top > n_bottom and (t.position >= n_top or t.position <= n_bottom)) then
+        
+        local t_left, t_right
+        if t.direction > 0 then
+          t_left = t.head - t.length + 1
+          t_right = t.head
+        else
+          t_left = t.head
+          t_right = t.head + t.length - 1
+        end
+        t_left = (t_left - 1) % params:get("pattern_width") + 1
+        t_right = (t_right - 1) % params:get("pattern_width") + 1
+        
+        -- Is the trigger on the note column?
+        if (t_left <= t_right and (n.position >= t_left and n.position <= t_right))
+        or (t_left > t_right and (n.position >= t_left or n.position <= t_right)) then
+          table.insert(active_notes_this_step, scale_notes[n.position])
+          n.active = true
+          t.active = true
+          break
         end
       end
     end
-  end
-  
-  -- Generate trails for notes if need be
-  if #triggers == 0 then
-    for _, n in pairs(notes) do
-      local ny
-      for ni = 0, n.length - 1 do
-        ny = n.head + (ni * n.direction * -1)
-        ny = (ny - 1) % params:get("pattern_height") + 1
-        if ny <= grid_h then trails[n.position][ny] = TRAIL_ANI_LENGTH end
-      end
-    end
+    
+    grid_dirty = true
   end
   
   -- Work out which need noteOffs
@@ -486,14 +523,15 @@ local function advance_step()
   
   -- Add remaining, the new notes
   for _, sa in pairs(active_notes_this_step) do
-    if #active_notes < params:get("max_active_notes") then
-      note_on(sa)
-      table.insert(active_notes, sa)
-    end
+    note_on(sa)
+    table.insert(active_notes, sa)
   end
   
   screen_dirty = true
-  grid_dirty = true
+end
+
+local function stop()
+  all_notes_kill()
 end
 
 local function reset_step()
@@ -661,7 +699,6 @@ function key(n, z)
           if not beat_clock.external then
             if beat_clock.playing then
               beat_clock:stop()
-              all_notes_off()
             else
               beat_clock:start()
             end
@@ -802,6 +839,7 @@ function init()
     grid_leds[x] = {}
     trails[x] = {}
     for y = 1, 16 do
+      grid_leds[x][y] = 0
       trails[x][y] = 0
     end
   end
@@ -820,6 +858,7 @@ function init()
   beat_clock = BeatClock.new()
   
   beat_clock.on_step = advance_step
+  beat_clock.on_stop = stop
   beat_clock.on_select_internal = function()
     beat_clock:start()
     screen_dirty = true
@@ -861,52 +900,65 @@ function init()
   
   -- Add params
   
-  params:add{type = "number", id = "grid_device", name = "Grid Device", min = 1, max = 4, default = 1, action = function(value)
-    grid_device.all(0)
-    grid_device.refresh()
-    grid_device:reconnect(value)
-  end}
+  params:add{type = "number", id = "grid_device", name = "Grid Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      grid_device.all(0)
+      grid_device.refresh()
+      grid_device:reconnect(value)
+    end}
   
-  params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_off}
+  params:add{type = "option", id = "output", name = "Output", options = options.OUTPUT, action = all_notes_kill}
   
-  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1, action = function(value)
-    midi_out_device:reconnect(value)
-  end}
+  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      midi_out_device:reconnect(value)
+    end}
   
-  params:add{type = "number", id = "midi_out_channel", name = "MIDI Out Channel", min = 1, max = 16, default = 1, action = function(value)
-    all_notes_off()
-    midi_out_channel = value
-  end}
+  params:add{type = "number", id = "midi_out_channel", name = "MIDI Out Channel", min = 1, max = 16, default = 1,
+    action = function(value)
+      all_notes_kill()
+      midi_out_channel = value
+    end}
   
-  params:add{type = "number", id = "max_active_notes", name = "Max Active Notes", min = 1, max = 16, default = 16}
+  params:add{type = "option", id = "clock", name = "Clock", options = {"Internal", "External"}, default = beat_clock.external or 2 and 1,
+    action = function(value)
+      beat_clock:clock_source_change(value)
+    end}
   
-  params:add{type = "option", id = "clock", name = "Clock", options = {"Internal", "External"}, default = beat_clock.external or 2 and 1, action = function(value)
-    beat_clock:clock_source_change(value)
-  end}
+  params:add{type = "number", id = "clock_midi_in_device", name = "Clock MIDI In Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      midi_in_device:reconnect(value)
+    end}
   
-  params:add{type = "number", id = "clock_midi_in_device", name = "Clock MIDI In Device", min = 1, max = 4, default = 1, action = function(value)
-    midi_in_device:reconnect(value)
-  end}
-  
-  params:add{type = "option", id = "clock_out", name = "Clock Out", options = {"Off", "On"}, default = beat_clock.send or 2 and 1, action = function(value)
-    if value == 1 then beat_clock.send = false
-    else beat_clock.send = true end
-  end}
+  params:add{type = "option", id = "clock_out", name = "Clock Out", options = {"Off", "On"}, default = beat_clock.send or 2 and 1,
+    action = function(value)
+      if value == 1 then beat_clock.send = false
+      else beat_clock.send = true end
+    end}
   
   params:add_separator()
   
-  params:add{type = "number", id = "bpm", name = "BPM", min = 1, max = 480, default = beat_clock.bpm, action = function(value)
-    beat_clock:bpm_change(value)
-    screen_dirty = true
-  end}
+  params:add{type = "number", id = "bpm", name = "BPM", min = 1, max = 240, default = beat_clock.bpm,
+    action = function(value)
+      beat_clock:bpm_change(value)
+      screen_dirty = true
+    end}
   
-  params:add{type = "option", id = "step_length", name = "Step Length", options = options.STEP_LENGTH_NAMES, default = 10, action = function(value)
-    beat_clock.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
-    beat_clock:bpm_change(beat_clock.bpm)
-  end}
+  params:add{type = "option", id = "step_length", name = "Step Length", options = options.STEP_LENGTH_NAMES, default = 10,
+    action = function(value)
+      beat_clock.ticks_per_step = 96 / options.STEP_LENGTH_DIVIDERS[value]
+      beat_clock.steps_per_beat = options.STEP_LENGTH_DIVIDERS[value] / 4
+      beat_clock:bpm_change(beat_clock.bpm)
+    end}
   
-  params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 8, max = 64, default = 16}
-  params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 8, max = 64, default = 16}
+  params:add{type = "number", id = "pattern_width", name = "Pattern Width", min = 4, max = 64, default = 16,
+    action = function()
+      grid_dirty = true
+    end}
+  params:add{type = "number", id = "pattern_height", name = "Pattern Height", min = 4, max = 64, default = 16,
+    action = function()
+      grid_dirty = true
+    end}
   
   params:add{type = "number", id = "min_velocity", name = "Min Velocity", min = 1, max = 127, default = 80}
   params:add{type = "number", id = "max_velocity", name = "Max Velocity", min = 1, max = 127, default = 100}
@@ -921,10 +973,9 @@ function init()
   
   -- UI
   
-  pages = UI.Pages.new(page_id, 3)
-  tabs = UI.Tabs.new()
-  save_slot_list = UI.ScrollingList.new(5, 14, 1, {})
-  save_menu_list = UI.List.new(92, 25, 1, save_menu_items)
+  pages = UI.Pages.new(1, 3)
+  save_slot_list = UI.ScrollingList.new(5, 9, 1, {})
+  save_menu_list = UI.List.new(92, 20, 1, save_menu_items)
   playback_icon = UI.PlaybackIcon.new(121, 1)
   
   screen.aa(1)
@@ -939,12 +990,6 @@ end
 
 
 function grid_redraw()
-  
-  local DOWN_BRIGHTNESS = 3
-  local TRAIL_BRIGHTNESS = 3
-  local OUTSIDE_BRIGHTNESS = 3
-  local INACTIVE_BRIGHTNESS = 10
-  local ACTIVE_BRIGHTNESS = 15
   
   local brightness
   
