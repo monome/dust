@@ -222,7 +222,7 @@ local function linearize_pat(n)
   
   local l_time = total_time / get_pat().count
   
-  for i = 1, #pattern[y - 1].time do
+  for i = 1, #pattern[n - 1].time do
     pattern[n - 1].time[i] = l_time
   end
   
