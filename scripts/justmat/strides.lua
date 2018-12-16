@@ -23,7 +23,7 @@
 --
 -- the 4 buttons in column
 -- 1 are the track selection
--- buttons.
+-- buttons. 
 --
 -- the 2x4 grid of buttons
 -- launches samples.
@@ -128,7 +128,7 @@ end
 
 
 local function set_base_time()
-  -- stores a copy of pattern[].time for recall
+  -- stores a copy of pattern[].time for recall.
   for i = 1, 4 do
     base_time[i] = {}
     for j = 1, #pattern[i].time do
@@ -139,7 +139,7 @@ end
 
 
 local function set_lin_time()
-  -- stores a linearized pattern.time for recall later
+  -- stores a linearized pattern.time for recall later.
   for i = 1, 4 do
     lin_time[i] = {}
     for j = 1, #pattern[i].time do
@@ -160,7 +160,7 @@ local function speed_up_time()
   -- doubles the speed of pattern playback
   for i = 1, 4 do
     for j = 1, #pattern[i].time do
-      pattern[i].time[j] = pattern[i].time[j] * .5
+      pattern[i].time[j] = util.clamp(pattern[i].time[j] * .5, .01, 1)
     end
   end
 end
@@ -168,7 +168,7 @@ end
 
 local function speed_up_playback()
   -- doubles the speed of sample playback
-  sample_playback_speed = util.clamp(sample_playback_speed + sample_playback_speed, 0.25, 4)
+  sample_playback_speed = util.clamp(sample_playback_speed + sample_playback_speed, 0.25, 5)
   speed_changed = true
 end
 
@@ -187,7 +187,7 @@ end
 
 local function slow_down_playback()
   -- halfs speed of sample playback
-  sample_playback_speed = util.clamp(sample_playback_speed * .5, 0.25, 4)
+  sample_playback_speed = util.clamp(sample_playback_speed * .5, 0.25, 5)
   speed_changed = true
 end
   
@@ -306,7 +306,7 @@ function enc(n, d)
     end
     last_enc = 1
     time_last_enc = util.time()
-
+    
   elseif n == 2 then
     if key1 == 1 then
       params:delta("delay_level", d)
@@ -315,7 +315,7 @@ function enc(n, d)
     end
     last_enc = 2
     time_last_enc = util.time()
-
+    
   elseif n == 3 then
     if key1 == 1 then
       for i = 1, 8 do
@@ -385,7 +385,7 @@ function g.event(x, y, state)
     if y == 4 or y == 5 then
     -- this is the drum pad grid.
       local e = {}
-      e.id = x * 8 + y
+      e.id = x*8 + y
       e.x = x
       e.y = y
       e.state = state
@@ -505,7 +505,7 @@ function redraw()
         screen.text_center("vol : " .. string.format("%.2f", mix:get("output")))
       end
     end
-
+    
   elseif last_enc == 2 then
     if util.time() - time_last_enc < .6 then
       if key1 == 1 then
@@ -514,14 +514,14 @@ function redraw()
         screen.text_center("delay time : " .. string.format("%.2f", params:get("delay_time")))
       end
     end
-
+    
   elseif last_enc == 3 then
     if util.time() - time_last_enc < .6 then
       if key1 == 1 then
         screen.text_center("delay send : " .. string.format("%.2f", params:get("1_delay_send")))
       else
         screen.text_center("delay feedback : " .. string.format("%.2f", params:get("delay_feedback")))
-      end
+      end 
     end
   end
   screen.stroke()
