@@ -23,7 +23,7 @@
 --
 -- the 4 buttons in column
 -- 1 are the track selection
--- buttons. 
+-- buttons.
 --
 -- the 2x4 grid of buttons
 -- launches samples.
@@ -385,7 +385,7 @@ function g.event(x, y, state)
     if y == 4 or y == 5 then
     -- this is the drum pad grid.
       local e = {}
-      e.id = x*8 + y
+      e.id = x * 8 + y
       e.x = x
       e.y = y
       e.state = state
@@ -521,7 +521,7 @@ function redraw()
         screen.text_center("delay send : " .. string.format("%.2f", params:get("1_delay_send")))
       else
         screen.text_center("delay feedback : " .. string.format("%.2f", params:get("delay_feedback")))
-      end 
+      end
     end
   end
   screen.stroke()
