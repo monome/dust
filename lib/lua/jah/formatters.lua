@@ -5,51 +5,6 @@ local function format(param, value, units)
 end
 
 
--- With label
-
-function Formatters.default_with_label(param)
-  return param.name..": "..Formatters.default(param)
-end
-
-function Formatters.unipolar_as_percentage_with_label(param)
-  return param.name..": "..Formatters.unipolar_as_percentage(param)
-end
-
-function Formatters.secs_as_ms_with_label(param)
-  return param.name..": "..Formatters.secs_as_ms(param)
-end
-
-function Formatters.unipolar_as_true_false_with_label(param)
-  return param.name..": "..Formatters.unipolar_as_true_false(param)
-end
-
-function Formatters.unipolar_as_enabled_disabled_with_label(param)
-  return param.name..": "..Formatters.unipolar_as_enabled_disabled(param)
-end
-
-function Formatters.bipolar_as_pan_widget_with_label(param)
-  return param.name..": "..Formatters.bipolar_as_pan_widget(param)
-end
-
-function Formatters.unipolar_as_multimode_filter_freq_with_label(param)
-  return param.name..": "..Formatters.unipolar_as_multimode_filter_freq(param)
-end
-
-function Formatters.round_with_label(precision)
-  return function(param)
-    return param.name..": "..Formatters.round(precision)(param)
-  end
-end
-
-function Formatters.format_freq_with_label(param)
-  return param.name..": "..Formatters.format_freq(param)
-end
-
-function Formatters.format_secs_with_label(param)
-  return param.name..": "..Formatters.format_secs(param)
-end
-
-
 -- Raw
 
 function Formatters.format_freq_raw(freq)
