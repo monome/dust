@@ -99,6 +99,9 @@ function init()
   
   params:add{type="number", id="fadetime", min=2, max=120, default=30,
     action=function(x) engine.fadetime(x) end}
+   
+  params:add{type="option", id="panning", name="panning", options={"on", "off"},
+    action=function(val) engine.panning_on(val) end}
   
   params:add{type="option", id="processing_type", name="processing_type", options={"---","reverb", "delay", "amp mod", "freeze", "pitchbend", "filter", "cascade"},
     action=function(val) if params:get("analysis")==2 then
