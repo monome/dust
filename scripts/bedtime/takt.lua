@@ -636,7 +636,21 @@ function count()
 end
 
 function key(n, z)
-  if n == 2 and z == 1 then
+  if n == 1 and z == 1 then
+    if (trackeditmode or lockeditmode or alttrackeditmode) then
+      mainmenu = true
+      alttrackeditmode = false
+      trackeditmode = false
+      lockeditmode = false
+    elseif mainmenu then
+      alttrackeditmode = false
+      trackeditmode = true
+      lockeditmode = false
+      mainmenu = false
+    end
+    enc_line = 2
+    redraw()
+  elseif n == 2 and z == 1 then
     if enc_line == 0 then
       enc_line = 1
       trackeditmode = false
@@ -666,7 +680,7 @@ function key(n, z)
   elseif n == 3 and z == 1 then
     if mainmenu then
       if enc_line == 1 then
-        textentry.enter(textentry_callback, data.name == nil and ( "untitled ".. project) or data.name)
+        textentry.enter(textentry_callback, data.name == nil and ("untitled ".. project) or data.name)
       elseif enc_line == 2 then
         load_project(project_to_load) project = project_to_load
       elseif enc_line == 5 then
@@ -675,6 +689,8 @@ function key(n, z)
         save_project(project_to_save)
       end
       redraw()
+    elseif lockeditmode then
+      erase_lock(voice_lock,step_lock, enc_line)
     elseif trackeditmode then
       if enc_line == 0 then
         loadchannel = disptrack
@@ -687,37 +703,8 @@ function key(n, z)
         disptrack = util.clamp(disptrack,1,VOICES)
       end
     end
+  end
   if filesel then else redraw() end
-  end
-
-  if z == 1 then
-    down_time = util.time()
-    else hold_time = util.time() - down_time
-    if n == 1 then
-      if (trackeditmode or lockeditmode or alttrackeditmode) then
-        mainmenu = true
-        alttrackeditmode = false
-        trackeditmode = false
-        lockeditmode = false
-      elseif mainmenu then
-        alttrackeditmode = false
-        trackeditmode = true
-        lockeditmode = false
-        mainmenu = false
-      end
-      enc_line = 2
-      redraw()
-    elseif n == 3 then
-      if lockeditmode then
-        if hold_time < 0.2 then
-          erase_lock(voice_lock,step_lock, enc_line)
-        else
-          -- ?
-        end
-      end
-      if filesel then else redraw() end
-    end
-  end
 end
 
 function enc(n,d)
