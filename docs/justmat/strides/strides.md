@@ -33,7 +33,7 @@ hold alt to access secondary grid functions.
 - d - sample pads
 - e - alt
 
-as well as secondary controls, holding alt will bring up several controls for pattern and playback speed manipulation.
+as well as secondary controls, holding alt will bring up several controls for pattern and sample playback speed manipulation.
 
 ![](strides-grid2.png)
 
