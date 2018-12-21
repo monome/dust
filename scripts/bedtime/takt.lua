@@ -257,7 +257,7 @@ local function draw_bar()
     end
   screen.level(enc_line == 0 and 15 or 0)
   screen.move ((trackeditmode or alttrackeditmode) and not lockeditmode and 12 or 24 ,8)
-  screen.text(params:string(((trackeditmode or alttrackeditmode and not lockeditmode) and disptrack or voice_lock ).."_sample"))
+  screen.text(params:string((not lockeditmode and disptrack or voice_lock) .."_sample"))
   end
   screen.level(not lockeditmode and 3 or 8 )
   screen.rect((metaplay == true and 91 or 100),0,(metaplay == true and 37 or 28),11)
