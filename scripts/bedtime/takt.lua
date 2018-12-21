@@ -1,23 +1,23 @@
 -- takt
 --
 --
--- takt is a parameter locking 
+-- takt is a parameter locking
 -- sequencer
 --
--- row 1  
+-- row 1
 -- key 1 - start/stop
 -- key 15/16 - shift/alt
--- 
+--
 -- press step to enter lock edit mode
--- hold step to remove trig 
+-- hold step to remove trig
 -- alt + step to erase step
 --
--- shift + column 16 - mutes 
+-- shift + column 16 - mutes
 -- shift + 1-15 - per track dividers
--- 
--- 
+--
+--
 -- hold btn 1 to enter main menu
--- 
+--
 --
 
 engine.name = 'Ack'
@@ -40,7 +40,7 @@ local val = {}
 local next_val = {}
 local last_val = {}
 local project = 1
-local pattern = 1 
+local pattern = 1
 local patternview = false
 local stepsview = true
 local mainmenu  = false
@@ -79,20 +79,20 @@ local project_to_load = 1
 local project_to_save = 16
 local pattern_to_copy = pattern
 
-function save_project(num)
+local function save_project(num)
   data[pattern].bpm = params:get("bpm")
   tab.save(data,"/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
   params:write("bedtime/takt-param-"..num ..".pset")
 end
 
-function load_project(num)
+local function load_project(num)
   saved_data = tab.load("/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
   if saved_data ~= nil then
     data = saved_data
     params:read("bedtime/takt-param-"..num  .. ".pset")
     pattern = 1
     params:set("bpm", data[pattern].bpm) -- load bpm
-    for v=1,7 do -- set loop points
+    for v=1,VOICES do -- set loop points
       set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
     end
     redraw()
@@ -113,7 +113,7 @@ local function load_sample(file)
   end
 end
 
-function textentry_callback(txt)
+local function textentry_callback(txt)
   if txt then
     data.name = txt
   else
@@ -121,18 +121,7 @@ function textentry_callback(txt)
   redraw()
 end
 
-function copy_pattern(src,dst)
-  data[dst] = simplecopy(data[src])
-end
-
-function switch_pattern(pat)
-  pattern = pat
-  for v=1,7 do
-    set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
-  end
-end
-
-function simplecopy(obj)
+local function simplecopy(obj)
   if type(obj) ~= 'table' then return obj end
   local res = {}
   for k, v in pairs(obj) do
@@ -141,7 +130,18 @@ function simplecopy(obj)
   return res
 end
 
-function set_loop(tr,startp,seql)
+local function copy_pattern(src,dst)
+  data[dst] = simplecopy(data[src])
+end
+
+local function tempmod(tr,div)
+  data[pattern].tempdivtr[tr] = div
+  for i=1,VOICES do
+    voicepos[i] = position
+  end
+end
+
+local function set_loop(tr,startp,seql)
   if startp == 1 and seql == 16 then
     tempmod(tr,data[pattern].tempdivtr[tr])
   else
@@ -150,14 +150,15 @@ function set_loop(tr,startp,seql)
   end
 end
 
-function tempmod(tr,div)
-  data[pattern].tempdivtr[tr] = div
-  for i=1,7 do
-    voicepos[i] = position 
+local function switch_pattern(pat)
+  pattern = pat
+  for v=1,VOICES do
+    set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
   end
 end
 
-function randomize_locks(v,p)
+
+local function randomize_locks(v,p)
   local max_clamp = {500,100,100,1200,0,0,0,20000,100}
   local min_clamp = {0,0,0,0,-60,-60,-30,0,0}
   local delta_mult = {0.01,0.01,0.01,0.01,1,1,1,1,0.01}
@@ -168,7 +169,7 @@ function randomize_locks(v,p)
   end
 end
 
-function erase_locks(voice)
+local function erase_locks(voice)
   for i=1,16 do
     for p = 1,#engine_params do
     data[pattern].locks[lock_params[p]][voice][i] = 0
@@ -176,12 +177,12 @@ function erase_locks(voice)
   end
 end
 
-function erase_lock(voice,step,lock)
+local function erase_lock(voice,step,lock)
   data[pattern].locks[lock_params[lock]][voice][step] = 0
   redraw()
 end
 
-function erase_step(voice,step)
+local function erase_step(voice,step)
   local defaults = {0,1,100,0,0,0}
   for i=1,#tablenames do
     data[pattern][tablenames[i]][voice][step] = defaults[i]
@@ -191,7 +192,7 @@ function erase_step(voice,step)
   end
 end
 
-function copy_step(x1,y1,x2,y2)
+local function copy_step(x1,y1,x2,y2)
   for i=1,#tablenames do
     data[pattern][tablenames[i]][y2][x2] = data[pattern][tablenames[i]][y1][x1]
   end
@@ -200,7 +201,7 @@ function copy_step(x1,y1,x2,y2)
   end
 end
 
-function read_locks(voice, step)
+local function read_locks(voice, step)
   for i=1,#engine_params do
     val[voice][i] = data[pattern].locks[lock_params[i]][voice][step]
     next_val[voice][i] = data[pattern].locks[lock_params[i]][voice][step + 1]
@@ -212,23 +213,23 @@ function read_locks(voice, step)
   end
 end
 
-function reset_params(voice)
-  for i=1,#engine_params do 
+local function reset_params(voice)
+  for i=1,#engine_params do
     if data[pattern].steps[voice][voicepos[voice]+1] ~= 0 and next_val[voice][i] ~= val[voice][i] then
       engine[engine_params[i]](voice - 1, params:get(voice .. lock_params[i]))
       data[pattern].displocks[lock_params[i]][voice] = 0
-    elseif val[voice][i] ~= 0 then 
+    elseif val[voice][i] ~= 0 then
       data[pattern].displocks[lock_params[i]][voice] = 0
     end
   end
 end
 
-function metaseq()
+local function metaseq()
   if ct % (data.metatempdiv > 0 and data.metatempdiv or data.metatempdivpat[pattern]) == 0 then
     if metaplay == true then
       if data.metastartpos > 1 then
         metapos = util.clamp(((metapos  %  data.metaseqlen) + 1),data.metastartpos,data.metaseqlen)
-      else 
+      else
         metapos = (metapos  %  data.metaseqlen) + 1
       end
       if data.metaval[metapos] ~= 0 then
@@ -239,9 +240,50 @@ function metaseq()
   end
 end
 
+local function draw_bar()
+  screen.level(not lockeditmode and 3 or 8 )
+  screen.rect(0,0,128,11)
+  screen.fill()
+  if trackeditmode or alttrackeditmode then
+    screen.level(0)
+    screen.rect(2,2,8,8)
+    screen.stroke()
+    screen.move(4,8)
+    screen.text(not lockeditmode and disptrack or voice_lock)
+    if lockeditmode then
+      screen.move(16,8)
+      screen.text_center(step_lock)
+      screen.rect(12,2,10,8)
+      screen.stroke()
+    end
+  screen.level(enc_line == 0 and 15 or 0)
+  screen.move ((trackeditmode or alttrackeditmode) and not lockeditmode and 12 or 24 ,8)
+  screen.text(params:string(((trackeditmode or alttrackeditmode and not lockeditmode) and disptrack or voice_lock ).."_sample"))
+  end
+  screen.level(not lockeditmode and 3 or 8 )
+  screen.rect((metaplay == true and 91 or 100),0,(metaplay == true and 37 or 28),11)
+  screen.fill()
+  screen.level(0)
+  screen.move(102,8)
+  screen.line(107,3)
+  screen.line(112,8)
+  screen.line(103,8)
+  screen.stroke()
+  screen.move(107,6)
+  screen.line(metroicon <=1 and 103 or 111,2)
+  screen.stroke()
+  screen.level(mainmenu and enc_line == 6 and 15 or 0)
+  screen.move(127,8)
+  screen.text_right(""..params:get("bpm"))
+  if metaplay == true then
+    screen.level(metroicon <=1 and 0 or 15)
+    screen.move(94,8)
+    screen.text("M")
+  end
+end
 
 function init()
-  for i=1,7 do
+  for i=1,VOICES do
     metro.alloc(i)
   end
   counter = beatclock.new()
@@ -254,7 +296,7 @@ function init()
   params:add_separator()
   Ack.add_effects_params()
   params:add_separator()
-  for channel=1,7 do
+  for channel=1,VOICES do
     Ack.add_channel_params(channel)
   end
   params:bang()
@@ -266,7 +308,7 @@ function init()
   data.metatempdivpat = {}
   for i=1,16 do
     data[i] = {}
-    data[i].bpm = 110 
+    data[i].bpm = 110
     data[i].steps = {}
     data[i].steps_rpt = {}
     data[i].steps_rpt_div = {}
@@ -278,7 +320,7 @@ function init()
     data[i].tempdivtr = {}
     data.metaval[i] = 0
     data.metatempdivpat[i] = 1
-    for v=1,7 do
+    for v=1,VOICES do
       mute[v] = 0
       data[i].steps[v] = {}
       data[i].steps_rpt[v] = {}
@@ -290,11 +332,11 @@ function init()
       data[i].tempdiv[v] = 1
       data[i].tempdivtr[v] = 1
       for l=1,16 do
-        table.insert(data[i].steps[v],0) 
-        table.insert(data[i].steps_rpt[v],0) 
-        table.insert(data[i].steps_rpt_div[v],1) 
-        table.insert(data[i].steps_div[v],0) 
-        table.insert(data[i].steps_prob[v],100) 
+        table.insert(data[i].steps[v],0)
+        table.insert(data[i].steps_rpt[v],0)
+        table.insert(data[i].steps_rpt_div[v],1)
+        table.insert(data[i].steps_div[v],0)
+        table.insert(data[i].steps_prob[v],100)
       end
     end
   end
@@ -309,7 +351,7 @@ function init()
       second[i] = 0
       data[p].locks[lock_params[i]] = {}
       data[p].displocks[lock_params[i]] = {}
-      for v = 1,7 do
+      for v = 1,VOICES do
         val[v] = {}
         next_val[v] = {}
         last_val[v] = {}
@@ -322,16 +364,16 @@ function init()
     end
   end
 end
+
 g = grid.connect()
-g.rotation(2)
 
 g.event = function(x,y,z)
-  if z==1 and held[y] then 
-    heldmax[y] = 0 
+  if z==1 and held[y] then
+    heldmax[y] = 0
   end
   held[y] = held[y] + (z*2-1)
-  if held[y] > heldmax[y] then 
-    heldmax[y] = held[y] 
+  if held[y] > heldmax[y] then
+    heldmax[y] = held[y]
   end
   if z == 1 then
     if y == 8 then
@@ -341,30 +383,30 @@ g.event = function(x,y,z)
         else
           counter:start()
         end
-      elseif x == 9 then 
-        if patternview then 
+      elseif x == 9 then
+        if patternview then
           stepsview = true
           patternview = false
-        else 
+        else
           patternview = true
           stepsview = false
         end
-      elseif x == 16 then 
+      elseif x == 16 then
         shift = true
-      elseif x == 15 then 
-        alt = true 
-      elseif x == 13 then 
+      elseif x == 15 then
+        alt = true
+      elseif x == 13 then
         copy_mode = true
-        copy_source_x = step_lock 
+        copy_source_x = step_lock
         copy_source_y = voice_lock
       end
     end
   elseif z == 0 then
     if y == 8 then
       if x == 16 then shift = false
-      elseif x == 15 then alt = false  
+      elseif x == 15 then alt = false
       elseif x == 13 then copy_mode = false
-      end 
+      end
     end
   end
   if copy_mode then
@@ -383,13 +425,13 @@ g.event = function(x,y,z)
           copy_step(copy_source_x,copy_source_y,x,y)
         end
       end
-    elseif patternview then 
+    elseif patternview then
       if y == 1 and z == 1 then
         copy_pattern(patselect, x)
       end
     end
   end
-  if stepsview then 
+  if stepsview then
     if not alt and not shift then
       if z == 1 then down_time = util.time()
       else hold_time = util.time() - down_time
@@ -400,8 +442,8 @@ g.event = function(x,y,z)
             lockeditmode = false
             if enc_line > 10 then enc_line = enc_line - 1 end
           elseif data[pattern].steps[y][x] == y and hold_time < 0.3 then
-            if not mainmenu then 
-              lockeditmode = true         
+            if not mainmenu then
+              lockeditmode = true
               if enc_line == 0 then enc_line = 1 end
             end
             voice_lock = y
@@ -430,8 +472,8 @@ g.event = function(x,y,z)
       elseif x == 16 and z == 1 then
         if mute[y] == 0 then
           mute[y] = 1
-        else 
-          mute[y] = 0 
+        else
+          mute[y] = 0
         end
       end
     end
@@ -440,7 +482,7 @@ g.event = function(x,y,z)
     if z == 1 and not shift then
       if y == 1 and not alt then
         if x ~= patselect then
-          patselect = x 
+          patselect = x
         elseif patselect == x then
         switch_pattern(x)
         end
@@ -449,7 +491,7 @@ g.event = function(x,y,z)
             data.metaval[x] = patselect
           elseif data.metaval[x] ~= patselect then
             data.metaval[x] = patselect
-          else 
+          else
             data.metaval[x] = 0
           end
       elseif  y == 3 then
@@ -462,9 +504,9 @@ g.event = function(x,y,z)
         end
       elseif y == 4 then
         data.metatempdiv = x * 4
-      elseif y == 6 and x == 2 then 
+      elseif y == 6 and x == 2 then
         if metaplay == true then
-          metaplay = false 
+          metaplay = false
         else
           metaplay = true
           metapos = util.clamp(position, data.metastartpos,data.metaseqlen)
@@ -474,8 +516,8 @@ g.event = function(x,y,z)
       if x == 16 and shift and z == 1 then
         if mute[y] == 0 then
           mute[y] = 1
-        else 
-          mute[y] = 0 
+        else
+          mute[y] = 0
         end
       end
     end
@@ -488,7 +530,7 @@ function grid_redraw()
   g.led(9,8, patternview and 15 or 6) -- alt
   g.led(16,8, shift and 15 or 6) -- alt
   g.led(15,8, alt and 9 or 3) -- shift
-  g.led(13,8, copy_mode and 9 or 3) 
+  g.led(13,8, copy_mode and 9 or 3)
   if copy_mode and not patternview then
     g.led(11,8,blink and 3  or 1)
     g.led(12,8,blink and 3 or 1)
@@ -502,7 +544,7 @@ function grid_redraw()
       g.led(i,3, (i < data.metastartpos or i > data.metaseqlen) and 0 or 6)
     end
     if shift then
-      for v=1,7 do
+      for v=1,VOICES do
         g.led(15,v,0)
         g.led(16,v,mute[v]== 1 and 15 or 6)
       end
@@ -515,18 +557,18 @@ function grid_redraw()
   elseif stepsview then
     if not shift then
       for i=1,16 do
-        for v=1,7 do
+        for v=1,VOICES do
           if alt then
             for i = data[pattern].startpos[v],data[pattern].seqlen[v] do
               g.led(i,v, 0==data[pattern].steps[v][i] and 2 or 6 )
             end
-            if mute[v] == 0 then 
-              g.led(voicepos[v],v,3) 
+            if mute[v] == 0 then
+              g.led(voicepos[v],v,3)
             end
           else
           g.led(i,data[pattern].steps[v][i],
                 mute[v] == 1 and 3
-                or copy_mode and copy_source_x == i and copy_source_y == v and blink and 4 
+                or copy_mode and copy_source_x == i and copy_source_y == v and blink and 4
                 or step_lock == i and voice_lock == v and lockeditmode == true and 13
                 or i < data[pattern].startpos[v] and 2
                 or i > data[pattern].seqlen[v] and 2
@@ -543,14 +585,14 @@ function grid_redraw()
     end
     elseif shift then
       for i=1,16 do
-        for v=1,7 do
+        for v=1,VOICES do
           g.led(i,data[pattern].steps[v][i],alt == false and 2 or 4)
           g.led(14,v,1)
           g.led(16,v,mute[v]== 1 and 15 or 6)
-          if mute[v] == 0 then 
-            g.led(voicepos[v] < data[pattern].seqlen[v] and voicepos[v] or 1,v,voicepos[v] == 16 and 16 or 3 ) 
+          if mute[v] == 0 then
+            g.led(voicepos[v] < data[pattern].seqlen[v] and voicepos[v] or 1,v,voicepos[v] == 16 and 16 or 3 )
           end
-            g.led((data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]),v,9) 
+            g.led((data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]),v,9)
         end
       end
     end
@@ -560,7 +602,7 @@ end
 
 function count()
   ct = ct + 1
-  for v = 1,7 do
+  for v = 1,VOICES do
     if ct % (data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]) == 0 then
       reset_params(v)
       position = (position % 16) + 1
@@ -571,7 +613,7 @@ function count()
           trigdisp[v] = 15
           if data[pattern].steps_div[v][voicepos[v]] > 0 then
             data[pattern].tempdiv[v] = data[pattern].steps_div[v][voicepos[v]]
-          elseif data[pattern].steps_div[v][voicepos[v]] == 0 then 
+          elseif data[pattern].steps_div[v][voicepos[v]] == 0 then
             data[pattern].tempdiv[v] = 0
           end
           read_locks(v,voicepos[v])
@@ -584,7 +626,7 @@ function count()
             metro[v]:start()
             end
         else
-          trigdisp[v] = 9 
+          trigdisp[v] = 9
         end
       end
     end
@@ -598,7 +640,7 @@ function key(n, z)
     if enc_line == 0 then
       enc_line = 1
       trackeditmode = false
-      alttrackeditmode = true 
+      alttrackeditmode = true
     else
       if lockeditmode then
         disptrack = voice_lock
@@ -610,12 +652,12 @@ function key(n, z)
           disptrack = disptrack - 1
           filesel = false
         if disptrack <= 0 then disptrack = 7 end
-          disptrack = util.clamp(disptrack,1,7)
+          disptrack = util.clamp(disptrack,1,VOICES)
       elseif mainmenu then
-        mainmenu = false 
+        mainmenu = false
         trackeditmode = true
       elseif alttrackeditmode then
-        alttrackeditmode = false 
+        alttrackeditmode = false
         trackeditmode = true
         enc_line = enc_line == 1 and enc_line - 1 or enc_line
       end
@@ -623,13 +665,13 @@ function key(n, z)
     redraw()
   elseif n == 3 and z == 1 then
     if mainmenu then
-      if enc_line == 1 then 
+      if enc_line == 1 then
         textentry.enter(textentry_callback, data.name == nil and ( "untitled ".. project) or data.name)
-      elseif enc_line == 2 then 
+      elseif enc_line == 2 then
         load_project(project_to_load) project = project_to_load
-      elseif enc_line == 5 then 
+      elseif enc_line == 5 then
         copy_pattern(pattern, pattern_to_copy)
-      elseif enc_line == 3  then 
+      elseif enc_line == 3  then
         save_project(project_to_save)
       end
       redraw()
@@ -642,7 +684,7 @@ function key(n, z)
         disptrack = disptrack + 1
         filesel = false
         if disptrack >= 8 then disptrack = 1 end
-        disptrack = util.clamp(disptrack,1,7)
+        disptrack = util.clamp(disptrack,1,VOICES)
       end
     end
   if filesel then else redraw() end
@@ -663,14 +705,14 @@ function key(n, z)
         lockeditmode = false
         mainmenu = false
       end
-      enc_line = 2 
+      enc_line = 2
       redraw()
     elseif n == 3 then
       if lockeditmode then
         if hold_time < 0.2 then
           erase_lock(voice_lock,step_lock, enc_line)
         else
-          -- ?  
+          -- ?
         end
       end
       if filesel then else redraw() end
@@ -681,7 +723,7 @@ end
 function enc(n,d)
   norns.encoders.set_sens(2,2)
   norns.encoders.set_sens(3,2)
-  norns.encoders.set_accel(3, not mainmenu and true or false) 
+  norns.encoders.set_accel(3, not mainmenu and true or false)
   if n == 1 then
     mix:delta("output",d)
   elseif n == 2 then
@@ -719,7 +761,7 @@ function enc(n,d)
       local line = data[pattern].locks[lock_params[util.clamp(enc_line,1,#engine_params)]][voice_lock][step_lock]
       if enc_line < 10 then
         if data[pattern].locks[lock_params[enc_line]][voice_lock][step_lock] == 0 then
-          line = params:get(voice_lock .. lock_params[enc_line]) 
+          line = params:get(voice_lock .. lock_params[enc_line])
         end
       end
       if enc_line <= 9 then
@@ -732,56 +774,16 @@ function enc(n,d)
   redraw()
 end
 
-function draw_bar()
-  screen.level(not lockeditmode and 3 or 8 )
-  screen.rect(0,0,128,11)
-  screen.fill()
-  if trackeditmode or alttrackeditmode then
-    screen.level(0)
-    screen.rect(2,2,8,8)
-    screen.stroke()
-    screen.move(4,8)     
-    screen.text(not lockeditmode and disptrack or voice_lock)
-    if lockeditmode then
-      screen.move(16,8)
-      screen.text_center(step_lock)
-      screen.rect(12,2,10,8)
-      screen.stroke()
-    end
-  screen.level(enc_line == 0 and 15 or 0)
-  screen.move ((trackeditmode or alttrackeditmode) and not lockeditmode and 12 or 24 ,8)
-  screen.text(params:string(((trackeditmode or alttrackeditmode and not lockeditmode) and disptrack or voice_lock ).."_sample"))
-  end
-  screen.level(not lockeditmode and 3 or 8 )
-  screen.rect((metaplay == true and 91 or 100),0,(metaplay == true and 37 or 28),11)
-  screen.fill()
-  screen.level(0)
-  screen.move(102,8)
-  screen.line(107,3)
-  screen.line(112,8)
-  screen.line(103,8)
-  screen.stroke()
-  screen.move(107,6)
-  screen.line(metroicon <=1 and 103 or 111,2)
-  screen.stroke()
-  screen.level(mainmenu and enc_line == 6 and 15 or 0)
-  screen.move(127,8)
-  screen.text_right(""..params:get("bpm"))
-  if metaplay == true then 
-    screen.level(metroicon <=1 and 0 or 15)
-    screen.move(94,8)
-    screen.text("M")
-  end
-end
+
 
 function redraw()
   if mainmenu then
     screen.clear()
     draw_bar()
-    for i=1,7 do
+    for i=1,VOICES do
       screen.level(enc_line == i and 15 or i == 5 and 1 or i == 1 and 0 or i == 3 and 1 or 2 )
       if i == 1 then
-        screen.move(2,8) 
+        screen.move(2,8)
         screen.text(data.name == nil and (project .. ": UNTITLED") or (project .. ": "..data.name))
       elseif i <= 3 then
         screen.move(i == 2 and i or i + 35, 20)
@@ -791,7 +793,7 @@ function redraw()
         screen.text("PATTERN: " .. pattern )
       elseif i == 5 then
         screen.move(50,30)
-        screen.text("COPY TO: " .. pattern_to_copy) 
+        screen.text("COPY TO: " .. pattern_to_copy)
       end
     end
   elseif alttrackeditmode and (not trackeditmode or not lockeditmode) then
