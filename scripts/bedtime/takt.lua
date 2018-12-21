@@ -79,28 +79,6 @@ local project_to_load = 1
 local project_to_save = 16
 local pattern_to_copy = pattern
 
-local function save_project(num)
-  data[pattern].bpm = params:get("bpm")
-  tab.save(data,"/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
-  params:write("bedtime/takt-param-"..num ..".pset")
-end
-
-local function load_project(num)
-  saved_data = tab.load("/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
-  if saved_data ~= nil then
-    data = saved_data
-    params:read("bedtime/takt-param-"..num  .. ".pset")
-    pattern = 1
-    params:set("bpm", data[pattern].bpm) -- load bpm
-    for v=1,VOICES do -- set loop points
-      set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
-    end
-    redraw()
-  else
-    print("no file")
-  end
-end
-
 local function load_sample(file)
   if file ~= "cancel" then
     if file:find(".aif") or file:find(".wav") then
@@ -150,13 +128,34 @@ local function set_loop(tr,startp,seql)
   end
 end
 
+local function save_project(num)
+  data[pattern].bpm = params:get("bpm")
+  tab.save(data,"/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
+  params:write("bedtime/takt-param-"..num ..".pset")
+end
+
+local function load_project(num)
+  saved_data = tab.load("/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
+  if saved_data ~= nil then
+    data = saved_data
+    params:read("bedtime/takt-param-"..num  .. ".pset")
+    pattern = 1
+    params:set("bpm", data[pattern].bpm) -- load bpm
+    for v=1,VOICES do -- set loop points
+      set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
+    end
+    redraw()
+  else
+    print("no file")
+  end
+end
+
 local function switch_pattern(pat)
   pattern = pat
   for v=1,VOICES do
     set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
   end
 end
-
 
 local function randomize_locks(v,p)
   local max_clamp = {500,100,100,1200,0,0,0,20000,100}
@@ -760,8 +759,6 @@ function enc(n,d)
   end
   redraw()
 end
-
-
 
 function redraw()
   if mainmenu then
