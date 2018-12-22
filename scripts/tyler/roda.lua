@@ -244,35 +244,34 @@ function count(c)
   for i = 1, #track do
     for j = 1, #track[i] do
       if position / track[i][j] == 1 then
-        t = i-1
         if mute[i] == 0 then
-          engine.trig(t) 
+          engine.trig(i-1) 
           print(track[i][j])
         end                                                               -- random modes affect after trigger
         if params:get("random_mode") == 1 then                            -- mode 1:total random
-          if params:get(t.."_mute") == 0 then   
-            params:set(t.."_start_pos", math.random())
-            --params:set(t.."_speed", math.random())
-            params:set(t.."_pan", math.random(-1,1)*math.random())        -- -1 or 1 * random float, to fit -1 through 1 panning range
-            params:set(t.."_filter_cutoff", math.random(20,20000))
-            params:set(t.."_filter_res", math.random())
-            params:set(t.."_filter_env_atk", math.random())
-            params:set(t.."_filter_env_rel", math.random())
-            params:set(t.."_filter_env_mod", math.random())
-            params:set(t.."_dist", math.random())
+          if params:get(i.."_mute") == 0 then   
+            params:set(i.."_start_pos", math.random())
+            --params:set(i.."_speed", math.random())
+            params:set(i.."_pan", math.random(-1,1)*math.random())        -- -1 or 1 * random float, to fit -1 through 1 panning range
+            params:set(i.."_filter_cutoff", math.random(20,20000))
+            params:set(i.."_filter_res", math.random())
+            params:set(i.."_filter_env_atk", math.random())
+            params:set(i.."_filter_env_rel", math.random())
+            params:set(i.."_filter_env_mod", math.random())
+            params:set(i.."_dist", math.random())
           end
         elseif params:get("random_mode") == 2 then                        -- mode 2: step-based (like drunk from Max) random
-          if params:get(t.."_mute") == 0 then   
+          if params:get(i.."_mute") == 0 then   
             size = params:get("drunk_step")
-            params:delta(t.."_start_pos", (math.random(-10,10)/100)*size)
-            --params:delta(t.."_speed", (math.random(-10,10)/100)*size)
-            params:delta(t.."_pan", (math.random(-10,10)/100)*size)       -- -1 or 1 * random float, to fit -1 through 1 panning range
-            params:delta(t.."_filter_cutoff", math.random(-100*size,100*size))
-            params:delta(t.."_filter_res", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_atk", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_rel", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_mod", (math.random(-10,10)/100)*size)
-            params:delta(t.."_dist", (math.random(-10,10)/100)*size)
+            params:delta(i.."_start_pos", (math.random(-10,10)/100)*size)
+            --params:delta(i.."_speed", (math.random(-10,10)/100)*size)
+            params:delta(i.."_pan", (math.random(-10,10)/100)*size)       -- -1 or 1 * random float, to fit -1 through 1 panning range
+            params:delta(i.."_filter_cutoff", math.random(-100*size,100*size))
+            params:delta(i.."_filter_res", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_atk", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_rel", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_mod", (math.random(-10,10)/100)*size)
+            params:delta(i.."_dist", (math.random(-10,10)/100)*size)
           end
         end
       end
