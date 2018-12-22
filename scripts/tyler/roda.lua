@@ -178,7 +178,7 @@ function key(n,z)
     
     if n == 2 then
       track_select = (track_select + 1) % #track
-      print(track_select)
+      div_select = 0
     end
     
     if n == 3 then
