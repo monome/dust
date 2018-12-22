@@ -69,15 +69,14 @@ counter = nil
 running = false
 ppq =  192 -- pulses per quarter
 
-track = {{},{},{},{}}
-track_divs = {1,2,3,4}
+track = {{},{},{},{}, divs = {1,2,3,4}}
 track_select = 0
 div_select = 0
 
 -- init tracks
 for i = 1, #track do
-  for j = 1, track_divs[i] do
-    table.insert(track[i], j, (ppq//track_divs[i])*j)
+  for j = 1, track.divs[i] do
+    table.insert(track[i], j, (ppq//track.divs[i])*j)
   end
 end
 
@@ -88,6 +87,8 @@ end
 ----------------
 
 
+
+-- FIX ME! set_action with key press?
 
 function init()
 
@@ -103,6 +104,10 @@ function init()
   params:set_action("2_mute", function(x) mute_groups(2,x) end )
   params:set_action("3_mute", function(x) mute_groups(3,x) end )
   params:set_action("4_mute", function(x) mute_groups(4,x) end )
+  params:add_separator()
+  params:add_number("preset", "preset:", 1, 128, 1)
+  params:add_option("file", "save-load", {"save","load"}, 1)
+  params:set_action("file", function(x) if x == 1 then save() else load() end end)
   params:add_separator()
   ack.add_effects_params()
   params:add_separator()
@@ -121,12 +126,13 @@ function init()
   counter.callback = count
   -- counter:start()
 
-  mute_groups("1-4",0)
+  random_mute_groups("1-4",0)
   redraw()
 end
 
-mute = {}
-function mute_groups(track,x)
+mute = {0,0,0,0}
+random_mute = {}
+function random_mute_groups(track,x)
   if x == 1 then
     print("track "..track.." muted")
   else
@@ -134,12 +140,12 @@ function mute_groups(track,x)
   end
   for i=1,4 do
     if params:get(i.."_mute") == 1 then
-      mute[i] = 1
+      random_mute[i] = 1
     else
-      mute[i] = 0
+      random_mute[i] = 0
     end
   end
-  tab.print(mute)
+  tab.print(random_mute)
 end
 
 
@@ -152,17 +158,18 @@ end
 
 function enc(n,d)
   if n == 1 then
-    div_select = (div_select + d) % track_divs[track_select+1]
+    div_select = (div_select + d) % track.divs[track_select+1]
   end
   
   if n == 2 then
-    track[track_select+1][div_select+1] = util.clamp(track[track_select+1][div_select+1] + d, 0, ppq - 1)
+    track[track_select+1][div_select+1] = util.clamp(track[track_select+1][div_select+1] + d, 1, ppq - 1)
+    print(track[track_select+1][div_select+1])
   end
   
   if n == 3 then
     refresh_track(
       track_select+1,
-      util.clamp(track_divs[track_select+1] + d, 1, 9)
+      util.clamp(track.divs[track_select+1] + d, 1, 9)
       )
   end
     
@@ -172,13 +179,14 @@ end
 function key(n,z)
   
   if z == 1 then
-    
     if n == 1 then
+      mute[track_select+1] = (mute[track_select+1] + 1) % 2
     end
     
     if n == 2 then
       track_select = (track_select + 1) % #track
       div_select = 0
+      print(track_select)
     end
     
     if n == 3 then
@@ -205,9 +213,9 @@ end
 
 function refresh_track(i, divs)
   track[i] = {}
-  track_divs[i] = divs
-  for j = 1, track_divs[i] do
-    table.insert(track[i], j, (ppq//track_divs[i]) * j)
+  track.divs[i] = divs
+  for j = 1, track.divs[i] do
+    table.insert(track[i], j, (ppq//track.divs[i]) * j)
   end
 end
 
@@ -235,7 +243,9 @@ function count(c)
     for j = 1, #track[i] do
       if position % track[i][j] == 0 then
         t = i-1
-        engine.trig(t)                                                    -- random modes affect after trigger
+        if mute[i] == 0 then
+          engine.trig(t) 
+        end                                                               -- random modes affect after trigger
         if params:get("random_mode") == 1 then                            -- mode 1:total random
           if params:get(t.."_mute") == 0 then   
             params:set(t.."_start_pos", math.random())
@@ -287,7 +297,7 @@ function redraw()
     -- divisions
     screen.aa(1)
     for i = 1, #track do
-      for j = 1, track_divs[i] do
+      for j = 1, track.divs[i] do
         if track[i][j] ~= ppq then
           screen.move(track[i][j]/1.6,i*10+5)
         else
@@ -302,7 +312,7 @@ function redraw()
         
         -- division length display
         screen.move(123, i*10+9)
-        screen.text(track_divs[i])
+        screen.text(track.divs[i])
       end
     end
     screen.aa(0)  
@@ -343,4 +353,15 @@ function redraw()
     screen.stroke()
       
 screen.update()
+end
+
+function save()
+  tab.save(track, data_dir .. 'tyler/roda-'.. params:get("preset") ..'.data')
+  print("SAVE COMPLETE", params:get("preset"))
+end
+
+function load()
+  track = tab.load(data_dir .. 'tyler/roda-'.. params:get("preset") ..'.data')
+  print("LOAD COMPLETE", params:get("preset"))
+  redraw()
 end
