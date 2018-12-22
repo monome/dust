@@ -223,6 +223,12 @@ local function reset_params(voice)
   end
 end
 
+local function prelisten()
+  read_locks(voice_lock,step_lock)
+  engine.trig(voice_lock-1)
+  end
+
+
 local function metaseq()
   if ct % (data.metatempdiv > 0 and data.metatempdiv or data.metatempdivpat[pattern]) == 0 then
     if metaplay == true then
@@ -279,6 +285,42 @@ local function draw_bar()
     screen.move(94,8)
     screen.text("M")
   end
+end
+
+local function count()
+  ct = ct + 1
+  for v = 1,VOICES do
+    if ct % (data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]) == 0 then
+      --reset_params(v)
+      position = (position % 16) + 1
+      voicepos[v] = util.clamp((voicepos[v] % data[pattern].seqlen[v]) + 1, data[pattern].startpos[v], data[pattern].seqlen[v]) -- voice pos
+      position = voicepos[v]
+      if data[pattern].steps[v][voicepos[v]] ~= 0 then
+        if data[pattern].steps_prob[v][voicepos[v]] >= math.random(100) and mute[v] == 0 then
+          reset_params(v)
+          trigdisp[v] = 15
+          if data[pattern].steps_div[v][voicepos[v]] > 0 then
+            data[pattern].tempdiv[v] = data[pattern].steps_div[v][voicepos[v]]
+          elseif data[pattern].steps_div[v][voicepos[v]] == 0 then
+            data[pattern].tempdiv[v] = 0
+          end
+          read_locks(v,voicepos[v])
+          engine.trig(v-1)
+          if data[pattern].steps_rpt[v][voicepos[v]] > 0 then
+            local rpt_time = ( params:get("bpm") / 7000 )
+            metro[v].count = data[pattern].steps_rpt[v][voicepos[v]]
+            metro[v].time = rpt_time * data[pattern].steps_rpt_div[v][voicepos[v]]
+            metro[v].callback = function() engine.trig(v-1) end
+            metro[v]:start()
+            end
+        else
+          trigdisp[v] = 9
+        end
+      end
+    end
+  metroicon = (metroicon + 1) % 4
+  end
+  if filesel then else redraw() end
 end
 
 function init()
@@ -434,7 +476,8 @@ g.event = function(x,y,z)
     if not alt and not shift then
       if z == 1 then down_time = util.time()
       else hold_time = util.time() - down_time
-      if  y < 8 then
+      if y == 8 and x == 5 and lockeditmode then prelisten()
+      elseif  y < 8 then
           data[pattern].steps[y][x] = y
           if data[pattern].steps[y][x] == y  and hold_time > 0.3 then
             erase_step(y,x)
@@ -530,6 +573,7 @@ function grid_redraw()
   g.led(16,8, shift and 15 or 6) -- alt
   g.led(15,8, alt and 9 or 3) -- shift
   g.led(13,8, copy_mode and 9 or 3)
+  g.led(5,8,lockeditmode and 2 or 0) -- prelisten
   if copy_mode and not patternview then
     g.led(11,8,blink and 3  or 1)
     g.led(12,8,blink and 3 or 1)
@@ -597,41 +641,6 @@ function grid_redraw()
     end
   end
   g.refresh()
-end
-
-function count()
-  ct = ct + 1
-  for v = 1,VOICES do
-    if ct % (data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]) == 0 then
-      reset_params(v)
-      position = (position % 16) + 1
-      voicepos[v] = util.clamp((voicepos[v] % data[pattern].seqlen[v]) + 1, data[pattern].startpos[v], data[pattern].seqlen[v]) -- voice pos
-      position = voicepos[v]
-      if data[pattern].steps[v][voicepos[v]] ~= 0 then
-        if data[pattern].steps_prob[v][voicepos[v]] >= math.random(100) and mute[v] == 0 then
-          trigdisp[v] = 15
-          if data[pattern].steps_div[v][voicepos[v]] > 0 then
-            data[pattern].tempdiv[v] = data[pattern].steps_div[v][voicepos[v]]
-          elseif data[pattern].steps_div[v][voicepos[v]] == 0 then
-            data[pattern].tempdiv[v] = 0
-          end
-          read_locks(v,voicepos[v])
-          engine.trig(v-1)
-          if data[pattern].steps_rpt[v][voicepos[v]] > 0 then
-            local rpt_time = ( params:get("bpm") / 7000 )
-            metro[v].count = data[pattern].steps_rpt[v][voicepos[v]]
-            metro[v].time = rpt_time * data[pattern].steps_rpt_div[v][voicepos[v]]
-            metro[v].callback = function() engine.trig(v-1) end
-            metro[v]:start()
-            end
-        else
-          trigdisp[v] = 9
-        end
-      end
-    end
-  metroicon = (metroicon + 1) % 4
-  end
-  if filesel then else redraw() end
 end
 
 function key(n, z)
