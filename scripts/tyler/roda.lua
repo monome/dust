@@ -1,12 +1,23 @@
--- Roda
+-- roda
 --
 --  a microrhythmic sampler
 --
 -- inspired by the microrhythms
--- of Samba de Roda
+-- of Samba de Roda.
 --
 -- load samples via parameters
 --
+-- DISPLAY
+-- -------------------------------------------
+-- bpm:         |ratio to beat|
+-- track 1          # divisions
+-- track 2          # divisions
+-- track 3          # divisions
+-- track 4          # divisions
+--                   pause|play
+--
+-- CONTROLS
+-- --------------------------------------------
 -- key2: change track
 -- key3: play|pause
 --
@@ -14,6 +25,30 @@
 -- enc2: move selected division
 -- enc3: change # of divisions
 --      to selected track [1-9]
+--
+-- PARAMETERS
+-- --------------------------------------------
+-- standard 'ack' parameters
+--
+-- RANDOM MODE
+-- ---------------------------------------------
+-- randomly change a handful
+-- of parameters on each
+-- sample triggered.
+--
+-- In the parameter menu...
+-- 
+-- mode 0: none/off
+-- mode 1: total random
+-- mode 2: step-based random
+-- (like Drunk Obj. in Max/MSP)
+--
+-- each track can be muted from 
+-- so as not to be altered by 
+-- random mode.
+--
+-- 0 = affectable
+-- 1 = unaffectable
 
 engine.name = 'Ack'
 
