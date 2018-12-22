@@ -237,15 +237,17 @@ function simplify(n,d)
 end
 
 function count(c)
-  position = position + 1
+  position = (position + 1) % (ppq + 1)
+  if position == 0 then position = 1 end
   counter.time = 60 / (params:get("bpm") * ppq)
   
   for i = 1, #track do
     for j = 1, #track[i] do
-      if position % track[i][j] == 0 then
+      if position / track[i][j] == 1 then
         t = i-1
         if mute[i] == 0 then
           engine.trig(t) 
+          print(track[i][j])
         end                                                               -- random modes affect after trigger
         if params:get("random_mode") == 1 then                            -- mode 1:total random
           if params:get(t.."_mute") == 0 then   
