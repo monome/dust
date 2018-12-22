@@ -18,6 +18,7 @@
 --
 -- CONTROLS
 -- --------------------------------------------
+-- key1: mute selected track
 -- key2: change track
 -- key3: play | pause
 --
@@ -291,7 +292,7 @@ function redraw()
   screen.level(15)
   
     -- track_select cursor
-    screen.rect(0,track_select*10+15,1,3)
+    screen.rect(0, track_select*10 + 15, 1, 3)
     screen.fill()
     
     -- divisions
@@ -299,9 +300,9 @@ function redraw()
     for i = 1, #track do
       for j = 1, track.divs[i] do
         if track[i][j] ~= ppq then
-          screen.move(track[i][j]/1.6,i*10+5)
+          screen.move(track[i][j]/1.6, i*10 + 5)
         else
-          screen.move(3,i*10+5)
+          screen.move(3, i*10 + 5)
         end
         screen.line_rel(0,3)
         
@@ -311,7 +312,7 @@ function redraw()
         screen.stroke()
         
         -- division length display
-        screen.move(123, i*10+9)
+        screen.move(123, i*10 + 9)
         screen.text(track.divs[i])
       end
     end
@@ -332,6 +333,18 @@ function redraw()
       screen.line_rel(-6,3)
       screen.fill()
     end
+    
+    -- track mute toggle
+    for i = 1, #track do
+      screen.move(4 + (i-1)*20, 60)
+      screen.text_right(i)
+      screen.rect(8 + (i-1)*20, 54, 8, 8)
+      screen.move(9 + (i-1)*20, 60)
+      if mute[i] == 0 then screen.level(1) end
+      screen.text("M")
+      screen.level(15)
+      screen.stroke()
+    end
 
   screen.level(12)
   
@@ -351,7 +364,7 @@ function redraw()
       simplify(track[track_select+1][div_select+1],ppq)[2]
       )
     screen.stroke()
-      
+    
 screen.update()
 end
 
