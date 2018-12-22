@@ -9,22 +9,22 @@
 --
 -- DISPLAY
 -- -------------------------------------------
--- bpm:         |ratio to beat|
+-- bpm:       | ratio to beat |
 -- track 1          # divisions
 -- track 2          # divisions
 -- track 3          # divisions
 -- track 4          # divisions
---                   pause|play
+--                  pause/play
 --
 -- CONTROLS
 -- --------------------------------------------
 -- key2: change track
--- key3: play|pause
+-- key3: play | pause
 --
 -- enc1: select division
--- enc2: move selected division
+-- enc2: shift selected division
 -- enc3: change # of divisions
---      to selected track [1-9]
+--      in selected track [1-9]
 --
 -- PARAMETERS
 -- --------------------------------------------
