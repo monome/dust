@@ -18,6 +18,7 @@
 --
 -- CONTROLS
 -- --------------------------------------------
+-- key1: mute selected track
 -- key2: change track
 -- key3: play | pause
 --
@@ -69,15 +70,14 @@ counter = nil
 running = false
 ppq =  192 -- pulses per quarter
 
-track = {{},{},{},{}}
-track_divs = {1,2,3,4}
+track = {{},{},{},{}, divs = {1,2,3,4}}
 track_select = 0
 div_select = 0
 
 -- init tracks
 for i = 1, #track do
-  for j = 1, track_divs[i] do
-    table.insert(track[i], j, (ppq//track_divs[i])*j)
+  for j = 1, track.divs[i] do
+    table.insert(track[i], j, (ppq//track.divs[i])*j)
   end
 end
 
@@ -88,6 +88,8 @@ end
 ----------------
 
 
+
+-- FIX ME! set_action with key press?
 
 function init()
 
@@ -103,6 +105,10 @@ function init()
   params:set_action("2_mute", function(x) mute_groups(2,x) end )
   params:set_action("3_mute", function(x) mute_groups(3,x) end )
   params:set_action("4_mute", function(x) mute_groups(4,x) end )
+  params:add_separator()
+  params:add_number("preset", "preset:", 1, 128, 1)
+  params:add_option("file", "save-load", {"save","load"}, 1)
+  params:set_action("file", function(x) if x == 1 then save() else load() end end)
   params:add_separator()
   ack.add_effects_params()
   params:add_separator()
@@ -121,12 +127,13 @@ function init()
   counter.callback = count
   -- counter:start()
 
-  mute_groups("1-4",0)
+  random_mute_groups("1-4",0)
   redraw()
 end
 
-mute = {}
-function mute_groups(track,x)
+mute = {0,0,0,0}
+random_mute = {}
+function random_mute_groups(track,x)
   if x == 1 then
     print("track "..track.." muted")
   else
@@ -134,12 +141,12 @@ function mute_groups(track,x)
   end
   for i=1,4 do
     if params:get(i.."_mute") == 1 then
-      mute[i] = 1
+      random_mute[i] = 1
     else
-      mute[i] = 0
+      random_mute[i] = 0
     end
   end
-  tab.print(mute)
+  tab.print(random_mute)
 end
 
 
@@ -152,17 +159,18 @@ end
 
 function enc(n,d)
   if n == 1 then
-    div_select = (div_select + d) % track_divs[track_select+1]
+    div_select = (div_select + d) % track.divs[track_select+1]
   end
   
   if n == 2 then
-    track[track_select+1][div_select+1] = util.clamp(track[track_select+1][div_select+1] + d, 0, ppq - 1)
+    track[track_select+1][div_select+1] = util.clamp(track[track_select+1][div_select+1] + d, 1, ppq - 1)
+    print(track[track_select+1][div_select+1])
   end
   
   if n == 3 then
     refresh_track(
       track_select+1,
-      util.clamp(track_divs[track_select+1] + d, 1, 9)
+      util.clamp(track.divs[track_select+1] + d, 1, 9)
       )
   end
     
@@ -172,13 +180,14 @@ end
 function key(n,z)
   
   if z == 1 then
-    
     if n == 1 then
+      mute[track_select+1] = (mute[track_select+1] + 1) % 2
     end
     
     if n == 2 then
       track_select = (track_select + 1) % #track
       div_select = 0
+      print(track_select)
     end
     
     if n == 3 then
@@ -205,9 +214,9 @@ end
 
 function refresh_track(i, divs)
   track[i] = {}
-  track_divs[i] = divs
-  for j = 1, track_divs[i] do
-    table.insert(track[i], j, (ppq//track_divs[i]) * j)
+  track.divs[i] = divs
+  for j = 1, track.divs[i] do
+    table.insert(track[i], j, (ppq//track.divs[i]) * j)
   end
 end
 
@@ -228,38 +237,41 @@ function simplify(n,d)
 end
 
 function count(c)
-  position = position + 1
+  position = (position + 1) % (ppq + 1)
+  if position == 0 then position = 1 end
   counter.time = 60 / (params:get("bpm") * ppq)
   
   for i = 1, #track do
     for j = 1, #track[i] do
-      if position % track[i][j] == 0 then
-        t = i-1
-        engine.trig(t)                                                    -- random modes affect after trigger
+      if position / track[i][j] == 1 then
+        if mute[i] == 0 then
+          engine.trig(i-1) 
+          print(track[i][j])
+        end                                                               -- random modes affect after trigger
         if params:get("random_mode") == 1 then                            -- mode 1:total random
-          if params:get(t.."_mute") == 0 then   
-            params:set(t.."_start_pos", math.random())
-            --params:set(t.."_speed", math.random())
-            params:set(t.."_pan", math.random(-1,1)*math.random())        -- -1 or 1 * random float, to fit -1 through 1 panning range
-            params:set(t.."_filter_cutoff", math.random(20,20000))
-            params:set(t.."_filter_res", math.random())
-            params:set(t.."_filter_env_atk", math.random())
-            params:set(t.."_filter_env_rel", math.random())
-            params:set(t.."_filter_env_mod", math.random())
-            params:set(t.."_dist", math.random())
+          if params:get(i.."_mute") == 0 then   
+            params:set(i.."_start_pos", math.random())
+            --params:set(i.."_speed", math.random())
+            params:set(i.."_pan", math.random(-1,1)*math.random())        -- -1 or 1 * random float, to fit -1 through 1 panning range
+            params:set(i.."_filter_cutoff", math.random(20,20000))
+            params:set(i.."_filter_res", math.random())
+            params:set(i.."_filter_env_atk", math.random())
+            params:set(i.."_filter_env_rel", math.random())
+            params:set(i.."_filter_env_mod", math.random())
+            params:set(i.."_dist", math.random())
           end
         elseif params:get("random_mode") == 2 then                        -- mode 2: step-based (like drunk from Max) random
-          if params:get(t.."_mute") == 0 then   
+          if params:get(i.."_mute") == 0 then   
             size = params:get("drunk_step")
-            params:delta(t.."_start_pos", (math.random(-10,10)/100)*size)
-            --params:delta(t.."_speed", (math.random(-10,10)/100)*size)
-            params:delta(t.."_pan", (math.random(-10,10)/100)*size)       -- -1 or 1 * random float, to fit -1 through 1 panning range
-            params:delta(t.."_filter_cutoff", math.random(-100*size,100*size))
-            params:delta(t.."_filter_res", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_atk", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_rel", (math.random(-10,10)/100)*size)
-            params:delta(t.."_filter_env_mod", (math.random(-10,10)/100)*size)
-            params:delta(t.."_dist", (math.random(-10,10)/100)*size)
+            params:delta(i.."_start_pos", (math.random(-10,10)/100)*size)
+            --params:delta(i.."_speed", (math.random(-10,10)/100)*size)
+            params:delta(i.."_pan", (math.random(-10,10)/100)*size)       -- -1 or 1 * random float, to fit -1 through 1 panning range
+            params:delta(i.."_filter_cutoff", math.random(-100*size,100*size))
+            params:delta(i.."_filter_res", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_atk", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_rel", (math.random(-10,10)/100)*size)
+            params:delta(i.."_filter_env_mod", (math.random(-10,10)/100)*size)
+            params:delta(i.."_dist", (math.random(-10,10)/100)*size)
           end
         end
       end
@@ -281,17 +293,17 @@ function redraw()
   screen.level(15)
   
     -- track_select cursor
-    screen.rect(0,track_select*10+15,1,3)
+    screen.rect(0, track_select*10 + 15, 1, 3)
     screen.fill()
     
     -- divisions
     screen.aa(1)
     for i = 1, #track do
-      for j = 1, track_divs[i] do
+      for j = 1, track.divs[i] do
         if track[i][j] ~= ppq then
-          screen.move(track[i][j]/1.6,i*10+5)
+          screen.move(track[i][j]/1.6, i*10 + 5)
         else
-          screen.move(3,i*10+5)
+          screen.move(3, i*10 + 5)
         end
         screen.line_rel(0,3)
         
@@ -301,8 +313,8 @@ function redraw()
         screen.stroke()
         
         -- division length display
-        screen.move(123, i*10+9)
-        screen.text(track_divs[i])
+        screen.move(123, i*10 + 9)
+        screen.text(track.divs[i])
       end
     end
     screen.aa(0)  
@@ -321,6 +333,18 @@ function redraw()
       screen.line_rel(6,3)
       screen.line_rel(-6,3)
       screen.fill()
+    end
+    
+    -- track mute toggle
+    for i = 1, #track do
+      screen.move(4 + (i-1)*20, 60)
+      screen.text_right(i)
+      screen.rect(8 + (i-1)*20, 54, 8, 8)
+      screen.move(9 + (i-1)*20, 60)
+      if mute[i] == 0 then screen.level(1) end
+      screen.text("M")
+      screen.level(15)
+      screen.stroke()
     end
 
   screen.level(12)
@@ -341,6 +365,17 @@ function redraw()
       simplify(track[track_select+1][div_select+1],ppq)[2]
       )
     screen.stroke()
-      
+    
 screen.update()
+end
+
+function save()
+  tab.save(track, data_dir .. 'tyler/roda-'.. params:get("preset") ..'.data')
+  print("SAVE COMPLETE", params:get("preset"))
+end
+
+function load()
+  track = tab.load(data_dir .. 'tyler/roda-'.. params:get("preset") ..'.data')
+  print("LOAD COMPLETE", params:get("preset"))
+  redraw()
 end
