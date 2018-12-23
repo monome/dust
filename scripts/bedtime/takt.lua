@@ -10,7 +10,6 @@
 --
 -- press step to enter lock edit mode
 -- hold step to remove trig
--- alt + step to erase step
 --
 -- shift + column 16 - mutes
 -- shift + 1-15 - per track dividers
@@ -214,7 +213,7 @@ end
 
 local function reset_params(voice)
   for i=1,#engine_params do
-    if data[pattern].steps[voice][voicepos[voice]+1] ~= 0 and next_val[voice][i] ~= val[voice][i] then
+    if data[pattern].steps[voice][voicepos[voice]] ~= 0 and next_val[voice][i] ~= val[voice][i] then
       engine[engine_params[i]](voice - 1, params:get(voice .. lock_params[i]))
       data[pattern].displocks[lock_params[i]][voice] = 0
     elseif val[voice][i] ~= 0 then
@@ -226,7 +225,7 @@ end
 local function prelisten()
   read_locks(voice_lock,step_lock)
   engine.trig(voice_lock-1)
-  end
+end
 
 
 local function metaseq()
@@ -453,13 +452,13 @@ g.event = function(x,y,z)
   if copy_mode then
     if stepsview then
       if y == 8 and x == 12 and z == 1 then
-        randomize_locks(disptrack,2)
+        randomize_locks(lockeditmode and voice_lock or disptrack,2)
         redraw()
       elseif y == 8 and x == 11 and z == 1 then
-        randomize_locks(disptrack,1)
+        randomize_locks(lockeditmode and voice_lock or disptrack,1)
         redraw()
       elseif y == 8 and x == 14 and z == 1 then
-        erase_locks(disptrack)
+        erase_locks(lockeditmode and voice_lock or disptrack)
         redraw()
       elseif y < 8 and z == 1 then
         if copy_source_x ~= -1 and not (copy_source_x == x and copy_source_y == y) then
@@ -479,7 +478,7 @@ g.event = function(x,y,z)
       if y == 8 and x == 5 and lockeditmode then prelisten()
       elseif  y < 8 then
           data[pattern].steps[y][x] = y
-          if data[pattern].steps[y][x] == y  and hold_time > 0.3 then
+          if data[pattern].steps[y][x] == y and hold_time > 0.3 then
             erase_step(y,x)
             lockeditmode = false
             if enc_line > 10 then enc_line = enc_line - 1 end
