@@ -264,7 +264,7 @@ function redraw()
     screen.move((offset * i) - 10 ,34)
     screen.level(15)
     if states[i]> 0 then
-      screen.text(""..(params:get("bpm")*divs[data[i].clockmult[i]]))
+      screen.text(""..(params:get("bpm")*divs[data[pattern].clockmult[i]]))
       if uidispnote[i] ~= 0 then
         screen.move((offset*i)-6,36)
         screen.line_width(0.3)
