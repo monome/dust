@@ -67,6 +67,16 @@ local function switch_pattern(pat)
   end
 end
 
+local function simplecopy(obj)
+  if type(obj) ~= 'table' then return obj end
+  local res = {}
+  for k, v in pairs(obj) do
+    res[simplecopy(k)] = simplecopy(v)
+  end
+  return res
+end
+
+
 local function save_project(num)
   data[pattern].bpm = params:get("bpm")
   data.last_pattern = pattern
@@ -386,7 +396,7 @@ g.event = function(x,y,z)
           pattern = x
           switch_pattern(pattern)
         elseif alt then
-          data[x] = data[pattern]
+          data[x] = simplecopy(data[pattern])
         end
       elseif y == 2 then
         if held[y]==1 then
