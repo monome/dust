@@ -76,7 +76,6 @@ local function simplecopy(obj)
   return res
 end
 
-
 local function save_project(num)
   data[pattern].bpm = params:get("bpm")
   data.last_pattern = pattern
@@ -123,8 +122,7 @@ local function count(tr)
     last_note_name[tr] = music.note_num_to_name(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]])
     if data[pattern].probmode[tr] == 0 then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
-        end
-    if data[pattern].probmode[tr] == 1 then
+    elseif data[pattern].probmode[tr] == 1 then
       if params:get(tr.."probability") == 100 then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
         elseif params:get(tr.."probability") >= math.random(100) then
@@ -168,7 +166,7 @@ function init()
     second[i] = 0
   end
   for i=1,8 do
-    metro[i] = beatclock.new(i)
+    metro[i] = beatclock.new()
     if i < 5 then
       metro[i].on_step = function() count(i,1) end
     elseif i >= 5 then
@@ -461,7 +459,6 @@ g.event = function(x,y,z)
       end
     end
   end
-  g.refresh()
 end
 
 function grid_redraw()
