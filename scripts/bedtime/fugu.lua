@@ -110,6 +110,7 @@ local function count(tr)
     position[tr] = util.clamp(math.random(data[pattern].startpos[tr],data[pattern].lengt[tr]), data[pattern].startpos[tr],data[pattern].lengt[tr])
   end
   if data[pattern].steps[position[tr]] ~= 0 then
+    last_note_name[tr] = music.note_num_to_name(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]])
     if data[pattern].probmode[tr] == 0 then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
         end
@@ -122,7 +123,6 @@ local function count(tr)
       end
       dispnote = data[pattern].notevals[data[pattern].steps[position[tr]]]
       uidispnote[tr] = data[pattern].notevals[data[pattern].steps[position[tr]]]
-      last_note_name[tr] = music.note_num_to_name(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]])
   else
     engine.noteOff(tr)
     dispnote = 0
