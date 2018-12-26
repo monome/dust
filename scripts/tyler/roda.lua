@@ -18,11 +18,13 @@
 --
 -- CONTROLS
 -- --------------------------------------------
--- key1: mute selected track
+-- key1: ALT
 -- key2: change track
--- key3: play | pause
+--    *ALT: mute track
+-- key3: play/pause
 --
 -- enc1: select division
+--    *ALT: change bpm
 -- enc2: shift selected division
 -- enc3: change # of divisions
 --      in selected track [1-9]
@@ -44,7 +46,7 @@
 -- mode 2: step-based random
 -- (like Drunk Obj. in Max/MSP)
 --
--- each track can be muted from 
+-- each track can be muted
 -- so as not to be altered by 
 -- random mode.
 --
@@ -73,10 +75,11 @@ ppq =  192 -- pulses per quarter
 track = {{},{},{},{}, divs = {1,2,3,4}}
 track_select = 0
 div_select = 0
+alt = 0
 
 -- init tracks
-for i = 1, #track do
-  for j = 1, track.divs[i] do
+for i=1, #track do
+  for j=1, track.divs[i] do
     table.insert(track[i], j, (ppq//track.divs[i])*j)
   end
 end
@@ -94,7 +97,13 @@ end
 function init()
 
   -- parameters
+  params:add_number("preset", "preset:", 1, 128, 1)
+  params:add_option("file", "save-load", {"save","S<->L","load"}, 2)
+  params:set_action("file", function(x) if x == 1 then save() elseif x == 3 then load() end end)
+  params:add_separator()
   params:add_number("bpm", "bpm", 15, 400, 60)
+  params:add_option("ppq", "resolution", {96,192,288,384}, 2)
+  params:set_action("ppq", function(x) ppq = params:get("ppq") * 96 end)
   params:add_number("random_mode", "random mode:", 0, 2, 0)
   params:add_number("drunk_step", "mode 2 step size:", 1, 10, 1)
   params:add_number("1_mute", "mute track 1:", 0, 1, 0)
@@ -106,14 +115,11 @@ function init()
   params:set_action("3_mute", function(x) mute_groups(3,x) end )
   params:set_action("4_mute", function(x) mute_groups(4,x) end )
   params:add_separator()
-  params:add_number("preset", "preset:", 1, 128, 1)
-  params:add_option("file", "save-load", {"save","load"}, 1)
-  params:set_action("file", function(x) if x == 1 then save() else load() end end)
-  params:add_separator()
+  
   ack.add_effects_params()
   params:add_separator()
   
-  for channel=1,4 do
+  for channel=1, 4 do
     ack.add_channel_params(channel)
     params:add_separator()
   end
@@ -139,7 +145,7 @@ function random_mute_groups(track,x)
   else
     print("track "..track.." unmuted")
   end
-  for i=1,4 do
+  for i=1, 4 do
     if params:get(i.."_mute") == 1 then
       random_mute[i] = 1
     else
@@ -160,6 +166,9 @@ end
 function enc(n,d)
   if n == 1 then
     div_select = (div_select + d) % track.divs[track_select+1]
+    if alt == 1 then
+      params:delta("bpm", d)
+    end
   end
   
   if n == 2 then
@@ -181,13 +190,16 @@ function key(n,z)
   
   if z == 1 then
     if n == 1 then
-      mute[track_select+1] = (mute[track_select+1] + 1) % 2
+      alt = 1
     end
     
     if n == 2 then
-      track_select = (track_select + 1) % #track
-      div_select = 0
-      print(track_select)
+      if alt == 0 then
+        track_select = (track_select + 1) % #track
+        div_select = 0
+      else
+        mute[track_select+1] = (mute[track_select+1] + 1) % 2
+      end
     end
     
     if n == 3 then
@@ -199,8 +211,13 @@ function key(n,z)
         running = true
       end
     end
-  end
 
+  else
+    if n == 1 then
+      alt = 0
+    end
+  end
+  
 redraw()
 end
 
@@ -241,8 +258,8 @@ function count(c)
   if position == 0 then position = 1 end
   counter.time = 60 / (params:get("bpm") * ppq)
   
-  for i = 1, #track do
-    for j = 1, #track[i] do
+  for i=1, #track do
+    for j=1, #track[i] do
       if position / track[i][j] == 1 then
         if mute[i] == 0 then
           engine.trig(i-1) 
@@ -298,10 +315,10 @@ function redraw()
     
     -- divisions
     screen.aa(1)
-    for i = 1, #track do
-      for j = 1, track.divs[i] do
+    for i=1, #track do
+      for j=1, track.divs[i] do
         if track[i][j] ~= ppq then
-          screen.move(track[i][j]/1.6, i*10 + 5)
+          screen.move(track[i][j]/(ppq/120), i*10 + 5)
         else
           screen.move(3, i*10 + 5)
         end
@@ -336,7 +353,7 @@ function redraw()
     end
     
     -- track mute toggle
-    for i = 1, #track do
+    for i=1, #track do
       screen.move(4 + (i-1)*20, 60)
       screen.text_right(i)
       screen.rect(8 + (i-1)*20, 54, 8, 8)
@@ -350,7 +367,7 @@ function redraw()
   screen.level(12)
   
     -- tracks
-    for i = 1, 4 do
+    for i=1, 4 do
       screen.rect(2, i*10+5, 118,4)
       screen.stroke()
     end
