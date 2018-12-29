@@ -11,6 +11,7 @@
 --
 
 engine.name = 'Glut'
+local g = grid.connect(1)
 
 local VOICES = 7
 
@@ -97,7 +98,7 @@ local function pattern_next(n)
   local event = bank[pos]
   local delta, x, y, z = table.unpack(event)
   pattern_leds[n] = z
-  gridkey(x, y, z, true)
+  grid_key(x, y, z, true)
 
   local next_pos = pos + 1
   if next_pos > #bank then
@@ -223,86 +224,10 @@ local function grid_refresh()
 
   local buf = grid_ctl | grid_voc
   buf:render(g)
-  g:refresh()
+  g.refresh()
 end
 
-function init()
-  -- polls
-  for v = 1, VOICES do
-    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
-    phase_poll.time = 0.05
-    phase_poll:start()
-
-    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
-    level_poll.time = 0.05
-    level_poll:start()
-  end
-
-  -- recorders
-  for v = 1, VOICES do
-    table.insert(pattern_timers, metro.alloc(function(tick) pattern_next(v) end))
-    table.insert(pattern_banks, {})
-    table.insert(pattern_leds, 0)
-    table.insert(pattern_positions, 1)
-  end
-
-  -- grid refresh timer, 40 fps
-  metro_grid_refresh = metro.alloc(function(stage) grid_refresh() end, 1 / 40)
-  metro_grid_refresh:start()
-
-  metro_blink = metro.alloc(function(stage) blink = blink ~ 1 end, 1 / 4)
-  metro_blink:start()
-
-  local sep = ": "
-
-  params:add_taper("*"..sep.."mix", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."mix", function(value) engine.reverb_mix(value / 100) end)
-
-  params:add_taper("*"..sep.."room", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."room", function(value) engine.reverb_room(value / 100) end)
-
-  params:add_taper("*"..sep.."damp", 0, 100, 50, 0, "%")
-  params:set_action("*"..sep.."damp", function(value) engine.reverb_damp(value / 100) end)
-
-  for v = 1, VOICES do
-    params:add_separator()
-
-    params:add_file(v..sep.."sample")
-    params:set_action(v..sep.."sample", function(file) engine.read(v, file) end)
-
-    params:add_taper(v..sep.."volume", -60, 20, 0, 0, "dB")
-    params:set_action(v..sep.."volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
-
-    params:add_taper(v..sep.."speed", -200, 200, 100, 0, "%")
-    params:set_action(v..sep.."speed", function(value) engine.speed(v, value / 100) end)
-
-    params:add_taper(v..sep.."jitter", 0, 500, 0, 5, "ms")
-    params:set_action(v..sep.."jitter", function(value) engine.jitter(v, value / 1000) end)
-
-    params:add_taper(v..sep.."size", 1, 500, 100, 5, "ms")
-    params:set_action(v..sep.."size", function(value) engine.size(v, value / 1000) end)
-
-    params:add_taper(v..sep.."density", 0, 512, 20, 6, "hz")
-    params:set_action(v..sep.."density", function(value) engine.density(v, value) end)
-
-    params:add_taper(v..sep.."pitch", -24, 24, 0, 0, "st")
-    params:set_action(v..sep.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
-
-    params:add_taper(v..sep.."spread", 0, 100, 0, 0, "%")
-    params:set_action(v..sep.."spread", function(value) engine.spread(v, value / 100) end)
-
-    params:add_taper(v..sep.."att / dec", 1, 9000, 1000, 3, "ms")
-    params:set_action(v..sep.."att / dec", function(value) engine.envscale(v, value / 1000) end)
-  end
-
-  params:bang()
-end
-
---[[
-exports
-]]
-
-function gridkey(x, y, z, skip_record)
+function grid_key(x, y, z, skip_record)
   if y > 1 or (y == 1 and x < 9) then
     if not skip_record then
       record_event(x, y, z)
@@ -333,6 +258,86 @@ function gridkey(x, y, z, skip_record)
     if x == 16 and y == 1 then alt = false end
   end
 end
+
+function init()
+  g.event = function(x, y, z)
+    grid_key(x, y, z)
+  end
+
+  -- polls
+  for v = 1, VOICES do
+    local phase_poll = poll.set('phase_' .. v, function(pos) positions[v] = pos end)
+    phase_poll.time = 0.05
+    phase_poll:start()
+
+    local level_poll = poll.set('level_' .. v, function(lvl) voice_levels[v] = lvl end)
+    level_poll.time = 0.05
+    level_poll:start()
+  end
+
+  -- recorders
+  for v = 1, VOICES do
+    table.insert(pattern_timers, metro.alloc(function(tick) pattern_next(v) end))
+    table.insert(pattern_banks, {})
+    table.insert(pattern_leds, 0)
+    table.insert(pattern_positions, 1)
+  end
+
+  -- grid refresh timer, 40 fps
+  metro_grid_refresh = metro.alloc(function(stage) grid_refresh() end, 1 / 40)
+  metro_grid_refresh:start()
+
+  metro_blink = metro.alloc(function(stage) blink = blink ~ 1 end, 1 / 4)
+  metro_blink:start()
+
+  local sep = ": "
+
+  params:add_taper("reverb_mix", "*"..sep.."mix", 0, 100, 50, 0, "%")
+  params:set_action("reverb_mix", function(value) engine.reverb_mix(value / 100) end)
+
+  params:add_taper("reverb_room", "*"..sep.."room", 0, 100, 50, 0, "%")
+  params:set_action("reverb_room", function(value) engine.reverb_room(value / 100) end)
+
+  params:add_taper("reverb_damp", "*"..sep.."damp", 0, 100, 50, 0, "%")
+  params:set_action("reverb_damp", function(value) engine.reverb_damp(value / 100) end)
+
+  for v = 1, VOICES do
+    params:add_separator()
+
+    params:add_file(v.."sample", v..sep.."sample")
+    params:set_action(v.."sample", function(file) engine.read(v, file) end)
+
+    params:add_taper(v.."volume", v..sep.."volume", -60, 20, 0, 0, "dB")
+    params:set_action(v.."volume", function(value) engine.volume(v, math.pow(10, value / 20)) end)
+
+    params:add_taper(v.."speed", v..sep.."speed", -200, 200, 100, 0, "%")
+    params:set_action(v.."speed", function(value) engine.speed(v, value / 100) end)
+
+    params:add_taper(v.."jitter", v..sep.."jitter", 0, 500, 0, 5, "ms")
+    params:set_action(v.."jitter", function(value) engine.jitter(v, value / 1000) end)
+
+    params:add_taper(v.."size", v..sep.."size", 1, 500, 100, 5, "ms")
+    params:set_action(v.."size", function(value) engine.size(v, value / 1000) end)
+
+    params:add_taper(v.."density", v..sep.."density", 0, 512, 20, 6, "hz")
+    params:set_action(v.."density", function(value) engine.density(v, value) end)
+
+    params:add_taper(v.."pitch", v..sep.."pitch", -24, 24, 0, 0, "st")
+    params:set_action(v.."pitch", function(value) engine.pitch(v, math.pow(0.5, -value / 12)) end)
+
+    params:add_taper(v.."spread", v..sep.."spread", 0, 100, 0, 0, "%")
+    params:set_action(v.."spread", function(value) engine.spread(v, value / 100) end)
+
+    params:add_taper(v.."fade", v..sep.."att / dec", 1, 9000, 1000, 3, "ms")
+    params:set_action(v.."fade", function(value) engine.envscale(v, value / 1000) end)
+  end
+
+  params:bang()
+end
+
+--[[
+exports
+]]
 
 function enc(n, d)
 end

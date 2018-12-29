@@ -118,12 +118,12 @@ function BeatClock:bpm_change(bpm)
 end
 
 function BeatClock:add_clock_params()
-  params:add_option("clock", {"internal", "external"}, self.external or 2 and 1)
+  params:add_option("clock", "clock", {"internal", "external"}, self.external or 2 and 1)
   params:set_action("clock", function(x) self:clock_source_change(x) end)
-  params:add_number("bpm", 1, 480, self.bpm)
+  params:add_number("bpm", "bpm", 1, 480, self.bpm)
   params:set_action("bpm", function(x) self:bpm_change(x) end)
-  params:add_option("clock out", { "no", "yes" }, self.send or 2 and 1)
-  params:set_action("clock out", function(x) if x == 1 then self.send = false else self.send = true end end)
+  params:add_option("clock_out", "clock out", { "no", "yes" }, self.send or 2 and 1)
+  params:set_action("clock_out", function(x) if x == 1 then self.send = false else self.send = true end end)
 end
 
 function BeatClock:enable_midi()

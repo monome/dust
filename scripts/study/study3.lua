@@ -42,7 +42,7 @@ COMMANDS = 8
 label = {"+", "-", "<", ">", "*", "M", "m", "#"}
 
 function init()
-  params:add_control("cutoff", controlspec.new(50, 5000, 'exp', 0, 555, 'hz'))
+  params:add_control("cutoff", "cutoff", controlspec.new(50, 5000, 'exp', 0, 555, 'hz'))
   params:set_action("cutoff", function(x) engine.cutoff(x) end)
   counter = metro.alloc(count, 0.125, -1)
   counter:start()

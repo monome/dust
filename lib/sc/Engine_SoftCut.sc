@@ -1,7 +1,7 @@
 // a sample capture / playback matrix
 Engine_SoftCut : CroneEngine {
-	classvar nvoices = 6; // total number of voices
-	classvar bufDur = 420; // 7 minutes +
+	classvar nvoices = 4; // total number of voices
+	classvar bufDur = 480; // 8 minutes +
 	
 	classvar commands;
 
@@ -70,8 +70,6 @@ Engine_SoftCut : CroneEngine {
 		postln("busses...");
 		bus = Event.new;
 		bus.adc = context.in_b;
-		
-
 		// here we convert  output bus to a mono array
 		bus.dac = Array.with( Bus.newFrom(context.out_b, 0), Bus.newFrom(context.out_b, 1));
 		bus.rec = Array.fill(nvoices, { Bus.audio(s, 1); });
@@ -161,7 +159,7 @@ Engine_SoftCut : CroneEngine {
 	free {
 		voices.do({ arg voice; voice.free; });
 		buf.free;
-		bus.dac.do({ arg b; b.free; });
+		// ADC/DAC busses belong to the context; don't free them!
 		bus.rec.do({ arg b; b.free; });
 		bus.pb.do({ arg b; b.free; });
 		pm.do({ arg p; p.free; });
@@ -175,7 +173,11 @@ Engine_SoftCut : CroneEngine {
 		buf.zero;
 	}
 
-	// fixme: need command to clear arbitrary section
+  // clear range of buffer
+  clearBufRange { arg startFrame, numFrames;
+    postln("clear buffer range start " ++ startFrame ++ " len " ++ numFrames);
+    buf.fill(startFrame, numFrames, 0.0);
+  }
 
 	// normalize buffer to given max
 	normalizeBuf { arg x;
@@ -190,7 +192,7 @@ Engine_SoftCut : CroneEngine {
 
 	// disk write
 	writeBuf { arg path, start, dur;
-			BufUtil.write(buf, path, start:start, dur:dur);
+			BufUtil.write(buf, path, start, dur);
 	}
 
 	syncVoice { arg src, dst, offset;
@@ -314,7 +316,8 @@ Engine_SoftCut : CroneEngine {
 			// clear the entire buffer
 			[\clear, '', { |msg| this.clearBuf }],
 
-			// TODO: clear range in buffer
+			// clear buffer range
+      [\clear_range, \ii, { |msg| this.clearBufRange(msg[1], msg[2]) }],
 
 			// normalize buffer to given maximum level
 			[\norm, \f, { |msg| this.normalizeBuf(msg[1]) }]

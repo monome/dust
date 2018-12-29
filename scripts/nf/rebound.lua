@@ -10,23 +10,45 @@
 -- written by nf in august 2018
 -- params and scales taken from tehn/awake, thanks
 
+-- TODO:
+-- - ack-based version
+
 local cs = require 'controlspec'
+local Midi = require 'midi'
+local MusicUtil = require 'mark_eats/musicutil'
 
 engine.name = "PolyPerc"
+
+local m = midi.connect()
 
 local balls = {}
 local cur_ball = 0
 
-local scale_degrees = {2,1,2,2,2,1,2}
-local notes = {}
-local freqs = {}
-
 local BeatClock = require 'beatclock'
 local clk = BeatClock.new()
 
-local freq_queue = {}
+local scale_notes = {}
+local note_queue = {}
+local note_off_queue = {}
+
+local min_note = 0
+local max_note = 127
+local min_rand_note = min_note+24
+local max_rand_note = max_note-24
 
 local shift = false
+
+local info_note_name = ""
+local info_visible = false
+local info_timer = metro.alloc()
+info_timer.callback = function() info_visible = false end
+function show_info()
+  info_visible = true
+  info_timer:start(1, 1)
+  local b = balls[cur_ball]
+  local n = MusicUtil.snap_note_to_array(b.n, scale_notes)
+  info_note_name = MusicUtil.note_num_to_name(n, true)
+end
 
 function init()
   screen.aa(1)
@@ -43,57 +65,49 @@ function init()
 
   params:add_separator()
 
-  params:add_number("scale mode",1,7,3)
-  params:set_action("scale mode", function(n) 
-    build_scale()
-  end) 
-  params:add_number("trans",-12,24,0)
-  params:set_action("trans", function(n) 
-    build_scale()
-  end)
+  local scales = {}
+  for i=1,#MusicUtil.SCALES do
+    scales[i] = MusicUtil.SCALES[i].name
+  end
+  params:add_option("scale", "scale", scales)
+  params:set_action("scale", build_scale)
+
+  params:add_option("root", "root", MusicUtil.NOTE_NAMES)
+  params:set_action("root", build_scale)
 
   params:add_separator()
 
   cs.AMP = cs.new(0,1,'lin',0,0.5,'')
-  params:add_control("amp",cs.AMP)
+  params:add_control("amp", "amp", cs.AMP)
   params:set_action("amp",
-  function(x) engine.amp(x) end) 
+  function(x) engine.amp(x) end)
 
   cs.PW = cs.new(0,100,'lin',0,80,'%')
-  params:add_control("pw",cs.PW)
+  params:add_control("pw", "pw", cs.PW)
   params:set_action("pw",
-  function(x) engine.pw(x/100) end) 
+  function(x) engine.pw(x/100) end)
 
-  cs.REL = cs.new(0.1,3.2,'lin',0,0.2,'s') 
-  params:add_control("release",cs.REL)
+  cs.REL = cs.new(0.1,3.2,'lin',0,0.2,'s')
+  params:add_control("release", "release", cs.REL)
   params:set_action("release",
-  function(x) engine.release(x) end) 
+  function(x) engine.release(x) end)
 
   cs.CUT = cs.new(50,5000,'exp',0,555,'hz')
-  params:add_control("cutoff",cs.CUT)
+  params:add_control("cutoff", "cutoff", cs.CUT)
   params:set_action("cutoff",
-  function(x) engine.cutoff(x) end) 
+  function(x) engine.cutoff(x) end)
 
   cs.GAIN = cs.new(0,4,'lin',0,1,'')
-  params:add_control("gain",cs.GAIN)
+  params:add_control("gain", "gain", cs.GAIN)
   params:set_action("gain",
-  function(x) engine.gain(x) end) 
+  function(x) engine.gain(x) end)
 
   params:bang()
 end
 
 function build_scale()
-  local scale = params:get("scale mode")
-  local trans = params:get("trans")
-  local n = 0
-  for i=1,32 do
-    notes[i] = n
-    n = n + scale_degrees[(scale + i)%#scale_degrees + 1]
-  end
-  for i=1,#notes do
-    freqs[i] = 55*2^((notes[i]+trans)/12)
-  end
-end 
+  scale_notes = MusicUtil.generate_scale(params:get("root") - 1, params:get("scale"), 9)
+end
 
 function redraw()
   screen.clear()
@@ -105,6 +119,15 @@ function redraw()
   end
   for i=1,#balls do
     drawball(balls[i], i == cur_ball)
+  end
+  if info_visible and cur_ball > 0 then
+    screen.level(15)
+    screen.font_face(3)
+    screen.font_size(16)
+    screen.move(8,52)
+    screen.text(cur_ball)
+    screen.move(32,52)
+    screen.text(info_note_name)
   end
   screen.update()
 end
@@ -119,7 +142,8 @@ end
 function enc(n, d)
   if n == 1 and not shift and cur_ball > 0 then
     -- note
-    balls[cur_ball].n = math.min(math.max(balls[cur_ball].n+d, 1), #notes)
+    balls[cur_ball].n = math.min(math.max(balls[cur_ball].n+d, min_note), max_note)
+    show_info()
   elseif n == 2 then
     -- rotate
     for i=1,#balls do
@@ -153,9 +177,11 @@ function key(n, z)
       table.insert(balls, newball())
       cur_ball = #balls
     end
+    show_info()
   elseif n == 3 and z == 1 and not shift and #balls > 0 then
     -- select next ball
     cur_ball = cur_ball%#balls+1
+    show_info()
   end
 end
 
@@ -165,7 +191,7 @@ function newball()
     y = 32,
     v = 0.5*math.random()+0.5,
     a = math.random()*2*math.pi,
-    n = math.floor(math.random()*#notes+1),
+    n = math.floor(math.random()*(max_rand_note-min_rand_note)+min_rand_note),
   }
 end
 
@@ -203,17 +229,27 @@ function updateball(b)
 end
 
 function enqueue_note(b, z)
-  local f = freqs[b.n]
+  local n = b.n
   if z == 0 then
-    f = f * 2
+    n = n + 12
   elseif z == 1 then
-    f = f / 2
+    n = n - 12
   end
-  table.insert(freq_queue, f)
+  n = math.max(min_note, math.min(max_note, n))
+  table.insert(note_queue, n)
 end
 
 function play_notes()
-  while #freq_queue > 0 do
-    engine.hz(table.remove(freq_queue))
+  -- send note off for previously played notes
+  while #note_off_queue > 0 do
+    m.send({type='note_off', note=table.remove(note_off_queue)})
+  end
+  -- play queued notes
+  while #note_queue > 0 do
+    local n = table.remove(note_queue)
+    n = MusicUtil.snap_note_to_array(n, scale_notes)
+    engine.hz(MusicUtil.note_num_to_freq(n))
+    m.send({type='note_on', note=n})
+    table.insert(note_off_queue, n)
   end
 end
