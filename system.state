@@ -1,0 +1,19 @@
+-- norns system state
+norns.state.clean_shutdown = false
+norns.state.tape = 0
+norns.state.script = '/home/we/dust/awake/awake.lua'
+norns.state.name = 'awake'
+norns.state.shortname = 'awake'
+norns.state.path = '/home/we/dust/awake/'
+midi.vport[1].name = 'none'
+midi.vport[2].name = 'none'
+midi.vport[3].name = 'none'
+midi.vport[4].name = 'none'
+grid.vport[1].name = 'none'
+grid.vport[2].name = 'none'
+grid.vport[3].name = 'none'
+grid.vport[4].name = 'none'
+arc.vport[1].name = 'none'
+arc.vport[2].name = 'none'
+arc.vport[3].name = 'none'
+arc.vport[4].name = 'none'
