@@ -14,14 +14,14 @@ A sequencer for Monome norns based on [Conway's Game of Life](https://en.wikiped
 
 ### Play Modes
 
-Set the play mode with KEY2.
+Set the play mode with ENC2.
 * reborn (default): Play a note for every cell that was born or reborn (= has exactly three neighbors), regardless of the previous state of the cell
 * born: Play a note for every cell that was born (has exactly three neighbors and was not alive in the previous generation)
 * ghost: Play a note for every cell that is dying(has less than two or more than three neighbors). Ghost notes can have a different pitch! (See the "ghost offset" setting in the parameters screen.)
 
 ### Play Direction
 
-Set the play direction with KEY3.
+Set the play direction with ENC3.
 * up: Cells on grid are played from top left (lowest note) to bottom right (highest note).
 * down: Cells on grid are played from bottom right (highest note) to top left (lowest note).
 * random: Cells are played in random order. The randomized order will be stable for a generation and will be re-randomized for every new generation.
