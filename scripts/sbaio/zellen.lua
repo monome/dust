@@ -449,7 +449,7 @@ function init()
   params:add_option("scale", "scale", SCALE_NAMES, 1)
   params:set_action("scale", set_scale)
   
-  params:add_option("root_note", "root note", NOTE_NAMES, 48)
+  params:add_option("root_note", "root note", NOTE_NAMES, 36)
   params:set_action("root_note", set_root_note)
   
   params:add_number("ghost_offset", "ghost offset", -24, 24, 0)
@@ -612,4 +612,5 @@ g.event = function(x, y, z)
   end
   grid_redraw()
 end
+
 
