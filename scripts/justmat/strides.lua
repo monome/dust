@@ -201,20 +201,6 @@ local function draw_record()
   screen.stroke()
 end
 
-
-local function draw_stop()
-  -- stop icon
-  screen.move(40, 2)
-  screen.rect(40, 2, 10, 10)
-  if enc_pattern[cc_page].play == 0 then
-    screen.level(10)
-  else
-    screen.level(2)
-  end
-  screen.fill()
-  screen.stroke()
-end
-
 -- helper functions for grid --
 
 local function get_grid_pat()
