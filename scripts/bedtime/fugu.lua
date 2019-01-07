@@ -82,6 +82,7 @@ end
 local function save_project(num)
   data[pattern].bpm = params:get("bpm")
   data.last_pattern = pattern
+  data.mode = mode
   tab.save(data,"/home/we/dust/data/bedtime/fugu-pat-"..num ..".data")
   params:write("bedtime/fugu-param-"..num ..".pset")
 end
@@ -91,10 +92,12 @@ local function load_project(num)
   if saved_data ~= nil then
     data = saved_data
     pattern = data.last_pattern
+    mode = data.mode
     params:read("bedtime/fugu-param-"..num  .. ".pset")
     params:set("bpm", data[pattern].bpm) -- load bpm
   else
     print("no file")
+    init()
   end
 end
 
@@ -151,6 +154,7 @@ function init()
   data.meta_lengt = 16
   data.meta_pos = 1
   data.last_pattern = pattern
+  data.mode = mode
   for i=1,16 do
     data[i] = {}
     data[i].steps = {}

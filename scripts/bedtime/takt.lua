@@ -146,6 +146,7 @@ local function load_project(num)
     redraw()
   else
     print("no file")
+    init()
   end
 end
 
