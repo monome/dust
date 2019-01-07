@@ -51,6 +51,7 @@ local done = {}
 local first = {}
 local second = {}
 local last_note_name = {"none","none","none","none"}
+local last_note = {}
 local states = {0,0,0,0}
 local position = {0,0,0,0}
 local octaveseqpos = {0,0,0,0}
@@ -58,6 +59,8 @@ local octaveseqstart = {0,0,0,0}
 local octaveseqlen = {7,7,7,7}
 local clockseqdiv = {4,4,4,4}
 local uidispnote = {0,0,0,0}
+local midi_out_device
+
 
 local function switch_pattern(pat)
   params:set("bpm", data[pat].bpm)
@@ -118,17 +121,22 @@ local function count(tr)
   elseif data[pattern].plmode[tr] == 2 then
     position[tr] = util.clamp(math.random(data[pattern].startpos[tr],data[pattern].lengt[tr]), data[pattern].startpos[tr],data[pattern].lengt[tr])
   end
+  midi_out_device.note_off(last_note[tr], nil, params:get(tr.."midich"))
   if data[pattern].steps[position[tr]] ~= 0 then
     last_note_name[tr] = music.note_num_to_name(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]])
     if data[pattern].probmode[tr] == 0 then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
+          midi_out_device.note_on(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]], params:get(tr.."vel"), params:get(tr.."midich"))
     elseif data[pattern].probmode[tr] == 1 then
       if params:get(tr.."probability") == 100 then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
+          midi_out_device.note_on(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]], params:get(tr.."vel"), params:get(tr.."midich"))
         elseif params:get(tr.."probability") >= math.random(100) then
           engine.noteOn(tr,music.note_num_to_freq(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]), params:get(tr.."vel")/127)
+          midi_out_device.note_on(scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]], params:get(tr.."vel"), params:get(tr.."midich"))
         end
       end
+      last_note[tr] = scale[data[pattern].notevals[data[pattern].steps[position[tr]]]] + trvals[data[pattern].transpose[tr]]
       dispnote = data[pattern].notevals[data[pattern].steps[position[tr]]]
       uidispnote[tr] = data[pattern].notevals[data[pattern].steps[position[tr]]]
   else
@@ -186,13 +194,22 @@ function init()
   params:set_action("sproj", function(x) save_project(project)   end)
   params:add_number("meta_div", "meta divider", 1,32,1)
   for i=1,TRACKS do
+    params:add_number(i.."midich", i.." midi channel",1,16,i)
     params:add_number(i.."vel", i.." vel", 0,127, 80)
     params:add_number(i.."probability", i.." probability",0,100,50)
     end
   metro[1]:add_clock_params()
+  midi_out_device = midi.connect(1)
+  midi_out_device.event = function() end
+  params:add{type = "number", id = "midi_out_device", name = "MIDI Out Device", min = 1, max = 4, default = 1,
+    action = function(value)
+      midi_out_device:reconnect(value)
+    end}
+
   params:add_separator()
   Molly.add_params()
   --
+
 end
 
 function key(n,z)
@@ -443,6 +460,7 @@ g.event = function(x,y,z)
             metro[x]:stop()
             last_note_name[x] = "none"
           engine.noteOff(x)
+          midi_out_device.note_off(last_note[x], nil, params:get(x.."midich"))
           states[x] = 0
           elseif not metro[x].playing then
             metro[x]:bpm_change((params:get("bpm")*divs[data[pattern].clockmult[x]]))
