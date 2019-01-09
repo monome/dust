@@ -8,6 +8,7 @@ A sequencer for Monome norns based on [Conway's Game of Life](https://en.wikiped
 * KEY2: play/pause current generation (semi-manual mode), advance sequence (manual mode), play/pause sequence (automatic mode)
 * KEY3: advance generation
 * hold KEY1 and press KEY3: erase the board
+* hold KEY2 and press KEY3: save current parameters state
 * ENC1: set speed (bpm)
 * ENC2: set play mode (see below)
 * ENC3: set play direction (see below)

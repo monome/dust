@@ -9,6 +9,8 @@
 -- KEY3: advance generation
 -- hold KEY1 + press KEY3:
 --   delete board
+-- hold KEY2 + press KEY3:
+--   save state
 --
 -- ENC1: set speed (bpm)
 -- ENC2: set play mode
@@ -191,6 +193,15 @@ local function update_playing_indicator()
     screen.rect(125, 53, 3, 3)
     screen.fill()
   end
+end
+
+local function load_state()
+  params:read("sbaio/zellen.pset")
+  params:bang()
+end
+
+local function save_state()
+  params:write("sbaio/zellen.pset")
 end
 
 
@@ -491,6 +502,8 @@ function init()
     end
   end
   
+  load_state()
+  
   init_position()
   init_engine()
 end
@@ -590,6 +603,8 @@ function key(n, z)
     KEY3_DOWN = z == 1
     if(KEY3_DOWN and KEY1_DOWN) then
       clear_board()
+    elseif(KEY3_DOWN and KEY2_DOWN) then
+      save_state()
     elseif(KEY3_DOWN) then
       seq_counter:stop()
       seq_running = false
