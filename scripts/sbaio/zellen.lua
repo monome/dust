@@ -577,7 +577,9 @@ function key(n, z)
   end
   if (n == 2) then
     KEY2_DOWN = z == 1
-    if (KEY2_DOWN) then
+    if(KEY2_DOWN and KEY1_DOWN) then
+      save_state()
+    elseif (KEY2_DOWN) then
       if(seq_mode == 1) then
         if (#playable_cells == 0) then
           generation_step()
@@ -603,8 +605,6 @@ function key(n, z)
     KEY3_DOWN = z == 1
     if(KEY3_DOWN and KEY1_DOWN) then
       clear_board()
-    elseif(KEY3_DOWN and KEY2_DOWN) then
-      save_state()
     elseif(KEY3_DOWN) then
       seq_counter:stop()
       seq_running = false
