@@ -60,7 +60,6 @@ local blink = false
 local copy_source_x = -1
 local copy_source_y = -1
 local position = 1
-local mute = {}
 local trigdisp = {0,0,0,0,0,0,0}
 local voicepos = {0,0,0,0,0,0,0}
 local VOICES = 7
@@ -129,6 +128,7 @@ end
 
 local function save_project(num)
   data[pattern].bpm = params:get("bpm")
+  data.lastpattern = pattern
   tab.save(data,"/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
   params:write("bedtime/takt-param-"..num ..".pset")
 end
@@ -137,8 +137,8 @@ local function load_project(num)
   saved_data = tab.load("/home/we/dust/data/bedtime/takt-pat-"..num ..".data")
   if saved_data ~= nil then
     data = saved_data
+    pattern = data.lastpattern
     params:read("bedtime/takt-param-"..num  .. ".pset")
-    pattern = 1
     params:set("bpm", data[pattern].bpm) -- load bpm
     for v=1,VOICES do -- set loop points
       set_loop(v,data[pattern].startpos[v],data[pattern].seqlen[v])
@@ -146,6 +146,7 @@ local function load_project(num)
     redraw()
   else
     print("no file")
+    init()
   end
 end
 
@@ -295,7 +296,7 @@ local function count()
       voicepos[v] = util.clamp((voicepos[v] % data[pattern].seqlen[v]) + 1, data[pattern].startpos[v], data[pattern].seqlen[v]) -- voice pos
       position = voicepos[v]
       if data[pattern].steps[v][voicepos[v]] ~= 0 then
-        if data[pattern].steps_prob[v][voicepos[v]] >= math.random(100) and mute[v] == 0 then
+        if data[pattern].steps_prob[v][voicepos[v]] >= math.random(100) and data.mute[v] == 0 then
           reset_params(v)
           trigdisp[v] = 15
           if data[pattern].steps_div[v][voicepos[v]] > 0 then
@@ -341,11 +342,13 @@ function init()
   end
   params:bang()
   -- init patterns
+  data.lastpattern = pattern
   data.metaseqlen = 16
   data.metastartpos = 1
   data.metatempdiv = 1
   data.metaval = {}
   data.metatempdivpat = {}
+  data.mute = {}
   for i=1,16 do
     data[i] = {}
     data[i].bpm = 110
@@ -361,7 +364,7 @@ function init()
     data.metaval[i] = 0
     data.metatempdivpat[i] = 1
     for v=1,VOICES do
-      mute[v] = 0
+      data.mute[v] = 0
       data[i].steps[v] = {}
       data[i].steps_rpt[v] = {}
       data[i].steps_rpt_div[v] = {}
@@ -511,10 +514,10 @@ g.event = function(x,y,z)
         tempmod(y,x)
         data[pattern].tempdiv[y] = x
       elseif x == 16 and z == 1 then
-        if mute[y] == 0 then
-          mute[y] = 1
+        if data.mute[y] == 0 then
+          data.mute[y] = 1
         else
-          mute[y] = 0
+          data.mute[y] = 0
         end
       end
     end
@@ -555,10 +558,10 @@ g.event = function(x,y,z)
       end
     elseif z == 1 and shift then
       if x == 16 and shift and z == 1 then
-        if mute[y] == 0 then
-          mute[y] = 1
+        if data.mute[y] == 0 then
+          data.mute[y] = 1
         else
-          mute[y] = 0
+          data.mute[y] = 0
         end
       end
     end
@@ -588,7 +591,7 @@ function grid_redraw()
     if shift then
       for v=1,VOICES do
         g.led(15,v,0)
-        g.led(16,v,mute[v]== 1 and 15 or 6)
+        g.led(16,v,data.mute[v]== 1 and 15 or 6)
       end
     end
     if metaplay then
@@ -604,19 +607,19 @@ function grid_redraw()
             for i = data[pattern].startpos[v],data[pattern].seqlen[v] do
               g.led(i,v, 0==data[pattern].steps[v][i] and 2 or 6 )
             end
-            if mute[v] == 0 then
+            if data.mute[v] == 0 then
               g.led(voicepos[v],v,3)
             end
           else
           g.led(i,data[pattern].steps[v][i],
-                mute[v] == 1 and 3
+                data.mute[v] == 1 and 3
                 or copy_mode and copy_source_x == i and copy_source_y == v and blink and 4
                 or step_lock == i and voice_lock == v and lockeditmode == true and 13
                 or i < data[pattern].startpos[v] and 2
                 or i > data[pattern].seqlen[v] and 2
                 or 8)
           if counter.playing then
-            if mute[v] == 0 then
+            if data.mute[v] == 0 then
               g.led(voicepos[v],v,0==data[pattern].steps[v][voicepos[v]] and 3 or trigdisp[v])
             else
               g.led(voicepos[v],v,1==data[pattern].steps[v][voicepos[v]] and 3 or 1)
@@ -630,8 +633,8 @@ function grid_redraw()
         for v=1,VOICES do
           g.led(i,data[pattern].steps[v][i],alt == false and 2 or 4)
           g.led(14,v,1)
-          g.led(16,v,mute[v]== 1 and 15 or 6)
-          if mute[v] == 0 then
+          g.led(16,v,data.mute[v]== 1 and 15 or 6)
+          if data.mute[v] == 0 then
             g.led(voicepos[v] < data[pattern].seqlen[v] and voicepos[v] or 1,v,voicepos[v] == 16 and 16 or 3 )
           end
             g.led((data[pattern].tempdiv[v] > 0 and data[pattern].tempdiv[v] or data[pattern].tempdivtr[v]),v,9)
