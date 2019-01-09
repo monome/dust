@@ -7,6 +7,16 @@
 -- enc 2 + 3: change menu val.
 -- params: midi, +/- st, timbre
 --
+-- plug in grid
+-- (1,1) to (8,2): bits
+-- (10,1) to (16,2): octaves
+-- (1,3) to (16,3): randomize
+-- (1,4) to (16,5): low
+-- (1,6) to (16,7): high
+-- (16,8): take snapshot
+-- (15,8): clear snapshots
+-- (1,8) to (8,8): snapshots
+--
 -- seek.
 -- think.
 -- discover.
