@@ -455,7 +455,7 @@ function init()
   params:add_number("ghost_offset", "ghost offset", -24, 24, 0)
   params:set_action("ghost_offset", set_ghost_offset)
   
-  params:add_number("speed", "speed", 0, 1000, 100)
+  params:add_number("speed", "bpm", 10, 1000, 100)
   params:set_action("speed", set_speed)
   
   params:add_option("play_mode", "play mode", PLAY_MODES, 1)
@@ -504,7 +504,7 @@ function redraw()
   screen.text(params:get("speed"))
   screen.level(7)
   screen.move(0, 16)
-  screen.text("speed")
+  screen.text("bpm")
   
   screen.move(0, 28)
   screen.level(15)
