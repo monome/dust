@@ -9,9 +9,10 @@
 --
 -- requires a grid.
 --
--- load samples and set
--- cc destinations via the
--- parameters menu.
+-- load samples as well as
+-- set midi note numbers
+-- and cc destinations via
+-- the parameters menu.
 -- ----------
 --
 -- alt_k = hold to access
@@ -44,7 +45,8 @@
 -- selection buttons.
 --
 -- the 2x4 grid of buttons
--- launches samples.
+-- launches samples or
+-- triggers midi notes.
 --
 -- the 2 buttons above
 -- the sample pads are
@@ -65,21 +67,21 @@
 --
 -- while holding alt_g, the right
 -- side of the grid will light
--- up with time and playback
--- speed controls.
+-- up with time and sample
+-- playback speed controls.
 --
 -- the column to the right of alt_g
 -- arms/disarms grid_pattern
 -- linearizing.
 --
--- the 4 button diamond controls
--- grid_pattern time, via the
+-- the 4 button diamond
+-- controls pattern time, via the
 -- left and right buttons, and
--- sample playback speed,
--- via up and down.
+-- sample playback speed, via
+-- up and down.
 --
 -- remaining are buttons for
--- restoring grid_pattern timing,
+-- restoring pattern timing,
 -- on the left, and sample play-
 -- back speed, on the right.
 -- ----------
@@ -93,7 +95,7 @@
 --
 --
 --
--- v1.1 by @justmat
+-- v1.2 by @justmat
 
 engine.name = "Ack"
 
@@ -201,6 +203,20 @@ local function draw_record()
   screen.stroke()
 end
 
+
+local function draw_stop()
+  -- stop icon
+  screen.move(40, 2)
+  screen.rect(40, 2, 10, 10)
+  if enc_pattern[cc_page].play == 0 then
+    screen.level(10)
+  else
+    screen.level(2)
+  end
+  screen.fill()
+  screen.stroke()
+end
+
 -- helper functions for grid --
 
 local function get_grid_pat()
@@ -212,6 +228,7 @@ local function clear_all_grid_pat()
   for i = 1, 8 do
     grid_pattern[i]:clear()
     is_linearized[i] = 0
+    m.note_off(params:get(i..":_midi_note"))
   end
   current_g_pat = 1
 end
@@ -327,28 +344,54 @@ local function linearize_pat(n)
   is_linearized[n] = 1
 end
 
--- pattern processing --
 
-local function trig(e)
+local function set_lit(e)
   if e.state > 0 then
     lit[e.id] = {}
     lit[e.id].state = 1
     lit[e.id].x = e.x
     lit[e.id].y = e.y
+  else
+    if lit[e.id].state == 1 then
+      lit[e.id].state = 0
+    end
+  end
+end
 
+-- pattern processing --
+
+local function trig(e)
+
+  set_lit(e)
+
+  if e.state == 1 then
+    -- check for playback speed changes
     if speed_changed then
       set_playback_speed()
       speed_changed = false
     end
-
+    -- trig ack, and send note on
     if e.y == 5 then
       engine.trig(e.x - 3)
+      if params:get("send_midi") == 1 then
+        m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     elseif e.y == 6 then
       engine.trig(e.x + 1)
+      if params:get("send_midi") == 1 then
+        m.note_on(params:get(e.x + 1 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     end
   else
-    if lit[e.id].state == 1 then
-      lit[e.id].state = 0
+    -- note off
+    if e.y == 5 then
+      if params:get("send_midi") == 1 then
+        m.note_off(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
+    elseif e.y == 6 then
+      if params:get("send_midi") == 1 then
+        m.note_off(params:get(e.x + 1 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     end
   end
   gridredraw()
@@ -375,13 +418,17 @@ function init()
     enc_pattern[i] = pattern_time.new()
     enc_pattern[i].process = enc_process
   end
+  -- midi trig params
+  params:add_option("send_midi", "send midi", {"yes", "no"}, 1)
+  params:add_number("midi_chan", "midi chan", 1, 16, 1)
+  params:add_separator()
   -- add engine params
   for i = 1, 8 do
+    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, 0)
     ack.add_channel_params(i)
     params:add_separator()
   end
-  -- set up midi channel and cc nums
-  params:add_number("midi_chan", "midi chan", 1, 16, 1)
+  -- set up midi cc nums
   for i = 1, 8 do
     params:add_number("cc_num" .. i, "cc num " .. i, 0, 127, i)
   end
@@ -563,7 +610,7 @@ function g.event(x, y, state)
     if y == 5 or y == 6 then
     -- this is the drum pad grid.
       local grid_e = {}
-      grid_e.id = x*8 + y
+      grid_e.id = x * 8 + y
       grid_e.x = x
       grid_e.y = y
       grid_e.state = state
@@ -717,7 +764,7 @@ else
     screen.font_face(4)
     screen.text("CC ")
     screen.move(35, 48)
-    screen.text(cc_page)
+    screen.text(params:get("cc_num" .. cc_page))
     screen.move(60, 32)
     screen.font_size(12)
     screen.font_face(5)
