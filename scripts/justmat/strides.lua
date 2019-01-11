@@ -45,7 +45,7 @@
 -- selection buttons.
 --
 -- the 2x4 grid of buttons
--- launches samples or 
+-- launches samples or
 -- triggers midi notes.
 --
 -- the 2 buttons above
@@ -436,12 +436,12 @@ function init()
     enc_pattern[i].process = enc_process
   end
   -- midi trig params
-  params:add_option("send_midi", "send midi", {"yes", "no"}, 1) -- maybe send {audio, midi + audio, midi}
+  params:add_option("send_midi", "send midi", {"yes", "no"}, 1)
   params:add_number("midi_chan", "midi chan", 1, 16, 1)
   params:add_separator()
   -- add engine params
   for i = 1, 8 do
-    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, i + 37) -- make this 0 before release
+    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, 0)
     ack.add_channel_params(i)
     params:add_separator()
   end
@@ -461,7 +461,7 @@ function init()
   params:bang()
   -- draw grid
   if g then
-    gridredraw() -- grid redraw metro?
+    gridredraw()
   end
 end
 
