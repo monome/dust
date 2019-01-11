@@ -396,7 +396,7 @@ local function trig(e)
     elseif e.y == 6 then
       engine.trig(e.x + 1)
       if params:get("send_midi") == 1 then
-        m.note_on(params:get(e.x + 1 .. ":_midi_note"), 100, params:get("midi_chan"))
+        m.note_on(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
   else
@@ -407,7 +407,7 @@ local function trig(e)
       end
     elseif e.y == 6 then
       if params:get("send_midi") == 1 then
-        m.note_off(params:get(e.x + 1 .. ":_midi_note"), 100, params:get("midi_chan"))
+        m.note_off(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
   end
