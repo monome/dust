@@ -241,6 +241,13 @@ local function stop_all_pat()
 end
 
 
+local function kill_midi()
+  for i = 1, 127 do
+    m.note_off(i, 100, params:get("midi_chan"))
+  end
+end
+
+
 local function set_base_time()
   -- stores a copy of grid_pattern[n].time for recall.
   for i = 1, 8 do
@@ -639,6 +646,10 @@ function g.event(x, y, state)
     end
   end
   if alt_g == 1 then
+    -- midi kill/ panic button
+    if x == 6 and y == 2 and state == 1 then
+      kill_midi()
+    end
     -- timing and speed controls for grid
     if x == 9 then
       if state == 1 then
@@ -714,8 +725,11 @@ function gridredraw()
       g.led(e.x, e.y, 4)
     end
   end
-  -- grid_pattern linearize buttons
+
   if alt_g == 1 then
+    -- kill midi
+    g.led(6, 2, 2)
+    -- grid_pattern linearize buttons
     for i = 1, 8 do
       if is_linearized[i] == 1 then
         g.led(9, i, 8)
