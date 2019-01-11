@@ -586,6 +586,7 @@ function g.event(x, y, state)
       elseif get_grid_pat().rec == 1 then
         get_grid_pat():rec_stop()
         if get_grid_pat().count > 0 then
+          set_base_time()
           get_grid_pat():start()
         end
       end
