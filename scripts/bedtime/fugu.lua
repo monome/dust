@@ -92,7 +92,7 @@ local function load_project(num)
   if saved_data ~= nil then
     data = saved_data
     pattern = data.last_pattern
-    mode = data.mode
+    if data.mode ~= nil then mode = data.mode end
     params:read("bedtime/fugu-param-"..num  .. ".pset")
     params:set("bpm", data[pattern].bpm) -- load bpm
   else
