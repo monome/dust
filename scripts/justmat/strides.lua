@@ -397,23 +397,23 @@ local function trig(e)
     -- trig ack, and send note on
     if e.y == 5 then
       engine.trig(e.x - 3)
-      if params:get("send_midi") == 1 then
+      if params:get("send_midi") == 2 then
         m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     elseif e.y == 6 then
       engine.trig(e.x + 1)
-      if params:get("send_midi") == 1 then
+      if params:get("send_midi") == 2 then
         m.note_on(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
   else
     -- note off
     if e.y == 5 then
-      if params:get("send_midi") == 1 then
+      if params:get("send_midi") == 2 then
         m.note_off(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     elseif e.y == 6 then
-      if params:get("send_midi") == 1 then
+      if params:get("send_midi") == 2 then
         m.note_off(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
