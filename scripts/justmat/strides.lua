@@ -436,7 +436,7 @@ function init()
     enc_pattern[i].process = enc_process
   end
   -- midi trig params
-  params:add_option("send_midi", "send midi", {"yes", "no"}, 1)
+  params:add_option("send_midi", "send midi", {"no", "yes"}, 1)
   params:add_number("midi_chan", "midi chan", 1, 16, 1)
   params:add_separator()
   -- add engine params
