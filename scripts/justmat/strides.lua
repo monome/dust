@@ -45,7 +45,7 @@
 -- selection buttons.
 --
 -- the 2x4 grid of buttons
--- launches samples or
+-- launches samples or 
 -- triggers midi notes.
 --
 -- the 2 buttons above
@@ -271,7 +271,15 @@ end
 
 
 local function speed_up_time()
-  -- doubles the speed of grid_pattern playback
+  -- doubles the speed of current grid pattern
+  for j = 1, #grid_pattern[current_g_pat].time do
+    grid_pattern[current_g_pat].time[j] = util.clamp(grid_pattern[current_g_pat].time[j] * .5, .01, 1)
+  end
+end
+
+
+local function speed_up_all_time()
+  -- doubles the speed of all grid patterns.
   for i = 1, 8 do
     for j = 1, #grid_pattern[i].time do
       grid_pattern[i].time[j] = util.clamp(grid_pattern[i].time[j] * .5, .01, 1)
@@ -288,7 +296,17 @@ end
 
 
 local function slow_down_time()
-  -- halfs speed of grid_pattern playback
+  -- halfs speed of current grid pattern
+    if grid_pattern[current_g_pat].count > 0 then
+      for j = 1, #grid_pattern[current_g_pat].time do
+        grid_pattern[current_g_pat].time[j] = grid_pattern[current_g_pat].time[j] / .5
+      end
+    end
+end
+
+
+local function slow_down_all_time()
+  -- halfs speed of all grid patterns
   for i = 1, 8 do
     if grid_pattern[i].count > 0 then
       for j = 1, #grid_pattern[i].time do
@@ -361,11 +379,10 @@ end
 -- pattern processing --
 
 local function trig(e)
-
   set_lit(e)
 
   if e.state == 1 then
-    -- check for playback speed changes
+    -- check for speed changes in sample playback
     if speed_changed then
       set_playback_speed()
       speed_changed = false
@@ -419,12 +436,12 @@ function init()
     enc_pattern[i].process = enc_process
   end
   -- midi trig params
-  params:add_option("send_midi", "send midi", {"yes", "no"}, 1)
+  params:add_option("send_midi", "send midi", {"yes", "no"}, 1) -- maybe send {audio, midi + audio, midi}
   params:add_number("midi_chan", "midi chan", 1, 16, 1)
   params:add_separator()
   -- add engine params
   for i = 1, 8 do
-    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, 0)
+    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, i + 37) -- make this 0 before release
     ack.add_channel_params(i)
     params:add_separator()
   end
@@ -444,7 +461,7 @@ function init()
   params:bang()
   -- draw grid
   if g then
-    gridredraw()
+    gridredraw() -- grid redraw metro?
   end
 end
 
@@ -463,11 +480,11 @@ function key(n, z)
   -- mode 0 is grid mode
   if mode == 0 then
     if n == 2 and z == 1 then
-      slow_down_time()
+      slow_down_all_time()
       slow_down_playback()
     elseif n == 3 and z == 1 then
       if alt_k == 0 then
-        speed_up_time()
+        speed_up_all_time()
         speed_up_playback()
       end
     end
@@ -610,7 +627,7 @@ function g.event(x, y, state)
     if y == 5 or y == 6 then
     -- this is the drum pad grid.
       local grid_e = {}
-      grid_e.id = x * 8 + y
+      grid_e.id = x*8 + y
       grid_e.x = x
       grid_e.y = y
       grid_e.state = state
