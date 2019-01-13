@@ -46,8 +46,8 @@ local preset_count = 0
 local active_notes_v1 = {}
 local active_notes_v2 = {}
 
-beatclock = require 'beatclock'
-clk = beatclock.new()
+local beatclock = require 'beatclock'
+local clk = beatclock.new()
 clk_midi = midi.connect()
 clk_midi.event = clk.process_midi
 
@@ -57,7 +57,7 @@ passersby = require "mark_eats/passersby"
 -- this section is all maths + computational events
 
 -- maths: translate the seed integer to binary
-function seed_to_binary()
+local function seed_to_binary()
   seed_as_binary = {}
   for i = 0,7 do
     table.insert(seed_as_binary, (seed & (2 ^ i)) >> i)
@@ -65,7 +65,7 @@ function seed_to_binary()
 end
 
 -- maths: translate the rule integer to binary
-function rule_to_binary()
+local function rule_to_binary()
   rule_as_binary = {}
   for i = 0,7 do
     table.insert(rule_as_binary, (rule & (2 ^ i)) >> i)
@@ -73,7 +73,7 @@ function rule_to_binary()
 end
 
 -- maths: basic compare function, used in bang()
-function compare (s, n)
+local function compare (s, n)
   if type(s) == type(n) then
         if type(s) == "table" then
                   for loop=1, 3 do
@@ -91,23 +91,23 @@ function compare (s, n)
 end
 
 -- maths: scale seeds to the note pool + range selected
-function scale(lo, hi, received)
+local function scale(lo, hi, received)
   scaled = math.floor(((((received-1) / (256-1)) * (hi - lo) + lo)))
 end
 
 -- pack the seeds into clusters, compare these against neighborhoods to determine gates in iterate()
-function bang()
-  redraw()
-  seed_to_binary()
-  rule_to_binary()
-  seed_pack1 = {seed_as_binary[1], seed_as_binary[8], seed_as_binary[7]}
-  seed_pack2 = {seed_as_binary[8], seed_as_binary[7], seed_as_binary[6]}
-  seed_pack3 = {seed_as_binary[7], seed_as_binary[6], seed_as_binary[5]}
-  seed_pack4 = {seed_as_binary[6], seed_as_binary[5], seed_as_binary[4]}
-  seed_pack5 = {seed_as_binary[5], seed_as_binary[4], seed_as_binary[3]}
-  seed_pack6 = {seed_as_binary[4], seed_as_binary[3], seed_as_binary[2]}
-  seed_pack7 = {seed_as_binary[3], seed_as_binary[2], seed_as_binary[1]}
-  seed_pack8 = {seed_as_binary[2], seed_as_binary[1], seed_as_binary[8]}
+local function bang()
+redraw()
+seed_to_binary()
+rule_to_binary()
+seed_pack1 = {seed_as_binary[1], seed_as_binary[8], seed_as_binary[7]}
+seed_pack2 = {seed_as_binary[8], seed_as_binary[7], seed_as_binary[6]}
+seed_pack3 = {seed_as_binary[7], seed_as_binary[6], seed_as_binary[5]}
+seed_pack4 = {seed_as_binary[6], seed_as_binary[5], seed_as_binary[4]}
+seed_pack5 = {seed_as_binary[5], seed_as_binary[4], seed_as_binary[3]}
+seed_pack6 = {seed_as_binary[4], seed_as_binary[3], seed_as_binary[2]}
+seed_pack7 = {seed_as_binary[3], seed_as_binary[2], seed_as_binary[1]}
+seed_pack8 = {seed_as_binary[2], seed_as_binary[1], seed_as_binary[8]}
 
 neighborhoods1 = {1,1,1}
 neighborhoods2 = {1,1,0}
@@ -118,195 +118,48 @@ neighborhoods6 = {0,1,0}
 neighborhoods7 = {0,0,1}
 neighborhoods8 = {0,0,0}
 
-function com1()
-if compare (seed_pack1,neighborhoods1) then
-    out1 = (rule_as_binary[8] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods2) then
-    out1 = (rule_as_binary[7] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods3) then
-    out1 = (rule_as_binary[6] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods4) then
-    out1 = (rule_as_binary[5] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods5) then
-    out1 = (rule_as_binary[4] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods6) then
-    out1 = (rule_as_binary[3] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods7) then
-    out1 = (rule_as_binary[2] << 7) & 128
-  elseif compare (seed_pack1, neighborhoods8) then
-    out1 = (rule_as_binary[1] << 7) & 128
-  else out1 = (0 << 7) & 128
+local function com (seed_packN, lshift, mask)
+  if compare (seed_packN,neighborhoods1) then
+    return (rule_as_binary[8] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods2) then
+    return (rule_as_binary[7] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods3) then
+    return (rule_as_binary[6] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods4) then
+    return (rule_as_binary[5] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods5) then
+    return (rule_as_binary[4] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods6) then
+    return (rule_as_binary[3] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods7) then
+    return (rule_as_binary[2] << lshift) & mask
+  elseif compare (seed_packN, neighborhoods8) then
+    return (rule_as_binary[1] << lshift) & mask
+  else return (0 << lshift) & mask
   end
 end
 
-function com2()
-if compare (seed_pack2,neighborhoods1) then
-    out2 = (rule_as_binary[8] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods2) then
-    out2 = (rule_as_binary[7] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods3) then
-    out2 = (rule_as_binary[6] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods4) then
-    out2 = (rule_as_binary[5] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods5) then
-    out2 = (rule_as_binary[4] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods6) then
-    out2 = (rule_as_binary[3] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods7) then
-    out2 = (rule_as_binary[2] << 6) & 64
-  elseif compare (seed_pack2, neighborhoods8) then
-    out2 = (rule_as_binary[1] << 6) & 64
-  else out2 = (0 << 6) & 64
-  end
-end
-
-function com3()
-if compare (seed_pack3,neighborhoods1) then
-    out3 = (rule_as_binary[8] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods2) then
-    out3 = (rule_as_binary[7] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods3) then
-    out3 = (rule_as_binary[6] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods4) then
-    out3 = (rule_as_binary[5] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods5) then
-    out3 = (rule_as_binary[4] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods6) then
-    out3 = (rule_as_binary[3] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods7) then
-    out3 = (rule_as_binary[2] << 5) & 32
-  elseif compare (seed_pack3, neighborhoods8) then
-    out3 = (rule_as_binary[1] << 5) & 32
-  else out3 = (0 << 5) & 32
-  end
-end
-
-function com4()
-if compare (seed_pack4,neighborhoods1) then
-    out4 = (rule_as_binary[8] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods2) then
-    out4 = (rule_as_binary[7] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods3) then
-    out4 = (rule_as_binary[6] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods4) then
-    out4 = (rule_as_binary[5] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods5) then
-    out4 = (rule_as_binary[4] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods6) then
-    out4 = (rule_as_binary[3] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods7) then
-    out4 = (rule_as_binary[2] << 4) & 16
-  elseif compare (seed_pack4, neighborhoods8) then
-    out4 = (rule_as_binary[1] << 4) & 16
-  else out4 = (0 << 4) & 16
-  end
-end
-
-function com5()
-if compare (seed_pack5,neighborhoods1) then
-    out5 = (rule_as_binary[8] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods2) then
-    out5 = (rule_as_binary[7] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods3) then
-    out5 = (rule_as_binary[6] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods4) then
-    out5 = (rule_as_binary[5] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods5) then
-    out5 = (rule_as_binary[4] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods6) then
-    out5 = (rule_as_binary[3] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods7) then
-    out5 = (rule_as_binary[2] << 3) & 8
-  elseif compare (seed_pack5, neighborhoods8) then
-    out5 = (rule_as_binary[1] << 3) & 8
-  else out5 = (0 << 3) & 8
-  end
-end
-
-function com6()
-if compare (seed_pack6,neighborhoods1) then
-    out6 = (rule_as_binary[8] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods2) then
-    out6 = (rule_as_binary[7] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods3) then
-    out6 = (rule_as_binary[6] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods4) then
-    out6 = (rule_as_binary[5] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods5) then
-    out6 = (rule_as_binary[4] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods6) then
-    out6 = (rule_as_binary[3] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods7) then
-    out6 = (rule_as_binary[2] << 2) & 4
-  elseif compare (seed_pack6, neighborhoods8) then
-    out6 = (rule_as_binary[1] << 2) & 4
-  else out6 = (0 << 2) & 4
-  end
-end
-
-function com7()
-if compare (seed_pack7,neighborhoods1) then
-    out7 = (rule_as_binary[8] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods2) then
-    out7 = (rule_as_binary[7] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods3) then
-    out7 = (rule_as_binary[6] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods4) then
-    out7 = (rule_as_binary[5] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods5) then
-    out7 = (rule_as_binary[4] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods6) then
-    out7 = (rule_as_binary[3] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods7) then
-    out7 = (rule_as_binary[2] << 1) & 2
-  elseif compare (seed_pack7, neighborhoods8) then
-    out7 = (rule_as_binary[1] << 1) & 2
-  else out7 = (0 << 1) & 2
-  end
-end
-
-function com8()
-if compare (seed_pack8,neighborhoods1) then
-    out8 = rule_as_binary[8] & 1
-  elseif compare (seed_pack8, neighborhoods2) then
-    out8 = rule_as_binary[7] & 1
-  elseif compare (seed_pack8, neighborhoods3) then
-    out8 = rule_as_binary[6] & 1
-  elseif compare (seed_pack8, neighborhoods4) then
-    out8 = rule_as_binary[5] & 1
-  elseif compare (seed_pack8, neighborhoods5) then
-    out8 = rule_as_binary[4] & 1
-  elseif compare (seed_pack8, neighborhoods6) then
-    out8 = rule_as_binary[3] & 1
-  elseif compare (seed_pack8, neighborhoods7) then
-    out8 = rule_as_binary[2] & 1
-  elseif compare (seed_pack8, neighborhoods8) then
-    out8 = rule_as_binary[1] & 1
-  else out8 = 0 & 1
-  end
-end
-
-com1()
-com2()
-com3()
-com4()
-com5()
-com6()
-com7()
-com8()
+out1 = com(seed_pack1, 7, 128)
+out2 = com(seed_pack2, 6, 64)
+out3 = com(seed_pack3, 5, 32)
+out4 = com(seed_pack4, 4, 16)
+out5 = com(seed_pack5, 3, 8)
+out6 = com(seed_pack6, 2, 4)
+out7 = com(seed_pack7, 1, 2)
+out8 = com(seed_pack8, 0, 1)
 
 next_seed = out1+out2+out3+out4+out5+out6+out7+out8
 
 end
 
-function notes_off_v1()
+local function notes_off_v1()
   for i=1,#active_notes_v1 do
     m.note_off(active_notes_v1[i],0,ch_1)
   end
   active_notes_v1 = {}
 end
 
-function notes_off_v2()
+local function notes_off_v2()
   for i=1,#active_notes_v2 do
     m.note_off(active_notes_v2[i],0,ch_2)
   end
@@ -314,7 +167,7 @@ function notes_off_v2()
 end
 
 -- if user-defined bit in the binary version of a seed equals 1, then note event [aka, bit-wise gating]
-function iterate()
+local function iterate()
   notes_off_v1()
   notes_off_v2()
   seed = next_seed
@@ -340,17 +193,17 @@ function midi_to_hz(note)
 end
 
 -- allow user to define the MIDI channel voice 1 sends on
-function midi_vox_1(channel)
+local function midi_vox_1(channel)
   ch_1 = channel
 end
 
 -- allow user to define the MIDI channel voice 2 sends on
-function midi_vox_2(channel)
+local function midi_vox_2(channel)
   ch_2 = channel
 end
 
 -- allow user to define the transposition of voice 1 and voice 2, simultaneous changes to MIDI and Passersby engine
-function transpose(semitone)
+local function transpose(semitone)
   semi = semitone
 end
 
@@ -667,7 +520,7 @@ g.event = function(x,y,z)
     g.refresh()
   end
   if y == 8 and z == 1 then
-    if x < 9 then
+    if x < 9 and x < preset_count+1 then
       preset_unpack(x)
     elseif x == 15 then
       presets = {}
