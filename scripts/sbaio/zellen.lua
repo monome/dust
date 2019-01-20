@@ -22,6 +22,7 @@
 engine.name = "PolyPerc"
 
 local music = require("mark_eats/musicutil")
+local er = require("sbaio/euclideanrhythm")
 local g = grid.connect()
 local m = midi.connect()
 
@@ -86,6 +87,10 @@ local active_notes = {}
 local seq_running = false
 local show_playing_indicator = false
 local board = {}
+local beats = {1}
+local euclid_seq_len = 1
+local euclid_seq_beats = 1
+local beat_step = 0
 
 -- note on/off
 local function note_on(note)
@@ -331,6 +336,9 @@ end
 local function reset_sequence()
   local seq_mode = params:get("seq_mode")
   play_pos = 1
+  if (params:get("euclid_reset") == 1) then
+    beat_step = 1
+  end
   
   if(seq_mode == 3) then
     init_position()
@@ -354,26 +362,34 @@ local function play_seq_step()
   
   show_playing_indicator = not show_playing_indicator
   
-  if (play_pos <= #playable_cells) then
-    position = playable_cells[play_pos]
-    local midi_note = scale[(position.x - 1) + position.y]
-    note_on(midi_note)
-    if(play_direction == 4 or play_direction == 5) then
-      if(math.random(2) == 1 and play_pos > 1) then
-        play_pos = play_pos - 1
+  local beat_seq_lengths = #beats
+  
+  if (beats[(beat_step % beat_seq_lengths) + 1] == 1) then
+    if (play_pos <= #playable_cells) then
+      position = playable_cells[play_pos]
+      local midi_note = scale[(position.x - 1) + position.y]
+      note_on(midi_note)
+      if(play_direction == 4 or play_direction == 5) then
+        if(math.random(2) == 1 and play_pos > 1) then
+          play_pos = play_pos - 1
+        else
+          play_pos = play_pos + 1
+        end
+        beat_step = beat_step + 1
       else
-        play_pos = play_pos + 1
+        if (play_pos < #playable_cells or seq_mode == 2) then
+          play_pos = play_pos + 1
+          beat_step = beat_step + 1
+        else
+          reset_sequence()
+        end
       end
     else
-      if (play_pos < #playable_cells or seq_mode == 2) then
-        play_pos = play_pos + 1
-      else
-        reset_sequence()
-      end
+      init_position()
+      reset_sequence()
     end
   else
-    init_position()
-    reset_sequence()
+    beat_step = beat_step + 1
   end
   redraw()
   grid_redraw()
@@ -421,6 +437,24 @@ end
 local function set_root_note(new_root_note)
   root_note = new_root_note
   scale = music.generate_scale_of_length(new_root_note, scale_name, SCALE_LENGTH)
+end
+
+local function set_euclid_seq_len(new_euclid_seq_len)
+  if (new_euclid_seq_len < euclid_seq_beats) then
+    new_euclid_seq_len = euclid_seq_beats
+    params:set("euclid_seq_len", new_euclid_seq_len)
+  end
+  euclid_seq_len = new_euclid_seq_len
+  beats = er.beat_as_table(new_euclid_seq_len, euclid_seq_beats)
+end
+
+local function set_euclid_seq_beats(new_euclid_seq_beats)
+  if(new_euclid_seq_beats > euclid_seq_len) then
+    new_euclid_seq_beats = euclid_seq_len
+    params:set("euclid_seq_beats", new_euclid_seq_beats)
+  end
+  euclid_seq_beats = new_euclid_seq_beats
+  beats = er.beat_as_table(euclid_seq_len, new_euclid_seq_beats)
 end
 
 local function set_release(r)
@@ -475,11 +509,25 @@ function init()
   params:add_option("play_direction", "play direction", PLAY_DIRECTIONS, 1)
   params:set_action("play_direction", set_play_direction)
   
+  params:add_separator()
+  
+  params:add_number("euclid_seq_len", "euclid seq length", 1, 100, 1)
+  params:set_action("euclid_seq_len", set_euclid_seq_len)
+  
+  params:add_number("euclid_seq_beats", "euclid seq beats", 1, 100, 1)
+  params:set_action("euclid_seq_beats", set_euclid_seq_beats)
+  
+  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 1)
+  
+  params:add_separator()
+  
   params:add_control("release", "release", controlspec.new(0.1, 5.0, "lin", 0.01, 0.5, "s"))
   params:set_action("release", set_release)
   
   params:add_control("cutoff", "cutoff", controlspec.new(50, 5000, "exp", 0, 1000, "hz"))
   params:set_action("cutoff", set_cutoff)
+  
+  params:add_separator()
   
   params:add_option("synth", "synth", SYNTHS, 3)
   
@@ -627,5 +675,3 @@ g.event = function(x, y, z)
   end
   grid_redraw()
 end
-
-
