@@ -1,3 +1,50 @@
+-- Quadrangularis
+--
+-- Just-Intonation instrument
+-- inspired by the fabled
+-- 'tonality diamond'. This
+-- thing is more of a 'tonality
+-- square', but you can play
+-- it!  Plug in a 128 grid, it
+-- should light up a square
+-- representing the tonality
+-- diamond - mash the glowing
+-- keys (plus the dim diagonal
+-- of root notes), rock out to
+-- those wild sounds hidden
+-- between your guitar's frets.
+--
+-- It's (innacurately) named
+-- after the Quadrangularis
+-- Reversum, which is
+-- (according to wikipedia) the
+-- name of that crazy looking
+-- marimba thing on the page
+-- https://en.wikipedia.org/wiki
+-- /Tonality_diamond.
+--
+-- Utonalities are in the top
+-- right, otonalities in bottom
+-- left.  All the ratios are
+-- calculated inside this
+-- program from first
+-- principles, and the
+-- generated fractions were
+-- checked against the values
+-- quoted by wikipedia...
+--
+-- Note this is *almost* a port
+-- of a similar patch from the
+-- aleph.  Luckily norns comes
+-- with a bunch of polyphonic
+-- synths ready to rock, so we
+-- immediately experiment with
+-- more than two tones...
+-- still, that aleph patch had
+-- onboard drum machine / white
+-- whale to jam with... watch
+-- this space!
+
 local g = grid.connect()
 
 
