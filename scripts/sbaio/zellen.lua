@@ -100,14 +100,14 @@ local function note_on(note)
     engine.hz(music.note_num_to_freq(note_num))
   end
   if(synth_mode == 2 or synth_mode == 3) then
-    m.note_on(note_num, params:get("midi_note_velocity"))
+    m.note_on(note_num, params:get("midi_note_velocity"), params:get("midi_channel"))
   end
   table.insert(active_notes, note_num)
 end
 
 local function notes_off()
   for i=1,#active_notes do
-    m.note_off(active_notes[i])
+    m.note_off(active_notes[i], 0, params:get("midi_channel"))
   end
   active_notes = {}
 end
@@ -531,6 +531,7 @@ function init()
   
   params:add_option("synth", "synth", SYNTHS, 3)
   
+  params:add_number("midi_channel", "midi channel", 1, 16, 1)
   params:add_number("midi_device_number", "midi device number", 1, 5, 1)
   params:set_action("midi_device_number", set_midi_device_number)
   
