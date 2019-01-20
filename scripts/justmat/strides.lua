@@ -9,9 +9,10 @@
 --
 -- requires a grid.
 --
--- load samples and set
--- cc destinations via the
--- parameters menu.
+-- load samples as well as
+-- set midi note numbers
+-- and cc destinations via
+-- the parameters menu.
 -- ----------
 --
 -- alt_k = hold to access
@@ -44,7 +45,8 @@
 -- selection buttons.
 --
 -- the 2x4 grid of buttons
--- launches samples.
+-- launches samples or
+-- triggers midi notes.
 --
 -- the 2 buttons above
 -- the sample pads are
@@ -65,21 +67,21 @@
 --
 -- while holding alt_g, the right
 -- side of the grid will light
--- up with time and playback
--- speed controls.
+-- up with time and sample
+-- playback speed controls.
 --
 -- the column to the right of alt_g
 -- arms/disarms grid_pattern
 -- linearizing.
 --
--- the 4 button diamond controls
--- grid_pattern time, via the
+-- the 4 button diamond
+-- controls pattern time, via the
 -- left and right buttons, and
--- sample playback speed,
--- via up and down.
+-- sample playback speed, via
+-- up and down.
 --
 -- remaining are buttons for
--- restoring grid_pattern timing,
+-- restoring pattern timing,
 -- on the left, and sample play-
 -- back speed, on the right.
 -- ----------
@@ -93,7 +95,7 @@
 --
 --
 --
--- v1.1 by @justmat
+-- v1.2 by @justmat
 
 engine.name = "Ack"
 
@@ -201,6 +203,20 @@ local function draw_record()
   screen.stroke()
 end
 
+
+local function draw_stop()
+  -- stop icon
+  screen.move(40, 2)
+  screen.rect(40, 2, 10, 10)
+  if enc_pattern[cc_page].play == 0 then
+    screen.level(10)
+  else
+    screen.level(2)
+  end
+  screen.fill()
+  screen.stroke()
+end
+
 -- helper functions for grid --
 
 local function get_grid_pat()
@@ -212,6 +228,7 @@ local function clear_all_grid_pat()
   for i = 1, 8 do
     grid_pattern[i]:clear()
     is_linearized[i] = 0
+    m.note_off(params:get(i..":_midi_note"))
   end
   current_g_pat = 1
 end
@@ -220,6 +237,13 @@ end
 local function stop_all_pat()
   for i = 1, 8 do
     grid_pattern[i]:stop()
+  end
+end
+
+
+local function kill_midi()
+  for i = 1, 127 do
+    m.note_off(i, 100, params:get("midi_chan"))
   end
 end
 
@@ -254,7 +278,15 @@ end
 
 
 local function speed_up_time()
-  -- doubles the speed of grid_pattern playback
+  -- doubles the speed of current grid pattern
+  for j = 1, #grid_pattern[current_g_pat].time do
+    grid_pattern[current_g_pat].time[j] = util.clamp(grid_pattern[current_g_pat].time[j] * .5, .01, 1)
+  end
+end
+
+
+local function speed_up_all_time()
+  -- doubles the speed of all grid patterns.
   for i = 1, 8 do
     for j = 1, #grid_pattern[i].time do
       grid_pattern[i].time[j] = util.clamp(grid_pattern[i].time[j] * .5, .01, 1)
@@ -271,7 +303,17 @@ end
 
 
 local function slow_down_time()
-  -- halfs speed of grid_pattern playback
+  -- halfs speed of current grid pattern
+    if grid_pattern[current_g_pat].count > 0 then
+      for j = 1, #grid_pattern[current_g_pat].time do
+        grid_pattern[current_g_pat].time[j] = grid_pattern[current_g_pat].time[j] / .5
+      end
+    end
+end
+
+
+local function slow_down_all_time()
+  -- halfs speed of all grid patterns
   for i = 1, 8 do
     if grid_pattern[i].count > 0 then
       for j = 1, #grid_pattern[i].time do
@@ -327,28 +369,53 @@ local function linearize_pat(n)
   is_linearized[n] = 1
 end
 
--- pattern processing --
 
-local function trig(e)
+local function set_lit(e)
   if e.state > 0 then
     lit[e.id] = {}
     lit[e.id].state = 1
     lit[e.id].x = e.x
     lit[e.id].y = e.y
+  else
+    if lit[e.id].state == 1 then
+      lit[e.id].state = 0
+    end
+  end
+end
 
+-- pattern processing --
+
+local function trig(e)
+  set_lit(e)
+
+  if e.state == 1 then
+    -- check for speed changes in sample playback
     if speed_changed then
       set_playback_speed()
       speed_changed = false
     end
-
+    -- trig ack, and send note on
     if e.y == 5 then
       engine.trig(e.x - 3)
+      if params:get("send_midi") == 2 then
+        m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     elseif e.y == 6 then
       engine.trig(e.x + 1)
+      if params:get("send_midi") == 2 then
+        m.note_on(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     end
   else
-    if lit[e.id].state == 1 then
-      lit[e.id].state = 0
+    -- note off
+    if e.y == 5 then
+      if params:get("send_midi") == 2 then
+        m.note_off(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
+    elseif e.y == 6 then
+      if params:get("send_midi") == 2 then
+        m.note_off(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      end
     end
   end
   gridredraw()
@@ -375,13 +442,17 @@ function init()
     enc_pattern[i] = pattern_time.new()
     enc_pattern[i].process = enc_process
   end
+  -- midi trig params
+  params:add_option("send_midi", "send midi", {"no", "yes"}, 1)
+  params:add_number("midi_chan", "midi chan", 1, 16, 1)
+  params:add_separator()
   -- add engine params
   for i = 1, 8 do
+    params:add_number(i .. ":_midi_note", i .. ": midi note", 0, 127, 0)
     ack.add_channel_params(i)
     params:add_separator()
   end
-  -- set up midi channel and cc nums
-  params:add_number("midi_chan", "midi chan", 1, 16, 1)
+  -- set up midi cc nums
   for i = 1, 8 do
     params:add_number("cc_num" .. i, "cc num " .. i, 0, 127, i)
   end
@@ -416,11 +487,11 @@ function key(n, z)
   -- mode 0 is grid mode
   if mode == 0 then
     if n == 2 and z == 1 then
-      slow_down_time()
+      slow_down_all_time()
       slow_down_playback()
     elseif n == 3 and z == 1 then
       if alt_k == 0 then
-        speed_up_time()
+        speed_up_all_time()
         speed_up_playback()
       end
     end
@@ -522,6 +593,7 @@ function g.event(x, y, state)
       elseif get_grid_pat().rec == 1 then
         get_grid_pat():rec_stop()
         if get_grid_pat().count > 0 then
+          set_base_time()
           get_grid_pat():start()
         end
       end
@@ -574,6 +646,10 @@ function g.event(x, y, state)
     end
   end
   if alt_g == 1 then
+    -- midi kill/ panic button
+    if x == 6 and y == 2 and state == 1 then
+      kill_midi()
+    end
     -- timing and speed controls for grid
     if x == 9 then
       if state == 1 then
@@ -649,8 +725,11 @@ function gridredraw()
       g.led(e.x, e.y, 4)
     end
   end
-  -- grid_pattern linearize buttons
+
   if alt_g == 1 then
+    -- kill midi
+    g.led(6, 2, 2)
+    -- grid_pattern linearize buttons
     for i = 1, 8 do
       if is_linearized[i] == 1 then
         g.led(9, i, 8)
@@ -717,7 +796,7 @@ else
     screen.font_face(4)
     screen.text("CC ")
     screen.move(35, 48)
-    screen.text(cc_page)
+    screen.text(params:get("cc_num" .. cc_page))
     screen.move(60, 32)
     screen.font_size(12)
     screen.font_face(5)
