@@ -17,16 +17,23 @@ function init()
 end
 
 
+oct = 1
 function key(n,z)
-  if n == 3 then
-    mode = z
-    counter:start()
-  else
-    color = 3 + z * 12
-    counter:stop()
+  if (n == 3) then
+    if (z > 0) then
+      oct = 2
+    else
+      oct = 1
+    end
+  end
+  if (n == 2) then
+    if (z > 0) then
+      oct = 0.5
+    else
+      oct = 1
+    end
   end
   redraw()
-  grid_redraw()
 end
 
 rel=1.0
@@ -100,6 +107,8 @@ function redraw()
     screen.text("cutoff: " .. co)
     screen.move(0,45)
     screen.text("pw: " .. pw)
+    screen.move(0,60)
+    screen.text("octave: " .. oct)
     screen.update()
   elseif mode == 1 then
     screen.clear()
@@ -254,8 +263,8 @@ end
 
 g.event = function(x,y,z)
   if z==1 then
-    engine.cutoff(440*d[x][y] * co )
-    engine.hz(440*d[x][y])
+    engine.cutoff(440*d[x][y] * oct * co )
+    engine.hz(440*d[x][y] * oct)
     g.led(x,y,z*15)
     g.refresh()
   else
