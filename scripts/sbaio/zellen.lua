@@ -9,6 +9,8 @@
 -- KEY3: advance generation
 -- hold KEY1 + press KEY3:
 --   delete board
+-- hold KEY2 + press KEY3:
+--   save state
 --
 -- ENC1: set speed (bpm)
 -- ENC2: set play mode
@@ -20,6 +22,7 @@
 engine.name = "PolyPerc"
 
 local music = require("mark_eats/musicutil")
+local er = require("sbaio/euclideanrhythm")
 local g = grid.connect()
 local m = midi.connect()
 
@@ -84,6 +87,10 @@ local active_notes = {}
 local seq_running = false
 local show_playing_indicator = false
 local board = {}
+local beats = {1}
+local euclid_seq_len = 1
+local euclid_seq_beats = 1
+local beat_step = 0
 
 -- note on/off
 local function note_on(note)
@@ -93,14 +100,14 @@ local function note_on(note)
     engine.hz(music.note_num_to_freq(note_num))
   end
   if(synth_mode == 2 or synth_mode == 3) then
-    m.note_on(note_num, params:get("midi_note_velocity"))
+    m.note_on(note_num, params:get("midi_note_velocity"), params:get("midi_channel"))
   end
   table.insert(active_notes, note_num)
 end
 
 local function notes_off()
   for i=1,#active_notes do
-    m.note_off(active_notes[i])
+    m.note_off(active_notes[i], 0, params:get("midi_channel"))
   end
   active_notes = {}
 end
@@ -191,6 +198,15 @@ local function update_playing_indicator()
     screen.rect(125, 53, 3, 3)
     screen.fill()
   end
+end
+
+local function load_state()
+  params:read("sbaio/zellen.pset")
+  params:bang()
+end
+
+local function save_state()
+  params:write("sbaio/zellen.pset")
 end
 
 
@@ -320,6 +336,9 @@ end
 local function reset_sequence()
   local seq_mode = params:get("seq_mode")
   play_pos = 1
+  if (params:get("euclid_reset") == 1) then
+    beat_step = 1
+  end
   
   if(seq_mode == 3) then
     init_position()
@@ -343,26 +362,34 @@ local function play_seq_step()
   
   show_playing_indicator = not show_playing_indicator
   
-  if (play_pos <= #playable_cells) then
-    position = playable_cells[play_pos]
-    local midi_note = scale[(position.x - 1) + position.y]
-    note_on(midi_note)
-    if(play_direction == 4 or play_direction == 5) then
-      if(math.random(2) == 1 and play_pos > 1) then
-        play_pos = play_pos - 1
+  local beat_seq_lengths = #beats
+  
+  if (beats[(beat_step % beat_seq_lengths) + 1] == 1) then
+    if (play_pos <= #playable_cells) then
+      position = playable_cells[play_pos]
+      local midi_note = scale[(position.x - 1) + position.y]
+      note_on(midi_note)
+      if(play_direction == 4 or play_direction == 5) then
+        if(math.random(2) == 1 and play_pos > 1) then
+          play_pos = play_pos - 1
+        else
+          play_pos = play_pos + 1
+        end
+        beat_step = beat_step + 1
       else
-        play_pos = play_pos + 1
+        if (play_pos < #playable_cells or seq_mode == 2) then
+          play_pos = play_pos + 1
+          beat_step = beat_step + 1
+        else
+          reset_sequence()
+        end
       end
     else
-      if (play_pos < #playable_cells or seq_mode == 2) then
-        play_pos = play_pos + 1
-      else
-        reset_sequence()
-      end
+      init_position()
+      reset_sequence()
     end
   else
-    init_position()
-    reset_sequence()
+    beat_step = beat_step + 1
   end
   redraw()
   grid_redraw()
@@ -412,6 +439,24 @@ local function set_root_note(new_root_note)
   scale = music.generate_scale_of_length(new_root_note, scale_name, SCALE_LENGTH)
 end
 
+local function set_euclid_seq_len(new_euclid_seq_len)
+  if (new_euclid_seq_len < euclid_seq_beats) then
+    new_euclid_seq_len = euclid_seq_beats
+    params:set("euclid_seq_len", new_euclid_seq_len)
+  end
+  euclid_seq_len = new_euclid_seq_len
+  beats = er.beat_as_table(new_euclid_seq_len, euclid_seq_beats)
+end
+
+local function set_euclid_seq_beats(new_euclid_seq_beats)
+  if(new_euclid_seq_beats > euclid_seq_len) then
+    new_euclid_seq_beats = euclid_seq_len
+    params:set("euclid_seq_beats", new_euclid_seq_beats)
+  end
+  euclid_seq_beats = new_euclid_seq_beats
+  beats = er.beat_as_table(euclid_seq_len, new_euclid_seq_beats)
+end
+
 local function set_release(r)
   engine.release(r)
 end
@@ -455,7 +500,7 @@ function init()
   params:add_number("ghost_offset", "ghost offset", -24, 24, 0)
   params:set_action("ghost_offset", set_ghost_offset)
   
-  params:add_number("speed", "speed", 0, 1000, 100)
+  params:add_number("speed", "bpm", 10, 1000, 100)
   params:set_action("speed", set_speed)
   
   params:add_option("play_mode", "play mode", PLAY_MODES, 1)
@@ -464,14 +509,29 @@ function init()
   params:add_option("play_direction", "play direction", PLAY_DIRECTIONS, 1)
   params:set_action("play_direction", set_play_direction)
   
+  params:add_separator()
+  
+  params:add_number("euclid_seq_len", "euclid seq length", 1, 100, 1)
+  params:set_action("euclid_seq_len", set_euclid_seq_len)
+  
+  params:add_number("euclid_seq_beats", "euclid seq beats", 1, 100, 1)
+  params:set_action("euclid_seq_beats", set_euclid_seq_beats)
+  
+  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 1)
+  
+  params:add_separator()
+  
   params:add_control("release", "release", controlspec.new(0.1, 5.0, "lin", 0.01, 0.5, "s"))
   params:set_action("release", set_release)
   
   params:add_control("cutoff", "cutoff", controlspec.new(50, 5000, "exp", 0, 1000, "hz"))
   params:set_action("cutoff", set_cutoff)
   
+  params:add_separator()
+  
   params:add_option("synth", "synth", SYNTHS, 3)
   
+  params:add_number("midi_channel", "midi channel", 1, 16, 1)
   params:add_number("midi_device_number", "midi device number", 1, 5, 1)
   params:set_action("midi_device_number", set_midi_device_number)
   
@@ -491,6 +551,8 @@ function init()
     end
   end
   
+  load_state()
+  
   init_position()
   init_engine()
 end
@@ -504,7 +566,7 @@ function redraw()
   screen.text(params:get("speed"))
   screen.level(7)
   screen.move(0, 16)
-  screen.text("speed")
+  screen.text("bpm")
   
   screen.move(0, 28)
   screen.level(15)
@@ -564,7 +626,9 @@ function key(n, z)
   end
   if (n == 2) then
     KEY2_DOWN = z == 1
-    if (KEY2_DOWN) then
+    if(KEY2_DOWN and KEY1_DOWN) then
+      save_state()
+    elseif (KEY2_DOWN) then
       if(seq_mode == 1) then
         if (#playable_cells == 0) then
           generation_step()
@@ -612,5 +676,3 @@ g.event = function(x, y, z)
   end
   grid_redraw()
 end
-
-
