@@ -22,7 +22,7 @@
 engine.name = "PolyPerc"
 
 local music = require("mark_eats/musicutil")
-local er = require("sbaio/euclideanrhythm")
+local er = require("er")
 local g = grid.connect()
 local m = midi.connect()
 
@@ -87,7 +87,7 @@ local active_notes = {}
 local seq_running = false
 local show_playing_indicator = false
 local board = {}
-local beats = {1}
+local beats = {true}
 local euclid_seq_len = 1
 local euclid_seq_beats = 1
 local beat_step = 0
@@ -364,7 +364,7 @@ local function play_seq_step()
   
   local beat_seq_lengths = #beats
   
-  if (beats[(beat_step % beat_seq_lengths) + 1] == 1) then
+  if (beats[(beat_step % beat_seq_lengths) + 1]) then
     if (play_pos <= #playable_cells) then
       position = playable_cells[play_pos]
       local midi_note = scale[(position.x - 1) + position.y]
@@ -445,7 +445,7 @@ local function set_euclid_seq_len(new_euclid_seq_len)
     params:set("euclid_seq_len", new_euclid_seq_len)
   end
   euclid_seq_len = new_euclid_seq_len
-  beats = er.beat_as_table(new_euclid_seq_len, euclid_seq_beats)
+  beats = er.gen(euclid_seq_beats, new_euclid_seq_len)
 end
 
 local function set_euclid_seq_beats(new_euclid_seq_beats)
@@ -454,7 +454,7 @@ local function set_euclid_seq_beats(new_euclid_seq_beats)
     params:set("euclid_seq_beats", new_euclid_seq_beats)
   end
   euclid_seq_beats = new_euclid_seq_beats
-  beats = er.beat_as_table(euclid_seq_len, new_euclid_seq_beats)
+  beats = er.gen(new_euclid_seq_beats, euclid_seq_len)
 end
 
 local function set_release(r)
