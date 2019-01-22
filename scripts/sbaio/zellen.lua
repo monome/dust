@@ -10,7 +10,7 @@
 -- hold KEY1 + press KEY3:
 --   delete board
 -- hold KEY2 + press KEY3:
---   save state
+--   save parameters
 --
 -- ENC1: set speed (bpm)
 -- ENC2: set play mode
@@ -51,7 +51,7 @@ local SCALE_NAMES = {}
 local SCALE_LENGTH = 24
 local SEQ_MODES = {
   "manual",
-  "semi-manual",
+  "semi-automatic",
   "automatic"
 }
 local PLAY_DIRECTIONS = {
@@ -62,9 +62,9 @@ local PLAY_DIRECTIONS = {
   "drunken down"
 }
 local PLAY_MODES = {
-"reborn",
-"born",
-"ghost"
+  "born",
+  "reborn",
+  "ghost"
 }
 local SYNTHS = {
   "internal",
@@ -262,13 +262,13 @@ local function collect_playable_cells()
   local mode = params:get("play_mode")
   for x=1,GRID_SIZE.X do
     for y=1,GRID_SIZE.Y do
-      if ((was_born(x, y) or was_reborn(x, y)) and mode == 1) then
+      if (was_born(x, y) and mode == 1) then
         table.insert(playable_cells, {
           ["x"] = x,
           ["y"] = y
         })
       end
-      if (was_born(x, y) and mode == 2) then
+      if ((was_born(x, y) or was_reborn(x, y)) and mode == 2) then
         table.insert(playable_cells, {
           ["x"] = x,
           ["y"] = y
@@ -517,7 +517,7 @@ function init()
   params:add_number("euclid_seq_beats", "euclid seq beats", 1, 100, 1)
   params:set_action("euclid_seq_beats", set_euclid_seq_beats)
   
-  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 1)
+  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 2)
   
   params:add_separator()
   
