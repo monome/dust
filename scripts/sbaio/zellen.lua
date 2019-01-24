@@ -10,7 +10,7 @@
 -- hold KEY1 + press KEY3:
 --   delete board
 -- hold KEY2 + press KEY3:
---   save state
+--   save parameters
 --
 -- ENC1: set speed (bpm)
 -- ENC2: set play mode
@@ -22,7 +22,7 @@
 engine.name = "PolyPerc"
 
 local music = require("mark_eats/musicutil")
-local er = require("sbaio/euclideanrhythm")
+local er = require("er")
 local g = grid.connect()
 local m = midi.connect()
 
@@ -51,7 +51,7 @@ local SCALE_NAMES = {}
 local SCALE_LENGTH = 24
 local SEQ_MODES = {
   "manual",
-  "semi-manual",
+  "semi-automatic",
   "automatic"
 }
 local PLAY_DIRECTIONS = {
@@ -62,9 +62,9 @@ local PLAY_DIRECTIONS = {
   "drunken down"
 }
 local PLAY_MODES = {
-"reborn",
-"born",
-"ghost"
+  "born",
+  "reborn",
+  "ghost"
 }
 local SYNTHS = {
   "internal",
@@ -87,7 +87,7 @@ local active_notes = {}
 local seq_running = false
 local show_playing_indicator = false
 local board = {}
-local beats = {1}
+local beats = {true}
 local euclid_seq_len = 1
 local euclid_seq_beats = 1
 local beat_step = 0
@@ -262,13 +262,13 @@ local function collect_playable_cells()
   local mode = params:get("play_mode")
   for x=1,GRID_SIZE.X do
     for y=1,GRID_SIZE.Y do
-      if ((was_born(x, y) or was_reborn(x, y)) and mode == 1) then
+      if (was_born(x, y) and mode == 1) then
         table.insert(playable_cells, {
           ["x"] = x,
           ["y"] = y
         })
       end
-      if (was_born(x, y) and mode == 2) then
+      if ((was_born(x, y) or was_reborn(x, y)) and mode == 2) then
         table.insert(playable_cells, {
           ["x"] = x,
           ["y"] = y
@@ -364,7 +364,7 @@ local function play_seq_step()
   
   local beat_seq_lengths = #beats
   
-  if (beats[(beat_step % beat_seq_lengths) + 1] == 1) then
+  if (beats[(beat_step % beat_seq_lengths) + 1]) then
     if (play_pos <= #playable_cells) then
       position = playable_cells[play_pos]
       local midi_note = scale[(position.x - 1) + position.y]
@@ -445,7 +445,7 @@ local function set_euclid_seq_len(new_euclid_seq_len)
     params:set("euclid_seq_len", new_euclid_seq_len)
   end
   euclid_seq_len = new_euclid_seq_len
-  beats = er.beat_as_table(new_euclid_seq_len, euclid_seq_beats)
+  beats = er.gen(euclid_seq_beats, new_euclid_seq_len)
 end
 
 local function set_euclid_seq_beats(new_euclid_seq_beats)
@@ -454,7 +454,7 @@ local function set_euclid_seq_beats(new_euclid_seq_beats)
     params:set("euclid_seq_beats", new_euclid_seq_beats)
   end
   euclid_seq_beats = new_euclid_seq_beats
-  beats = er.beat_as_table(euclid_seq_len, new_euclid_seq_beats)
+  beats = er.gen(new_euclid_seq_beats, euclid_seq_len)
 end
 
 local function set_release(r)
@@ -517,7 +517,7 @@ function init()
   params:add_number("euclid_seq_beats", "euclid seq beats", 1, 100, 1)
   params:set_action("euclid_seq_beats", set_euclid_seq_beats)
   
-  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 1)
+  params:add_option("euclid_reset", "reset seq at start of gen", { "Y", "N" }, 2)
   
   params:add_separator()
   
