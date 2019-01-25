@@ -5,6 +5,7 @@
 engine.name = 'Haven'
 
 local sel = 1
+local shift = false
 
 function init()
   params:add{
@@ -48,6 +49,13 @@ function init()
     controlspec=controlspec.new(-1, 1, "linear", 0, 0.03, ""),
     action=engine.fdbck,
   }
+  
+  params:add{
+    type="control",
+    id="rev_level",
+    controlspec=controlspec.new(-math.huge,18,'db',0,0,"dB"),
+    action=function(value) mix:set("rev_level", value) end,
+  }
 end
 
 function redraw()
@@ -57,55 +65,63 @@ function redraw()
   screen.level(15)
 
   screen.level(sel == 1 and 15 or 4)
-  screen.move(0, 8)
+  screen.move(30, 8)
   screen.text(params:string("freq1"))
 
   screen.level(3)
-  screen.move(0, 16)
+  screen.move(0, 8)
   screen.text("lo freq")
 
   screen.level(sel == 1 and 15 or 4)
-  screen.move(64, 8)
+  screen.move(94, 8)
   screen.text(params:string("amp1"))
 
   screen.level(3)
-  screen.move(64, 16)
+  screen.move(74, 8)
   screen.text("amp")
 
   screen.level(sel == 2 and 15 or 4)
-  screen.move(0, 32)
+  screen.move(30, 24)
   screen.text(params:string("freq2"))
 
   screen.level(3)
-  screen.move(0, 40)
+  screen.move(0, 24)
   screen.text("hi freq")
 
   screen.level(sel == 2 and 15 or 4)
-  screen.move(64, 32)
+  screen.move(94, 24)
   screen.text(params:string("amp2"))
 
   screen.level(3)
-  screen.move(64, 40)
+  screen.move(74, 24)
   screen.text("amp")
 
   screen.level(sel == 3 and 15 or 4)
-  screen.move(0, 56)
+  screen.move(30, 40)
   screen.text(params:string("fdbck"))
 
   screen.level(3)
-  screen.move(0, 64)
+  screen.move(0, 40)
   screen.text("fdbck")
 
   screen.level(sel == 3 and 15 or 4)
-  screen.move(64, 56)
+  screen.move(94, 40)
   screen.text(params:string("in_amp"))
 
   screen.level(3)
-  screen.move(64, 64)
+  screen.move(74, 40)
   screen.text("in")
 
-  screen.move(128, 8)
-  screen.text_right("haven")
+  screen.level(sel == 4 and 15 or 4)
+  screen.move(30, 56)
+  screen.text(params:string("rev_level"))
+  
+  screen.level(3)
+  screen.move(0, 56)
+  screen.text("reverb")
+
+  -- screen.move(128, 8)
+  -- screen.text_right("haven")
 
   screen.update()
 end
@@ -114,23 +130,57 @@ end
 function key(n, z)
   if n == 2 and z == 1 then
     sel = sel + 1
-    if sel > 3 then sel = 1 end
+    if sel > 4 then sel = 1 end
     redraw()
+  end
+  
+  if n == 3 then
+    shift = z == 1
   end
 end
 
 function enc(n, delta)
-  if n == 1 then mix:delta("output", delta) end
+  local delta = delta
+
+  if n == 1 then
+    mix:delta("output", delta)
+  end
 
   if sel == 1 then
-    if n == 2 then params:delta("freq1", delta) end
-    if n == 3 then params:delta("amp1", delta) end
+    if n == 2 then
+      if shift then delta = delta / 100 end
+      params:delta("freq1", delta)
+    end
+    if n == 3 then
+      if shift then delta = delta / 10 end
+      params:delta("amp1", delta)
+    end
   elseif sel == 2 then
-    if n == 2 then params:delta("freq2", delta) end
-    if n == 3 then params:delta("amp2", delta) end
+    if n == 2 then
+      if shift then delta = delta / 100 end
+      params:delta("freq2", delta)
+    end
+    if n == 3 then
+      if shift then delta = delta / 10 end
+      params:delta("amp2", delta)
+    end
   elseif sel == 3 then
-    if n == 2 then params:delta("fdbck", delta) end
-    if n == 3 then params:delta("in_amp", delta) end
+    if n == 2 then
+      if shift then
+        params:set("fdbck", -params:get("fdbck"))
+      else
+        params:delta("fdbck", delta)
+      end
+    end
+    if n == 3 then
+      if shift then delta = delta / 10 end
+      params:delta("in_amp", delta)
+    end
+  elseif sel == 4 then
+    if n == 2 then
+      if shift then delta = delta / 100 end
+      params:delta("rev_level", delta)
+    end
   end
 
   redraw()
