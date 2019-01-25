@@ -52,24 +52,31 @@ Engine_Haven : CroneGenEngine {
 			);
 
 			oscAmps = [amp1, amp2].lag(0.2) * AmpCompA.kr(freqs);
+			snd = SinOscFB.ar(
+				freq: freqs,
+				feedback: (dyns * [2, 1.1]).fold(0, [1.5, 1.9])
+			) * oscAmps * 4;
 
-			snd = (fdbck * xxx) // feedback
-			+ this.rotate(
-				in: Mix([
-					inputs,
-					SinOscFB.ar(
-						freq: freqs,
-						feedback: (dyns * [2, 1.1]).fold(0, [1.5, 1.9])
-					) * oscAmps * 4
-				]).tanh
-				* SinOsc.ar(
-					0.01 + dyns.varlag(20, 20)
-				)
-				* LFTri.ar(
-					(1-dyns.lag(1)) * 20
-				),
+			// mix
+			snd = (inputs + snd).tanh;
+
+			// amp modulation
+			snd = snd * SinOsc.ar(
+				0.01 + dyns.varlag(20, 20),
+				{Rand()}!2
+			) * LFTri.ar(
+				(1-dyns.lag([1, 1.2])) * 20,
+				{Rand()}!2
+			);
+
+			//stereo rotate
+			sbd = this.rotate(
+				in: snd,
 				pos: (dynIns + LFSaw.kr(0.001))%1 // (2, 2)
 			);
+
+			snd = (fdbck * xxx) // feedback
+			+ snd;
 
 			// collapse to stereo
 			snd = snd.sum;
