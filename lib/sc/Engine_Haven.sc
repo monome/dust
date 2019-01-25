@@ -1,6 +1,8 @@
 /*
 2018, Till Bovermann
 http://tai-studio.org
+
+
 */
 
 Engine_Haven : CroneGenEngine {
@@ -9,63 +11,93 @@ Engine_Haven : CroneGenEngine {
 	}
 
 	*ugenGraphFunc {
-		^{|in = 0, out = 0, freq1, freq2, amp1, amp2, inAmp, fdbck|
+		^{|in = 0, out = 0, freq1, freq2, amp1, amp2, inAmp, fdbck, fdbckSign|
 
-			var x, freq, snd, lIn, input, dyn2;
-			var dyn, dynIn;
+			var freqs, freqRange = 0.85;
+			var inputs, oscAmps;
+			var dyns, dynIns;
+			var xxx, snd, lIns;
 
-			fdbck = fdbck.varlag(0.3);
-			freq = [freq1, freq2].varlag(0.5);
+			// combine fdbck with its sign
+			fdbck = fdbck.varlag(0.3) * fdbckSign.lag(SampleRate.ir * 0.5);
 
-			lIn = LocalIn.ar(2);
-			input = (In.ar(in, 2) * inAmp);
-			dynIn = Amplitude.ar(input, 0.1, 0.1);
-			x = Limiter.ar(
+			lIns = LocalIn.ar(2);
+			inputs = (In.ar(in, 2) * inAmp);
+			dynIns = Amplitude.ar(inputs, 0.1, 0.1);
+
+			// magic (>:)
+			xxx = Limiter.ar(
 				CombL.ar(
-					lIn,
+					lIns + inputs,
 					0.5,
-					(LFNoise1.ar(0.1, 0.5, 0.5) + dynIn).tanh * 0.5,
+					(LFNoise1.ar(0.1, 0.5, 0.5) + dynIns).tanh * 0.5,
 					-10
 				)
 			);
 
-			dyn = Impulse.ar(0).lag(0.001, 0.1) + Amplitude.ar(x.reverse, LFNoise1.kr(0.062).abs * 10, LFNoise2.kr(0.12362).abs * 15);
-
-			snd =
-			(fdbck * x) +
-			this.rotate(
-				SinOscFB.ar(
-					freq: (freq) - (dyn.lag(0.003235246) * (freq - [0, 2])),
-					feedback: (dyn).fold(0, 1.5),
-					mul: SinOsc.ar(0.1 + dyn.lag(0, 10)) * (0.1 + dyn) * LFTri.ar(dyn.lag(0.04235) * 20 + 0.001) * 200
-				).tanh
-				* [amp1, amp2].lag(0.2),
-				(dynIn + LFSaw.kr(0.001))%1
+			dyns = Impulse.ar(0).lag(0.001, 0.1)
+			+ Amplitude.ar(
+				in: xxx.reverse,
+				attackTime: LFNoise1.kr(dynIns[0].lag(1) * 0.1).abs * 5,
+				releaseTime: LFNoise1.kr(dynIns[0].lag(3) * 0.5).abs * 15
 			);
 
+			freqs = [freq1, freq2].varlag(0.5);
+			freqs = freqs -
+			(
+				dyns.lag(0.003235246).abs
+				* (
+					(freqRange * freqs)
+				)
+			);
+
+			oscAmps = [amp1, amp2].lag(0.2) * AmpCompA.kr(freqs);
+
+			snd = (fdbck * xxx) // feedback
+			+ this.rotate(
+				in: Mix([
+					inputs,
+					SinOscFB.ar(
+						freq: freqs,
+						feedback: (dyns * [2, 1.1]).fold(0, [1.5, 1.9])
+					) * oscAmps * 4
+				]).tanh
+				* SinOsc.ar(
+					0.01 + dyns.varlag(20, 20)
+				)
+				* LFTri.ar(
+					(1-dyns.lag(1)) * 20
+				),
+				pos: (dynIns + LFSaw.kr(0.001))%1 // (2, 2)
+			);
+
+			// collapse to stereo
+			snd = snd.sum;
 			snd = LeakDC.ar(snd);
 
+			LocalOut.ar(snd);
 
-			LocalOut.ar(snd + input);
-
-			snd = snd - (0.5 * MoogLadder.ar(this.rotate(snd, dyn.sum.lag(0.01)), ffreq: (1-dyn.lag(0, 10)) * 1100 + 50, res: 0.2));
+			snd = snd - (0.5 * MoogLadder.ar(this.rotate(snd, dyns.sum.lag(0.01)), ffreq: (1-dyns.lag(0, 10)) * 1100 + 50, res: 0.2));
+			snd = snd.tanh;
 
 			Out.ar(out, snd);
+			// snd.tanh
 		}
 	}
 
 	*specs {
 		^(
-			freq1: ControlSpec(10, 200, \exp, default: 20, units: "Hz"),
-			freq2: ControlSpec(1000, 12000, \exp, default: 4000, units: "Hz"),
-			amp1: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			amp2: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			inAmp: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			fdbck: ControlSpec(-1, 1, \lin, default: 0.03, units: "")
+			\freq1: [1, 800, \exp, 0.0, 20].asSpec,
+			\freq2: [400, 12000, \exp, 0.0, 4000, "Hz"].asSpec,
+			\amp1: [0, 1, \linear, 0.0, 0, ""].asSpec,
+			\amp2: [0, 1, \linear, 0.0, 0, ""].asSpec,
+			\inAmp: [0, 1, \linear, 0.0, 0, ""].asSpec,
+			\fdbck: [0, 1, \linear, 0.0, 0.03, ""].asSpec,
+			\fdbckSign: [-1, 1, \linear, 1, 0, ""].asSpec
 		)
 	}
 
-	*synthDef { // TODO: remove, this is just due to wrapping of out not working right atm
+	*synthDef { // TODO: move ugenGraphFunc to here...
 		^SynthDef(
 			\haven,
 			this.ugenGraphFunc,
