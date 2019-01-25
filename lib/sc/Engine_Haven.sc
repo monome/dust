@@ -70,7 +70,7 @@ Engine_Haven : CroneGenEngine {
 			);
 
 			//stereo rotate
-			sbd = this.rotate(
+			snd = this.rotate(
 				in: snd,
 				pos: (dynIns + LFSaw.kr(0.001))%1 // (2, 2)
 			);
