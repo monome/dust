@@ -3,7 +3,7 @@
 
 # foulplay
 
-a euclidean sample instrument with trigger conditions.
+a euclidean instrument with trigger conditions.
 based on tehn/playfair.
 
 samples can be loaded via PARAMETERS in the main menu.
@@ -30,9 +30,13 @@ while **home**, KEY3 is ALT.
 
 ## track edit
 
-holding KEY1 will bring up the **track edit** screen, releasing KEY1 will return **home**.
+each track can be configured to either send midi or trigger a sample.
+please see the PARAMETERS menu for configuration.
 
-**track edit** is where you will find trigger conditions and probability settings, as well as various track specific parameters.
+holding KEY1 will bring up the **track edit** screen, releasing KEY1 will return **home**.
+ 
+**track edit** is where you will find trigger conditions and probability settings, as well as various sample specific parameters. 
+if sending midi, **track edit** will contain shortcuts for setting the midi channel and note.
 
 in **track edit** parameters 1-3 are tied to their respective encoders.
 
@@ -44,22 +48,34 @@ in **track edit** parameters 1-3 are tied to their respective encoders.
 # grid 
 (coded by @junklight)
 
-![](grid.png)
+![](FP_grid.png)
 
-column 1 selects which track to edit.
-column 2 provides track mute toggles. 
+* a. track select column
+* b. track mute toggle column
+* c. pattern and pset select area
+* d. start / stop button
+* e. phase reset button
+* f. pset load button
+* g. track edit pages
+* h. copy button
 
-buttons 4-7 on the bottom row bring up track edit pages 1-4.
-button 8 on the bottom row is copy.
+pressing a button in section **a** will select which track to focus for editing. tracks are numbered top to bottom, 1-8.
 
-the pattern area is a 5x5 grid of memory cells, allowing for storing/ recalling patterns.
-to copy a pattern to a new cell hold the copy button and press the cell you wish to copy. 
-the cell will blink. while still holding copy, press the desired destination cell. release
-copy to return to normal use.
+pressing a button in section **b** will mute or unmute the adjacent track in section **a**.
+
+section **c** is a multi-function area containing 25 buttons numbered from left to right, top to bottom. if no modifiers are held, pressing a button in section **c** will load the corresponding pattern data.
+
+pressing **d** will start or stop the clock.
+
+pressing **e** will reset all tracks to 1.
+
+**f** is a modifier button for section **c**. holding **f** and pressing in section **c** will load the corresponding pset data.
+
+the buttons in section **g** open track edit pages for your currently selected track.
+
+**h** is a modifier button for section **c**, allowing for copy/paste behavior. holding **h** and pressing a pattern in section **c** will copy the selected pattern. while still holding **h**, press the desired pattern location to paste.
 
 ---
-
-# extended explanations
 
 ### saving/ loading your work
 
@@ -67,13 +83,3 @@ foulplay will automatically save its _current state*_ whenever (a) you switch sc
 loading is also automatic, and will happen anytime that you load foulplay.
 
 *foulplays current state includes the 25 memory cells, accessible via grid, and their data.*
-
----
-
-### trig logic & probability
-
-on page 2 of **track edit** you will find the trig logic and probability settings.
-
-- ENC1 selects which logic to use. either **none**, **and**, **or**, **nand**, **nor**, or **xor**.
-- ENC2 selects which track to apply the logic to. you must have trig logic turned on to access this one.
-- ENC3 sets the trig probability. this is also applied to logic derived trigs.

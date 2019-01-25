@@ -21,6 +21,8 @@ _Note: channels are indexed 0-7 in commands._
 
 - `trig i` - triggers single channel.
 - `multiTrig iiiiiiii` - triggers multiple channels. one 1/0 argument for each channel. 1 means trigger.
+- `kill i` - mute single channel.
+- `killTrig iiiiiiii` - mutes multiple channels. one 1/0 argument for each channel. 1 means mute.
 
 ### Channel Settings
 
@@ -43,6 +45,8 @@ First argument is always channel.
 - `filterEnvAttack if` - filter AR envelope attack time.
 - `filterEnvRelease if` - filter AR envelope release time.
 - `filterEnvMod if` - filter AR envelope cutoff modulation -1...1.
+- `dist if` - distorsion amount 0...1.
+- `includeInMuteGroup ii` - 0 or 1. 1 means channel will be muted if other channel in mute group is played.
 - `delaySend if` - delay send expressed in dB.
 - `reverbSend if` - reverb send expressed in dB.
 
@@ -109,6 +113,8 @@ Settings per channel:
 - `filter env atk` - 0-1000 ms
 - `filter env rel` - 0-3000 ms
 - `filter env mod` - bipolar -100..100%
+- `dist` - unipolar 0..100%
+- `in mutegroup` - mutegroup enable / disable
 - `delay send` - expressed in dB
 - `reverb send` - expressed in dB
 

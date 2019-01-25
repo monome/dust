@@ -12,7 +12,7 @@ Engine_PolySub : CroneEngine {
 	var <voices; // collection of voice nodes
 
 	*initClass {
-		maxNumVoices = 10;
+		maxNumVoices = 16;
 		StartUp.add {
 			// a decently versatile subtractive synth voice
 			polyDef = SynthDef.new(\polySub, {
@@ -55,7 +55,7 @@ Engine_PolySub : CroneEngine {
 				snd = snd + ((SinOsc.ar(hz / 2) * sub).dup);
 				aenv = EnvGen.ar(
 					Env.adsr(ampAtk, ampDec, ampSus, ampRel, 1.0, ampCurve),
-					gate);
+					gate, doneAction:2);
 
 
 				fenv = EnvGen.ar(Env.adsr(cutAtk, cutDec, cutSus, cutRel), gate);
@@ -66,8 +66,6 @@ Engine_PolySub : CroneEngine {
 				snd = SelectX.ar(noise, [snd, [PinkNoise.ar, PinkNoise.ar]]);
 				snd = MoogFF.ar(snd, cut, fgain) * aenv;
 
-				// hm... doneAction is still busted!!!
-				FreeSelf.kr(DetectSilence.ar(snd));
 				Out.ar(out, level * SelectX.ar(width, [Mix.new(snd).dup, snd]));
 			});
 
@@ -97,7 +95,7 @@ Engine_PolySub : CroneEngine {
 	}
 
 	alloc {
-		gr = Group.new(context.xg);
+		gr = ParGroup.new(context.xg);
 
 		voices = Dictionary.new;
 		ctlBus = Dictionary.new;

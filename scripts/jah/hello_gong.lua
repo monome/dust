@@ -15,14 +15,18 @@
 local ControlSpec = require 'controlspec'
 local Voice = require 'exp/voice'
 local Gong = require 'jah/gong'
-local Midi = require 'midi'
-local Grid = require 'grid'
+local midi = require 'midi'
+local grid = require 'grid'
 local Metro = require 'metro'
 
 engine.name = 'Gong'
 
-local midi_device
-local grid_device
+local midi_device = midi.connect(1)
+local midi_device_is_connected = false
+
+local grid_device = grid.connect(1)
+local grid_device_is_connected = false
+
 local indicate_midi_event
 local indicate_gridkey_event
 
@@ -46,7 +50,7 @@ end
 local function update_device_indicators()
   screen.move(0,60)
   screen.font_size(8)
-  if midi_device then
+  if midi_device_is_connected then
     if indicate_midi_event then
       screen.level(8)
     else
@@ -55,10 +59,10 @@ local function update_device_indicators()
     screen.text("midi")
   end
   screen.level(15)
-  if midi_device and grid_device then
+  if midi_device_is_connected and grid_device_is_connected then
     screen.text("+")
   end
-  if grid_device then
+  if grid_device_is_connected then
     if indicate_gridkey_event then
       screen.level(8)
     else
@@ -66,7 +70,7 @@ local function update_device_indicators()
     end
     screen.text("grid")
   end
-  if midi_device == nil and grid_device == nil then
+  if midi_device_is_connected == false and grid_device_is_connected == false then
     screen.level(3)
     screen.text("no midi / grid")
   end
@@ -153,14 +157,13 @@ local function note_off(note)
 end
 
 local function default_patch()
-  params:set("osc1 > osc3 freq", 1)
-  params:set("osc1 partial no", 2)
-  -- params:set_raw("osc1 partial no", 0.13043) -- = 2 mapped
-  params:set("osc3 gain", 1)
-  params:set("osc3 index", 5)
-  params:set("osc3 > amp", 0.1)
-  params:set("env > osc1 gain", 0.5)
-  params:set("env > amp gain", 1)
+  params:set("osc1_to_osc3freq", 1)
+  params:set("osc1partial", 2)
+  params:set("osc3gain", 1)
+  params:set("osc3index", 5)
+  params:set("osc3outlevel", 0.1)
+  params:set("env_to_osc1gain", 0.5)
+  params:set("env_to_ampgain", 1)
   --[[
   params:set("delay send", -20)
   params:set("delay time left", 0.03)
@@ -174,13 +177,15 @@ local function gridkey_event(x, y, s)
   local note = x * 8 + y
   if s == 1 then
     note_on(note, 5)
-    grid_device:led(x, y, 15)
+    grid_device.led(x, y, 15)
   else
     note_off(note)
-    grid_device:led(x, y, 0)
+    grid_device.led(x, y, 0)
   end
-  grid_device:refresh()
+  grid_device.refresh()
 end
+
+grid_device.event = gridkey_event
 
 local function midi_event(data)
   indicate_midi_event = true
@@ -212,23 +217,23 @@ local function midi_event(data)
   end
 end
 
-function Midi.add(dev)
-  if not midi_device then
-    dev.event = midi_event
+midi_device.event = midi_event
+
+function midi.add(dev)
+  if not midi_device_is_connected then
     dev.remove = function()
-      midi_device = nil
+      midi_device_is_connected = false
     end
-    midi_device = dev
+    midi_device_is_connected = true
   end
 end
 
-function Grid.add(dev)
-  if not grid_device then
-    dev.key = gridkey_event
+function grid.add(dev)
+  if not grid_device_is_connected then
     dev.remove = function()
-      grid_device = nil
+      grid_device_is_connected = false
     end
-    grid_device = dev
+    grid_device_is_connected = true
   end
 end
 
@@ -238,14 +243,14 @@ local function add_midi_cc_params()
     midi_cc_note_list[i] = i
   end
   cc_type = {"abs", "rel"}
-  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
-  params:add_option("filter cutoff cc type", cc_type)
-  params:add_option("filter resonance cc", midi_cc_note_list, 2)
-  params:add_option("filter resonance cc type", cc_type)
-  params:add_option("timbre cc", midi_cc_note_list, 3)
-  params:add_option("timbre cc type", cc_type)
-  params:add_option("timemod cc", midi_cc_note_list, 4)
-  params:add_option("timemod cc type", cc_type)
+  params:add_option("filter_cutoff_cc", "filter cutoff cc", midi_cc_note_list, 1)
+  params:add_option("filter_cutoff_cc_type", "filter cutoff cc type", cc_type)
+  params:add_option("filter_resonance_cc", "filter resonance cc", midi_cc_note_list, 2)
+  params:add_option("filter_resonance_cc_type", "filter resonance cc type", cc_type)
+  params:add_option("timbre_cc", "timbre cc", midi_cc_note_list, 3)
+  params:add_option("timbre_cc_type", "timbre cc type", cc_type)
+  params:add_option("timemod_cc", "timemod cc", midi_cc_note_list, 4)
+  params:add_option("timemod_cc_type", "timemod cc type", cc_type)
 end
 
 function init()

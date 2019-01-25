@@ -25,14 +25,16 @@
 
 local ControlSpec = require 'controlspec'
 local Ack = require 'jah/ack'
-local Midi = require 'midi'
-local Grid = require 'grid'
+local midi = require 'midi'
+local grid = require 'grid'
 local Metro = require 'metro'
 
 engine.name = 'Ack'
 
-local midi_device
-local grid_device
+local midi_device = midi.connect(1)
+
+local grid_device = grid.connect(1)
+
 local indicate_midi_event
 local indicate_gridkey_event
 
@@ -76,7 +78,7 @@ end
 local function update_device_indicators()
   screen.move(0,60)
   screen.font_size(8)
-  if midi_device then
+  if midi_device.attached then
     if indicate_midi_event then
       screen.level(8)
     else
@@ -85,10 +87,10 @@ local function update_device_indicators()
     screen.text("midi")
   end
   screen.level(15)
-  if midi_device and grid_device then
+  if midi_device.attached and grid_device.attached then
     screen.text("+")
   end
-  if grid_device then
+  if grid_device.attached then
     if indicate_gridkey_event then
       screen.level(8)
     else
@@ -96,7 +98,7 @@ local function update_device_indicators()
     end
     screen.text("grid")
   end
-  if midi_device == nil and grid_device == nil then
+  if midi_device.attached == false and grid_device.attached == false then
     screen.level(3)
     screen.text("no midi / grid")
   end
@@ -105,7 +107,7 @@ end
 local function channels_from_midinote(midinote)
   channels = {}
   for channel=1,8 do
-    if params:get(channel..": midi note") == midinote then
+    if params:get(channel.."_midi_note") == midinote then
       table.insert(channels, channel)
     end
   end
@@ -143,12 +145,12 @@ end
 local function note_on(note, velocity)
   local channels = channels_from_midinote(note)
   if #channels > 0 then
-    if params:get("midi selects channel") == 2 then
+    if params:get("midi_selects_channel") == 2 then
       selected_channels = {}
     end
     for _, channel in pairs(channels) do
       if not note_downs[channel] then
-        if params:get("midi selects channel") == 2 then
+        if params:get("midi_selects_channel") == 2 then
           table.insert(selected_channels, channel)
         end
       end
@@ -188,76 +190,44 @@ end
 local function cc(ctl, value)
   local param_name
   local spec
-  if ctl == params:get("filter cutoff cc") then
-    param_name = "filter cutoff"
+  if ctl == params:get("filter_cutoff_cc") then
+    param_name = "filter_cutoff"
     spec = Ack.specs.filter_cutoff
-    abs = params:get("filter cutoff cc type") == 1
-  elseif ctl == params:get("filter res cc") then
-    param_name = "filter res"
+    abs = params:get("filter_cutoff_cc_type") == 1
+  elseif ctl == params:get("filter_res_cc") then
+    param_name = "filter_res"
     spec = Ack.specs.filter_res
-    abs = params:get("filter res cc type") == 1
-  elseif ctl == params:get("delay send cc") then
-    param_name = "delay send"
+    abs = params:get("filter_res_cc_type") == 1
+  elseif ctl == params:get("delay_send_cc") then
+    param_name = "delay_send"
     spec = Ack.specs.send
-    abs = params:get("delay send cc type") == 1
-  elseif ctl == params:get("reverb send cc") then
-    param_name = "reverb send"
+    abs = params:get("delay_send_cc_type") == 1
+  elseif ctl == params:get("reverb_send_cc") then
+    param_name = "reverb_send"
     spec = Ack.specs.send
-    abs = params:get("reverb send cc type") == 1
+    abs = params:get("reverb_send_cc_type") == 1
   end
   if param_name then
     if abs then
       if all_modifier_is_held then
         for channel=1,8 do
-          cc_set_control(channel..": "..param_name, spec, value)
+          cc_set_control(channel.."_"..param_name, spec, value)
         end
       else
         for _, channel in pairs(selected_channels) do
-          cc_set_control(channel..": "..param_name, spec, value)
+          cc_set_control(channel.."_"..param_name, spec, value)
         end
       end
     else
       if all_modifier_is_held then
         for channel=1,8 do
-          cc_delta_control(channel..": "..param_name, spec, value)
+          cc_delta_control(channel.."_"..param_name, spec, value)
         end
       else
         for _, channel in pairs(selected_channels) do
-          cc_delta_control(channel..": "..param_name, spec, value)
+          cc_delta_control(channel.."_"..param_name, spec, value)
         end
       end
-    end
-  end
-end
-
-local function grid_refresh()
-  if grid_device then
-    for channel=1,8 do
-      local brightness
-      if contains(selected_channels, channel) or all_modifier_is_held then
-        brightness = 15
-      else
-        brightness = 5
-      end
-
-      grid_device:led(channel, 8, brightness)
-    end
-    grid_device:refresh()
-  end
-end
-
-local function gridkey_event(x, y, s)
-  indicate_gridkey_event = true
-  if y == 8 and x < 9 then
-    if s == 1 then
-      trig_channel(x)
-      if params:get("grid selects channel") == 2 then
-        selected_channels = {x}
-        redraw()
-      end
-    else
-      reset_channel(x)
-      redraw()
     end
   end
 end
@@ -267,7 +237,7 @@ local function midi_event(data)
   local status = data[1]
   local data1 = data[2]
   local data2 = data[3]
-  if params:get("midi in") == 2 then
+  if params:get("midi_in") == 2 then
     if status == 144 then
       if data2 ~= 0 then
         note_on(data1, data2)
@@ -283,54 +253,68 @@ local function midi_event(data)
   end
 end
 
-function Midi.add(dev)
-  if not midi_device then
-    dev.event = midi_event
-    dev.remove = function()
-      midi_device = nil
+midi_device.event = midi_event
+
+local function grid_refresh()
+  for channel=1,8 do
+    local brightness
+    if contains(selected_channels, channel) or all_modifier_is_held then
+      brightness = 15
+    else
+      brightness = 5
     end
-    midi_device = dev
+
+    grid_device.led(channel, 8, brightness)
+  end
+  grid_device.refresh()
+end
+
+local function gridkey_event(x, y, s)
+  indicate_gridkey_event = true
+  if y == 8 and x < 9 then
+    if s == 1 then
+      trig_channel(x)
+      if params:get("grid_selects_channel") == 2 then
+        selected_channels = {x}
+        redraw()
+      end
+    else
+      reset_channel(x)
+      redraw()
+    end
   end
 end
 
-function Grid.add(dev)
-  if not grid_device then
-    dev.key = gridkey_event
-    dev.remove = function()
-      grid_device = nil
-    end
-    grid_device = dev
-  end
-end
+grid_device.event = gridkey_event
 
 function init()
   screen.aa(1)
   screen.line_width(1.0)
 
   local bool = {"false", "true"}
-  params:add_option("grid selects channel", bool, 2)
+  params:add_option("grid_selects_channel", "grid_selects_channel", bool, 2)
   params:add_separator()
-  params:add_option("midi in", {"disabled", "enabled"}, 2)
-  params:add_option("midi selects channel", bool, 2)
+  params:add_option("midi_in", "midi in", {"disabled", "enabled"}, 2)
+  params:add_option("midi_selects_channel", "midi selects channel", bool, 2)
 
   local midi_cc_note_list = {}
   for i=0,127 do
     midi_cc_note_list[i] = i
   end
   local cc_type = {"abs", "rel"}
-  params:add_option("filter cutoff cc", midi_cc_note_list, 1)
-  params:add_option("filter cutoff cc type", cc_type)
-  params:add_option("filter res cc", midi_cc_note_list, 2)
-  params:add_option("filter res cc type", cc_type)
-  params:add_option("delay send cc", midi_cc_note_list, 3)
-  params:add_option("delay send cc type", cc_type)
-  params:add_option("reverb send cc", midi_cc_note_list, 4)
-  params:add_option("reverb send cc type", cc_type)
+  params:add_option("filter_cutoff_cc", "filter cutoff cc", midi_cc_note_list, 1)
+  params:add_option("filter_cutoff_cc_type", "filter cutoff cc type", cc_type)
+  params:add_option("filter_res_cc", "filter res cc", midi_cc_note_list, 2)
+  params:add_option("filter_res_cc_type", "filter res cc type", cc_type)
+  params:add_option("delay_send_cc", "delay send cc", midi_cc_note_list, 3)
+  params:add_option("delay_send_cc_type", "delay send cc type", cc_type)
+  params:add_option("reverb_send_cc", "reverb send cc", midi_cc_note_list, 4)
+  params:add_option("reverb_send_cc_type", "reverb send cc type", cc_type)
 
   params:add_separator()
 
   for channel=1,8 do
-    params:add_option(channel..": midi note", midi_cc_note_list, default_channel_midi_notes[channel])
+    params:add_option(channel.."_midi_note", channel..": midi note", midi_cc_note_list, default_channel_midi_notes[channel])
     Ack.add_channel_params(channel)
   end
 

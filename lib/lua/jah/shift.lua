@@ -14,8 +14,8 @@ specs.freqshift_freq = ControlSpec.new(-2000, 2000, "linear", 0, 0, "Hz")
 Shift.specs = specs
 
 local function bind(paramname, id, formatter)
-  params:add_control(paramname, specs[id], formatter)
-  params:set_action(paramname, engine[id])
+  params:add_control(id, paramname, specs[id], formatter)
+  params:set_action(id, engine[id])
 end
 
 function Shift.add_params()
