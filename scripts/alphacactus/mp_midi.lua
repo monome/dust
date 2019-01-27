@@ -1,4 +1,8 @@
-
+-- meadowphysics with midi
+-- engine PolyPerc
+-- enc1 volume
+-- enc3 bpm
+-- key3 save state
 engine.name = "PolyPerc"
 
 local MusicUtil = require "mark_eats/musicutil"
