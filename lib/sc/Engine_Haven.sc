@@ -32,7 +32,7 @@ Engine_Haven : CroneGenEngine {
 			inAmp   = max(0,  inAmp      .dbamp - (-90.dbamp)); // ensure mute when at -90 db;
 
 			// combine fdbck with its sign
-			fdbck = fdbck.varlag(0.3) * fdbckSign.lag(SampleRate.ir * 0.5);
+			fdbck = fdbck.varlag(0.3) * fdbckSign.lag(2.0 / SampleRate.ir);
 
 			lIns = LocalIn.ar(2);
 			inputs = (In.ar(in, 2) * inAmp);
