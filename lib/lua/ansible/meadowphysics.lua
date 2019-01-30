@@ -1,9 +1,25 @@
+
+local tabutil = require "tabutil"
+
 local mp = {}
 mp.__index = mp
+
+mp.SIGN = {{0,0,0,0,0,0,0,0},-- o
+{0,24,24,126,126,24,24,0}, -- +
+{0,0,0,126,126,0,0,0}, -- -
+{0,96,96,126,126,96,96,0}, -- >
+{0,6,6,126,126,6,6,0}, -- <
+{0,102,102,24,24,102,102,0}, -- * rnd
+{0,120,120,102,102,30,30,0}, -- <> up/down
+{0,126,126,102,102,126,126,0}} -- [] sync2 = 12
 
 mp.MODE_POSITION = 0
 mp.MODE_SPEED = 1
 mp.MODE_RULES = 2
+
+mp.L0 = 4
+mp.L1 = 8
+mp.L2 = 12
 
 local mp_set = {}
 mp_set.__index = mp_set
@@ -20,6 +36,8 @@ function mp.new()
 	m.prev_mode = 0
 	m.kcount = 0
 	m.scount = {}
+	m.state = {}
+	m.clear = {}
 
 	m.count = {}
 	m.position = {}
@@ -32,7 +50,7 @@ function mp.new()
 	m.rules = {}
 	m.rule_dests = {}
 	m.sync = {}
-	m.sound = {}
+	m.sound = 0
 	m.pushed = {}
 	m.rule_dest_targets = {}
 	m.smin = {}
@@ -53,52 +71,11 @@ function mp.new()
 		m.rule_dest_targets[i] = 3
 		m.smin[i] = 0
 		m.smax[i] = 0
-
+		m.pushed[i] = 0
 		m.scount[i] = 0
 	end
 
-	m.mp_event = function(i) print("mp_event row: " .. i) end
-	return m
-end
-
-function mp_set.new()
-	local m = {}
-	setmetatable(m, mp_set)
-
-	m.count = {}
-	m.position = {}
-	m.speed = {}
-	m.tick = {}
-	m.min = {}
-	m.max = {}
-	m.trigger = {}
-	m.toggle = {}
-	m.rules = {}
-	m.rule_dests = {}
-	m.sync = {}
-	m.sound = {}
-	m.pushed = {}
-	m.rule_dest_targets = {}
-	m.smin = {}
-	m.smax = {}
-
-	for i=1,8 do
-		m.count[i] = 8+i
-		m.position[i] = 8+i
-		m.speed[i] = 0
-		m.tick[i] = 0
-		m.max[i] = 8+i
-		m.min[i] = 8+i
-		m.trigger[i] = (1 << i)
-		m.toggle[i] = 0
-		m.rules[i] = 2 -- inc
-		m.rule_dests[i] = i
-		m.sync[i] = (1 << i)
-		m.rule_dest_targets[i] = 3
-		m.smin[i] = 0
-		m.smax[i] = 0
-	end
-
+	m.mp_event = function(i, s) print("mp_event row: " .. i .. " state: " .. s) end
 	return m
 end
 
@@ -139,11 +116,11 @@ function mp:apply_rule(i)
 
 	elseif self.rules[i] == 6 then -- rnd
 		if (self.rule_dest_targets[i] & 1) > 0 then
-			self.count[rd] = math.random(self.max[rd] - self.min[rd] + 1) + self.min[rd]
+			self.count[rd] = math.random(self.min[rd], self.max[rd])
 		end
 
 		if (self.rule_dest_targets[i] & 2) > 0 then
-			self.speed[rd] = math.random(self.smax[rd] - self.smin[rd] + 1) + self.smin[rd]
+			self.speed[rd] = math.random(self.smin[rd], self.smax[rd])
 		end
 
 	elseif self.rules[i] == 7 then -- pole
@@ -172,12 +149,32 @@ end
 
 function mp:clock()
 	for i=1,8 do
+		if self.pushed[i] == 1 then
+			for n=1,8 do
+				if (self.sync[i] & (1 << n)) > 0 then
+					self.position[n] = self.count[n]
+					self.tick[n] = self.speed[n]
+				end
+
+				if (self.trigger[i] & (1 << n)) > 0 then
+					self.state[n] = 1
+					self.clear[n] = 1
+				end
+
+				if (self.toggle[i] & (1 << n)) > 0 then
+					self.state[n] = self.state[n] ~ 1
+				end
+			end
+
+			self.pushed[i] = 0
+		end
+
 		if self.tick[i] == 0 then
 			self.tick[i] = self.speed[i]
 
 			if self.position[i] == 1 then 
-				self.mp_event(i)
 				self:apply_rule(i) 
+
 				self.position[i] = self.position[i] - 1
 
 				for n=1,8 do
@@ -185,15 +182,28 @@ function mp:clock()
 						self.position[n] = self.count[n]
 						self.tick[n] = self.speed[n]
 					end
-				end
 
+					if (self.trigger[i] & (1 << n)) > 0 then
+						self.state[n] = 1
+						self.clear[n] = 1
+					end
+
+					if (self.toggle[i] & (1 << n)) > 0 then
+						self.state[n] = self.state[n] ~ 1
+					end
+				end
 			elseif self.position[i] > 1 then
 				self.position[i] = self.position[i] - 1
 			end
-
 		else
 			self.tick[i] = self.tick[i] - 1
 		end
+	end
+
+	for i=1,8 do
+		self.mp_event(i, self.state[i])
+		if self.clear[i] == 1 then self.state[i] = 0 end
+		self.clear[i] = 0
 	end
 end
 
@@ -202,28 +212,29 @@ function mp:gridevent(x, y, z)
 
 	if x == 1 then
 		self.kcount = self.kcount + ((z << 1)-1)
-		if selfkcount < 0 then self.kcount = 0 end
+
+		if self.kcount < 0 then self.kcount = 0 end
 
 		if self.kcount == 1 and z == 1 then
-			self.mode = 1
+			self.mode = mp.MODE_SPEED
 		elseif self.kcount == 0 then
-			self.mode = 0
+			self.mode = mp.MODE_POSITION
 			self.scount[y] = 0
 		end
 
-		if self.mode == 1 and z == 1 then 
+		if self.mode == mp.MODE_SPEED and z == 1 then 
 			self.edit_row = y 
 		end
 
-	elseif x == 2 and self.mode ~= 0 then
-		if self.mode == 1 and z == 1 then 
-			self.mode = 2
+	elseif x == 2 and self.mode ~= mp.MODE_POSITION then
+		if self.mode == mp.MODE_SPEED and z == 1 then 
+			self.mode = mp.MODE_RULES
 			self.edit_row = y
-		elseif self.mode == 2 and z == 0 then
-			self.mode = 1
+		elseif self.mode == mp.MODE_RULES and z == 0 then
+			self.mode = mp.MODE_SPEED
 		end
 
-	elseif self.mode == 0 then
+	elseif self.mode == mp.MODE_POSITION then
 		self.scount[y] = self.scount[y] + ((z << 1) - 1)
 		if self.scount[y] < 0 then self.scount[y] = 0 end
 
@@ -234,7 +245,8 @@ function mp:gridevent(x, y, z)
 			self.max[y] = x
 			self.tick[y] = self.speed[y]
 
-			--if self.sound then self.pushed[y] = 1 end
+			if self.sound == 1 then self.pushed[y] = 1 end
+
 		elseif z == 1 and self.scount[y] == 2 then
 			if x < self.count[y] then
 				self.min[y] = x
@@ -244,9 +256,44 @@ function mp:gridevent(x, y, z)
 				self.min[y] = self.count[y]
 			end
 		end
-	elseif self.mode == 1 then
+	elseif self.mode == mp.MODE_SPEED then
+		self.scount[y] = self.scount[y] + ((z << 1) - 1)
+		if self.scount[y] < 0 then self.scount[y] = 0 end
 
-	elseif self.mode == 2 and z == 1 then
+		if z == 1 then
+			if x > 8 then
+				if self.scount[y] == 1 then
+					self.smin[y] = x - 9
+					self.smax[y] = x - 9
+					self.speed[y] = x - 9
+					self.tick[y] = self.speed[y]
+				elseif self.scount[y] == 2 then
+					if x-8 < self.smin[y] then
+						self.smax[y] = self.smin[y]
+						self.smin[y] = x - 9
+					else
+						self.smax[y] = x - 9
+					end
+				end
+			elseif x == 6 then
+				self.toggle[self.edit_row] = self.toggle[self.edit_row] ~ (1 << y)
+				self.trigger[self.edit_row] = self.trigger[self.edit_row] & (~(1 << y))
+			elseif x == 7 then
+				self.trigger[self.edit_row] = self.trigger[self.edit_row] ~ (1 << y)
+				self.toggle[self.edit_row] = self.toggle[self.edit_row] & (~(1 << y))
+			elseif x == 5 then
+				self.sound = self.sound ~ 1
+			elseif x == 3 then
+				if self.position[y] == -1 then 
+					self.position[y] = self.count[y]
+				else
+					self.position[y] = -1
+				end
+			elseif x == 4 then
+				self.sync[self.edit_row] = self.sync[self.edit_row] ~ (1 << y)
+			end
+		end
+	elseif self.mode == mp.MODE_RULES and z == 1 then
 		if x > 4 and x < 8 then
 			self.rule_dests[self.edit_row] = y
 			self.rule_dest_targets[self.edit_row] = x - 4
@@ -262,79 +309,111 @@ function mp:gridredraw(g)
 	if self.mode == mp.MODE_POSITION then
 		for i=1,8 do
 			for j=self.min[i],self.max[i] do
-				gbuf:led_level_set(j, i, 4)
+				gbuf:led_level_set(j, i, mp.L0)
 			end
 
-			gbuf:led_level_set(self.count[i], i, 8)
+			gbuf:led_level_set(self.count[i], i, mp.L1)
 
 			if self.position[i] >= 1 then
-				gbuf:led_level_set(self.position[i], i, 12)
+				gbuf:led_level_set(self.position[i], i, mp.L2)
 			end
 		end
 	elseif self.mode == mp.MODE_SPEED then
 		for i=1,8 do 
-			if self.position[i] >= 1 then gbuf:led_level_set(self.position[i], i, 4) end
+			if self.position[i] >= 1 then gbuf:led_level_set(self.position[i], i, mp.L0) end
 
 			if self.position[i] ~= -1 then gbuf:led_level_set(3, i, 2) end
 
 			for j=self.smin[i],self.smax[i] do
-				gbuf:led_level_set(j+9, i, 4)
+				gbuf:led_level_set(j+9, i, mp.L0)
 			end
 
-			gbuf:led_level_set(self.speed[i]+9, i, 8)
+			gbuf:led_level_set(self.speed[i]+9, i, mp.L1)
 
-			--if self.sound then gbuf:led_level_set(5, i, 2) end
+			if self.sound == 1 then gbuf:led_level_set(5, i, 2) end
 
 			if (self.toggle[self.edit_row] & (1 << i)) > 0 then
-				gbuf:led_level_set(6, i, 12)
+				gbuf:led_level_set(6, i, mp.L2)
 			else
-				gbuf:led_level_set(6, i, 4)
+				gbuf:led_level_set(6, i, mp.L0)
 			end
 
 			if (self.trigger[self.edit_row] & (1 << i)) > 0 then
-				gbuf:led_level_set(7, i, 12)
+				gbuf:led_level_set(7, i, mp.L2)
 			else
-				gbuf:led_level_set(7, i, 4)
+				gbuf:led_level_set(7, i, mp.L0)
 			end
 
-			if (self.toggle[self.edit_row] & (1 << i)) > 0 then
-				gbuf:led_level_set(4, i, 8)
+			if (self.sync[self.edit_row] & (1 << i)) > 0 then
+				gbuf:led_level_set(4, i, mp.L1)
 			else
-				gbuf:led_level_set(4, i, 4)
+				gbuf:led_level_set(4, i, mp.L0)
 			end
 		end
 
-		gbuf:led_level_set(1, self.edit_row, 8)
-	elseif mode == mp.MODE_RULES then 
+		gbuf:led_level_set(1, self.edit_row, mp.L2)
+	elseif self.mode == mp.MODE_RULES then 
 		for i=1,8 do 
-			if self.position[i] >= 1 then gbuf:led_level_set(self.position[i], i, 4) end
+			if self.position[i] >= 1 then gbuf:led_level_set(self.position[i], i, mp.L0) end
 		end
 
-		gbuf:led_level_set(1, self.edit_row, 8)
-		gbuf:led_level_set(2, self.edit_row, 8)
+		gbuf:led_level_set(1, self.edit_row, mp.L1)
+		gbuf:led_level_set(2, self.edit_row, mp.L1)
 
 		local rd = self.rule_dests[self.edit_row]
 		if self.rule_dest_targets[self.edit_row] == 1 then
-			gbuf:led_level_set(5, rd, 12)
-			gbuf:led_level_set(6, rd, 4)
-			gbuf:led_level_set(7, rd, 4)
+			gbuf:led_level_set(5, rd, mp.L2)
+			gbuf:led_level_set(6, rd, mp.L0)
+			gbuf:led_level_set(7, rd, mp.L0)
 		elseif self.rule_dest_targets[self.edit_row] == 2 then
-			gbuf:led_level_set(5, rd, 4)
-			gbuf:led_level_set(6, rd, 12)
-			gbuf:led_level_set(7, rd, 4)
+			gbuf:led_level_set(5, rd, mp.L0)
+			gbuf:led_level_set(6, rd, mp.L2)
+			gbuf:led_level_set(7, rd, mp.L0)
 		else
-			gbuf:led_level_set(5, rd, 12)
-			gbuf:led_level_set(6, rd, 12)
-			gbuf:led_level_set(7, rd, 4)
+			gbuf:led_level_set(5, rd, mp.L2)
+			gbuf:led_level_set(6, rd, mp.L2)
+			gbuf:led_level_set(7, rd, mp.L0)
+		end
 
-			for i=8,16 do
-				gbuf:led_level_set(i, self.rules[self.edit_row], 4)
+		for i=8,16 do
+			gbuf:led_level_set(i, self.rules[self.edit_row], mp.L0)
+		end
+
+		for i=1,8 do
+			local k = mp.SIGN[self.rules[self.edit_row]][i]
+			for j=1,8 do
+				if (k & (1 << j)) ~= 0 then
+					gbuf:led_level_set(9+j, i, mp.L2) 
+				end
 			end
 		end
 	end
 
 	gbuf:render(g)
 	g.refresh()
+end
+
+function mp.loadornew(f)
+	local m
+	m = tabutil.load(data_dir .. f)
+
+	if m == nil then
+		m = mp.new()
+	else
+		setmetatable(m, mp)
+	end
+
+	return m
+end
+
+function mp:save(f)
+	print("saving mp")
+
+	for k,v in ipairs(self) do
+		print("saving mp." .. k)
+	end
+
+	tabutil.save(self, data_dir .. f)
 end
 
 return mp

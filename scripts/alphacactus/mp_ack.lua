@@ -1,3 +1,13 @@
+-- mp_ack
+-- v1.0 alpha_cactus
+--
+-- simple drum sequencer using 
+-- the meadowphysics library
+-- and the ack engine
+--
+-- key3 save mp state
+-- enc1 output
+-- enc3 bpm
 
 local ack = require "jah/ack"
 
