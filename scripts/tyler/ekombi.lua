@@ -219,7 +219,6 @@ function g.event(x, y, z)
   -- sending data to two separate functions
   gridkeyhold(x,y,z)
   gridkey(x,y,z)
-  print(x,y,z)
 end
 
 function gridkey(x,y,z)
