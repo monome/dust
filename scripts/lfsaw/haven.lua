@@ -1,5 +1,5 @@
 -- haven.
--- lots of feedback
+-- a safe space?
 --
 
 engine.name = 'Haven'
@@ -24,28 +24,28 @@ function init()
   params:add{
     type="control",
     id="amp1",
-    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    controlspec=controlspec.new(-90, 0, "linear", 0, 0, ""),
     action=engine.amp1,
   }
 
   params:add{
     type="control",
     id="amp2",
-    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    controlspec=controlspec.new(-90, 0, "linear", 0, 0, ""),
     action=engine.amp2,
   }
 
   params:add{
     type="control",
     id="in_amp",
-    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+    controlspec=controlspec.new(-90, 0, "linear", 0, 0, ""),
     action=engine.inAmp,
   }
 
   params:add{
     type="control",
     id="fdbck",
-    controlspec=controlspec.new(-1, 1, "linear", 0, 0.03, ""),
+    controlspec=controlspec.new(0, 1, "linear", 0, 0.03, ""),
     action=engine.fdbck,
   }
 end
@@ -98,7 +98,7 @@ function redraw()
 
   screen.level(sel == 3 and 15 or 4)
   screen.move(64, 56)
-  screen.text(params:string("in_amp"))
+  screen.text(params:string("in amp"))
 
   screen.level(3)
   screen.move(64, 64)
