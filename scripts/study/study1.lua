@@ -43,3 +43,5 @@ function enc(n,d)
     engine.hz(octave * f)
   end
 end
+
+function redraw() end

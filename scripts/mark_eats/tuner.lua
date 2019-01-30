@@ -9,7 +9,7 @@
 
 local ControlSpec = require "controlspec"
 local MusicUtil = require "mark_eats/musicutil"
-local MEFormatters = require "mark_eats/formatters"
+local Formatters = require "jah/formatters"
 
 engine.name = "TestSine"
 
@@ -147,7 +147,7 @@ function redraw()
     screen.move(64, 50)
     if current_freq > 0 then screen.level(3)
     else screen.level(1) end
-    screen.text_center(MEFormatters.format_freq(last_freq))
+    screen.text_center(Formatters.format_freq_raw(last_freq))
   end
   
   -- Draw ref note
