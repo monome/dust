@@ -1,80 +1,128 @@
 /*
-2018, Till Bovermann
+2019, Till Bovermann
 http://tai-studio.org
+
+
 */
 
 Engine_Haven : CroneGenEngine {
-	*rotate {|in, pos = 0.0|
-		^Rotate2.ar(in[0], in[1], pos)
+	*specs {
+		^(
+			\freq1: [1, 800, \exp, 0.0, 20].asSpec,
+			\freq2: [400, 12000, \exp, 0.0, 4000, "Hz"].asSpec,
+			\amp1: [-90, 0, \linear, 0.0, 0, ""].asSpec,
+			\amp2: [-90, 0, \linear, 0.0, 0, ""].asSpec,
+			\inAmp: [-90, 0, \linear, 0.0, 0, ""].asSpec,
+			\fdbck: [0, 1, \linear, 0.0, 0.03, ""].asSpec,
+			\fdbckSign: [-1, 1, \linear, 1, 0, ""].asSpec
+		)
 	}
 
-	*ugenGraphFunc {
-		^{|in = 0, out = 0, freq1, freq2, amp1, amp2, inAmp, fdbck|
+	*synthDef { // TODO: move ugenGraphFunc to here...
+		^SynthDef(\haven, {|in = 0, out = 0, freq1, freq2, amp1, amp2, inAmp, fdbck, fdbckSign = 1|
+			var freqs, freqRanges;
+			var inputs, oscAmps;
+			var dyns, dynIns;
+			var xxx, snd, lIns;
+			var rotate = {|in, pos = 0.0|
+				Rotate2.ar(in[0], in[1], pos)
+			};
 
-			var x, freq, snd, lIn, input, dyn2;
-			var dyn, dynIn;
+			oscAmps = max(0, [amp1, amp2].dbamp - (-90.dbamp)); // ensure mute when at -90 db;
+			inAmp   = max(0,  inAmp      .dbamp - (-90.dbamp)); // ensure mute when at -90 db;
 
-			fdbck = fdbck.varlag(0.3);
-			freq = [freq1, freq2].varlag(0.5);
+			// combine fdbck with its sign
+			fdbck = fdbck.varlag(0.3) * fdbckSign.lag(SampleRate.ir * 0.5);
 
-			lIn = LocalIn.ar(2);
-			input = (In.ar(in, 2) * inAmp);
-			dynIn = Amplitude.ar(input, 0.1, 0.1);
-			x = Limiter.ar(
+			lIns = LocalIn.ar(2);
+			inputs = (In.ar(in, 2) * inAmp);
+			dynIns = Amplitude.ar(inputs, 0.1, 0.1);
+
+			// magic (>:)
+			xxx = Limiter.ar(
 				CombL.ar(
-					lIn,
+					lIns + inputs,
 					0.5,
-					(LFNoise1.ar(0.1, 0.5, 0.5) + dynIn).tanh * 0.5,
+					(LFNoise1.ar(0.1, 0.5, 0.5) + dynIns).tanh * 0.5,
 					-10
 				)
 			);
 
-			dyn = Impulse.ar(0).lag(0.001, 0.1) + Amplitude.ar(x.reverse, LFNoise1.kr(0.062).abs * 10, LFNoise2.kr(0.12362).abs * 15);
-
-			snd =
-			(fdbck * x) +
-			this.rotate(
-				SinOscFB.ar(
-					freq: (freq) - (dyn.lag(0.003235246) * (freq - [0, 2])),
-					feedback: (dyn).fold(0, 1.5),
-					mul: SinOsc.ar(0.1 + dyn.lag(0, 10)) * (0.1 + dyn) * LFTri.ar(dyn.lag(0.04235) * 20 + 0.001) * 200
-				).tanh
-				* [amp1, amp2].lag(0.2),
-				(dynIn + LFSaw.kr(0.001))%1
+			dyns = Impulse.ar(0).lag(0.001, 0.1)
+			+ Amplitude.ar(
+				in: xxx.reverse,
+				attackTime: LFNoise1.kr(dynIns[0].lag(1) * 0.1).abs * 5,
+				releaseTime: LFNoise1.kr(dynIns[0].lag(3) * 0.5).abs * 15
 			);
 
+			freqRanges = [0.85, 0.4];
+			freqs = [freq1, freq2].varlag(0.5);
+			freqs = freqs -
+			(
+				dyns.lag(0.003235246)
+				* (
+					(freqRanges * freqs)
+				)
+			);
+
+
+			// oscAmps = [amp1, amp2].dbamp.poll;
+			oscAmps = oscAmps.lag(0.2) * AmpCompA.kr(freqs);
+			snd = [
+				SinOscFB.ar(
+					freq: freqs[0],
+					feedback: (dyns[0] * 2).fold(0, 1.5)
+				) * oscAmps[0] * 10,
+				RHPF.ar(
+					Pulse.ar(
+						freq: freqs[1],
+						width: (dyns[1].lag(0.01) * 200.1 + Decay.kr(Dust.kr(50 * (1-dyns[0])), 0.05)).wrap(0, 1),
+					) * oscAmps[1] * 4,
+					8 * freqs[1].varlag(10, 20, start: 400), 0.3
+				)
+			];
+
+
+
+			// mix
+			snd = (inputs + snd).tanh;
+
+			// amp modulation
+			snd = snd * SinOsc.ar(
+				(0.01 + dyns.varlag(2, 1, 5, 1)) * 0.5,
+				{Rand()}!2
+			).range((dyns.varlag(2, 1, 5, 10) * 0.5) + 0.5, 1);/* * SinOsc.ar(
+			(1-dyns.lag([1, 1.2])) * 20,
+			{Rand()}!2
+			).range(0.01, 1);
+			*/
+			//stereo rotate
+			snd = rotate.(
+				in: snd,
+				pos: (dynIns + LFSaw.kr(0.001, 0.23))%1 // (2, 2)
+			);
+
+
+			snd = (fdbck * xxx) // feedback
+			+ snd;
+
+			// collapse to stereo
+			snd = snd.sum;
 			snd = LeakDC.ar(snd);
 
+			LocalOut.ar(snd);
 
-			LocalOut.ar(snd + input);
-
-			snd = snd - (0.5 * MoogLadder.ar(this.rotate(snd, dyn.sum.lag(0.01)), ffreq: (1-dyn.lag(0, 10)) * 1100 + 50, res: 0.2));
+			snd = (snd * 0.8) - (0.5 * MoogLadder.ar(rotate.(snd, dyns.sum.lag(0.01)), ffreq: (1-dyns.lag(0, 10)) * 1100 + 50, res: 0.2));
+			snd = snd.tanh;
 
 			Out.ar(out, snd);
-		}
-	}
-
-	*specs {
-		^(
-			freq1: ControlSpec(10, 200, \exp, default: 20, units: "Hz"),
-			freq2: ControlSpec(1000, 12000, \exp, default: 4000, units: "Hz"),
-			amp1: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			amp2: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			inAmp: ControlSpec(0, 1, \lin, default: 0, units: ""),
-			fdbck: ControlSpec(-1, 1, \lin, default: 0.03, units: "")
-		)
-	}
-
-	*synthDef { // TODO: remove, this is just due to wrapping of out not working right atm
-		^SynthDef(
-			\haven,
-			this.ugenGraphFunc,
-			metadata: (specs: this.specs)
+		},
+		metadata: (specs: this.specs)
 		)
 	}
 }
 
-/*
+	/*
 
-Engine_Haven.generateLuaEngineModuleSpecsSection
-*/
+	Engine_Haven.generateLuaEngineModuleSpecsSection
+	*/
