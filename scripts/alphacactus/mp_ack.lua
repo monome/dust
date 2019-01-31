@@ -1,19 +1,9 @@
--- mp_ack
--- v1.0 alpha_cactus
---
--- simple drum sequencer using 
--- the meadowphysics library
--- and the ack engine
---
--- key3 save mp state
--- enc1 output
--- enc3 bpm
 
 local ack = require "jah/ack"
 
 engine.name = "Ack"
 
-local meadowphysics = require "ansible/meadowphysics"
+local meadowphysics = require "meadowphysics"
 
 local g = grid.connect()
 
@@ -23,8 +13,8 @@ function init()
 	-- meadowphysics
 	-- mp = meadowphysics.new()
 	-- save the meadowphysics state using mp:save("filename")
-	mp = meadowphysics.new() -- for default 
-	-- mp = meadowphysics.loadornew("alphacactus/mp.data") -- to load a saved state
+	--mp = meadowphysics.new() -- for default 
+	mp = meadowphysics.loadornew("alphacactus/mp.data") -- to load a saved state
 
 	-- set mp.mp_event to your callback function(see step function below)
 	mp.mp_event = step
@@ -37,7 +27,7 @@ function init()
 	clk.callback = tick
 
 	-- ack
-	for channel=1,8 do
+	for channel=8,1,-1 do
 		ack.add_channel_params(channel)
 	end
   ack.add_effects_params()
@@ -53,19 +43,19 @@ function init()
 end
 
 -- callback function from meadowphysics
--- parameter "i" is the row number where an event occured
+-- parameter "row" is the row number where an event occured
 --
--- parameter "s" is the row state
--- if set to trigger mode "s" will be 1 when a row reaches the endpoint
--- else "s" will be 0
+-- parameter "state" is the row state
+-- if set to trigger mode "state" will be 1 when a row reaches the endpoint
+-- else "state" will be 0
 --
--- if set to toggle mode "s" will be 1 when toggled on
--- else "s" will be zero when toggled off
-function step(i, s)
+-- if set to toggle mode "state" will be 1 when toggled on
+-- else "state" will be zero when toggled off
+function step(row, state)
 	-- if a trigger occurs then trigger a sample
 	-- when toggled on trigger a sample on each clock step
-	if s == 1 then
-		engine.trig(i-1)
+	if state == 1 then
+		engine.trig(row-1)
 	end
 end
 

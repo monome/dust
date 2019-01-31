@@ -21,9 +21,6 @@ mp.L0 = 4
 mp.L1 = 8
 mp.L2 = 12
 
-local mp_set = {}
-mp_set.__index = mp_set
-
 local gridbuf = require "gridbuf"
 local gbuf = gridbuf.new(16, 8)
 
@@ -75,7 +72,7 @@ function mp.new()
 		m.scount[i] = 0
 	end
 
-	m.mp_event = function(i, s) print("mp_event row: " .. i .. " state: " .. s) end
+	m.mp_event = function(row, state) end 
 	return m
 end
 
@@ -201,7 +198,8 @@ function mp:clock()
 	end
 
 	for i=1,8 do
-		self.mp_event(i, self.state[i])
+		local row = math.abs(i - 9) -- inverse so that index 1 is bottom row
+		self.mp_event(row, self.state[i])
 		if self.clear[i] == 1 then self.state[i] = 0 end
 		self.clear[i] = 0
 	end

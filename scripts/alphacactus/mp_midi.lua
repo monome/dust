@@ -1,20 +1,26 @@
--- meadowphysics with midi
+-- meadowphysics
+-- midi out capability
 -- engine PolyPerc
--- enc1 volume
--- enc3 bpm
--- key3 save state
+--
+-- key2  toggle scale mode^
+-- key3  save meadowphysics
+-- key3^ save scales
+-- enc1  volume
+-- enc2  root note
+-- enc3  bpm
+--
+
 engine.name = "PolyPerc"
 
+local shift = 0
+
+local MeadowPhysics = require "meadowphysics"
+local mp
+
+local GridScales = require "gridscales"
+local gridscales
+
 local MusicUtil = require "mark_eats/musicutil"
-local root = 36
-local function build_scale()
-	local r = root + params:get("root")
-	scale_notes = MusicUtil.generate_scale(r, params:get("scale"), 1)
-end
-
-
-local MeadowPhysics = require "ansible/meadowphysics"
-local mp = MeadowPhysics.loadornew("alphacactus/mp.data") 
 
 local g = grid.connect()
 
@@ -79,38 +85,46 @@ local function reset_pattern()
 	clk:reset()
 end
 
-local grid_clk = metro.alloc()
+local grid_clk 
 
-local screen_clk = metro.alloc()
+local screen_clk 
 
+NOTE_NAMES_OCTAVE = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+NOTES = {}
+NOTE_NAMES = {}
+
+local function table_map(f, arr)
+  local mapped_arr = {}
+  for i,v in ipairs(arr) do
+    mapped_arr[i] = f(v)
+  end
+  return mapped_arr
+end
 
 function init()
 	-- meadowphysics
+	mp = MeadowPhysics.loadornew("alphacactus/mp.data") 
 	mp.mp_event = event 
 	
-	-- scale
-	local scales = {}
-	for i=1,#MusicUtil.SCALES do
-		scales[i] = MusicUtil.SCALES[i].name
-	end
+	-- gridscale
+	gridscales = GridScales.loadornew("alphacactus/gridscales.data")
+
+  for i=0,141 do
+    NOTES[i] = {
+      ["number"] = i,
+      ["name"] = NOTE_NAMES_OCTAVE[i % 12 + 1] .. math.floor(i / 12),
+      ["octave"] = math.floor(i / 12)
+    }
+  end
+  NOTE_NAMES = table_map(function(note) return note.name end, NOTES)
 
 	params:add {
 		type = "option",
-		id = "scale",
-		name = "scale",
-		options = scales,
-		action = build_scale
+		id = "root_note",
+		name = "root note",
+		options = NOTE_NAMES, 
+		default = 36
 	}
-
-	params:add {
-		type = "option",
-		id = "root",
-		name = "root",
-		options = MusicUtil.NOTE_NAMES,
-		action = build_scale
-	}
-
-	build_scale()
 
 	-- metro / midi
 	midi_out_device = midi.connect(1)
@@ -177,7 +191,7 @@ function init()
 
 	-- metro
 	grid_clk = metro.alloc()
-	grid_clk.callback = function() mp:gridredraw(g) end
+	grid_clk.callback = gridredraw 
 	grid_clk.time = 1 / 30
 
 	screen_clk = metro.alloc()
@@ -231,13 +245,40 @@ function init()
 	clk:start()
 end
 
-function event(i, s)
-	if s == 1 then
-		table.insert(notes, scale_notes[i])
+function event(row, state)
+	if state == 1 then
+		table.insert(notes, params:get("root_note") + gridscales:note(row))
 	end
 end
 
 function redraw()
+	if shift == 1 then
+		draw_gridscales()
+	else
+		draw_mp()
+	end
+end
+
+function draw_gridscales()
+	screen.clear()
+	screen.aa(1)
+
+	screen.font_size(8)
+	for i=1,8 do
+		screen.move(8,72-(i*8))
+		screen.text(NOTE_NAMES[params:get("root_note") + gridscales:note(i)])
+	end
+	screen.stroke()
+
+	screen.move(64,32)
+	screen.font_size(32)
+	screen.text(NOTE_NAMES[params:get("root_note")])
+	screen.stroke()
+
+	screen.update()
+end
+
+function draw_mp()
 	screen.clear()
 	screen.aa(1)
 
@@ -288,12 +329,28 @@ function draw_bpm()
 end
 
 function g.event(x, y, z)
-	mp:gridevent(x, y, z)
+	if shift == 1 then
+		gridscales:gridevent(x, y, z)
+	else
+		mp:gridevent(x, y, z)
+	end
+end
+
+function gridredraw()
+	if shift == 1 then
+		gridscales:gridredraw(g)
+	else
+		mp:gridredraw(g)
+	end
 end
 
 function enc(n, d)
 	if n == 1 then
 		mix:delta("output", d)
+	elseif n == 2 then
+		local v = util.clamp(params:get("root_note") + d, 0, 72)
+		params:set("root_note", v)
+		draw_gridscales()
 	elseif n == 3 then
 		params:delta("bpm", d)
 		draw_bpm()
@@ -301,8 +358,14 @@ function enc(n, d)
 end
 
 function key(n, z)
-	if n == 3 and z == 1 then
-		mp:save("alphacactus/mp.data")
+	if n == 2 and z == 1 then 
+		shift = shift ~ 1
+	elseif n == 3 and z == 1 then
+		if shift == 1 then
+			gridscales:save("alphacactus/gridscales.data")
+		else
+			mp:save("alphacactus/mp.data")
+		end
 	end
 end
 
