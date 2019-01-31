@@ -1,10 +1,10 @@
 // CroneEngine_MollyThePoly
 //
-// v1.0.0 Mark Eats
+// v1.0.1 Mark Eats
 
 Engine_MollyThePoly : CroneEngine {
 
-	classvar maxNumVoices = 24;
+	classvar maxNumVoices = 16;
 	var voiceGroup;
 	var voiceList;
 	var lfo;
@@ -246,54 +246,56 @@ Engine_MollyThePoly : CroneEngine {
 				voiceList.remove(voiceToRemove);
 			});
 
-			if(lastFreq == 0,
-				{ lastFreq = freq; }
-			);
+			if(lastFreq == 0, {
+				lastFreq = freq;
+			});
 
 			// Add new voice
-			newVoice = (id: id, theSynth: Synth.new(defName: \voice, args: [
-				\out, mixerBus,
-				\lfoIn, lfoBus,
-				\freq, freq,
-				\pitchBendRatio, pitchBendRatio,
-				\gate, 1,
-				\vel, vel.linlin(0, 1, 0.3, 1),
-				\pressure, channelPressure,
-				\oscWaveShape, oscWaveShape,
-				\pwMod, pwMod,
-				\pwModSource, pwModSource,
-				\freqModLfo, freqModLfo,
-				\freqModEnv, freqModEnv,
-				\lastFreq, lastFreq,
-				\glide, glide,
-				\mainOscLevel, mainOscLevel,
-				\subOscLevel, subOscLevel,
-				\subOscDetune, subOscDetune,
-				\noiseLevel, noiseLevel,
-				\hpFilterCutoff, hpFilterCutoff,
-				\lpFilterType, lpFilterType,
-				\lpFilterCutoff, lpFilterCutoff,
-				\lpFilterResonance, lpFilterResonance,
-				\lpFilterCutoffEnvSelect, lpFilterCutoffEnvSelect,
-				\lpFilterCutoffModEnv, lpFilterCutoffModEnv,
-				\lpFilterCutoffModLfo, lpFilterCutoffModLfo,
-				\lpFilterTracking, lpFilterTracking,
-				\lfoFade, lfoFade,
-				\env1Attack, env1Attack,
-				\env1Decay, env1Decay,
-				\env1Sustain, env1Sustain,
-				\env1Release, env1Release,
-				\env2Attack, env2Attack,
-				\env2Decay, env2Decay,
-				\env2Sustain, env2Sustain,
-				\env2Release, env2Release,
-				\ampMod, ampMod,
-				\ringModFade, ringModFade,
-				\ringModMix, ringModMix
-			], target: voiceGroup).onFree({ voiceList.remove(newVoice); }), gate: 1);
-			voiceList.addFirst(newVoice);
+			context.server.makeBundle(nil, {
+				newVoice = (id: id, theSynth: Synth.new(defName: \voice, args: [
+					\out, mixerBus,
+					\lfoIn, lfoBus,
+					\freq, freq,
+					\pitchBendRatio, pitchBendRatio,
+					\gate, 1,
+					\vel, vel.linlin(0, 1, 0.3, 1),
+					\pressure, channelPressure,
+					\oscWaveShape, oscWaveShape,
+					\pwMod, pwMod,
+					\pwModSource, pwModSource,
+					\freqModLfo, freqModLfo,
+					\freqModEnv, freqModEnv,
+					\lastFreq, lastFreq,
+					\glide, glide,
+					\mainOscLevel, mainOscLevel,
+					\subOscLevel, subOscLevel,
+					\subOscDetune, subOscDetune,
+					\noiseLevel, noiseLevel,
+					\hpFilterCutoff, hpFilterCutoff,
+					\lpFilterType, lpFilterType,
+					\lpFilterCutoff, lpFilterCutoff,
+					\lpFilterResonance, lpFilterResonance,
+					\lpFilterCutoffEnvSelect, lpFilterCutoffEnvSelect,
+					\lpFilterCutoffModEnv, lpFilterCutoffModEnv,
+					\lpFilterCutoffModLfo, lpFilterCutoffModLfo,
+					\lpFilterTracking, lpFilterTracking,
+					\lfoFade, lfoFade,
+					\env1Attack, env1Attack,
+					\env1Decay, env1Decay,
+					\env1Sustain, env1Sustain,
+					\env1Release, env1Release,
+					\env2Attack, env2Attack,
+					\env2Decay, env2Decay,
+					\env2Sustain, env2Sustain,
+					\env2Release, env2Release,
+					\ampMod, ampMod,
+					\ringModFade, ringModFade,
+					\ringModMix, ringModMix
+				], target: voiceGroup).onFree({ voiceList.remove(newVoice); }), gate: 1);
 
-			lastFreq = freq
+				voiceList.addFirst(newVoice);
+				lastFreq = freq;
+			});
 		});
 
 		// noteOff(id)

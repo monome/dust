@@ -12,11 +12,36 @@ local FM7 = {}
 local specs = {}
 local options = {}
 
---options.ALGO = {"Fixed", "Manual"}
-specs.AMP_ATK = ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
-specs.AMP_DEC = ControlSpec.new(0,2,"lin",0,0.1,"ms")
-specs.AMP_SUS = ControlSpec.new(0,1,"lin",0,1,"ms")
-specs.AMP_REL = ControlSpec.new(0.01,10,"lin",0,1,"ms")
+specs.OPAMP_A1= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D1= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S1= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R1= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
+specs.OPAMP_A2= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D2= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S2= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R2= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
+specs.OPAMP_A3= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D3= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S3= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R3= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
+specs.OPAMP_A4= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D4= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S4= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R4= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
+specs.OPAMP_A5= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D5= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S5= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R5= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
+specs.OPAMP_A6= ControlSpec.new(0.01,10,"lin",0,0.05,"ms")
+specs.OPAMP_D6= ControlSpec.new(0,2,"lin",0,0.1,"ms")
+specs.OPAMP_S6= ControlSpec.new(0,1,"lin",0,1,"db")
+specs.OPAMP_R6= ControlSpec.new(0.01,10,"lin",0,1,"ms")
+
 specs.HZ1 = ControlSpec.new(0,5, "lin",0,1,"")
 specs.HZ2 = ControlSpec.new(0,5, "lin",0,1,"")
 specs.HZ3 = ControlSpec.new(0,5, "lin",0,1,"")
@@ -81,11 +106,6 @@ specs.CARRIER6 = ControlSpec.new(0,1, "lin",0,1,"db")
 FM7.specs = specs
 
 function FM7.add_params()
-  params:add{type = "control", id = "ampAtk",name = "Amplitude Env Attack", controlspec = specs.AMP_ATK, action = engine.ampAtk}
-  params:add{type = "control", id = "ampDec",name = "Amplitude Env Decay", controlspec = specs.AMP_DEC, action = engine.ampDec}
-  params:add{type = "control", id = "ampSus",name = "Amplitude Env Sustain", controlspec = specs.AMP_SUS, action = engine.ampSus}
-  params:add{type = "control", id = "ampRel",name = "Amplitude Env Release", controlspec = specs.AMP_REL, action = engine.ampRel}
-  params:add_separator()
   params:add{type = "control", id = "hz1",name = "Osc 1 Frequency Multiplier", controlspec = specs.HZ1, action = engine.hz1}
   params:add{type = "control", id = "hz2",name = "Osc 2 Frequency Multiplier", controlspec = specs.HZ2, action = engine.hz2}
   params:add{type = "control", id = "hz3",name = "Osc 3 Frequency Multiplier", controlspec = specs.HZ3, action = engine.hz3}
@@ -150,6 +170,31 @@ function FM7.add_params()
   params:add{type = "control", id = "carrier4",name = "Carrier 4 Amplitude", controlspec = specs.CARRIER4, action = engine.carrier4}
   params:add{type = "control", id = "carrier5",name = "Carrier 5 Amplitude", controlspec = specs.CARRIER5, action = engine.carrier5}
   params:add{type = "control", id = "carrier6",name = "Carrier 6 Amplitude", controlspec = specs.CARRIER6, action = engine.carrier6}
+  params:add_separator()
+  params:add{type = "control", id = "opAmpA1",name = "Osc1 Amp Env Attack", controlspec = specs.OPAMP_A1, action = engine.opAmpA1}
+  params:add{type = "control", id = "opAmpD1",name = "Osc1 Amp Env Decay", controlspec = specs.OPAMP_D1, action = engine.opAmpD1}
+  params:add{type = "control", id = "opAmpS1",name = "Osc1 Amp Env Sustain", controlspec = specs.OPAMP_S1, action = engine.opAmpS1}
+  params:add{type = "control", id = "opAmpR1",name = "Osc1 Amp Env Release", controlspec = specs.OPAMP_R1, action = engine.opAmpR1}
+  params:add{type = "control", id = "opAmpA2",name = "Osc2 Amp Env Attack", controlspec = specs.OPAMP_A2, action = engine.opAmpA2}
+  params:add{type = "control", id = "opAmpD2",name = "Osc2 Amp Env Decay", controlspec = specs.OPAMP_D2, action = engine.opAmpD2}
+  params:add{type = "control", id = "opAmpS2",name = "Osc2 Amp Env Sustain", controlspec = specs.OPAMP_S2, action = engine.opAmpS2}
+  params:add{type = "control", id = "opAmpR2",name = "Osc2 Amp Env Release", controlspec = specs.OPAMP_R2, action = engine.opAmpR2}
+  params:add{type = "control", id = "opAmpA3",name = "Osc3 Amp Env Attack", controlspec = specs.OPAMP_A3, action = engine.opAmpA3}
+  params:add{type = "control", id = "opAmpD3",name = "Osc3 Amp Env Decay", controlspec = specs.OPAMP_D3, action = engine.opAmpD3}
+  params:add{type = "control", id = "opAmpS3",name = "Osc3 Amp Env Sustain", controlspec = specs.OPAMP_S3, action = engine.opAmpS3}
+  params:add{type = "control", id = "opAmpR3",name = "Osc3 Amp Env Release", controlspec = specs.OPAMP_R3, action = engine.opAmpR3}
+  params:add{type = "control", id = "opAmpA4",name = "Osc4 Amp Env Attack", controlspec = specs.OPAMP_A4, action = engine.opAmpA4}
+  params:add{type = "control", id = "opAmpD4",name = "Osc4 Amp Env Decay", controlspec = specs.OPAMP_D4, action = engine.opAmpD4}
+  params:add{type = "control", id = "opAmpS4",name = "Osc4 Amp Env Sustain", controlspec = specs.OPAMP_S4, action = engine.opAmpS4}
+  params:add{type = "control", id = "opAmpR4",name = "Osc4 Amp Env Release", controlspec = specs.OPAMP_R4, action = engine.opAmpR4}
+  params:add{type = "control", id = "opAmpA5",name = "Osc5 Amp Env Attack", controlspec = specs.OPAMP_A5, action = engine.opAmpA5}
+  params:add{type = "control", id = "opAmpD5",name = "Osc5 Amp Env Decay", controlspec = specs.OPAMP_D5, action = engine.opAmpD5}
+  params:add{type = "control", id = "opAmpS5",name = "Osc5 Amp Env Sustain", controlspec = specs.OPAMP_S5, action = engine.opAmpS5}
+  params:add{type = "control", id = "opAmpR5",name = "Osc5 Amp Env Release", controlspec = specs.OPAMP_R5, action = engine.opAmpR5}
+  params:add{type = "control", id = "opAmpA6",name = "Osc6 Amp Env Attack", controlspec = specs.OPAMP_A6, action = engine.opAmpA6}
+  params:add{type = "control", id = "opAmpD6",name = "Osc6 Amp Env Decay", controlspec = specs.OPAMP_D6, action = engine.opAmpD6}
+  params:add{type = "control", id = "opAmpS6",name = "Osc6 Amp Env Sustain", controlspec = specs.OPAMP_S6, action = engine.opAmpS6}
+  params:add{type = "control", id = "opAmpR6",name = "Osc6 Amp Env Release", controlspec = specs.OPAMP_R6, action = engine.opAmpR6}
   params:bang()
 
 end

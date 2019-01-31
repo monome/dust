@@ -7,10 +7,11 @@
 -- KEY3 : Change tab
 -- ENC2/3 : Adjust parameters
 --
--- v1.0.1 Mark Eats
+-- v1.1.0 Mark Eats
 --
 
 local MusicUtil = require "mark_eats/musicutil"
+local UI = require "mark_eats/ui"
 local Graph = require "mark_eats/graph"
 local EnvGraph = require "mark_eats/envgraph"
 local Passersby = require "mark_eats/passersby"
@@ -19,40 +20,44 @@ local SCREEN_FRAMERATE = 15
 local screen_refresh_metro
 local screen_dirty = true
 
-local PAGES = 4
-local page_id = 1
-local tab_id = 1
-
 local midi_in_device
+local active_notes = {}
+
+local pages
+local tabs
+local tab_titles = {{"Wave", "FM"}, {"Env", "Reverb"}, {"LFO", "Targets"}, {"Fate"}}
 
 local input_indicator_active = false
-local input_indicator_metro
 local wave_table = {}
 local wave = {}
 local wave_graph
 local SUB_SAMPLING = 4
-local fm_graph
-local lpg_graph
-local lpg_status = {}
-local lpg_status_metro
+local fm1_dial
+local fm2_dial
+local env_graph
+local env_status = {}
+local env_status_metro
 local spring_path = {}
+local reverb_slider
 local lfo_graph
 local dice_throw_vel = 0
 local dice_throw_progress = 0
 local dice_thrown = false
 local dice_need_update = false
 local dice = {}
+local drift_dial
 
-local mod_wheel = 0
+local timbre = 0
 local wave_shape = {actual = 0, modu = 0, dirty = true}
 local wave_folds = {actual = 0, modu = 0, dirty = true}
 local fm1_amount = {actual = 0, modu = 0, dirty = true}
 local fm2_amount = {actual = 0, modu = 0, dirty = true}
-local lpg_peak = {actual = 0, modu = 1, dirty = true}
-local lpg_decay = {actual = 0, modu = 0, dirty = true}
+local attack = {actual = 0, modu = 0, dirty = true}
+local peak = {actual = 0, modu = 1, dirty = true}
+local decay = {actual = 0, modu = 0, dirty = true}
 local reverb_mix = {actual = 0, modu = 0, dirty = true}
+local lfo_shape = {dirty = true}
 local lfo_freq = {dirty = true}
-local lfo_amount = {dirty = true}
 local lfo_destinations = {dirty = true}
 local drift = {actual = 0, dirty = true}
 
@@ -121,8 +126,37 @@ local function generate_spring_path(width, height, turns)
 end
 
 local function generate_lfo_wave(x)
-  x = x * util.linlin(Passersby.specs.LFO_FREQ.minval, Passersby.specs.LFO_FREQ.maxval, 0.5, 10, params:get("lfo_frequency"))
-  return (math.abs((x * 2 - 0.5) % 2 - 1) * 2 - 1) * params:get("lfo_amount")
+  
+  local lfo_shape = params:get("lfo_shape")
+  x = x * util.linlin(Passersby.specs.LFO_FREQ.minval, Passersby.specs.LFO_FREQ.maxval, 0.5, 10, params:get("lfo_freq"))
+  
+  if lfo_shape == 1 then -- Tri
+    x = math.abs((x * 2 - 0.5) % 2 - 1) * 2 - 1
+  elseif lfo_shape == 2 then -- Ramp
+    x = ((x + 0.25) % 1) * 2 - 1
+  elseif lfo_shape == 3 then -- Square
+    x = math.abs(x * 2 % 2 - 1) - 0.5
+    x = x > 0 and 1 or math.floor(x)
+  elseif lfo_shape == 4 then -- Random
+    local NOISE = {0.7, -0.65, 0.2, 0.9, -0.1, -0.5, 0.7, -0.9, 0.25, 1.0, -0.6, -0.2, 0.6, -0.35, 0.7, 0.1, -0.5, 0.7, 0.2, -0.85, -0.3}
+    x = NOISE[util.round(x * 2) + 1]
+  end
+  
+  return x * 0.75
+end
+
+local function update_lfo_amounts_list()
+  lfo_amounts_list.entries = {
+    util.round(params:get("lfo_to_freq_amount") * 100, 1),
+    util.round(params:get("lfo_to_wave_shape_amount") * 100, 1),
+    util.round(params:get("lfo_to_wave_folds_amount") * 100, 1),
+    util.round(params:get("lfo_to_fm_low_amount") * 100, 1),
+    util.round(params:get("lfo_to_fm_high_amount") * 100, 1),
+    util.round(params:get("lfo_to_attack_amount") * 100, 1),
+    util.round(params:get("lfo_to_peak_amount") * 100, 1),
+    util.round(params:get("lfo_to_decay_amount") * 100, 1),
+    util.round(params:get("lfo_to_reverb_mix_amount") * 100, 1)
+  }
 end
 
 local function randomize_dice()
@@ -144,69 +178,47 @@ local function set_dice_throw_vel(vel_delta)
   dice_need_update = true
 end
 
-local function start_input_indicator_timeout()
-  input_indicator_active = true
-  screen_dirty = true
-  if input_indicator_metro.is_running then
-    input_indicator_metro:stop()
+local function start_env_status_timeout(status_text, x, y)
+  env_status.text = status_text
+  env_status.x, env_status.y = x, y
+  if env_status_metro.is_running then
+    env_status_metro:stop()
   end
-  input_indicator_metro:start(0.25, 1)
-end
-
-local function start_lpg_status_timeout(status_text, x, y)
-  lpg_status.text = status_text
-  lpg_status.x, lpg_status.y = x, y
-  if lpg_status_metro.is_running then
-    lpg_status_metro:stop()
-  end
-  lpg_status_metro:start(1, 1)
+  env_status_metro:start(1, 1)
 end
 
 local function update_tabs()
-  if tab_id == 1 then
-    wave_graph:set_active(true)
-    lpg_graph:set_active(true)
-    lfo_graph:set_active(true)
-  else
-    wave_graph:set_active(false)
-    lpg_graph:set_active(false)
-    lpg_status.text = ""
-    lfo_graph:set_active(false)
-  end
-end
-
-local function set_page(id)
-  page_id = util.clamp(id, 1, PAGES)
-  tab_id = 1
-  lpg_status.text = ""
-  update_tabs()
+  
+  wave_graph:set_active(tabs.index == 1)
+  env_graph:set_active(tabs.index == 1 or params:get("env_type") == 2)
+  lfo_graph:set_active(tabs.index == 1)
+  
+  if tabs.index == 2 then env_status.text = "" end
+  lfo_destinations_list.active = tabs.index == 2
+  lfo_amounts_list.active = tabs.index == 2
+  fm1_dial.active = tabs.index == 2
+  fm2_dial.active = tabs.index == 2
+  
   screen_dirty = true
 end
 
-local function set_page_delta(delta, loop)
-  local id
-  if loop then
-    id = page_id % PAGES + delta
-  else
-    id = page_id + delta
-  end
-  set_page(id)
-end
-
-local function set_tab(id)
-  tab_id = util.clamp(id, 1, 2)
+local function update_pages()
+  tabs:set_index(1)
+  tabs.titles = tab_titles[pages.index]
+  env_status.text = ""
+  lfo_destinations_list:set_index(1)
+  lfo_amounts_list:set_index(1)
   update_tabs()
-  screen_dirty = true
 end
 
-local function set_tab_delta(delta, loop)
-  local id
-  if loop then
-    id = tab_id % 2 + delta
+local function init_env_graph(env_type)
+  if env_type == 1 then
+    env_graph = EnvGraph.new_ar(0, 1, 0, 1, 0.003, util.explin(Passersby.specs.DECAY.minval * 0.5, Passersby.specs.DECAY.maxval, 0, 1, decay.actual), util.explin(Passersby.specs.PEAK.minval * 0.5, Passersby.specs.PEAK.maxval, 0, 1, peak.actual), -4)
   else
-    id = tab_id + delta
+    env_graph = EnvGraph.new_asr(0, 1, 0, 1, util.explin(Passersby.specs.ATTACK.minval, Passersby.specs.ATTACK.maxval, 0, 0.4, attack.actual), util.explin(Passersby.specs.DECAY.minval, Passersby.specs.DECAY.maxval, 0, 0.4, decay.actual), 1, -4)
   end
-  set_tab(id)
+  env_graph:set_position_and_size(8, 22, 49, 36)
+  env_graph:set_show_x_axis(true)
 end
 
 
@@ -214,15 +226,35 @@ end
 
 local function note_on(note_num, vel)
   engine.noteOn(note_num, MusicUtil.note_num_to_freq(note_num), vel)
+  table.insert(active_notes, note_num)
+  input_indicator_active = true
+  screen_dirty = true
+end
+
+local function note_off(note_num)
+  engine.noteOff(note_num)
+  for i = #active_notes, 1, -1 do
+    if active_notes[i] == note_num then
+      table.remove(active_notes, i)
+    end
+  end
+  if #active_notes == 0 then
+    input_indicator_active = false
+    screen_dirty = true
+  end
 end
 
 local function set_pitch_bend(bend_st)
-  engine.pitchBend(MusicUtil.interval_to_ratio(bend_st))
+  engine.pitchBendAll(MusicUtil.interval_to_ratio(bend_st))
 end
 
-local function set_mod_wheel(value)
-  mod_wheel = value * 0.5
-  engine.waveFolds(params:get("wave_folds") + mod_wheel)
+local function set_channel_pressure(pressure)
+  engine.pressureAll(pressure)
+end
+
+local function set_channel_timbre(value)
+  engine.timbreAll(value)
+  timbre = value * 0.5
   wave_folds.dirty = true
 end
 
@@ -236,7 +268,7 @@ local function update_wave_shape()
 end
 
 local function update_wave_folds()
-  wave_folds.actual = util.clamp(params:get("wave_folds") + mod_wheel + wave_folds.modu, Passersby.specs.WAVE_FOLDS.minval, Passersby.specs.WAVE_FOLDS.maxval)
+  wave_folds.actual = util.clamp(params:get("wave_folds") + timbre + wave_folds.modu, Passersby.specs.WAVE_FOLDS.minval, Passersby.specs.WAVE_FOLDS.maxval + 0.5)
   wave_graph:update_functions()
   wave_folds.dirty = false
   screen_dirty = true
@@ -244,47 +276,100 @@ end
 
 local function update_fm1_amount()
   fm1_amount.actual = util.clamp(params:get("fm_low_amount") + fm1_amount.modu, Passersby.specs.FM_LOW_AMOUNT.minval, Passersby.specs.FM_LOW_AMOUNT.maxval)
+  fm1_dial.value = fm1_amount.actual * 100
   fm1_amount.dirty = false
   screen_dirty = true
 end
 
 local function update_fm2_amount()
   fm2_amount.actual = util.clamp(params:get("fm_high_amount") + fm2_amount.modu, Passersby.specs.FM_HIGH_AMOUNT.minval, Passersby.specs.FM_HIGH_AMOUNT.maxval)
+  fm2_dial.value = fm2_amount.actual * 100
   fm2_amount.dirty = false
   screen_dirty = true
 end
 
-local function update_lpg_peak()
-  lpg_peak.actual = util.clamp(params:get("lpg_peak") * lpg_peak.modu, Passersby.specs.LPG_PEAK.minval, Passersby.specs.LPG_PEAK.maxval)
-  local norm_peak = util.explin(Passersby.specs.LPG_PEAK.minval * 0.5, Passersby.specs.LPG_PEAK.maxval, 0, 1, lpg_peak.actual)
-  lpg_graph:edit_ar(nil, nil, norm_peak)
-  lpg_peak.dirty = false
+local function update_attack()
+  attack.actual = util.clamp(params:get("attack") + attack.modu, Passersby.specs.ATTACK.minval, Passersby.specs.ATTACK.maxval)
+  if params:get("env_type") == 2 then
+    local norm_attack = util.explin(Passersby.specs.ATTACK.minval, Passersby.specs.ATTACK.maxval, 0, 0.4, attack.actual)
+    env_graph:edit_asr(norm_attack)
+  end
+  attack.dirty = false
   screen_dirty = true
 end
 
-local function show_lpg_peak_status()
-  local norm_peak = util.explin(Passersby.specs.LPG_PEAK.minval * 0.5, Passersby.specs.LPG_PEAK.maxval, 0, 1, params:get("lpg_peak") * lpg_peak.modu)
-  start_lpg_status_timeout(params:string("lpg_peak"), 57, util.linlin(0, 1, 56, 26, norm_peak))
+local function show_attack_status()
+  if params:get("env_type") == 2 then
+    local norm_attack = util.explin(Passersby.specs.ATTACK.minval, Passersby.specs.ATTACK.maxval, 0, 0.4, params:get("attack") + attack.modu)
+    local norm_peak = util.explin(Passersby.specs.PEAK.minval * 0.5, Passersby.specs.PEAK.maxval, 0, 1, params:get("peak") * peak.modu)
+    local y
+    if norm_peak > 0.6 then y = 46 else y = util.linlin(0, 1, 52, 18, norm_peak) end
+    start_env_status_timeout(params:string("attack"), 38, y)
+    screen_dirty = true
+  end
+end
+
+local function update_peak()
+  peak.actual = util.clamp(params:get("peak") * peak.modu, Passersby.specs.PEAK.minval, Passersby.specs.PEAK.maxval)
+  local norm_peak = util.explin(Passersby.specs.PEAK.minval * 0.5, Passersby.specs.PEAK.maxval, 0, 1, peak.actual)
+  if params:get("env_type") == 1 then
+    env_graph:edit_ar(nil, nil, norm_peak)
+  else
+    env_graph:edit_asr(nil, nil, norm_peak)
+  end
+  peak.dirty = false
   screen_dirty = true
 end
 
-local function update_lpg_decay()
-  lpg_decay.actual = util.clamp(params:get("lpg_decay") + lpg_decay.modu, Passersby.specs.LPG_DECAY.minval, Passersby.specs.LPG_DECAY.maxval)
-  local norm_decay = util.explin(Passersby.specs.LPG_DECAY.minval * 0.5, Passersby.specs.LPG_DECAY.maxval, 0, 1, lpg_decay.actual)
-  lpg_graph:edit_ar(nil, norm_decay)
-  lpg_decay.dirty = false
+local function show_peak_status()
+  local norm_peak = util.explin(Passersby.specs.PEAK.minval * 0.5, Passersby.specs.PEAK.maxval, 0, 1, params:get("peak") * peak.modu)
+  if params:get("env_type") == 1 then
+    start_env_status_timeout(params:string("peak"), 57, util.linlin(0, 1, 56, 26, norm_peak))
+  else
+    start_env_status_timeout(params:string("peak"), 45, util.linlin(0, 1, 52, 18, norm_peak))
+  end
   screen_dirty = true
 end
 
-local function show_lpg_decay_status()
-  local norm_decay = util.explin(Passersby.specs.LPG_DECAY.minval * 0.5, Passersby.specs.LPG_DECAY.maxval, 0, 1, params:get("lpg_decay") + lpg_decay.modu)
-  start_lpg_status_timeout(params:string("lpg_decay"), util.linlin(0, 1, 36, 58, norm_decay), 48)
+local function update_decay()
+  decay.actual = util.clamp(params:get("decay") + decay.modu, Passersby.specs.DECAY.minval, Passersby.specs.DECAY.maxval)
+  if params:get("env_type") == 1 then
+    local norm_decay = util.explin(Passersby.specs.DECAY.minval * 0.5, Passersby.specs.DECAY.maxval, 0, 1, decay.actual)
+    env_graph:edit_ar(nil, norm_decay)
+  else
+    local norm_decay = util.explin(Passersby.specs.DECAY.minval, Passersby.specs.DECAY.maxval, 0, 0.4, decay.actual)
+    env_graph:edit_asr(nil, norm_decay)
+  end
+  decay.dirty = false
+  screen_dirty = true
+end
+
+local function show_decay_status()
+  local norm_decay
+  if params:get("env_type") == 1 then
+    norm_decay = util.explin(Passersby.specs.DECAY.minval * 0.5, Passersby.specs.DECAY.maxval, 0, 0.4, params:get("decay") + decay.modu)
+    start_env_status_timeout(params:string("decay"), util.linlin(0, 1, 38, 80, norm_decay), 48)
+  else
+    norm_decay = util.explin(Passersby.specs.DECAY.minval, Passersby.specs.DECAY.maxval, 0.4, 0, params:get("decay") + decay.modu)
+    local norm_peak = util.explin(Passersby.specs.PEAK.minval * 0.5, Passersby.specs.PEAK.maxval, 0, 1, params:get("peak") * peak.modu)
+    local y
+    if norm_peak > 0.6 then y = 53 else y = util.linlin(0, 1, 52, 18, norm_peak) end
+    start_env_status_timeout(params:string("decay"), util.linlin(0, 1, 39, 74, norm_decay), y)
+  end
   screen_dirty = true
 end
 
 local function update_reverb_mix()
   reverb_mix.actual = util.clamp(params:get("reverb_mix") + reverb_mix.modu, Passersby.specs.REVERB_MIX.minval, Passersby.specs.REVERB_MIX.maxval)
+  reverb_slider.value = reverb_mix.actual
   reverb_mix.dirty = false
+  screen_dirty = true
+end
+
+
+local function update_lfo_shape()
+  lfo_graph:update_functions()
+  lfo_shape.dirty = false
   screen_dirty = true
 end
 
@@ -294,18 +379,14 @@ local function update_lfo_freq()
   screen_dirty = true
 end
 
-local function update_lfo_amount()
-  lfo_graph:update_functions()
-  lfo_amount.dirty = false
-  screen_dirty = true
-end
-
 local function update_lfo_destinations()
+  update_lfo_amounts_list()
   lfo_destinations.dirty = false
   screen_dirty = true
 end
 
 local function update_drift()
+  drift_dial.value = params:get("drift") * 100
   drift.dirty = false
   screen_dirty = true
 end
@@ -318,12 +399,13 @@ function enc(n, delta)
   
   if n == 1 then
     -- Page scroll
-    set_page_delta(util.clamp(delta, -1, 1), false)
+    pages:set_index_delta(util.clamp(delta, -1, 1), false)
+    update_pages()
   end
   
-  if page_id == 1 then
+  if pages.index == 1 then
     
-      if tab_id == 1 then
+      if tabs.index == 1 then
         -- Wave
         if n == 2 then
           params:delta("wave_shape", delta)
@@ -340,44 +422,77 @@ function enc(n, delta)
         end
       end
       
-  elseif page_id == 2 then
+  elseif pages.index == 2 then
     
-      if tab_id == 1 then
+      if tabs.index == 1 then
         -- LPG
         if n == 2 then
-          params:delta("lpg_peak", delta)
+          if params:get("env_type") == 1 then
+            params:delta("peak", delta)
+          else
+            params:delta("attack", delta)
+          end
         elseif n == 3 then
-          params:delta("lpg_decay", delta)
+          if params:get("env_type") == 1 then
+            params:delta("decay", delta)
+          else
+            params:delta("decay", -delta)
+          end
         end
         
       else
+        -- Peak
+        if n == 2 and params:get("env_type") == 2 then
+          params:delta("peak", delta)
         -- Reverb
-        if n == 2 then
+        elseif n == 3 then
           params:delta("reverb_mix", delta)
         end
       end
       
-  elseif page_id == 3 then
+  elseif pages.index == 3 then
     
-    if tab_id == 1 then
+    if tabs.index == 1 then
       -- LFO
       if n == 2 then
-        params:delta("lfo_frequency", delta)
+        params:delta("lfo_shape", util.clamp(delta, -1, 1))
       elseif n == 3 then
-        params:delta("lfo_amount", delta)
+        params:delta("lfo_freq", delta)
       end
     
     else
-      -- Destinations
+      -- LFO scroll lists
       if n == 2 then
-        params:delta("lfo_destination_1", util.clamp(delta, -1, 1))
+        lfo_destinations_list:set_index_delta(util.clamp(delta, -1, 1), false)
+        lfo_amounts_list:set_index(lfo_destinations_list.index)
+        screen_dirty = true
+        
+      -- LFO amounts
       elseif n == 3 then
-        params:delta("lfo_destination_2", util.clamp(delta, -1, 1))
+        if lfo_destinations_list.index == 1 then
+          params:delta("lfo_to_freq_amount", delta)
+        elseif lfo_destinations_list.index == 2 then
+          params:delta("lfo_to_wave_shape_amount", delta)
+        elseif lfo_destinations_list.index == 3 then
+          params:delta("lfo_to_wave_folds_amount", delta)
+        elseif lfo_destinations_list.index == 4 then
+          params:delta("lfo_to_fm_low_amount", delta)
+        elseif lfo_destinations_list.index == 5 then
+          params:delta("lfo_to_fm_high_amount", delta)
+        elseif lfo_destinations_list.index == 6 then
+          params:delta("lfo_to_attack_amount", delta)
+        elseif lfo_destinations_list.index == 7 then
+          params:delta("lfo_to_peak_amount", delta)
+        elseif lfo_destinations_list.index == 8 then
+          params:delta("lfo_to_decay_amount", delta)
+        elseif lfo_destinations_list.index == 9 then
+          params:delta("lfo_to_reverb_mix_amount", delta)
+        end
       end
       
     end
       
-  elseif page_id == 4 then
+  elseif pages.index == 4 then
     
     -- Randomize
     if n == 2 then
@@ -396,10 +511,12 @@ function key(n, z)
   if z == 1 then
     
     if n == 2 then
-      set_page_delta(1, true)
+      pages:set_index_delta(1, true)
+      update_pages()
       
     elseif n == 3 then
-      set_tab_delta(1, true)
+      tabs:set_index_delta(1, true)
+      update_tabs()
       
     end
   end
@@ -418,19 +535,19 @@ local function midi_event(data)
     -- Note on
     if msg.type == "note_on" then
       note_on(msg.note, msg.vel / 127)
-      start_input_indicator_timeout()
       
-    -- CC
-    elseif msg.type == "cc" then
-      -- Mod wheel
-      if msg.cc == 1 then
-        set_mod_wheel(util.linlin(0, 127, 0, 1, msg.val))
-      end
+    -- Note off
+    elseif msg.type == "note_off" then
+      note_off(msg.note)
       
     -- Pitch bend
     elseif msg.type == "pitchbend" then
       local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
-      set_pitch_bend(bend_st * 2) -- 2 Semitones of bend
+      set_pitch_bend(bend_st * params:get("bend_range"))
+      
+    -- Pressure
+    elseif msg.type == "channel_pressure" or msg.type == "key_pressure" then
+      set_channel_pressure(msg.val / 127)
       
     end
   end
@@ -440,6 +557,8 @@ end
 -- Init
 
 function init()
+  
+  screen.aa(1)
   
   midi_in_device = midi.connect(1)
   midi_in_device.event = midi_event
@@ -454,6 +573,8 @@ function init()
   for i = 1, 16 do table.insert(channels, i) end
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
   
+  params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
+  
   params:add_separator()
   
   Passersby.add_params()
@@ -466,7 +587,7 @@ function init()
   end)
   
   params:set_action("wave_folds", function(value)
-    engine.waveFolds(value + mod_wheel)
+    engine.waveFolds(value)
     wave_folds.dirty = true
   end)
   
@@ -480,16 +601,38 @@ function init()
     fm2_amount.dirty = true
   end)
   
-  params:set_action("lpg_peak", function(value)
-    engine.lpgPeak(value)
-    if page_id == 2 then show_lpg_peak_status() end
-    lpg_peak.dirty = true
+  params:set_action("env_type", function(value)
+    engine.envType(value - 1)
+    init_env_graph(value)
+    tab_titles[2][1] = params:string("env_type")
+    if value == 1 then
+      tab_titles[2][2] = "Reverb"
+    else
+      tab_titles[2][2] = "Peak/Reverb"
+    end
+    if pages.index == 2 then
+      tabs.titles = tab_titles[2]
+      update_tabs()
+      screen_dirty = true
+    end
   end)
   
-  params:set_action("lpg_decay", function(value)
-    engine.lpgDecay(value)
-    if page_id == 2 then show_lpg_decay_status() end
-    lpg_decay.dirty = true
+  params:set_action("attack", function(value)
+    engine.attack(value)
+    if pages.index == 2 then show_attack_status() end
+    attack.dirty = true
+  end)
+  
+  params:set_action("peak", function(value)
+    engine.peak(value)
+    if pages.index == 2 then show_peak_status() end
+    peak.dirty = true
+  end)
+  
+  params:set_action("decay", function(value)
+    engine.decay(value)
+    if pages.index == 2 then show_decay_status() end
+    decay.dirty = true
   end)
   
   params:set_action("reverb_mix", function(value)
@@ -497,22 +640,60 @@ function init()
     reverb_mix.dirty = true
   end)
   
-  params:set_action("lfo_frequency", function(value)
+  params:set_action("lfo_shape", function(value)
+    engine.lfoShape(value - 1)
+    lfo_shape.dirty = true
+  end)
+  
+  params:set_action("lfo_freq", function(value)
     engine.lfoFreq(value)
     lfo_freq.dirty = true
   end)
   
-  params:set_action("lfo_amount", function(value)
-    engine.lfoAmount(value)
-    lfo_amount.dirty = true
+  params:set_action("lfo_to_freq_amount", function(value)
+    engine.lfoToFreqAmount(value)
+    lfo_destinations.dirty = true
   end)
   
-  for i = 1, 2 do
-    params:set_action("lfo_destination_" .. i, function(value)
-      engine.lfoDest(i - 1, value - 1)
-      lfo_destinations.dirty = true
-    end)
-  end
+  params:set_action("lfo_to_wave_shape_amount", function(value)
+    engine.lfoToWaveShapeAmount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_wave_folds_amount", function(value)
+    engine.lfoToWaveFoldsAmount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_fm_low_amount", function(value)
+    engine.lfoToFm1Amount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_fm_high_amount", function(value)
+    engine.lfoToFm2Amount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_attack_amount", function(value)
+    engine.lfoToAttackAmount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_peak_amount", function(value)
+    engine.lfoToPeakAmount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_decay_amount", function(value)
+    engine.lfoToDecayAmount(value)
+    lfo_destinations.dirty = true
+  end)
+  
+  params:set_action("lfo_to_reverb_mix_amount", function(value)
+    engine.lfoToReverbMixAmount(value)
+    lfo_destinations.dirty = true
+  end)
   
   params:set_action("drift", function(value)
     engine.drift(value)
@@ -523,16 +704,35 @@ function init()
   wave_folds.actual = params:get("wave_folds")
   fm1_amount.actual = params:get("fm_low_amount")
   fm2_amount.actual = params:get("fm_high_amount")
-  lpg_peak.actual = params:get("lpg_peak")
-  lpg_decay.actual = params:get("lpg_decay")
+  attack.actual = params:get("attack")
+  peak.actual = params:get("peak")
+  decay.actual = params:get("decay")
   reverb_mix.actual = params:get("reverb_mix")
-  drift.actual = params:get("drift")
   
-  input_indicator_metro = metro.alloc()
-  input_indicator_metro.callback = function(stage)
-    input_indicator_active = false
-    screen_dirty = true
-  end
+  -- Init UI
+  
+  pages = UI.Pages.new(1, 4)
+  tab_titles[2][1] = params:string("env_type")
+  tabs = UI.Tabs.new(1, tab_titles[pages.index])
+  
+  fm1_dial = UI.Dial.new(72, 19, 22, fm1_amount.actual * 100, 0, 100, 1)
+  fm2_dial = UI.Dial.new(97, 34, 22, fm2_amount.actual * 100, 0, 100, 1)
+  
+  reverb_slider = UI.Slider.new(102, 22, 3, 36, reverb_mix.actual, 0, 1, {0.5})
+  
+  lfo_destinations_list = UI.ScrollingList.new(71, 18, 1, {"Freq", "Shape", "Folds", "FM Low", "FM High", "Attack", "Peak", "Decay", "Reverb"})
+  lfo_destinations_list.num_visible = 4
+  lfo_destinations_list.num_above_selected = 0
+  lfo_destinations_list.active = false
+  
+  lfo_amounts_list = UI.ScrollingList.new(120, 18)
+  lfo_amounts_list.num_visible = 4
+  lfo_amounts_list.num_above_selected = 0
+  lfo_amounts_list.text_align = "right"
+  lfo_amounts_list.active = false
+  update_lfo_amounts_list()
+  
+  drift_dial = UI.Dial.new(85, 28, 22, params:get("drift") * 100, 0, 100, 1)
 
   -- Init graphs
   
@@ -544,19 +744,17 @@ function init()
   end
   wave_graph:add_function(wave_func, SUB_SAMPLING)
   
-  lpg_graph = EnvGraph.new_ar(0, 1, 0, 1, 0.003, util.explin(Passersby.specs.LPG_DECAY.minval * 0.5, Passersby.specs.LPG_DECAY.maxval, 0, 1, lpg_decay.actual), util.explin(Passersby.specs.LPG_PEAK.minval * 0.5, Passersby.specs.LPG_PEAK.maxval, 0, 1, lpg_peak.actual), -4)
-  lpg_graph:set_position_and_size(8, 22, 49, 36)
-  lpg_graph:set_show_x_axis(true)
+  init_env_graph(params:get("env_type"))
   
   lfo_graph = Graph.new(0, 1, "lin", -1, 1, "lin", nil, true, false)
   lfo_graph:set_position_and_size(8, 18, 49, 36)
   lfo_graph:add_function(generate_lfo_wave, SUB_SAMPLING)
   
-  lpg_status.text = ""
-  lpg_status.x, lpg_status.y = 0, 0
-  lpg_status_metro = metro.alloc()
-  lpg_status_metro.callback = function(stage)
-    lpg_status.text = ""
+  env_status.text = ""
+  env_status.x, env_status.y = 0, 0
+  env_status_metro = metro.alloc()
+  env_status_metro.callback = function()
+    env_status.text = ""
     screen_dirty = true
   end
   
@@ -598,21 +796,29 @@ function init()
   end)
   fm2_amount_poll:start()
   
-  local lpg_peak_poll = poll.set("lpgPeakMulMod", function(value)
-    if lpg_peak.modu ~= value then
-      lpg_peak.modu = value
-      lpg_peak.dirty = true
+  local attack_poll = poll.set("attackMod", function(value)
+    if attack.modu ~= value then
+      attack.modu = value
+      attack.dirty = true
     end
   end)
-  lpg_peak_poll:start()
+  attack_poll:start()
   
-  local lpg_decay_poll = poll.set("lpgDecayMod", function(value)
-    if lpg_decay.modu ~= value then
-      lpg_decay.modu = value
-      lpg_decay.dirty = true
+  local peak_poll = poll.set("peakMulMod", function(value)
+    if peak.modu ~= value then
+      peak.modu = value
+      peak.dirty = true
     end
   end)
-  lpg_decay_poll:start()
+  peak_poll:start()
+  
+  local decay_poll = poll.set("decayMod", function(value)
+    if decay.modu ~= value then
+      decay.modu = value
+      decay.dirty = true
+    end
+  end)
+  decay_poll:start()
   
   local reverb_mix_poll = poll.set("reverbMixMod", function(value)
     if reverb_mix.modu ~= value then
@@ -624,7 +830,7 @@ function init()
   
   -- Start drawing to screen
   screen_refresh_metro = metro.alloc()
-  screen_refresh_metro.callback = function(stage)
+  screen_refresh_metro.callback = function()
     update()
     if screen_dirty then
       screen_dirty = false
@@ -646,17 +852,6 @@ local function rotate(x, y, center_x, center_y, angle_rads)
   return (x * cos_a - y * sin_a) + center_x, (x * sin_a + y * cos_a) + center_y
 end
 
-local function draw_page_dots(index, total_pages)
-  local dots_y = util.round((64 - total_pages * 4 - (total_pages - 1) * 2) * 0.5)
-  for i = 1, total_pages do
-    if i == index then screen.level(5)
-    else screen.level(1) end
-    screen.rect(127, dots_y, 1, 4)
-    screen.fill()
-    dots_y = dots_y + 6
-  end
-end
-
 local function draw_input_indicator()
   screen.level(4)
   screen.move(0, 1)
@@ -671,49 +866,6 @@ local function draw_background_rects()
   screen.rect(8, 18, 49, 44)
   screen.fill()
   screen.rect(71, 18, 49, 44)
-  screen.fill()
-end
-
-local function draw_tabs(titles_array, active)
-  local margin = 8
-  local gutter = 14
-  local col_width = (128 - (margin * 2) - gutter * (#titles_array - 1)) / #titles_array
-  for i = 1, #titles_array do
-    if i == active then screen.level(15)
-    else screen.level(3) end
-    screen.move(margin + col_width * 0.5 + ((col_width + gutter) * (i - 1)), 6)
-    screen.text_center(titles_array[i])
-  end
-end
-
-local function draw_dial(value, x, y, size, active)
-  local radius = size * 0.5
-  local start_angle = math.pi * 0.7
-  local end_angle = math.pi * 2.3
-  
-  screen.level(5)
-  screen.arc(x + radius, y + radius, radius - 0.5, util.linlin(0, 1, start_angle, end_angle, value), end_angle)
-  screen.stroke()
-  
-  screen.level(15)
-  screen.line_width(2.5)
-  screen.arc(x + radius, y + radius, radius - 0.5, start_angle, util.linlin(0, 1, start_angle, end_angle, value))
-  screen.stroke()
-  screen.line_width(1)
-  
-  if active then screen.level(15) else screen.level(3) end
-  screen.move(x + radius, y + size + 6)
-  screen.text_center(util.round(value * 100, 1))
-  screen.fill()
-end
-
-local function draw_slider(value, x, y, width, height, active)
-  screen.level(3)
-  screen.rect(x + 0.5, y + 0.5, width - 1, height - 1)
-  screen.stroke()
-  local filled_height = util.round(util.linlin(0, 1, 0, height, value))
-  screen.rect(x, y + height - filled_height, width, filled_height)
-  if active then screen.level(15) else screen.level(5) end
   screen.fill()
 end
 
@@ -851,26 +1003,27 @@ local function update_dice()
   
   dice_throw_progress = util.clamp(dice_throw_progress + dice_throw_vel, 0, 1)
   
-  if page_id == 4 then screen_dirty = true end
+  if pages.index == 4 then screen_dirty = true end
   if dice_throw_progress == 0 and not dice_thrown then dice_need_update = false end
 end
 
 function update()
   
-  if page_id == 1 then
+  if pages.index == 1 then
     if wave_shape.dirty then update_wave_shape() end
     if wave_folds.dirty then update_wave_folds() end
     if fm1_amount.dirty then update_fm1_amount() end
     if fm2_amount.dirty then update_fm2_amount() end
-  elseif page_id == 2 then
-    if lpg_peak.dirty then update_lpg_peak() end
-    if lpg_decay.dirty then update_lpg_decay() end
+  elseif pages.index == 2 then
+    if attack.dirty then update_attack() end
+    if peak.dirty then update_peak() end
+    if decay.dirty then update_decay() end
     if reverb_mix.dirty then update_reverb_mix() end
-  elseif page_id == 3 then
+  elseif pages.index == 3 then
+    if lfo_shape.dirty then update_lfo_shape() end
     if lfo_freq.dirty then update_lfo_freq() end
-    if lfo_amount.dirty then update_lfo_amount() end
     if lfo_destinations.dirty then update_lfo_destinations() end
-  elseif page_id == 4 then
+  elseif pages.index == 4 then
     if drift.dirty then update_drift() end
   end
   
@@ -879,69 +1032,56 @@ end
 
 function redraw()
   screen.clear()
-  screen.aa(1)
   
-  draw_page_dots(page_id, PAGES)
+  pages:redraw()
+  tabs:redraw()
   
   if input_indicator_active then draw_input_indicator() end
   
   -- draw_background_rects()
   
-  if page_id == 1 then
-    
-    draw_tabs({"Wave", "FM"}, tab_id)
+  if pages.index == 1 then
     
     -- Wave
     wave_graph:redraw()
     
     -- FM
+    fm1_dial:redraw()
+    fm2_dial:redraw()
     screen.level(3)
     screen.move(83, 33)
     screen.text_center("L")
     screen.move(108, 48)
     screen.text_center("H")
     screen.fill() -- Prevents extra line
-    draw_dial(fm1_amount.actual, 72, 19, 22, tab_id == 2)
-    draw_dial(fm2_amount.actual, 97, 34, 22, tab_id == 2)
     
-  elseif page_id == 2 then
+  elseif pages.index == 2 then
     
-    draw_tabs({"LPG", "Reverb"}, tab_id)
-    
-    -- LPG
-    lpg_graph:redraw()
+    -- Env
+    env_graph:redraw()
     screen.level(3)
-    screen.move(lpg_status.x, lpg_status.y)
-    screen.text_right(lpg_status.text)
+    screen.move(env_status.x, env_status.y)
+    screen.text_right(env_status.text)
     
     -- Reverb
     screen.fill()
-    draw_spring(82, 22, tab_id == 2)
-    screen.rect(100, 40, 7, 1)
-    screen.level(3)
-    screen.fill()
-    draw_slider(reverb_mix.actual, 102, 22, 3, 36, true)
+    draw_spring(82, 22, tabs.index == 2)
+    reverb_slider:redraw()
     
-  elseif page_id == 3 then
-    
-    draw_tabs({"LFO", "Targets"}, tab_id)
+  elseif pages.index == 3 then
     
     -- LFO
     lfo_graph:redraw()
     screen.level(3)
     screen.move(8, 62)
-    screen.text(params:string("lfo_frequency"))
+    screen.text(params:string("lfo_freq"))
     
     -- LFO Targets
-    if tab_id == 2 then screen.level(15) else screen.level(3) end
-    screen.move(71, 33)
-    screen.text(Passersby.LFO_DESTINATIONS[params:get("lfo_destination_1")])
-    screen.move(71, 49)
-    screen.text(Passersby.LFO_DESTINATIONS[params:get("lfo_destination_2")])
+    if tabs.index == 2 then screen.level(15) else screen.level(3) end
+    lfo_destinations_list:redraw()
+    lfo_amounts_list:redraw()
     
-  elseif page_id == 4 then
-    
-    draw_tabs({"Fate"}, 1)
+  elseif pages.index == 4 then
     
     -- Dice
     draw_dice()
@@ -950,7 +1090,7 @@ function redraw()
     screen.move(96, 23)
     screen.text_center("Drift")
     screen.fill()
-    draw_dial(params:get("drift"), 85, 28, 22, true)
+    drift_dial:redraw()
     
   end
   

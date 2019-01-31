@@ -39,11 +39,10 @@ local screen_refresh_metro
 local screen_dirty = true
 local shift_key = false
 
-engine.name = "TestSine"
-
 
 function init()
-  engine.amp(0)
+  
+  screen.aa(1)
   
   -- Dummy data for graphs
   for i = 1, 12 do point_vals[i] = math.random() * 2 - 1 end
@@ -53,7 +52,7 @@ function init()
   
   -- Metro to call redraw()
   screen_refresh_metro = metro.alloc()
-  screen_refresh_metro.callback = function(stage)
+  screen_refresh_metro.callback = function()
     if screen_dirty then
       screen_dirty = false
       redraw()
@@ -63,7 +62,7 @@ function init()
   
   -- Metro for sequencer demo
   step_metro = metro.alloc()
-  step_metro.callback = function(stage)
+  step_metro.callback = function()
     if graph_id == 4 then
       step = step % 16 + 1
       screen_dirty = true
@@ -248,7 +247,6 @@ end
 -- Drawing
 function redraw()
   screen.clear()
-  screen.aa(1)
   
   -- Don't panic! Only one line of this redraw function is used to draw the graph, everything else relates to the supporting text and graphics.
   

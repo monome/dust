@@ -157,7 +157,8 @@ local function midi_event(data)
     -- Pitch bend
     elseif msg.type == "pitchbend" then
       local bend_st = (util.round(msg.val / 2)) / 8192 * 2 -1 -- Convert to -1 to 1
-      set_pitch_bend(bend_st * 2) -- 2 Semitones of bend
+      local bend_range = params:get("bend_range")
+      set_pitch_bend(bend_st * bend_range)
       
     end
   
@@ -221,6 +222,8 @@ function init()
   local channels = {"All"}
   for i = 1, 16 do table.insert(channels, i) end
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
+
+  params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
   
   params:add_separator()
   
