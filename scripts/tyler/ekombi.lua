@@ -106,14 +106,14 @@ meter_display = 47
 
 -- grid variables
 -- for holding one gridkey and pressing another further right
-held = {}
-heldmax = {}
+g_held = {}
+g_heldMax = {}
 done = {}
 first = {}
 second = {}
 for row = 1,8 do
-  held[row] = 0
-  heldmax[row] = 0
+  g_held[row] = 0
+  g_heldMax[row] = 0
   done[row] = 0
   first[row] = 0
   second[row] = 0
@@ -206,6 +206,9 @@ function mute_groups(track,x)
 end
 
 mode = 0
+
+
+
 -------------------------
 -- grid control functions
 -------------------------
@@ -269,17 +272,17 @@ end
 
 
 function gridkeyhold(x, y, z)
-  if z == 1 and held[y] then heldmax[y] = 0 end
-  held[y] = held[y] + (z*2 -1)
+  if z == 1 and g_held[y] then g_heldMax[y] = 0 end
+  g_held[y] = g_held[y] + (z*2 -1)
 
-  if held[y] > heldmax[y] then heldmax[y] = held[y] end
+  if g_held[y] > g_heldMax[y] then g_heldMax[y] = g_held[y] end
 
-  if y > 8 and held[y] == 1 then
+  if y > 8 and g_held[y] == 1 then
       first[y] = x
-  elseif y <= 8 and held[y] == 2 then
+  elseif y <= 8 and g_held[y] == 2 then
     second[y] = x
   elseif z == 0 then
-    if y <= 8 and held[y] == 1 and heldmax[y] == 2 then
+    if y <= 8 and g_held[y] == 1 and g_heldMax[y] == 2 then
       track[y] = {}
       for i = 1, second[y] do
         track[y][i] = {}
@@ -363,20 +366,20 @@ function key(n,z)
     end
 
     if n == 2 or n == 3 then
-      held = util.time()
+      key_held = util.time()
     end
 
 else
   
     if n == 2 then
-      if held - util.time() < -0.333 then -- hold for a third of a second
+      if key_held - util.time() < -0.333 then -- hold for a third of a second
         load_pattern()
         pattern_display = pattern_select
       end
     end
     
     if n == 3 then
-      if held - util.time() < -0.333 then -- hold for a third of a second
+      if key_held - util.time() < -0.333 then -- hold for a third of a second
         mode = (mode + 1) % 2
         print("mode "..mode)
         blinker:start()
