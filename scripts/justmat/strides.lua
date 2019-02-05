@@ -277,7 +277,7 @@ end
 
 local function speed_up_time()
   -- doubles the speed of current grid pattern
-  for j = 1, #grid_pattern[current_g_pat].time do
+  for j = 1, #get_grid_pat().time do
     get_grid_pat().time[j] = util.clamp(get_grid_pat().time[j] * .5, .01, 1)
   end
 end
