@@ -95,7 +95,7 @@
 --
 --
 --
--- v1.2 by @justmat
+-- v1.3 by @justmat
 
 engine.name = "Ack"
 
@@ -231,6 +231,7 @@ local function clear_all_grid_pat()
     m.note_off(params:get(i..":_midi_note"))
   end
   current_g_pat = 1
+  lit = {}
 end
 
 
@@ -238,6 +239,7 @@ local function stop_all_pat()
   for i = 1, 8 do
     grid_pattern[i]:stop()
   end
+  lit = {}
 end
 
 
@@ -248,24 +250,20 @@ local function kill_midi()
 end
 
 
-local function set_base_time()
+local function set_base_time(n)
   -- stores a copy of grid_pattern[n].time for recall.
-  for i = 1, 8 do
-    base_time[i] = {}
-    for j = 1, #grid_pattern[i].time do
-      base_time[i][j] = grid_pattern[i].time[j]
-    end
+  base_time[n] = {}
+  for j = 1, #grid_pattern[n].time do
+    base_time[n][j] = grid_pattern[n].time[j]
   end
 end
 
 
-local function set_lin_time()
+local function set_lin_time(n)
   -- stores a linearized grid_pattern.time for recall later.
-  for i = 1, 8 do
-    lin_time[i] = {}
-    for j = 1, #grid_pattern[i].time do
-      lin_time[i][j] = grid_pattern[i].time[j]
-    end
+  lin_time[n] = {}
+  for j = 1, #grid_pattern[n].time do
+    lin_time[n][j] = grid_pattern[n].time[j]
   end
 end
 
@@ -280,7 +278,7 @@ end
 local function speed_up_time()
   -- doubles the speed of current grid pattern
   for j = 1, #grid_pattern[current_g_pat].time do
-    grid_pattern[current_g_pat].time[j] = util.clamp(grid_pattern[current_g_pat].time[j] * .5, .01, 1)
+    get_grid_pat().time[j] = util.clamp(get_grid_pat().time[j] * .5, .01, 1)
   end
 end
 
@@ -304,9 +302,9 @@ end
 
 local function slow_down_time()
   -- halfs speed of current grid pattern
-    if grid_pattern[current_g_pat].count > 0 then
-      for j = 1, #grid_pattern[current_g_pat].time do
-        grid_pattern[current_g_pat].time[j] = grid_pattern[current_g_pat].time[j] / .5
+    if get_grid_pat().count > 0 then
+      for j = 1, #get_grid_pat().time do
+        get_grid_pat().time[j] = get_grid_pat().time[j] / .5
       end
     end
 end
@@ -352,21 +350,21 @@ local function restore_playback()
 end
 
 
-local function linearize_pat(n)
+local function linearize_time(n)
   local total_time = 0
 
   for i = 1, #grid_pattern[n].time do
     total_time = total_time + grid_pattern[n].time[i]
   end
 
-  local l_time = total_time / get_grid_pat().count
+  local l_time = total_time / grid_pattern[n].count
 
   for i = 1, #grid_pattern[n].time do
     grid_pattern[n].time[i] = l_time
   end
 
-  set_lin_time()
   is_linearized[n] = 1
+  set_lin_time(n)
 end
 
 
@@ -593,7 +591,7 @@ function g.event(x, y, state)
       elseif get_grid_pat().rec == 1 then
         get_grid_pat():rec_stop()
         if get_grid_pat().count > 0 then
-          set_base_time()
+          set_base_time(current_g_pat)
           get_grid_pat():start()
         end
       end
@@ -609,7 +607,7 @@ function g.event(x, y, state)
           get_grid_pat():rec_stop()
         end
         get_grid_pat():start()
-        set_base_time()
+        set_base_time(current_g_pat)
       elseif get_grid_pat().play == 1 then
         get_grid_pat():stop()
       end
@@ -657,7 +655,7 @@ function g.event(x, y, state)
           is_linearized[y] = 0
           restore_time(y)
         else
-          linearize_pat(y)
+          linearize_time(y)
           is_linearized[y] = 1
         end
       end
