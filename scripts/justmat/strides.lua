@@ -93,8 +93,6 @@
 --
 -- ----------
 --
---
---
 -- v1.3 by @justmat
 
 engine.name = "Ack"
@@ -393,25 +391,27 @@ local function trig(e)
       speed_changed = false
     end
     -- trig ack, and send note on
-    if e.y == 5 then
-      engine.trig(e.x - 3)
-      if params:get("send_midi") == 2 then
-        m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+    if params:get("send") == 1 or params:get("send") == 2 then
+      if e.y == 5 then
+        engine.trig(e.x - 3)
+      elseif e.y == 6 then
+        engine.trig(e.x + 1)
       end
-    elseif e.y == 6 then
-      engine.trig(e.x + 1)
-      if params:get("send_midi") == 2 then
+    end
+    
+    if params:get("send") == 2 or params:get("send") == 3 then
+      if e.y == 5 then
+        m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
+      elseif e.y == 6 then
         m.note_on(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
   else
     -- note off
-    if e.y == 5 then
-      if params:get("send_midi") == 2 then
+    if params:get("send") == 2 or params:get("send") == 3 then
+      if e.y == 5 then
         m.note_off(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
-      end
-    elseif e.y == 6 then
-      if params:get("send_midi") == 2 then
+      elseif e.y == 6 then
         m.note_off(params:get(e.x + 2 .. ":_midi_note"), 100, params:get("midi_chan"))
       end
     end
@@ -441,7 +441,7 @@ function init()
     enc_pattern[i].process = enc_process
   end
   -- midi trig params
-  params:add_option("send_midi", "send midi", {"no", "yes"}, 1)
+  params:add_option("send", "send", {"audio", "audio + midi", "midi"}, 1)
   params:add_number("midi_chan", "midi chan", 1, 16, 1)
   params:add_separator()
   -- add engine params
