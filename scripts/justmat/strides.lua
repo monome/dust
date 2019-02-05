@@ -390,7 +390,7 @@ local function trig(e)
       set_playback_speed()
       speed_changed = false
     end
-    -- trig ack, and send note on
+    -- trig ack
     if params:get("send") == 1 or params:get("send") == 2 then
       if e.y == 5 then
         engine.trig(e.x - 3)
@@ -398,7 +398,7 @@ local function trig(e)
         engine.trig(e.x + 1)
       end
     end
-    
+    -- midi note on
     if params:get("send") == 2 or params:get("send") == 3 then
       if e.y == 5 then
         m.note_on(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
@@ -407,7 +407,7 @@ local function trig(e)
       end
     end
   else
-    -- note off
+    -- midi note off
     if params:get("send") == 2 or params:get("send") == 3 then
       if e.y == 5 then
         m.note_off(params:get(e.x - 2 .. ":_midi_note"), 100, params:get("midi_chan"))
