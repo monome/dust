@@ -14,10 +14,10 @@ engine.name = "PolyPerc"
 
 local shift = 0
 
-local MeadowPhysics = require "meadowphysics"
+local MeadowPhysics = require "ansible/meadowphysics"
 local mp
 
-local GridScales = require "gridscales"
+local GridScales = require "ansible/gridscales"
 local gridscales
 
 local MusicUtil = require "mark_eats/musicutil"
@@ -89,42 +89,14 @@ local grid_clk
 
 local screen_clk 
 
-NOTE_NAMES_OCTAVE = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
-NOTES = {}
-NOTE_NAMES = {}
-
-local function table_map(f, arr)
-  local mapped_arr = {}
-  for i,v in ipairs(arr) do
-    mapped_arr[i] = f(v)
-  end
-  return mapped_arr
-end
-
 function init()
 	-- meadowphysics
 	mp = MeadowPhysics.loadornew("alphacactus/mp.data") 
 	mp.mp_event = event 
 	
-	-- gridscale
+	-- gridscales
 	gridscales = GridScales.loadornew("alphacactus/gridscales.data")
-
-  for i=0,141 do
-    NOTES[i] = {
-      ["number"] = i,
-      ["name"] = NOTE_NAMES_OCTAVE[i % 12 + 1] .. math.floor(i / 12),
-      ["octave"] = math.floor(i / 12)
-    }
-  end
-  NOTE_NAMES = table_map(function(note) return note.name end, NOTES)
-
-	params:add {
-		type = "option",
-		id = "root_note",
-		name = "root note",
-		options = NOTE_NAMES, 
-		default = 36
-	}
+	gridscales:add_params()
 
 	-- metro / midi
 	midi_out_device = midi.connect(1)
@@ -260,22 +232,7 @@ function redraw()
 end
 
 function draw_gridscales()
-	screen.clear()
-	screen.aa(1)
-
-	screen.font_size(8)
-	for i=1,8 do
-		screen.move(8,72-(i*8))
-		screen.text(NOTE_NAMES[params:get("root_note") + gridscales:note(i)])
-	end
-	screen.stroke()
-
-	screen.move(64,32)
-	screen.font_size(32)
-	screen.text(NOTE_NAMES[params:get("root_note")])
-	screen.stroke()
-
-	screen.update()
+	gridscales:redraw()
 end
 
 function draw_mp()
@@ -348,8 +305,7 @@ function enc(n, d)
 	if n == 1 then
 		mix:delta("output", d)
 	elseif n == 2 then
-		local v = util.clamp(params:get("root_note") + d, 0, 72)
-		params:set("root_note", v)
+		params:delta("root_note", d)
 		draw_gridscales()
 	elseif n == 3 then
 		params:delta("bpm", d)
@@ -358,6 +314,9 @@ function enc(n, d)
 end
 
 function key(n, z)
+	if n == 1 and z == 1 then
+		gridscales:set_scale(8)
+	end
 	if n == 2 and z == 1 then 
 		shift = shift ~ 1
 	elseif n == 3 and z == 1 then

@@ -8,6 +8,11 @@ gridscales.L0 = 4
 gridscales.L1 = 8
 gridscales.L2 = 12
 
+gridscales.NOTE_NAMES_OCTAVE = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+gridscales.NOTES = {}
+gridscales.NOTE_NAMES = {}
+
+
 local gridbuf = require "gridbuf"
 local gbuf = gridbuf.new(16, 8)
 
@@ -49,6 +54,48 @@ function gridscales:note(i)
 	return n
 end
 
+function gridscales:set_scale(n)
+	self.selected = n
+end
+
+function gridscales:add_params()
+  for i=0,127 do
+    self.NOTES[i] = {
+      ["number"] = i,
+      ["name"] = self.NOTE_NAMES_OCTAVE[i % 12 + 1] .. math.floor((i - 12) / 12),
+    }
+		self.NOTE_NAMES[i] = self.NOTES[i].name
+  end
+
+	params:add {
+		type = "option",
+		id = "root_note",
+		name = "root note",
+		options = self.NOTE_NAMES, 
+		default = 60,
+	}
+end
+
+function gridscales:redraw() 
+	screen.clear()
+	screen.aa(1)
+
+	screen.font_size(8)
+	for i=1,8 do
+		screen.move(8,72-(i*8))
+		local n = util.clamp(params:get("root_note") + self:note(i), 0, 127)
+		screen.text(self.NOTE_NAMES[n])
+	end
+	screen.stroke()
+
+	screen.move(64,32)
+	screen.font_size(32)
+	screen.text(self.NOTE_NAMES[params:get("root_note")])
+	screen.stroke()
+
+	screen.update()
+end
+
 function gridscales:gridevent(x, y, z)
 	-- select scale
 	if x < 9 then
@@ -59,10 +106,10 @@ function gridscales:gridevent(x, y, z)
 				self.selected = 8 + x
 			end
 		end
-	-- change scale
+	-- change scale notes
 	else
-		local y = math.abs(y-9) -- inverse so that index 1 is bottom row
-		self.scales[self.selected][y] = x - 9
+		local i = math.abs(y-9) -- inverse so that index 1 is bottom row
+		self.scales[self.selected][i] = x - 9
 	end
 end
 

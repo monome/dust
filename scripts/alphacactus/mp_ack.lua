@@ -3,7 +3,7 @@ local ack = require "jah/ack"
 
 engine.name = "Ack"
 
-local meadowphysics = require "meadowphysics"
+local meadowphysics = require "ansible/meadowphysics"
 
 local g = grid.connect()
 
