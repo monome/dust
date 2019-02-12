@@ -9,7 +9,7 @@
 -- KEY3: advance generation
 -- hold KEY1 + press KEY3:
 --   delete board
--- hold KEY2 + press KEY3:
+-- hold KEY1 + press KEY2:
 --   save parameters
 --
 -- ENC1: set speed (bpm)
@@ -97,10 +97,25 @@ local function note_on(note)
   local note_num = math.min((note + note_offset), 127)
   local synth_mode = params:get("synth")
   if(synth_mode == 1 or synth_mode == 3) then
+    local amp = params:get("amp")
+    local amp_variance = math.random(params:get("midi_velocity_var")) / 100
+    if(math.random(2) > 1) then
+      amp = math.min(amp + amp_variance, 1.0)
+    else
+      amp = math.max(amp - amp_variance, 0)
+    end
+    engine.amp(amp)
     engine.hz(music.note_num_to_freq(note_num))
   end
   if(synth_mode == 2 or synth_mode == 3) then
-    m.note_on(note_num, params:get("midi_note_velocity"), params:get("midi_channel"))
+    local velocity_variance = math.random(params:get("midi_velocity_var"))
+    local velocity = params:get("midi_note_velocity")
+    if(math.random(2) > 1) then
+      velocity = math.min(velocity + velocity_variance, 127)
+    else
+      velocity = math.max(velocity - velocity_variance, 0)
+    end
+    m.note_on(note_num, velocity, params:get("midi_channel"))
   end
   table.insert(active_notes, note_num)
 end
@@ -340,9 +355,11 @@ local function reset_sequence()
     beat_step = 1
   end
   
-  if(seq_mode == 3) then
-    init_position()
-    generation_step()
+  if(seq_mode == 3 or (seq_mode == 2 and params:get("loop_semi_auto_seq") == 1)) then
+    if(seq_mode == 3) then
+      init_position()
+      generation_step()
+    end
     if(not seq_running) then
       seq_counter:start()
       seq_running = true
@@ -364,7 +381,7 @@ local function play_seq_step()
   
   local beat_seq_lengths = #beats
   
-  if (beats[(beat_step % beat_seq_lengths) + 1]) then
+  if (beats[(beat_step % beat_seq_lengths) + 1] or seq_mode == 1) then
     if (play_pos <= #playable_cells) then
       position = playable_cells[play_pos]
       local midi_note = scale[(position.x - 1) + position.y]
@@ -490,6 +507,7 @@ function init()
   
   -- params
   params:add_option("seq_mode", "seq mode", SEQ_MODES, 2)
+  params:add_option("loop_semi_auto_seq", "loop seq in semi-auto mode", {"Y", "N"}, 1)
   
   params:add_option("scale", "scale", SCALE_NAMES, 1)
   params:set_action("scale", set_scale)
@@ -521,6 +539,8 @@ function init()
   
   params:add_separator()
   
+  params:add_control("amp", "amp", controlspec.new(0.1, 1.0, "lin", 0.01, 0.3, ""))
+
   params:add_control("release", "release", controlspec.new(0.1, 5.0, "lin", 0.01, 0.5, "s"))
   params:set_action("release", set_release)
   
@@ -535,7 +555,8 @@ function init()
   params:add_number("midi_device_number", "midi device number", 1, 5, 1)
   params:set_action("midi_device_number", set_midi_device_number)
   
-  params:add_number("midi_note_velocity", "midi note velocity", 1, 127, 100)
+  params:add_control("midi_note_velocity", "midi note velocity", controlspec.new(1, 127, "lin", 1, 100, ""))
+  params:add_control("midi_velocity_var", "midi velocity variance", controlspec.new(1, 100, "lin", 1, 20, ""))
   
   scale_name = SCALE_NAMES[13]
   scale = music.generate_scale_of_length(root_note, scale_name, SCALE_LENGTH)
@@ -655,9 +676,11 @@ function key(n, z)
     if(KEY3_DOWN and KEY1_DOWN) then
       clear_board()
     elseif(KEY3_DOWN) then
-      seq_counter:stop()
-      seq_running = false
-      show_playing_indicator = false
+      if(not (seq_mode == 2 and params:get("loop_semi_auto_seq") == 1)) then
+        seq_counter:stop()
+        seq_running = false
+        show_playing_indicator = false
+      end
       generation_step()
     end
   end
