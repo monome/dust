@@ -381,7 +381,7 @@ local function play_seq_step()
   
   local beat_seq_lengths = #beats
   
-  if (beats[(beat_step % beat_seq_lengths) + 1]) then
+  if (beats[(beat_step % beat_seq_lengths) + 1] or seq_mode == 1) then
     if (play_pos <= #playable_cells) then
       position = playable_cells[play_pos]
       local midi_note = scale[(position.x - 1) + position.y]
