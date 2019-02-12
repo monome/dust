@@ -30,13 +30,13 @@ Set the play direction with ENC3.
 * drunken down: Like down, but decides for each step randomly if it goes up or down.
 
 ### Sequencing modes
-Set the sequencing mode in the parameters screen. Default is semi-manual.
+Set the sequencing mode in the parameters screen. Default is semi-automatic.
 * manual: Press KEY2 to play the next step in the sequence for a single generation.
-* semi-manual: Plays the sequence for a single generation.
+* semi-automatic: Plays the sequence for a single generation (and loops it if "loop seq in semi-auto mode" is enabled (default)).
 * automatic: Like semi-automatic, but automatically calculates the next generation and plays it.
 
 ## MIDI
-Set the MIDI device number (default: 1) and MIDI velocity (default: 100) in the parameters screen. MIDI sync and more MIDI related features will be implemented in a future update.
+Set the MIDI channel (default: 1), MIDI device number (default: 1) and MIDI velocity (default: 100) in the parameters screen. MIDI sync and more MIDI related features will be implemented in a future update.
 
 ## More Parameters
 There is lots more to discover in the parameters screen, like root note, scale, and ghost offset.
