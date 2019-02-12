@@ -97,10 +97,25 @@ local function note_on(note)
   local note_num = math.min((note + note_offset), 127)
   local synth_mode = params:get("synth")
   if(synth_mode == 1 or synth_mode == 3) then
+    local amp = params:get("amp")
+    local amp_variance = math.random(params:get("midi_velocity_var")) / 100
+    if(math.random(2) > 1) then
+      amp = math.min(amp + amp_variance, 1.0)
+    else
+      amp = math.max(amp - amp_variance, 0)
+    end
+    engine.amp(amp)
     engine.hz(music.note_num_to_freq(note_num))
   end
   if(synth_mode == 2 or synth_mode == 3) then
-    m.note_on(note_num, params:get("midi_note_velocity"), params:get("midi_channel"))
+    local velocity_variance = math.random(params:get("midi_velocity_var"))
+    local velocity = params:get("midi_note_velocity")
+    if(math.random(2) > 1) then
+      velocity = math.min(velocity + velocity_variance, 127)
+    else
+      velocity = math.max(velocity - velocity_variance, 0)
+    end
+    m.note_on(note_num, velocity, params:get("midi_channel"))
   end
   table.insert(active_notes, note_num)
 end
@@ -521,6 +536,8 @@ function init()
   
   params:add_separator()
   
+  params:add_control("amp", "amp", controlspec.new(0.1, 1.0, "lin", 0.01, 0.3, ""))
+
   params:add_control("release", "release", controlspec.new(0.1, 5.0, "lin", 0.01, 0.5, "s"))
   params:set_action("release", set_release)
   
@@ -535,7 +552,8 @@ function init()
   params:add_number("midi_device_number", "midi device number", 1, 5, 1)
   params:set_action("midi_device_number", set_midi_device_number)
   
-  params:add_number("midi_note_velocity", "midi note velocity", 1, 127, 100)
+  params:add_control("midi_note_velocity", "midi note velocity", controlspec.new(1, 127, "lin", 1, 100, ""))
+  params:add_control("midi_velocity_var", "midi velocity variance", controlspec.new(1, 100, "lin", 1, 20, ""))
   
   scale_name = SCALE_NAMES[13]
   scale = music.generate_scale_of_length(root_note, scale_name, SCALE_LENGTH)
