@@ -177,6 +177,32 @@ Amplifier with two inputs, level parameter and variable exponential or linear ga
 	- `Out`
 	- `Mode`
 
+### BPFilter
+
+Bandpass SVF filter.
+
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Out`
+- Parameters:
+	- `AudioLevel`
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
+
+### BRFilter
+
+Bandreject (Notch) SVF filter.
+
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Out`
+- Parameters:
+	- `AudioLevel`
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
+
 ### DbMixer
 
 Mixer suited for audio signals.
@@ -262,6 +288,19 @@ CV/Gate thing.
 - Parameters:
 	- `Frequency`
 	- `Gate`
+
+### HPFilter
+
+Highpass SVF filter.
+
+- Inputs: `In`, `FM`, `ResonanceModulation`
+- Outputs: `Out`
+- Parameters:
+	- `AudioLevel`
+	- `Frequency`
+	- `Resonance`
+	- `FM`
+	- `ResonanceModulation`
 
 ### LPFilter
 
