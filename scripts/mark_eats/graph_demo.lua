@@ -16,6 +16,7 @@
 -- Include the Graph classes
 local Graph = require "mark_eats/graph"
 local EnvGraph = require "mark_eats/envgraph"
+local FilterGraph = require "mark_eats/filtergraph"
 
 local MusicUtil = require "mark_eats/musicutil"
 
@@ -33,6 +34,8 @@ local step = 1
 local step_metro
 local highlight_progress = 1
 local highlight_id = 1
+local filter_vals = {filter_type = 1, freq = 2000, resonance = 0.6}
+local filter_types = {"lowpass", "bandpass", "notch", "highpass"}
 
 local SCREEN_FRAMERATE = 15
 local screen_refresh_metro
@@ -40,41 +43,8 @@ local screen_dirty = true
 local shift_key = false
 
 
-function init()
-  
-  screen.aa(1)
-  
-  -- Dummy data for graphs
-  for i = 1, 12 do point_vals[i] = math.random() * 2 - 1 end
-  for i = 1, 16 do seq_vals[i] = math.random(48, 72) end
-  
-  init_graph(graph_id)
-  
-  -- Metro to call redraw()
-  screen_refresh_metro = metro.alloc()
-  screen_refresh_metro.callback = function()
-    if screen_dirty then
-      screen_dirty = false
-      redraw()
-    end
-  end
-  screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
-  
-  -- Metro for sequencer demo
-  step_metro = metro.alloc()
-  step_metro.callback = function()
-    if graph_id == 4 then
-      step = step % 16 + 1
-      screen_dirty = true
-    end
-  end
-  step_metro:start(0.25)
-  
-end
-
-
 -- This is where we create the graphs
-function init_graph(id)
+local function init_graph(id)
   
   -- Wave shape graph
   if graph_id == 1 then
@@ -135,7 +105,51 @@ function init_graph(id)
     highlight_progress = 1
     highlight_id = 1
     demo_graph:highlight_exclusive_point(highlight_id)
+    
+    
+  -- Filter graph
+  elseif graph_id == 5 then
+    
+    -- The Graph class can also draw splines. The FilterGraph subclass uses this to draw approximate filter graphs.
+    -- filter_type can be "lowpass", "bandpass", "notch" or "highpass".
+    -- FilterGraph.new(x_min, x_max, y_min, y_max, filter_type, slope, freq, resonance)
+    demo_graph = FilterGraph.new(nil, nil, nil, nil, filter_types[filter_vals.filter_type], 12, filter_vals.freq, filter_vals.resonance)
+    demo_graph:set_position_and_size(5, 7, 118, 40)
+    
   end
+  
+end
+
+
+function init()
+  
+  screen.aa(1)
+  
+  -- Dummy data for graphs
+  for i = 1, 12 do point_vals[i] = math.random() * 2 - 1 end
+  for i = 1, 16 do seq_vals[i] = math.random(48, 72) end
+  
+  init_graph(graph_id)
+  
+  -- Metro to call redraw()
+  screen_refresh_metro = metro.alloc()
+  screen_refresh_metro.callback = function()
+    if screen_dirty then
+      screen_dirty = false
+      redraw()
+    end
+  end
+  screen_refresh_metro:start(1 / SCREEN_FRAMERATE)
+  
+  -- Metro for sequencer demo
+  step_metro = metro.alloc()
+  step_metro.callback = function()
+    if graph_id == 4 then
+      step = step % 16 + 1
+      screen_dirty = true
+    end
+  end
+  step_metro:start(0.25)
   
 end
 
@@ -149,12 +163,12 @@ function enc(n, delta)
     -- ENC2 blends between the two wave shapes using a 0-1 value.
     if n == 2 then
       -- We call update_functions() whenever the wave function gets new data (here, wave_shape is changed)
-      wave_shape = util.clamp(wave_shape + delta * 0.01, 0, 1)
+      wave_shape = util.clamp(wave_shape + delta * 0.05, 0, 1)
       demo_graph:update_functions()
       
     -- ENC3 set the wave frequency, 1-10.
     elseif n == 3 then
-      wave_freq = util.clamp(wave_freq + delta * 0.03, 1, 10)
+      wave_freq = util.clamp(wave_freq + delta * 0.1, 1, 10)
       demo_graph:update_functions()
     end
     
@@ -162,7 +176,7 @@ function enc(n, delta)
   elseif graph_id == 2 then
     
     -- The ENC2 and ENC3 change attack and decay. When KEY3 is held they switch to sustain and release.
-    local change = delta * 0.01
+    local change = delta * 0.05
     
     if n == 2 then
       if not shift_key then
@@ -186,14 +200,14 @@ function enc(n, delta)
     
     -- ENC2 changes the highlight_id which is fed to the graph.
     if n == 2 then
-      highlight_progress = util.clamp(highlight_progress + delta * 0.1, 1, 12)
+      highlight_progress = util.clamp(highlight_progress + delta * 0.5, 1, 12)
       highlight_id = util.round(highlight_progress)
       demo_graph:highlight_exclusive_point(highlight_id)
       
     -- ENC3 changes the highlighted point value.
     elseif n == 3 then
       -- We could store the values in the graph but here we store the data model in this class and update the graph view from it.
-      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.01, demo_graph:get_y_min(), demo_graph:get_y_max())
+      point_vals[highlight_id] = util.clamp(point_vals[highlight_id] + delta * 0.05, demo_graph:get_y_min(), demo_graph:get_y_max())
       demo_graph:edit_point(highlight_id, nil, point_vals[highlight_id])
     end
     
@@ -202,7 +216,7 @@ function enc(n, delta)
     
     -- ENC2 changes the highlight_id again.
     if n == 2 then
-      highlight_progress = util.clamp(highlight_progress + delta * 0.1, 1, 16)
+      highlight_progress = util.clamp(highlight_progress + delta * 0.5, 1, 16)
       highlight_id = util.round(highlight_progress)
       demo_graph:highlight_exclusive_point(highlight_id)
       
@@ -211,6 +225,22 @@ function enc(n, delta)
       seq_vals[highlight_id] = util.clamp(seq_vals[highlight_id] + util.clamp(delta, -1, 1), demo_graph:get_y_min(), demo_graph:get_y_max())
       demo_graph:edit_point(highlight_id, nil, seq_vals[highlight_id])
     end
+    
+  -- Filter interaction
+  elseif graph_id == 5 then
+    
+    -- ENC2 sets frequency
+    if n == 2 then
+      filter_vals.freq = util.clamp(filter_vals.freq + (filter_vals.freq * delta * 0.1), 20, 10000)
+      
+    -- ENC3 sets resonance
+    elseif n == 3 then
+      filter_vals.resonance = util.clamp(filter_vals.resonance + delta * 0.05, 0, 1)
+      
+    end
+    
+    -- The filter values are then updated in the graph here.
+    demo_graph:edit(nil, nil, filter_vals.freq, filter_vals.resonance)
     
   end
   
@@ -224,8 +254,7 @@ function key(n, z)
   if n == 2 and z == 1 then
     
     -- Increment graph_id
-    graph_id = graph_id + 1
-    if graph_id > 4 then graph_id = 1 end
+    graph_id = graph_id % 5 + 1
     
     -- Init a new graph.
     init_graph(graph_id)
@@ -235,8 +264,13 @@ function key(n, z)
     shift_key =  z > 0 and true or false
     
     if graph_id == 3 then
-      if shift_key then demo_graph:set_style("line")
+      if shift_key then demo_graph:set_style("line_and_point")
       else demo_graph:set_style("point") end
+      
+    elseif graph_id == 5 and z == 1 then
+      -- Change filter type
+      filter_vals.filter_type = filter_vals.filter_type % #filter_types + 1
+      demo_graph:edit(filter_types[filter_vals.filter_type])
     end
   end
   
@@ -281,6 +315,18 @@ function redraw()
     screen.fill()
     screen.move(util.linlin(demo_graph:get_x_min(), demo_graph:get_x_max(), demo_graph:get_x(), demo_graph:get_x() + demo_graph:get_width() - 1, highlight_id), 62)
     screen.text_center(MusicUtil.note_num_to_name(seq_vals[highlight_id], true))
+    
+  -- Draw filter text
+  elseif graph_id == 5 then
+    screen.level(15)
+    screen.move(5, 60)
+    screen.text(util.round(filter_vals.freq, 1) .. " Hz")
+    local filter_name = filter_types[filter_vals.filter_type]
+    filter_name = string.upper(string.sub(filter_name, 1, 1)) .. string.sub(filter_name, 2)
+    screen.move(123, 60)
+    screen.text_right(filter_name)
+    screen.fill()
+    
   end
   
   -- Draw the actual graph!
