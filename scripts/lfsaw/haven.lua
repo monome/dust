@@ -7,6 +7,7 @@ engine.name = "Haven"
 
 local sel = 1
 local shift = false
+local fdbckSign = 1
 
 function init()
   params:add{
@@ -46,16 +47,16 @@ function init()
 
   params:add{
     type="control",
+    id="fdbckSign",
+    controlspec=controlspec.new(-1, 1, "linear", 1, 1, ""),
+	  action=engine.fdbckSign,
+  }
+
+  params:add{
+    type="control",
     id="fdbck",
-    controlspec=controlspec.new(-1, 1, "linear", 0, 0.03, ""),
-    action=function(value)
-      if (value < 0) then
-        engine.fdbckSign(-1)
-      else
-        engine.fdbckSign(1)
-      end
-      engine.fdbck(math.abs(value))
-    end,
+    controlspec=controlspec.new(0, 1, "linear", 0, 0, ""),
+	  action=engine.fdbck,
   }
 
   params:add{
@@ -76,20 +77,33 @@ function redraw()
 
   screen.level(sel == 1 and 15 or 2)
   screen.move(8, 16)
-  screen.text("lo: "..params:string("freq1").."  *  "..params:string("amp1"))
-
+  if params:string("amp1") == "-90.0 dB" then
+    screen.text("lo: "..params:string("freq1").."  *  -inf dB")
+  else
+    screen.text("lo: "..params:string("freq1").."  *  "..params:string("amp1"))
+  end
   screen.level(sel == 2 and 15 or 2)
   screen.move(8, 24)
-  screen.text("hi: "..params:string("freq2").."  *  "..params:string("amp2"))
-  
+  if params:string("amp2") == "-90.0 dB" then
+    screen.text("hi: "..params:string("freq2").."  *  -inf dB")
+  else
+    screen.text("hi: "..params:string("freq2").."  *  "..params:string("amp2"))
+  end
   screen.level(sel == 3 and 15 or 2)
   screen.move(8, 32)
-  screen.text("fdbck: "..params:string("fdbck"))
-
+  if fdbckSign == 1 then
+    screen.text("fdbck: "..params:string("fdbck"))
+  else
+    screen.text("fdbck: -"..params:string("fdbck"))
+  end    
   screen.level(sel == 4 and 15 or 2)
   screen.move(8, 40)
-  screen.text("in: "..params:string("in_amp"))
-
+  if params:string("in_amp") == "-90.0 dB" then
+    screen.text("in: -inf dB")
+  else
+    screen.text("in: "..params:string("in_amp"))
+  end
+  
   screen.level(sel == 5 and 15 or 2)
   screen.move(8, 48)
   screen.text("reverb: "..params:string("rev_level"))
@@ -100,17 +114,25 @@ end
 
 function key(n, z)
   if n == 2 and z == 1 then
-    sel = sel + 1
-
-    if sel > 5 then
-      sel = 1
-    end
-
+  	-- use shift to move up, else down in selection
+    if shift then
+	    sel = sel - 1
+	  else
+		  sel = sel +1
+	  end
+    -- wrap cycle around
+    sel = ((sel-1) % 5) + 1
     redraw()
   end
   
   if n == 3 then
-    shift = z == 1
+    shift = (z == 1)
+	  if sel == 3 and z == 1 then
+		  -- toggle feedbackSign
+  	  fdbckSign = fdbckSign * -1
+	    engine.fdbckSign(fdbckSign)
+      redraw()
+	  end
   end
 end
 
@@ -161,4 +183,3 @@ function enc(n, delta)
 
   redraw()
 end
-

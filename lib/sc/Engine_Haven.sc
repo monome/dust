@@ -19,7 +19,7 @@ Engine_Haven : CroneGenEngine {
 	}
 
 	*synthDef { // TODO: move ugenGraphFunc to here...
-		^SynthDef(\haven, {|in = 0, out = 0, freq1, freq2, amp1, amp2, inAmp, fdbck, fdbckSign = 1|
+		^SynthDef(\haven, {|in = 0, out = 0, freq1 = 20, freq2 = 4000, amp1 = -90, amp2 = -90, inAmp = -90, fdbck = 0.3, fdbckSign = 1|
 			var freqs, freqRanges;
 			var inputs, oscAmps;
 			var dyns, dynIns;
@@ -28,8 +28,15 @@ Engine_Haven : CroneGenEngine {
 				Rotate2.ar(in[0], in[1], pos)
 			};
 
-			oscAmps = max(0, [amp1, amp2].dbamp - (-90.dbamp)); // ensure mute when at -90 db;
-			inAmp   = max(0,  inAmp      .dbamp - (-90.dbamp)); // ensure mute when at -90 db;
+			oscAmps = [amp1, amp2];
+			oscAmps = oscAmps.varlag(0.3);
+			inAmp = inAmp.varlag(0.3);
+
+			oscAmps = max(0, oscAmps.dbamp - (-90.dbamp)); // ensure mute when at -90 db;
+			inAmp   = max(0,  inAmp .dbamp - (-90.dbamp)); // ensure mute when at -90 db;
+
+
+
 
 			// combine fdbck with its sign
 			fdbck = fdbck.varlag(0.3) * fdbckSign.lag(2.0 / SampleRate.ir);
@@ -41,7 +48,7 @@ Engine_Haven : CroneGenEngine {
 			// magic (>:)
 			xxx = Limiter.ar(
 				CombL.ar(
-					lIns + inputs,
+					lIns/* + inputs*/,
 					0.5,
 					(LFNoise1.ar(0.1, 0.5, 0.5) + dynIns).tanh * 0.5,
 					-10
@@ -67,7 +74,7 @@ Engine_Haven : CroneGenEngine {
 
 
 			// oscAmps = [amp1, amp2].dbamp.poll;
-			oscAmps = oscAmps.lag(0.2) * AmpCompA.kr(freqs);
+			oscAmps = oscAmps * AmpCompA.kr(freqs);
 			snd = [
 				SinOscFB.ar(
 					freq: freqs[0],
@@ -84,8 +91,15 @@ Engine_Haven : CroneGenEngine {
 
 
 
-			// mix
+			//stereo rotate
+			snd = rotate.(
+				in: snd,
+				pos: (dynIns + LFSaw.kr(0.001, 0.23))%1 // (2, 2)
+			);
+			// mix with input
 			snd = (inputs + snd).tanh;
+			// ensure silence on load
+			snd = snd * EnvGen.kr(Env([0, 0, 1], [1.2, 0.5]));
 
 			// amp modulation
 			snd = snd * SinOsc.ar(
@@ -96,11 +110,6 @@ Engine_Haven : CroneGenEngine {
 			{Rand()}!2
 			).range(0.01, 1);
 			*/
-			//stereo rotate
-			snd = rotate.(
-				in: snd,
-				pos: (dynIns + LFSaw.kr(0.001, 0.23))%1 // (2, 2)
-			);
 
 
 			snd = (fdbck * xxx) // feedback
@@ -122,7 +131,7 @@ Engine_Haven : CroneGenEngine {
 	}
 }
 
-	/*
+/*
 
-	Engine_Haven.generateLuaEngineModuleSpecsSection
-	*/
+Engine_Haven.generateLuaEngineModuleSpecsSection
+*/
