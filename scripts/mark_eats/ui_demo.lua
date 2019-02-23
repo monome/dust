@@ -39,7 +39,7 @@ function init()
   tabs = UI.Tabs.new(1, {"Tab A", "Tab B"})
   
   dial_l = UI.Dial.new(9, 19, 22, 25, 0, 100, 1)
-  dial_r = UI.Dial.new(34, 34, 22, 0.3, 0, 2, 0.01)
+  dial_r = UI.Dial.new(34.5, 34, 22, 0.3, -1, 1, 0.01, 0, {0})
   
   slider_l = UI.Slider.new(86, 18, 3, 44, 0.25, 0, 1, {0.84})
   slider_r = UI.Slider.new(102, 18, 3, 44, 0.25, 0, 1, {0.84})
@@ -73,16 +73,16 @@ function enc(n, delta)
       if tabs.index == 1 then
         -- Tab A
         if n == 2 then
-          dial_l:set_value_delta(delta)
+          dial_l:set_value_delta(delta * 2)
         elseif n == 3 then
-          dial_r:set_value_delta(delta / 50)
+          dial_r:set_value_delta(delta / 20)
         end
       else
         -- Tab B
         if n == 2 then
-          slider_l:set_value_delta(delta / 100)
+          slider_l:set_value_delta(delta / 20)
         elseif n == 3 then
-          slider_r:set_value_delta(delta / 100)
+          slider_r:set_value_delta(delta / 20)
         end
       end
       
