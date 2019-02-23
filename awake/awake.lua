@@ -153,7 +153,7 @@ function init()
     action = all_notes_off}
   params:add{type = "number", id = "midi_out_device", name = "midi out device",
     min = 1, max = 4, default = 1,
-    action = function(value) midi_out_device:reconnect(value) end}
+    action = function(value) midi_out_device = midi.connect(value) end}
   params:add{type = "number", id = "midi_out_channel", name = "midi out channel",
     min = 1, max = 16, default = 1,
     action = function(value)
@@ -205,8 +205,8 @@ function init()
   clk:start()
 end
 
-function g.event(x, y, z)
-  local grid_h = g.rows()
+function g.key(x, y, z)
+  local grid_h = g.rows
   if z > 0 then
     if (grid_h == 8 and edit_mode == 1) or (grid_h == 16 and y <= 8) then
       if one.data[x] == 9-y then
@@ -229,31 +229,31 @@ function g.event(x, y, z)
 end
 
 function gridredraw()
-  local grid_h = g.rows()
-  g.all(0)
+  local grid_h = g.rows
+  g:all(0)
   if edit_mode == 1 or grid_h == 16 then
     for x = 1, 16 do
-      if one.data[x] > 0 then g.led(x, 9-one.data[x], 5) end
+      if one.data[x] > 0 then g:led(x, 9-one.data[x], 5) end
     end
     if one.pos > 0 and one.data[one.pos] > 0 then
-      g.led(one.pos, 9-one.data[one.pos], 15)
+      g:led(one.pos, 9-one.data[one.pos], 15)
     else
-      g.led(one.pos, 1, 3)
+      g:led(one.pos, 1, 3)
     end
   end
   if edit_mode == 2 or grid_h == 16 then
     local y_offset = 0
     if grid_h == 16 then y_offset = 8 end
     for x = 1, 16 do
-      if two.data[x] > 0 then g.led(x, 9-two.data[x] + y_offset, 5) end
+      if two.data[x] > 0 then g:led(x, 9-two.data[x] + y_offset, 5) end
     end
     if two.pos > 0 and two.data[two.pos] > 0 then
-      g.led(two.pos, 9-two.data[two.pos] + y_offset, 15)
+      g:led(two.pos, 9-two.data[two.pos] + y_offset, 15)
     else
-      g.led(two.pos, 1 + y_offset, 3)
+      g:led(two.pos, 1 + y_offset, 3)
     end
   end
-  g.refresh()
+  g:refresh()
 end
 
 function enc(n, delta)
