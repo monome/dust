@@ -1,4 +1,4 @@
--- strum v0.5
+-- strum v0.52
 --
 -- tap grid pads to change pitch
 -- double tap to add a rest
@@ -22,7 +22,7 @@ local cs = require 'controlspec'
 music = require 'mark_eats/musicutil'
 beatclock = require 'beatclock'
 
-version = "v0.5"
+version = "v0.52"
 name = ":: strum :: "
 
 steps = {}
@@ -68,7 +68,7 @@ function init()
     params:set_action("damping",
         function(x) engine.decay(x) end)
 
-    cs.COEF = cs.new(0,1,'lin',0,0.11,'')
+    cs.COEF = cs.new(0.2,0.9,'lin',0,0.2,'')
     params:add_control("brightness", "brightness", cs.COEF)
     params:set_action("brightness",
         function(x) engine.coef(x) end)
@@ -83,12 +83,12 @@ function init()
     params:set_action("lpf_gain",
         function(x) engine.lpf_gain(x) end)
 
-    cs.BPF_FREQ = cs.new(100,10000,'lin',0,0.5,'')
+    cs.BPF_FREQ = cs.new(100,4000,'lin',0,0.5,'')
     params:add_control("bpf_freq", "bpf_freq", cs.BPF_FREQ)
     params:set_action("bpf_freq",
         function(x) engine.bpf_freq(x) end)
 
-    cs.BPF_RES = cs.new(0,4,'lin',0,0.5,'')
+    cs.BPF_RES = cs.new(0,3,'lin',0,0.5,'')
     params:add_control("bpf_res", "bpf_res", cs.BPF_RES)
     params:set_action("bpf_res",
         function(x) engine.bpf_res(x) end)
