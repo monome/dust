@@ -11,10 +11,10 @@
 -- key 2: random modulation matrix
 -- key 3: play a random note
 
-local FM7 = require 'lazzarello/fm7'
+local FM7 = require 'fm7'
 local tab = require 'tabutil'
 local pattern_time = require 'pattern_time'
-local UI = require 'mark_eats/ui'
+local UI = require 'ui'
 
 local g = grid.connect()
 
@@ -89,15 +89,15 @@ function init()
 
   if g then gridredraw() end
 
-  screen_refresh_metro = metro.alloc()
-  screen_refresh_metro.callback = function(stage)
+  screen_refresh_metro = metro.init()
+  screen_refresh_metro.event = function(stage)
     redraw()
   end
   screen_refresh_metro:start(1 / screen_framerate)
 
   local startup_ani_count = 1
-  local startup_ani_metro = metro.alloc()
-  startup_ani_metro.callback = function(stage)
+  local startup_ani_metro = metro.init()
+  startup_ani_metro.event = function(stage)
     startup_ani_count = startup_ani_count + 1
   end
   startup_ani_metro:start( 0.1, 3 )
@@ -120,7 +120,7 @@ function init()
   pages = UI.Pages.new(1, 33)
 end
 
-function g.event(x, y, z)
+function g.key(x, y, z)
   if x == 1 and (y > 2 and y < 8) then
     if z == 1 and getEncoderMode() == y - 1 then
       setEncoderMode(1)
@@ -223,20 +223,20 @@ end
 
 local function toggleModLED(mode)
   if mode ~= 1 then
-    g.led(1,mode + 1,12)
+    g:led(1,mode + 1,12)
   end
 end
 
 function gridredraw()
-  g.all(0)
-  g.led(1,1,2 + pat.rec * 10)
-  g.led(1,2,2 + pat.play * 10)
-  g.led(1,8,2 + mode_transpose * 10)
+  g:all(0)
+  g:led(1,1,2 + pat.rec * 10)
+  g:led(1,2,2 + pat.play * 10)
+  g:led(1,8,2 + mode_transpose * 10)
   toggleModLED(getEncoderMode())
 
-  if mode_transpose == 1 then g.led(trans.x, trans.y, 4) end
+  if mode_transpose == 1 then g:led(trans.x, trans.y, 4) end
   for i,e in pairs(lit) do
-    g.led(e.x, e.y,15)
+    g:led(e.x, e.y,15)
   end
 
   g:refresh()
@@ -247,9 +247,9 @@ function enc(n,delta)
     pages:set_index_delta(delta, true)
     --print("set algo ".. (pages.index - 1))
     if (pages.index - 1) < 10 then
-      params:read("lazzarello/fm7-0".. (pages.index - 1) .. ".pset")
+      params:read("fm7-0".. (pages.index - 1) .. ".pset")
     else
-      params:read("lazzarello/fm7-".. (pages.index - 1) .. ".pset")
+      params:read("fm7-".. (pages.index - 1) .. ".pset")
     end
   elseif n == 2 then
     print("encoder 2")
