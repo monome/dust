@@ -1,3 +1,9 @@
+# DEPRECATED
+
+see updated information in the docs.
+
+archived for now, will be deleted at some point.
+
 # dust: norns incantations
 
 user data for the norns system
